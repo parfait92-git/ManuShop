@@ -14,6 +14,8 @@ git add .
 git commit -m "chore: initialiser le projet Next.js"
 git branch -M main
 git remote add origin git@github.com:parfait92-git/ManuShop.git
+# Uniquement si le dépôt distant n'est pas vide :
+# git pull --rebase origin main
 git push -u origin main
 git checkout -b develop
 git push -u origin develop
@@ -34,8 +36,4 @@ git remote -v
 git status
 ```
 
-Si ton dépôt distant a été créé avec un `README`, un `.gitignore` ou une licence, récupère d'abord son contenu avant le premier `push` :
-
-```bash
-git pull --rebase origin main
-```
+Exécute `git pull --rebase origin main` uniquement si le dépôt distant n'est pas vide (par exemple s'il contient déjà un `README`, un `.gitignore` ou une licence).
