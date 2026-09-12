@@ -4,7 +4,7 @@ Boutique en ligne construite avec Next.js et TypeScript.
 
 ## Importer le projet dans le dépôt Git
 
-Une fois le dépôt GitHub créé, place-toi dans le dossier local de ton projet Next.js puis exécute les commandes suivantes sur Fedora 44 :
+Une fois le dépôt GitHub créé vide, place-toi dans le dossier local de ton projet Next.js puis exécute les commandes suivantes sur Fedora 44 :
 
 ```bash
 sudo dnf install -y git
@@ -14,19 +14,16 @@ git add .
 git commit -m "chore: initialiser le projet Next.js"
 git branch -M main
 git remote add origin git@github.com:parfait92-git/ManuShop.git
-# Uniquement si le dépôt distant n'est pas vide :
-# git pull --rebase origin main
 git push -u origin main
 git checkout -b develop
 git push -u origin develop
-git checkout develop
 ```
 
 ## Résultat attendu
 
 - `main` devient la branche principale du dépôt.
 - `develop` devient la branche de travail pour le développement courant.
-- Le projet local reste positionné sur `develop` après l'import initial.
+- Le projet local reste positionné sur `develop` après sa création.
 
 ## Vérifications utiles
 
@@ -36,4 +33,4 @@ git remote -v
 git status
 ```
 
-Exécute `git pull --rebase origin main` uniquement si le dépôt distant n'est pas vide (par exemple s'il contient déjà un `README`, un `.gitignore` ou une licence).
+Pour éviter les conflits d'historiques, crée le dépôt distant sans `README`, sans licence et sans `.gitignore` avant l'import initial.
