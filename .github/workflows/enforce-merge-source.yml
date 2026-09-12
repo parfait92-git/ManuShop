@@ -1,0 +1,17 @@
+name: Enforce merge source
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify pull request originates from develop
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "Seules les fusions depuis la branche 'develop' sont autorisées vers 'main' (branche source: ${{ github.head_ref }})."
+            exit 1
+          fi
