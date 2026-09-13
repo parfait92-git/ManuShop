@@ -13,6 +13,8 @@ const TestIcon = React.forwardRef((props: any, ref: any) => (
   <svg data-testid="test-icon" {...props} ref={ref} />
 )) as unknown as LucideIcon;
 
+TestIcon.displayName = "TestIcon";
+
 describe("Home page", () => {
   it("renders without crashing", () => {
     render(<Home />);
