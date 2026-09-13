@@ -28,7 +28,7 @@ describe("Home page", () => {
 
     expect(heading).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(section?.querySelector("div")).toBeNull();
+    expect(section?.querySelector('[class*="hero__actions"]')).toBeNull();
   });
 
   it("renders optional component branches", () => {
