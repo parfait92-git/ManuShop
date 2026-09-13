@@ -10,24 +10,24 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 
 ### 0.1 Comptes & Projets externes
 - [x] Créer le projet **Firebase** (`manushop-eb15a`) : Firestore activé, règles déployées, app Web enregistrée
-- [ ] Activer **Authentication** (Email/Password) dans la console Firebase
-- [ ] ~~Firebase Storage~~ → remplacé par **Cloudinary** (Firebase Storage nécessite le forfait payant Blaze) : créer un compte gratuit sur cloudinary.com, récupérer Cloud Name / API Key / API Secret
-- [ ] Créer le projet **Vercel** et le connecter au repo GitHub `ManuShop`
-  - [ ] Brancher le déploiement production sur `main`
-  - [ ] Configurer les Preview Deployments sur les PR issues de `develop`
+- [x] Activer **Authentication** (Email/Password) dans la console Firebase
+- [x] ~~Firebase Storage~~ → remplacé par **Cloudinary** (Firebase Storage nécessite le forfait payant Blaze) : compte créé, clés en cours d'ajout dans `.env.local`
+- [x] Créer le projet **Vercel** et le connecter au repo GitHub `ManuShop` (`manu-shop`)
+  - [x] Brancher le déploiement production sur `main`
+  - [x] Configurer les Preview Deployments sur les PR issues de `develop`
 - [ ] Réserver le nom de domaine (`.cm` ou `.com`) si disponible dès cette phase
 - [ ] (Peut être différé en Phase 2/3) Comptes développeurs Meta (Facebook/Instagram Graph API), WhatsApp Business Cloud API, TikTok Business API
 
 ### 0.2 Outillage local (VS Code)
 - [ ] Extensions : ESLint, Prettier, Tailwind CSS IntelliSense, Firebase (toba233/firebase ou officiel), GitLens, Error Lens, Playwright (pour tests E2E futurs)
-- [ ] Configurer `firebase-tools` CLI (`npm install -g firebase-tools`, `firebase login`, `firebase init`)
-- [ ] Configurer `vercel` CLI (`npm install -g vercel`, `vercel login`, `vercel link`)
+- [x] Configurer `firebase-tools` CLI (via `npx`, pas d'installation globale possible sans sudo) : login, init Firestore
+- [x] Configurer `vercel` CLI (via `npx`) : login, link au projet `manu-shop` existant
 
 ### 0.3 Initialisation technique du projet
-- [ ] Installer les dépendances listées en §10 de [04-besoins-techniques.md](./04-besoins-techniques.md) (Firebase SDK, shadcn/ui, Zustand, React Hook Form + Zod, react-pdf, sonner, next-pwa, etc.)
-- [ ] `npx shadcn@latest init` + configuration Tailwind
-- [ ] Configurer `next-pwa` dans `next.config.ts`
-- [ ] Créer la structure de dossiers : `src/repositories`, `src/services`, `src/factories`, `src/strategies`, `src/types`
+- [x] Installer les dépendances (Firebase SDK, Cloudinary/next-cloudinary, Zustand, React Hook Form + Zod, react-pdf, sonner, lucide-react, date-fns, clsx, tailwind-merge)
+- [x] `npx shadcn@latest init` + configuration Tailwind
+- [ ] Configurer `next-pwa` (ou l'équivalent App Router natif) dans `next.config.ts`
+- [x] Créer la structure de dossiers : `src/repositories`, `src/services`, `src/factories`, `src/strategies`, `src/types` + clients `src/lib/firebase.ts` et `src/lib/cloudinary.ts`
 - [ ] Créer les fichiers `.env.local` (non commité) et `.env.example` (commité, sans valeurs) reprenant les variables du §8
 - [ ] Ajouter les mêmes variables en secrets sur Vercel et GitHub Actions
 - [ ] Écrire les règles de sécurité Firestore (§6) et les déployer (`firebase deploy --only firestore:rules`)
