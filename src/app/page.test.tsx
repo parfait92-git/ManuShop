@@ -23,8 +23,12 @@ describe("Home page", () => {
       />
     );
 
-    expect(screen.getByRole("heading", { name: "ManuShop" })).toBeInTheDocument();
+    const heading = screen.getByRole("heading", { name: "ManuShop" });
+    const section = heading.closest("section");
+
+    expect(heading).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(section?.querySelector("div")).toBeNull();
   });
 
   it("renders optional component branches", () => {
