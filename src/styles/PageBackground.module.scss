@@ -1,0 +1,63 @@
+.background {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+}
+
+.blob--fuchsia {
+  top: -8rem;
+  left: -6rem;
+  height: 24rem;
+  width: 24rem;
+  background: rgba(217, 70, 239, 0.4);
+}
+
+.blob--cyan {
+  top: 25%;
+  right: -8rem;
+  height: 28rem;
+  width: 28rem;
+  background: rgba(34, 211, 238, 0.3);
+}
+
+.blob--indigo {
+  top: 55%;
+  left: 33%;
+  height: 32rem;
+  width: 32rem;
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.blob--amber {
+  bottom: 0;
+  left: -4rem;
+  height: 24rem;
+  width: 24rem;
+  background: rgba(251, 191, 36, 0.2);
+}
+
+.blob--emerald {
+  bottom: 2.5rem;
+  right: 0;
+  height: 20rem;
+  width: 20rem;
+  background: rgba(52, 211, 153, 0.2);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(2, 6, 23, 0.3),
+    rgba(2, 6, 23, 0.5),
+    rgba(2, 6, 23, 0.8)
+  );
+}
