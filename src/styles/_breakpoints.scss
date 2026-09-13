@@ -1,0 +1,34 @@
+// Breakpoint scale mirrored from Tailwind's defaults so custom SCSS media
+// queries stay in sync with the `sm:` / `md:` / `lg:` / `xl:` / `2xl:` utilities
+// used across the app. Override the map below to diverge from Tailwind.
+@use "sass:map";
+
+$breakpoint-xs: 0;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;
+
+$breakpoints: (
+  "xs": $breakpoint-xs,
+  "sm": $breakpoint-sm,
+  "md": $breakpoint-md,
+  "lg": $breakpoint-lg,
+  "xl": $breakpoint-xl,
+  "2xl": $breakpoint-2xl,
+);
+
+@mixin respond-to($breakpoint) {
+  $value: map.get($breakpoints, $breakpoint);
+
+  @if $value == null {
+    @warn "Unknown breakpoint `#{$breakpoint}`. Expected one of #{map.keys($breakpoints)}.";
+  } @else if $value == 0 {
+    @content;
+  } @else {
+    @media (min-width: $value) {
+      @content;
+    }
+  }
+}
