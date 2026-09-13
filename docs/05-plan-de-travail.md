@@ -19,7 +19,7 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 - [ ] (Peut être différé en Phase 2/3) Comptes développeurs Meta (Facebook/Instagram Graph API), WhatsApp Business Cloud API, TikTok Business API
 
 ### 0.2 Outillage local (VS Code)
-- [ ] Extensions : ESLint, Prettier, Tailwind CSS IntelliSense, Firebase (toba233/firebase ou officiel), GitLens, Error Lens, Playwright (pour tests E2E futurs)
+- [x] Extensions : ESLint, Prettier, Tailwind CSS IntelliSense, GitLens, Error Lens, Playwright (déjà présentes ou installées)
 - [x] Configurer `firebase-tools` CLI (via `npx`, pas d'installation globale possible sans sudo) : login, init Firestore
 - [x] Configurer `vercel` CLI (via `npx`) : login, link au projet `manu-shop` existant
 
