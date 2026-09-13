@@ -9,7 +9,9 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 ## Phase 0 — Prérequis & Mise en place (avant tout code métier)
 
 ### 0.1 Comptes & Projets externes
-- [ ] Créer le projet **Firebase** (console.firebase.google.com) : activer Firestore, Authentication (Email/Password), Storage, Cloud Messaging
+- [x] Créer le projet **Firebase** (`manushop-eb15a`) : Firestore activé, règles déployées, app Web enregistrée
+- [ ] Activer **Authentication** (Email/Password) dans la console Firebase
+- [ ] ~~Firebase Storage~~ → remplacé par **Cloudinary** (Firebase Storage nécessite le forfait payant Blaze) : créer un compte gratuit sur cloudinary.com, récupérer Cloud Name / API Key / API Secret
 - [ ] Créer le projet **Vercel** et le connecter au repo GitHub `ManuShop`
   - [ ] Brancher le déploiement production sur `main`
   - [ ] Configurer les Preview Deployments sur les PR issues de `develop`

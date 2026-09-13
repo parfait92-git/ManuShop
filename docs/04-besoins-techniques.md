@@ -10,7 +10,7 @@
 | Styling | Tailwind CSS + shadcn/ui | Rapide, cohérent, mobile-first |
 | Base de données | Firebase Firestore (NoSQL) | Temps réel, scalable, sans serveur |
 | Authentification | Firebase Auth | Sécurisé, multi-provider, gratuit |
-| Stockage fichiers | Firebase Storage | Photos produits, logos, PDFs |
+| Stockage fichiers | Cloudinary | Photos produits, logos, PDFs — évite le forfait Blaze requis par Firebase Storage |
 | Hébergement | Vercel | CI/CD automatique, CDN global, gratuit |
 | État global | Zustand | Léger, simple, TypeScript-friendly |
 | Formulaires | React Hook Form + Zod | Validation robuste, typée |
@@ -334,6 +334,11 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 
+# Cloudinary (stockage images/PDF)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
 # Meta (Facebook/Instagram)
 META_APP_ID=
 META_APP_SECRET=
@@ -380,6 +385,9 @@ GitHub Actions
 ```bash
 # Firebase
 npm install firebase firebase-admin
+
+# Cloudinary (stockage images/PDF)
+npm install cloudinary next-cloudinary
 
 # UI Components
 npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu
