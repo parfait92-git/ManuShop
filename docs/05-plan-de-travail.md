@@ -26,12 +26,13 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 ### 0.3 Initialisation technique du projet
 - [x] Installer les dépendances (Firebase SDK, Cloudinary/next-cloudinary, Zustand, React Hook Form + Zod, react-pdf, sonner, lucide-react, date-fns, clsx, tailwind-merge)
 - [x] `npx shadcn@latest init` + configuration Tailwind
-- [ ] Configurer `next-pwa` (ou l'équivalent App Router natif) dans `next.config.ts`
+- [x] Configurer le PWA en natif App Router (`src/app/manifest.ts` + `public/sw.js` + `src/instrumentation-client.ts`) plutôt que `next-pwa` (compatibilité Turbopack non garantie)
 - [x] Créer la structure de dossiers : `src/repositories`, `src/services`, `src/factories`, `src/strategies`, `src/models` (une interface par fichier, un dossier par entité) + clients `src/lib/firebase.ts` et `src/lib/cloudinary.ts`
-- [ ] Créer les fichiers `.env.local` (non commité) et `.env.example` (commité, sans valeurs) reprenant les variables du §8
-- [ ] Ajouter les mêmes variables en secrets sur Vercel et GitHub Actions
-- [ ] Écrire les règles de sécurité Firestore (§6) et les déployer (`firebase deploy --only firestore:rules`)
-- [ ] Mettre en place le pipeline CI GitHub Actions : lint + typecheck + tests + build (§9)
+- [x] Créer les fichiers `.env.local` (non commité) et `.env.example` (commité, sans valeurs) reprenant les variables du §8
+- [x] Ajouter les mêmes variables en secrets sur Vercel et GitHub Actions (Cloudinary en attente des clés)
+- [x] Écrire les règles de sécurité Firestore (§6) et les déployer (`firebase deploy --only firestore:rules`)
+- [x] Mettre en place le pipeline CI GitHub Actions : lint + tests + build (`.github/workflows/ci.yml`, vert sur `develop`)
+- [x] Configurer Jest + Testing Library (`next/jest`, seuil de couverture 70% dans `jest.config.mjs`)
 - [ ] Configurer Jest + Testing Library (objectif couverture > 70%, BNF-28)
 
 **Definition of Done Phase 0** : `npm run build` passe en local et sur Vercel (déploiement preview visible), Firebase répond depuis l'app (lecture/écriture test), CI verte sur une PR `develop → main` de test.
