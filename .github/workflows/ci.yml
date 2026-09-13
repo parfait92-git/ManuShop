@@ -23,13 +23,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Type check
-        run: npx tsc --noEmit
-
       - name: Test
         run: npm run test:coverage
 
-      - name: Build
+      - name: Build (includes TypeScript check)
         run: npm run build
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
