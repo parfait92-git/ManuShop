@@ -27,7 +27,7 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 - [x] Installer les dépendances (Firebase SDK, Cloudinary/next-cloudinary, Zustand, React Hook Form + Zod, react-pdf, sonner, lucide-react, date-fns, clsx, tailwind-merge)
 - [x] `npx shadcn@latest init` + configuration Tailwind
 - [ ] Configurer `next-pwa` (ou l'équivalent App Router natif) dans `next.config.ts`
-- [x] Créer la structure de dossiers : `src/repositories`, `src/services`, `src/factories`, `src/strategies`, `src/types` + clients `src/lib/firebase.ts` et `src/lib/cloudinary.ts`
+- [x] Créer la structure de dossiers : `src/repositories`, `src/services`, `src/factories`, `src/strategies`, `src/models` (une interface par fichier, un dossier par entité) + clients `src/lib/firebase.ts` et `src/lib/cloudinary.ts`
 - [ ] Créer les fichiers `.env.local` (non commité) et `.env.example` (commité, sans valeurs) reprenant les variables du §8
 - [ ] Ajouter les mêmes variables en secrets sur Vercel et GitHub Actions
 - [ ] Écrire les règles de sécurité Firestore (§6) et les déployer (`firebase deploy --only firestore:rules`)
