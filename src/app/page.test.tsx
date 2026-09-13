@@ -1,3 +1,4 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import type { LucideIcon } from "lucide-react";
 
@@ -7,7 +8,10 @@ import { Badge } from "@/components/ui/Badge";
 import { FeatureCard } from "@/components/ui/FeatureCard";
 import { GlassButton } from "@/components/ui/GlassButton";
 
-const TestIcon: LucideIcon = (props) => <svg data-testid="test-icon" {...props} />;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TestIcon = React.forwardRef((props: any, ref: any) => (
+  <svg data-testid="test-icon" {...props} ref={ref} />
+)) as unknown as LucideIcon;
 
 describe("Home page", () => {
   it("renders without crashing", () => {
