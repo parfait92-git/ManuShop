@@ -8,10 +8,15 @@ import { Badge } from "@/components/ui/Badge";
 import { FeatureCard } from "@/components/ui/FeatureCard";
 import { GlassButton } from "@/components/ui/GlassButton";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TestIcon = React.forwardRef((props: any, ref: any) => (
-  <svg data-testid="test-icon" {...props} ref={ref} />
-)) as unknown as LucideIcon;
+// Remplace les lignes 11-16 par ceci
+const TestIcon = React.forwardRef(function TestIconComponent(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ref: any
+) {
+  return <svg data-testid="test-icon" {...props} ref={ref} />;
+}) as unknown as LucideIcon;
 
 TestIcon.displayName = "TestIcon";
 
