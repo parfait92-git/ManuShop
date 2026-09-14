@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "cn"
+import * as React from "react";
+import { cn } from "cn";
 
-import styles from "@/styles/ScrollReveal.module.scss"
+import styles from "@/styles/ScrollReveal.module.scss";
 
 export interface ScrollRevealProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
+  children: React.ReactNode;
   /** Delay in milliseconds before starting the entrance animation. */
-  delay?: number
+  delay?: number;
   /** Distance in pixels to slide upwards during reveal. Default 24. */
-  distance?: number
+  distance?: number;
   /** Class name passed to the container element. */
-  className?: string
+  className?: string;
   /** Tag to render. Defaults to "div". */
-  as?: React.ElementType
+  as?: React.ElementType;
 }
 
 /**
@@ -29,36 +29,45 @@ export function ScrollReveal({
   style,
   ...props
 }: ScrollRevealProps) {
-  const [isVisible, setIsVisible] = React.useState(false)
-  const ref = React.useRef<HTMLElement | null>(null)
+  const [isVisible, setIsVisible] = React.useState(false);
+  const ref = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
-    const node = ref.current
-    if (!node) return
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsVisible(entry.isIntersecting);
+    });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
 
     // If IntersectionObserver is not supported (SSR / old browsers / tests), reveal immediately
     if (typeof IntersectionObserver === "undefined") {
-      setIsVisible(true)
-      return
+      setIsVisible(true);
+      return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const [entry] = entries
+        const [entry] = entries;
         if (entry?.isIntersecting) {
-          setIsVisible(true)
-          observer.unobserve(node)
+          setIsVisible(true);
+          observer.unobserve(node);
         }
       },
       {
         threshold: 0.15,
         rootMargin: "0px 0px -40px 0px",
-      }
-    )
+      },
+    );
 
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <Component
@@ -66,16 +75,18 @@ export function ScrollReveal({
       className={cn(
         styles.reveal,
         isVisible && styles["reveal--visible"],
-        className
+        className,
       )}
-      style={{
-        "--reveal-delay": `${delay}ms`,
-        "--reveal-distance": `${distance}px`,
-        ...style,
-      } as React.CSSProperties}
+      style={
+        {
+          "--reveal-delay": `${delay}ms`,
+          "--reveal-distance": `${distance}px`,
+          ...style,
+        } as React.CSSProperties
+      }
       {...props}
     >
       {children}
     </Component>
-  )
+  );
 }

@@ -31,11 +31,13 @@ export function LaunchPromo({
 }: LaunchPromoProps) {
   const targetMs = Date.parse(targetDate);
   const [mounted, setMounted] = React.useState(false);
-  const [now, setNow] = React.useState(targetMs);
+  const [now, setNow] = React.useState<number>(() => Date.now());
 
   React.useEffect(() => {
     setMounted(true);
-    setNow(Date.now());
+  }, []);
+
+  React.useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
