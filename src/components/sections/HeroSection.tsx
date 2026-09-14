@@ -6,7 +6,7 @@ import { GlassButton, type GlassButtonProps } from "@/components/ui/GlassButton"
 import styles from "@/styles/HeroSection.module.scss"
 
 export interface HeroCta {
-  label: string
+  label: React.ReactNode
   href: string
   variant?: GlassButtonProps["variant"]
 }
@@ -14,16 +14,23 @@ export interface HeroCta {
 export interface HeroSectionProps extends React.HTMLAttributes<HTMLElement> {
   /** Content rendered inside the eyebrow badge above the title. */
   eyebrow?: React.ReactNode
+  /** Large faded copy sitting behind the heading. */
+  watermark?: string
   /** Hero heading. */
-  title: string
+  title: React.ReactNode
   /** Hero supporting copy. */
   description: string
   /** Call-to-action buttons rendered below the description. */
   ctas?: HeroCta[]
 }
 
+export function HeroAccent({ children }: { children: React.ReactNode }) {
+  return <em className={styles.hero__accent}>{children}</em>
+}
+
 export function HeroSection({
   eyebrow,
+  watermark,
   title,
   description,
   ctas = [],
@@ -32,13 +39,18 @@ export function HeroSection({
 }: HeroSectionProps) {
   return (
     <section className={cn(styles.hero, className)} {...props}>
+      {watermark ? (
+        <p aria-hidden className={styles.hero__watermark}>
+          {watermark}
+        </p>
+      ) : null}
       {eyebrow ? <Badge>{eyebrow}</Badge> : null}
       <h1 className={styles.hero__title}>{title}</h1>
       <p className={styles.hero__description}>{description}</p>
       {ctas.length > 0 ? (
         <div className={styles.hero__actions}>
           {ctas.map(({ label, href, variant }) => (
-            <GlassButton key={label} href={href} variant={variant}>
+            <GlassButton key={href} href={href} variant={variant}>
               {label}
             </GlassButton>
           ))}
