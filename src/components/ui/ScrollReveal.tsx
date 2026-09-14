@@ -29,27 +29,17 @@ export function ScrollReveal({
   style,
   ...props
 }: ScrollRevealProps) {
-  const [isVisible, setIsVisible] = React.useState(false);
+  const [isVisible, setIsVisible] = React.useState(
+    () => typeof IntersectionObserver === "undefined",
+  );
   const ref = React.useRef<HTMLElement | null>(null);
-
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsVisible(entry.isIntersecting);
-    });
-
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
 
   React.useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
     // If IntersectionObserver is not supported (SSR / old browsers / tests), reveal immediately
-    if (typeof IntersectionObserver === "undefined") {
-      setIsVisible(true);
-      return;
-    }
+    if (typeof IntersectionObserver === "undefined") return;
 
     const observer = new IntersectionObserver(
       (entries) => {

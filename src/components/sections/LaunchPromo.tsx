@@ -30,19 +30,14 @@ export function LaunchPromo({
   ...props
 }: LaunchPromoProps) {
   const targetMs = Date.parse(targetDate);
-  const [mounted, setMounted] = React.useState(false);
-  const [now, setNow] = React.useState<number>(() => Date.now());
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [now, setNow] = React.useState<number>(() => targetMs);
 
   React.useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  const parts = getTimeParts(targetMs, mounted ? now : targetMs);
+  const parts = getTimeParts(targetMs, now);
 
   return (
     <section className={cn(styles.section, className)} {...props}>
