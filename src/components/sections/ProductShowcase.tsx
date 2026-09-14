@@ -3,6 +3,7 @@ import { TrendingUp } from "lucide-react"
 import { cn } from "cn"
 
 import { ProductCard } from "@/components/ui/ProductCard"
+import { ScrollReveal } from "@/components/ui/ScrollReveal"
 import styles from "@/styles/ProductShowcase.module.scss"
 
 export interface ShowcaseProduct {
@@ -43,8 +44,10 @@ export function ProductShowcase({
         ) : null}
       </div>
       <div className={styles.grid}>
-        {products.map((product) => (
-          <ProductCard key={product.name} {...product} />
+        {products.map((product, index) => (
+          <ScrollReveal key={product.name} delay={index * 100}>
+            <ProductCard {...product} />
+          </ScrollReveal>
         ))}
       </div>
     </section>

@@ -9,13 +9,58 @@ import styles from "@/styles/SiteHeader.module.scss"
 
 export type SiteHeaderProps = React.HTMLAttributes<HTMLElement>
 
-export function SiteHeader({ className, ...props }: SiteHeaderProps) {
+// Scroll delta threshold to avoid flickering on micro-scrolls
+const SCROLL_DELTA_THRESHOLD = 8;
+// Offset from top under which the header is always visible
+const TOP_OFFSET_THRESHOLD = 50;
+
+export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const [visible, setVisible] = React.useState(true)
+
+  React.useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+          const diff = currentY - lastScrollY;
+
+          if (currentY <= TOP_OFFSET_THRESHOLD) {
+            setVisible(true);
+          } else if (Math.abs(diff) > SCROLL_DELTA_THRESHOLD) {
+            // Scroll down hides, scroll up reveals
+            setVisible(diff < 0);
+          }
+
+          lastScrollY = Math.max(0, currentY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const closeMenu = () => setMenuOpen(false)
 
+  const isVisible = visible || menuOpen;
+
   return (
-    <header className={cn(styles.header, className)} {...props}>
+    <header
+      className={cn(styles.header, className)}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(-100%)",
+        pointerEvents: isVisible ? undefined : "none",
+        ...style,
+      }}
+      {...props}
+    >
       <div className={styles.header__inner}>
         <Link href="/" className={styles.logo}>
           <span aria-hidden className={styles.logo__mark}>

@@ -4,6 +4,7 @@ import * as React from "react";
 import { cn } from "cn";
 
 import { getTimeParts, pad2 } from "@/lib/countdown";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import styles from "@/styles/LaunchPromo.module.scss";
 
 export interface LaunchPromoProps extends React.HTMLAttributes<HTMLElement> {
@@ -20,28 +21,6 @@ const UNIT_LABELS = [
   { key: "seconds", label: "Sec" },
 ] as const;
 
-let nowStore = Date.now();
-
-function subscribe(onStoreChange: () => void) {
-  const id = window.setInterval(() => {
-    nowStore = Date.now();
-    onStoreChange();
-  }, 1000);
-
-  return () => window.clearInterval(id);
-}
-
-function getSnapshot() {
-  return nowStore;
-}
-
-export interface LaunchPromoProps extends React.HTMLAttributes<HTMLElement> {
-  eyebrow?: string;
-  title: string;
-  description: string;
-  targetDate: string;
-}
-
 export function LaunchPromo({
   eyebrow,
   title,
@@ -51,19 +30,26 @@ export function LaunchPromo({
   ...props
 }: LaunchPromoProps) {
   const targetMs = Date.parse(targetDate);
+  const [mounted, setMounted] = React.useState(false);
+  const [now, setNow] = React.useState(targetMs);
 
-  const now = React.useSyncExternalStore(subscribe, getSnapshot, () => targetMs);
+  React.useEffect(() => {
+    setMounted(true);
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
-  const parts = getTimeParts(targetMs, now);
+  const parts = getTimeParts(targetMs, mounted ? now : targetMs);
 
   return (
     <section className={cn(styles.section, className)} {...props}>
-      <div>
+      <ScrollReveal>
         {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
         <h2 className={styles.title}>{title}</h2>
         <p className={styles.description}>{description}</p>
-      </div>
-      <div className={styles.countdown} aria-live="polite">
+      </ScrollReveal>
+      <ScrollReveal delay={120} className={styles.countdown} aria-live="polite">
         <p className={styles.countdownLabel}>L’offre expire dans</p>
         <div className={styles.units}>
           {UNIT_LABELS.map((unit) => (
@@ -73,7 +59,7 @@ export function LaunchPromo({
             </div>
           ))}
         </div>
-      </div>
+      </ScrollReveal>
     </section>
   );
 }
