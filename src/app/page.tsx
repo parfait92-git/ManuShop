@@ -97,7 +97,7 @@ export default function Home() {
               PWA · boutique installable et hors-ligne
             </>
           }
-          title={
+          heading={
             <>
               Votre boutique, sans <HeroAccent>limites.</HeroAccent>
             </>
