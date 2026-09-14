@@ -30,14 +30,17 @@ export function LaunchPromo({
 }: LaunchPromoProps) {
   const targetMs = Date.parse(targetDate);
 
-  const [now, setNow] = React.useState<number>(() => Date.now());
+  // Start at null so the server and initial client render match; the real
+  // clock only kicks in after mount, avoiding a hydration mismatch.
+  const [now, setNow] = React.useState<number | null>(null);
 
   React.useEffect(() => {
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  const parts = getTimeParts(targetMs, now);
+  const parts = getTimeParts(targetMs, now ?? targetMs);
 
   return (
     <section className={cn(styles.section, className)} {...props}>
