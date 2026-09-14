@@ -94,7 +94,7 @@ export default function Home() {
           eyebrow={
             <>
               <span className="size-1.5 rounded-full bg-cyan-300" />
-              PWA · boutique installable et hors-ligne
+              boutique installable et hors-ligne
             </>
           }
           heading={
@@ -136,12 +136,12 @@ export default function Home() {
           id="apropos"
           eyebrow="Promotion de lancement"
           title="Votre première vitrine digitale commence ici."
-          description="Profitez de l'offre spéciale réservée aux commerçants camerounais et démarrez avec tous les outils essentiels."
+          description="Profitez de l'offre spéciale réservée aux commerçants et démarrez avec tous les outils essentiels."
           targetDate="2026-09-16T06:00:00+01:00"
         />
 
         <SiteFooter>
-          © 2026 ManuShop · Conçu pour les commerçants camerounais.
+          © 2026 ManuShop · Conçu pour les commerçants.
         </SiteFooter>
       </main>
     </div>
