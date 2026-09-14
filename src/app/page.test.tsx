@@ -76,7 +76,7 @@ describe("Home page", () => {
   it("renders hero section without optional eyebrow, watermark and ctas", () => {
     render(
       <HeroSection
-        title="ManuShop"
+        heading="ManuShop"
         description="Digitalisez votre boutique."
       />
     );
