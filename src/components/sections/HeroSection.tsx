@@ -12,15 +12,10 @@ export interface HeroCta {
 }
 
 export interface HeroSectionProps extends React.HTMLAttributes<HTMLElement> {
-  /** Content rendered inside the eyebrow badge above the title. */
   eyebrow?: React.ReactNode
-  /** Large faded copy sitting behind the heading. */
   watermark?: string
-  /** Hero heading. */
-  title: React.ReactNode
-  /** Hero supporting copy. */
+  heading: React.ReactNode
   description: string
-  /** Call-to-action buttons rendered below the description. */
   ctas?: HeroCta[]
 }
 
@@ -31,7 +26,7 @@ export function HeroAccent({ children }: { children: React.ReactNode }) {
 export function HeroSection({
   eyebrow,
   watermark,
-  title,
+  heading,
   description,
   ctas = [],
   className,
@@ -45,7 +40,7 @@ export function HeroSection({
         </p>
       ) : null}
       {eyebrow ? <Badge>{eyebrow}</Badge> : null}
-      <h1 className={styles.hero__title}>{title}</h1>
+      <h1 className={styles.hero__title}>{heading}</h1>
       <p className={styles.hero__description}>{description}</p>
       {ctas.length > 0 ? (
         <div className={styles.hero__actions}>
