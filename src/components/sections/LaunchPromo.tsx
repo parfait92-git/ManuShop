@@ -20,6 +20,28 @@ const UNIT_LABELS = [
   { key: "seconds", label: "Sec" },
 ] as const;
 
+let nowStore = Date.now();
+
+function subscribe(onStoreChange: () => void) {
+  const id = window.setInterval(() => {
+    nowStore = Date.now();
+    onStoreChange();
+  }, 1000);
+
+  return () => window.clearInterval(id);
+}
+
+function getSnapshot() {
+  return nowStore;
+}
+
+export interface LaunchPromoProps extends React.HTMLAttributes<HTMLElement> {
+  eyebrow?: string;
+  title: string;
+  description: string;
+  targetDate: string;
+}
+
 export function LaunchPromo({
   eyebrow,
   title,
@@ -30,14 +52,7 @@ export function LaunchPromo({
 }: LaunchPromoProps) {
   const targetMs = Date.parse(targetDate);
 
-  const now = React.useSyncExternalStore(
-    React.useCallback((onStoreChange: () => void) => {
-      const id = window.setInterval(onStoreChange, 1000);
-      return () => window.clearInterval(id);
-    }, []),
-    () => Date.now(),
-    () => targetMs
-  );
+  const now = React.useSyncExternalStore(subscribe, getSnapshot, () => targetMs);
 
   const parts = getTimeParts(targetMs, now);
 
