@@ -4,6 +4,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   border-radius: 9999px;
   padding: 0.75rem 1.5rem;
   font-size: 0.875rem;
@@ -52,5 +53,15 @@
 
   &:hover {
     background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.button--accent {
+  border: 1px solid rgba(165, 243, 252, 0.55);
+  background: #a5f3fc;
+  color: #155e75;
+
+  &:hover {
+    background: #cffafe;
   }
 }

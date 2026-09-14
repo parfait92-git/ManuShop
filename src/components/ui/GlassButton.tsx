@@ -6,7 +6,7 @@ import styles from "@/styles/GlassButton.module.scss"
 export interface GlassButtonProps
   extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   /** Visual style of the button. */
-  variant?: "glass" | "ghost" | "solid"
+  variant?: "glass" | "ghost" | "solid" | "accent"
 }
 
 export function GlassButton({
