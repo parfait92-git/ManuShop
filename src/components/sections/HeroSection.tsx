@@ -35,9 +35,7 @@ export function HeroSection({
   return (
     <section className={cn(styles.hero, className)} {...props}>
       {watermark ? (
-        <p aria-hidden className={styles.hero__watermark}>
-          {watermark}
-        </p>
+        <p className={styles.hero__watermark}>{watermark}</p>
       ) : null}
       {eyebrow ? <Badge>{eyebrow}</Badge> : null}
       <h1 className={styles.hero__title}>{heading}</h1>
