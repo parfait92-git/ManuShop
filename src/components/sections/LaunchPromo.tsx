@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "cn"
+import * as React from "react";
+import { cn } from "cn";
 
-import { getTimeParts, pad2 } from "@/lib/countdown"
-import styles from "@/styles/LaunchPromo.module.scss"
+import { getTimeParts, pad2 } from "@/lib/countdown";
+import styles from "@/styles/LaunchPromo.module.scss";
 
 export interface LaunchPromoProps extends React.HTMLAttributes<HTMLElement> {
-  eyebrow?: string
-  title: string
-  description: string
-  targetDate: string
+  eyebrow?: string;
+  title: string;
+  description: string;
+  targetDate: string;
 }
 
 const UNIT_LABELS = [
@@ -18,7 +18,7 @@ const UNIT_LABELS = [
   { key: "hours", label: "Heures" },
   { key: "minutes", label: "Min" },
   { key: "seconds", label: "Sec" },
-] as const
+] as const;
 
 export function LaunchPromo({
   eyebrow,
@@ -28,16 +28,16 @@ export function LaunchPromo({
   className,
   ...props
 }: LaunchPromoProps) {
-  const targetMs = Date.parse(targetDate)
-  const [now, setNow] = React.useState<number | null>(null)
+  const targetMs = Date.parse(targetDate);
+
+  const [now, setNow] = React.useState<number>(() => Date.now());
 
   React.useEffect(() => {
-    setNow(Date.now())
-    const id = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
-  const parts = getTimeParts(targetMs, now ?? targetMs)
+  const parts = getTimeParts(targetMs, now);
 
   return (
     <section className={cn(styles.section, className)} {...props}>
@@ -58,5 +58,5 @@ export function LaunchPromo({
         </div>
       </div>
     </section>
-  )
+  );
 }

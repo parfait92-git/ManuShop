@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Menu, ShoppingBag, Store, X } from "lucide-react"
 import { cn } from "cn"
 
@@ -16,12 +17,12 @@ export function SiteHeader({ className, ...props }: SiteHeaderProps) {
   return (
     <header className={cn(styles.header, className)} {...props}>
       <div className={styles.header__inner}>
-        <a href="/" className={styles.logo}>
+        <Link href="/" className={styles.logo}>
           <span aria-hidden className={styles.logo__mark}>
             <Store className="size-4" />
           </span>
           Manu Shop
-        </a>
+        </Link>
 
         <nav aria-label="Navigation principale" className={styles.nav}>
           <a className={styles.navLink} href="#boutique">
@@ -43,10 +44,10 @@ export function SiteHeader({ className, ...props }: SiteHeaderProps) {
             className={styles.search}
             action="#boutique"
             onSubmit={(event) => {
-              event.preventDefault()
+              event.preventDefault();
               document.getElementById("boutique")?.scrollIntoView({
                 behavior: "smooth",
-              })
+              });
             }}
           >
             <input
@@ -108,5 +109,5 @@ export function SiteHeader({ className, ...props }: SiteHeaderProps) {
         </nav>
       ) : null}
     </header>
-  )
+  );
 }
