@@ -106,7 +106,7 @@ export default function Home() {
           ctas={[
             {
               label: "Découvrir la boutique",
-              href: "#boutique",
+              href: "/catalogue",
               variant: "solid",
             },
             {

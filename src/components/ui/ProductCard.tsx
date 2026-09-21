@@ -17,7 +17,7 @@ export function ProductCard({
   name,
   priceLabel,
   gradient,
-  href = "#boutique",
+  href = "/catalogue",
   className,
   ...props
 }: ProductCardProps) {

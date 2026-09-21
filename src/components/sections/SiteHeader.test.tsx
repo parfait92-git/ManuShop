@@ -1,6 +1,11 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const pushMock = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
 import { SiteHeader } from "./SiteHeader";
 
 function setScrollY(value: number) {
@@ -114,18 +119,38 @@ describe("SiteHeader", () => {
     expect(screen.queryByLabelText("Navigation mobile")).not.toBeInTheDocument();
   });
 
-  it("scrolls to the shop section when the search form is submitted", () => {
+  it("navigates to the catalogue when the search form is submitted empty", () => {
     render(<SiteHeader />);
-    const scrollIntoViewMock = jest.fn();
-    const shopSection = document.createElement("div");
-    shopSection.id = "boutique";
-    shopSection.scrollIntoView = scrollIntoViewMock;
-    document.body.appendChild(shopSection);
 
     fireEvent.submit(screen.getByLabelText("Rechercher un produit").closest("form")!);
 
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: "smooth" });
+    expect(pushMock).toHaveBeenCalledWith("/catalogue");
+  });
 
-    document.body.removeChild(shopSection);
+  it("navigates to the catalogue with the search term as a query param", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<SiteHeader />);
+
+    await user.type(screen.getByLabelText("Rechercher un produit"), "sandales");
+    fireEvent.submit(screen.getByLabelText("Rechercher un produit").closest("form")!);
+
+    expect(pushMock).toHaveBeenCalledWith("/catalogue?q=sandales");
+  });
+
+  it("links Se connecter, Boutique, and the cart to their real pages", () => {
+    render(<SiteHeader />);
+
+    expect(screen.getByRole("link", { name: "Se connecter" })).toHaveAttribute(
+      "href",
+      "/login"
+    );
+    expect(screen.getByRole("link", { name: "Boutique" })).toHaveAttribute(
+      "href",
+      "/catalogue"
+    );
+    expect(screen.getByRole("link", { name: "Voir le panier" })).toHaveAttribute(
+      "href",
+      "/catalogue"
+    );
   });
 });
