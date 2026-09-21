@@ -29,17 +29,25 @@ export function ScrollReveal({
   style,
   ...props
 }: ScrollRevealProps) {
-  const [isVisible, setIsVisible] = React.useState(
-    () => typeof IntersectionObserver === "undefined",
-  );
+  // Always starts hidden so the server-rendered markup and the client's
+  // first render match; revealing happens only inside the effect below,
+  // which never runs during SSR. Branching this initial state on
+  // `typeof IntersectionObserver` (absent on the server, present in the
+  // browser) produced a hydration mismatch.
+  const [isVisible, setIsVisible] = React.useState(false);
   const ref = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
-    // If IntersectionObserver is not supported (SSR / old browsers / tests), reveal immediately
-    if (typeof IntersectionObserver === "undefined") return;
+    // If IntersectionObserver is not supported (old browsers / tests), reveal
+    // immediately. Deferred to a microtask so setState runs in a callback
+    // rather than synchronously in the effect body.
+    if (typeof IntersectionObserver === "undefined") {
+      queueMicrotask(() => setIsVisible(true));
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {

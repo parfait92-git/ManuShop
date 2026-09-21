@@ -10,12 +10,17 @@ export type PageBackgroundProps = React.HTMLAttributes<HTMLDivElement>;
 export function PageBackground({ className, ...props }: PageBackgroundProps) {
   return (
     <div aria-hidden className={cn(styles.background, className)} {...props}>
+      {/*
+        Each variant is hidden via CSS below/above the `md` breakpoint
+        (art direction), which renders it at 0 width. `sizes` mirrors that
+        so Next doesn't flag the hidden variant as under-sized for "100vw".
+      */}
       <Image
         src="/images/manushop-mobile-bg.jpeg"
         alt=""
         fill
         priority
-        sizes="100vw"
+        sizes="(min-width: 768px) 0px, 100vw"
         className={cn(styles.backgroundImage, styles["backgroundImage--mobile"])}
       />
       <Image
@@ -23,7 +28,7 @@ export function PageBackground({ className, ...props }: PageBackgroundProps) {
         alt=""
         fill
         priority
-        sizes="100vw"
+        sizes="(max-width: 767px) 0px, 100vw"
         className={cn(styles.backgroundImage, styles["backgroundImage--web"])}
       />
       <div className={cn(styles.blob, styles["blob--fuchsia"])} />
