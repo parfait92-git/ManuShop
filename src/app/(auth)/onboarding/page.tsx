@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { OnboardingForm } from "@/components/auth/OnboardingForm";
+import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
 
 export default function OnboardingPage() {
   const { firebaseUser, profile, loading } = useAuth();
@@ -27,17 +28,17 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-4 py-12">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
+    <LiquidGlassCard className="flex w-full max-w-sm flex-col items-center gap-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold text-white">
           Plus qu&apos;une étape
         </h1>
-        <p className="max-w-sm text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-white/70">
           Donnez un nom à votre boutique pour terminer la création de votre
           compte.
         </p>
       </div>
       <OnboardingForm />
-    </div>
+    </LiquidGlassCard>
   );
 }

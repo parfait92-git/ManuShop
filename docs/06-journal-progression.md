@@ -203,3 +203,16 @@ Demande explicite : relier les boutons/liens de l'app aux pages réellement cons
 Vérifié avec Playwright : clic sur "Se connecter" → `/login`, clic sur le panier → `/catalogue`, recherche "wax" + Entrée → `/catalogue?q=wax`, aucune erreur/avertissement console après le correctif `data-scroll-behavior`.
 
 `npm run lint`, `npm run build` et `npm run test:coverage` passent (110 tests, couverture 83.93/84.03/82.5/85.38 stmts/branch/funcs/lines). Rien de commité.
+
+### 2026-09-21 — Correction de lisibilité sur register/forgot-password/onboarding
+
+L'utilisateur a repartagé la maquette de login en demandant explicitement que login **et register** soient lisibles en respectant le design. Capture d'écran avant modification pour vérifier : `/register` et `/forgot-password` n'avaient **aucune carte en arrière-plan** — juste du texte et des champs flottant directement sur l'illustration du fond (`PageBackground`), quasi illisibles (labels et titres qui se fondent dans l'image). `/onboarding` avait le même problème, en pire : cette page n'était même pas dans le groupe de routes `(auth)`, donc elle n'héritait ni du fond sombre ni du `LiquidGlassCard`.
+
+**Corrigé :**
+- `/register` : reconstruite avec le même panneau à deux volets que `/login` (`LiquidGlassCard`, panneau marketing à gauche avec badge "Nouvelle boutique", formulaire à droite).
+- `/forgot-password` et `/onboarding` : carte `LiquidGlassCard` centrée simple (pas de panneau marketing, juste un formulaire court — inutile de dupliquer le volet gauche pour une seule question).
+- `/onboarding` déplacée de `src/app/onboarding/` vers `src/app/(auth)/onboarding/` pour hériter du layout sombre partagé (fond, en-tête) — les groupes de routes `(auth)` n'ajoutent pas de segment d'URL donc `/onboarding` reste identique. L'ancien fichier supprimé pour éviter un conflit de route (next aurait vu deux `page.tsx` pour la même URL).
+
+Vérifié avec Playwright (desktop 1440px + mobile 390px pour register, desktop pour forgot-password) : les deux sont maintenant aussi lisibles que `/login`, aucune erreur console. `/onboarding` non vérifiable visuellement sans session authentifiée réelle, mais suit exactement le même patron que `/forgot-password` (déjà vérifié) et compile sans erreur.
+
+`npm run lint`, `npm run build` et `npm run test:coverage` passent (110 tests, aucune régression). Rien de commité.
