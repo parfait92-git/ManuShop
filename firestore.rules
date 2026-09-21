@@ -4,12 +4,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Produits — lecture publique, écriture admin/vendeur
+    // Produits — lecture publique, écriture admin/vendeur limitée à leur
+    // propre boutique (shopId doit correspondre à celui de l'utilisateur).
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid))
-          .data.role in ['admin', 'seller'];
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow update, delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+    }
+
+    // Catégories — lecture publique (utile pour filtrer la vitrine), même
+    // règle d'écriture scopée par boutique que les produits.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
     }
 
     // Commandes — lecture/écriture authentifiée
