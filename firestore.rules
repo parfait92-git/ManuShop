@@ -17,9 +17,22 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Utilisateurs — lecture/écriture de son propre profil
+    // Utilisateurs — chacun gère son propre profil ; un admin peut en plus
+    // lire et créer les comptes Vendeur de sa propre boutique (gestion
+    // d'équipe, BF-03).
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read: if request.auth.uid == userId
+        || (request.auth != null
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId);
+
+      allow create: if request.auth.uid == userId
+        || (request.auth != null
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          && request.resource.data.role == 'seller'
+          && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId);
+
+      allow update: if request.auth.uid == userId;
     }
 
     // Shop — lecture publique, écriture admin seulement
