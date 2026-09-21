@@ -1,13 +1,24 @@
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
+  FacebookAuthProvider,
+  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  setPersistence,
+  signInAnonymously,
   signInWithEmailAndPassword,
+  signInWithPhoneNumber,
+  signInWithPopup,
   signOut,
+  type ConfirmationResult,
+  type RecaptchaVerifier,
   type User as FirebaseUser,
 } from "firebase/auth";
 
 import { auth, getSecondaryAuth } from "@/lib/firebase";
+import type { Shop } from "@/models/shop/Shop";
 import type { User } from "@/models/user/User";
 import { shopRepository } from "@/repositories/ShopRepository";
 import type { IShopRepository } from "@/repositories/interfaces/IShopRepository";
@@ -19,6 +30,11 @@ export interface RegisterShopOwnerInput {
   shopName: string;
   email: string;
   password: string;
+}
+
+export interface CompleteMerchantSignupInput {
+  displayName: string;
+  shopName: string;
 }
 
 export interface InviteSellerInput {
@@ -57,26 +73,72 @@ export class AuthService {
       password
     );
 
-    // Le profil utilisateur doit exister avant la boutique : les règles
-    // Firestore vérifient le rôle admin via users/{uid} pour autoriser
-    // l'écriture sur shops/{shopId}.
-    const user = await this.users.create(credential.user.uid, {
+    return this.createShopOwnerProfile(credential.user.uid, {
+      displayName,
+      shopName,
       email,
+    });
+  }
+
+  /**
+   * Termine la création du compte gérant pour l'utilisateur Firebase déjà
+   * connecté (après Google/Facebook/téléphone/anonyme, qui n'ont pas de nom
+   * de boutique à proposer au moment de l'authentification). Voir
+   * `/onboarding`.
+   */
+  async completeMerchantSignup({
+    displayName,
+    shopName,
+  }: CompleteMerchantSignupInput): Promise<User> {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      throw new Error(
+        "Vous devez être connecté pour terminer la création de votre boutique."
+      );
+    }
+
+    return this.createShopOwnerProfile(firebaseUser.uid, {
+      displayName,
+      shopName,
+      email: firebaseUser.email ?? undefined,
+      phone: firebaseUser.phoneNumber ?? undefined,
+    });
+  }
+
+  /**
+   * Crée le profil Firestore (rôle admin) et la boutique par défaut pour un
+   * utilisateur Firebase Auth déjà créé, quel que soit la méthode de
+   * connexion utilisée. Le profil doit exister avant la boutique : les
+   * règles Firestore vérifient le rôle admin via users/{uid} pour autoriser
+   * l'écriture sur shops/{shopId}.
+   */
+  private async createShopOwnerProfile(
+    uid: string,
+    {
+      displayName,
+      shopName,
+      email,
+      phone,
+    }: { displayName: string; shopName: string; email?: string; phone?: string }
+  ): Promise<User> {
+    const user = await this.users.create(uid, {
+      ...(email ? { email } : {}),
+      ...(phone ? { phone } : {}),
       displayName,
       role: "admin",
     });
 
-    const shop = await this.shops.create({
+    const shop: Shop = await this.shops.create({
       name: shopName,
       logo: "",
       address: "",
       phone: "",
       whatsapp: "",
       currency: "XAF",
-      ownerId: credential.user.uid,
+      ownerId: uid,
     });
 
-    await this.users.update(credential.user.uid, { shopId: shop.id });
+    await this.users.update(uid, { shopId: shop.id });
 
     return { ...user, shopId: shop.id };
   }
@@ -121,8 +183,50 @@ export class AuthService {
     return this.users.listByShop(shopId);
   }
 
+  /** Bascule la persistance de la session : "local" (survit à la fermeture
+   * du navigateur, `Se souvenir de moi`) ou "session" (effacée à la
+   * fermeture de l'onglet). Doit être appelé avant `login`/`loginWith*`. */
+  async setRememberMe(remember: boolean): Promise<void> {
+    await setPersistence(
+      auth,
+      remember ? browserLocalPersistence : browserSessionPersistence
+    );
+  }
+
   async login(email: string, password: string): Promise<FirebaseUser> {
     const credential = await signInWithEmailAndPassword(auth, email, password);
+    return credential.user;
+  }
+
+  async loginWithGoogle(): Promise<FirebaseUser> {
+    const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+    return credential.user;
+  }
+
+  async loginWithFacebook(): Promise<FirebaseUser> {
+    const credential = await signInWithPopup(auth, new FacebookAuthProvider());
+    return credential.user;
+  }
+
+  async loginAnonymously(): Promise<FirebaseUser> {
+    const credential = await signInAnonymously(auth);
+    return credential.user;
+  }
+
+  /** Envoie le code de vérification SMS. `verifier` est un RecaptchaVerifier
+   * créé côté composant (nécessite le DOM). */
+  startPhoneSignIn(
+    phoneNumber: string,
+    verifier: RecaptchaVerifier
+  ): Promise<ConfirmationResult> {
+    return signInWithPhoneNumber(auth, phoneNumber, verifier);
+  }
+
+  async confirmPhoneCode(
+    confirmation: ConfirmationResult,
+    code: string
+  ): Promise<FirebaseUser> {
+    const credential = await confirmation.confirm(code);
     return credential.user;
   }
 

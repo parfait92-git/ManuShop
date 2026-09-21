@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Menu, ShoppingBag, Store, X } from "lucide-react"
 import { cn } from "cn"
 
@@ -15,8 +16,10 @@ const SCROLL_DELTA_THRESHOLD = 8;
 const TOP_OFFSET_THRESHOLD = 50;
 
 export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
+  const router = useRouter()
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [visible, setVisible] = React.useState(true)
+  const [searchTerm, setSearchTerm] = React.useState("")
 
   React.useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -70,9 +73,9 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
         </Link>
 
         <nav aria-label="Navigation principale" className={styles.nav}>
-          <a className={styles.navLink} href="#boutique">
+          <Link className={styles.navLink} href="/catalogue">
             Boutique
-          </a>
+          </Link>
           <a className={styles.navLink} href="#fonctionnalites">
             Fonctionnalités
           </a>
@@ -82,34 +85,38 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
         </nav>
 
         <div className={styles.actions}>
-          <a className={styles.login} href="#connexion">
+          <Link className={styles.login} href="/login">
             Se connecter
-          </a>
+          </Link>
           <form
             className={styles.search}
-            action="#boutique"
             onSubmit={(event) => {
               event.preventDefault();
-              document.getElementById("boutique")?.scrollIntoView({
-                behavior: "smooth",
-              });
+              const query = searchTerm.trim();
+              router.push(
+                query
+                  ? `/catalogue?q=${encodeURIComponent(query)}`
+                  : "/catalogue"
+              );
             }}
           >
             <input
               className={styles.searchInput}
               type="search"
               name="q"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Rechercher"
               aria-label="Rechercher un produit"
             />
           </form>
-          <a
+          <Link
             className={styles.cart}
-            href="#boutique"
+            href="/catalogue"
             aria-label="Voir le panier"
           >
             <ShoppingBag className="size-4" />
-          </a>
+          </Link>
           <button
             type="button"
             className={styles.menuToggle}
@@ -135,9 +142,9 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
           aria-label="Navigation mobile"
           className={styles.mobileNav}
         >
-          <a className={styles.navLink} href="#boutique" onClick={closeMenu}>
+          <Link className={styles.navLink} href="/catalogue" onClick={closeMenu}>
             Boutique
-          </a>
+          </Link>
           <a
             className={styles.navLink}
             href="#fonctionnalites"
@@ -148,9 +155,9 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
           <a className={styles.navLink} href="#apropos" onClick={closeMenu}>
             À propos
           </a>
-          <a className={styles.navLink} href="#connexion" onClick={closeMenu}>
+          <Link className={styles.navLink} href="/login" onClick={closeMenu}>
             Se connecter
-          </a>
+          </Link>
         </nav>
       ) : null}
     </header>

@@ -16,6 +16,11 @@ interface ProtectedRouteProps {
  * étant gérée par le SDK client, l'autorisation réelle reste appliquée par
  * les règles Firestore. Ce composant ne fait qu'éviter d'afficher du
  * contenu protégé le temps de rediriger un visiteur non autorisé.
+ *
+ * Un utilisateur Firebase authentifié sans profil Firestore (première
+ * connexion via Google/Facebook/téléphone/anonyme) est envoyé vers
+ * `/onboarding` pour créer sa boutique, plutôt que d'être silencieusement
+ * laissé passer.
  */
 export function ProtectedRoute({
   children,
@@ -23,6 +28,9 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { firebaseUser, profile, loading } = useAuth();
   const router = useRouter();
+
+  const isUnauthorizedRole =
+    !!allowedRoles && !!profile && !allowedRoles.includes(profile.role);
 
   useEffect(() => {
     if (loading) return;
@@ -32,16 +40,17 @@ export function ProtectedRoute({
       return;
     }
 
-    if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
+    if (profile === null) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    if (isUnauthorizedRole) {
       router.replace("/dashboard");
     }
-  }, [loading, firebaseUser, profile, allowedRoles, router]);
+  }, [loading, firebaseUser, profile, isUnauthorizedRole, router]);
 
-  if (loading || !firebaseUser) {
-    return null;
-  }
-
-  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
+  if (loading || !firebaseUser || profile === null || isUnauthorizedRole) {
     return null;
   }
 

@@ -2,6 +2,9 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
+  limit,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -22,6 +25,14 @@ export class ShopRepository implements IShopRepository {
     const snapshot = await getDoc(doc(db, SHOPS_COLLECTION, id));
     if (!snapshot.exists()) return null;
     return { id: snapshot.id, ...snapshot.data() } as Shop;
+  }
+
+  async getFirst(): Promise<Shop | null> {
+    const snapshot = await getDocs(
+      query(collection(db, SHOPS_COLLECTION), limit(1))
+    );
+    const [first] = snapshot.docs;
+    return first ? ({ id: first.id, ...first.data() } as Shop) : null;
   }
 
   async create(data: CreateShopDto): Promise<Shop> {

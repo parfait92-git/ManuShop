@@ -22,6 +22,22 @@ export function DashboardNav() {
         ManuShop
       </Link>
       <nav className="flex items-center gap-4 text-sm">
+        {(profile?.role === "admin" || profile?.role === "seller") && (
+          <>
+            <Link
+              href="/dashboard/products"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Produits
+            </Link>
+            <Link
+              href="/dashboard/categories"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Catégories
+            </Link>
+          </>
+        )}
         {profile?.role === "admin" && (
           <>
             <Link

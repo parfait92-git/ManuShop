@@ -3,6 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { LucideIcon } from "lucide-react";
 
+const pushMock = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
 import Home from "./page";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { Badge } from "@/components/ui/Badge";
@@ -20,10 +25,6 @@ const TestIcon = React.forwardRef(function TestIconComponent(
 
 TestIcon.displayName = "TestIcon";
 
-beforeAll(() => {
-  Element.prototype.scrollIntoView = jest.fn();
-});
-
 describe("Home page", () => {
   it("renders the landing layout from the mockup", () => {
     render(<Home />);
@@ -35,7 +36,7 @@ describe("Home page", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Découvrir la boutique" })).toHaveAttribute(
       "href",
-      "#boutique"
+      "/catalogue"
     );
     expect(screen.getByText("Ensemble Wax Moderne")).toBeInTheDocument();
     expect(
@@ -56,21 +57,21 @@ describe("Home page", () => {
 
     await user.click(
       screen.getByRole("navigation", { name: "Navigation mobile" }).querySelector(
-        'a[href="#boutique"]'
+        'a[href="/catalogue"]'
       ) as HTMLAnchorElement
     );
 
     expect(screen.queryByLabelText("Navigation mobile")).not.toBeInTheDocument();
   });
 
-  it("scrolls to the boutique from the header search", async () => {
+  it("navigates to the catalogue with the search term from the header search", async () => {
     const user = userEvent.setup();
     render(<Home />);
 
     await user.type(screen.getByLabelText("Rechercher un produit"), "wax");
     await user.keyboard("{Enter}");
 
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    expect(pushMock).toHaveBeenCalledWith("/catalogue?q=wax");
   });
 
   it("renders hero section without optional eyebrow, watermark and ctas", () => {
