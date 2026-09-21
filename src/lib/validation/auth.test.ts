@@ -1,7 +1,10 @@
 import {
+  CompleteMerchantSignupSchema,
   ForgotPasswordSchema,
   InviteSellerSchema,
   LoginSchema,
+  PhoneCodeSchema,
+  PhoneLoginSchema,
   RegisterSchema,
   ShopProfileSchema,
 } from "./auth";
@@ -64,6 +67,40 @@ describe("LoginSchema", () => {
       LoginSchema.safeParse({ email: "a@b.com", password: "" }).success
     ).toBe(false);
   });
+
+  it("accepts an optional rememberMe flag", () => {
+    expect(
+      LoginSchema.safeParse({
+        email: "a@b.com",
+        password: "x",
+        rememberMe: true,
+      }).success
+    ).toBe(true);
+  });
+});
+
+describe("PhoneLoginSchema", () => {
+  it("accepts a valid E.164 phone number", () => {
+    expect(
+      PhoneLoginSchema.safeParse({ phone: "+237600000000" }).success
+    ).toBe(true);
+  });
+
+  it("rejects a number without the country code prefix", () => {
+    expect(
+      PhoneLoginSchema.safeParse({ phone: "0600000000" }).success
+    ).toBe(false);
+  });
+});
+
+describe("PhoneCodeSchema", () => {
+  it("accepts a 6-digit code", () => {
+    expect(PhoneCodeSchema.safeParse({ code: "123456" }).success).toBe(true);
+  });
+
+  it("rejects a code with the wrong length", () => {
+    expect(PhoneCodeSchema.safeParse({ code: "123" }).success).toBe(false);
+  });
 });
 
 describe("ForgotPasswordSchema", () => {
@@ -102,6 +139,26 @@ describe("InviteSellerSchema", () => {
       InviteSellerSchema.safeParse({
         displayName: "Moussa Ba",
         email: "invalid",
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("CompleteMerchantSignupSchema", () => {
+  it("accepts a valid payload", () => {
+    expect(
+      CompleteMerchantSignupSchema.safeParse({
+        displayName: "Moussa Ba",
+        shopName: "Moussa Boutique",
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects a short shop name", () => {
+    expect(
+      CompleteMerchantSignupSchema.safeParse({
+        displayName: "Moussa Ba",
+        shopName: "M",
       }).success
     ).toBe(false);
   });

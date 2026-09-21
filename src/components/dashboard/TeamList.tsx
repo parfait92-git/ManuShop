@@ -25,7 +25,7 @@ export function TeamList({ members }: { members: User[] }) {
           <div className="flex flex-col">
             <span className="text-sm font-medium">{member.displayName}</span>
             <span className="text-sm text-muted-foreground">
-              {member.email}
+              {member.email ?? member.phone}
             </span>
           </div>
           <span className="text-xs font-medium text-muted-foreground">

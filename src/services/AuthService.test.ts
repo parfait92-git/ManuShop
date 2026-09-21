@@ -1,10 +1,22 @@
 import type { Timestamp } from "firebase/firestore";
 
 jest.mock("firebase/auth", () => ({
+  browserLocalPersistence: "local",
+  browserSessionPersistence: "session",
   createUserWithEmailAndPassword: jest.fn(),
+  FacebookAuthProvider: jest.fn(function FacebookAuthProvider(this: object) {
+    Object.assign(this, { __tag: "facebook-provider" });
+  }),
+  GoogleAuthProvider: jest.fn(function GoogleAuthProvider(this: object) {
+    Object.assign(this, { __tag: "google-provider" });
+  }),
   onAuthStateChanged: jest.fn(),
   sendPasswordResetEmail: jest.fn(),
+  setPersistence: jest.fn(),
+  signInAnonymously: jest.fn(),
   signInWithEmailAndPassword: jest.fn(),
+  signInWithPhoneNumber: jest.fn(),
+  signInWithPopup: jest.fn(),
   signOut: jest.fn(),
 }));
 
@@ -14,14 +26,18 @@ const secondaryAuthInstance = { __tag: "secondary" };
 // through the SWC alias rewrite `next/jest` applies to real `import`
 // statements — so the `@/...` alias must be spelled out relative here.
 jest.mock("../lib/firebase", () => ({
-  auth: { __tag: "primary" },
+  auth: { __tag: "primary", currentUser: null },
   getSecondaryAuth: jest.fn(() => secondaryAuthInstance),
 }));
 
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  setPersistence,
+  signInAnonymously,
   signInWithEmailAndPassword,
+  signInWithPhoneNumber,
+  signInWithPopup,
   signOut,
 } from "firebase/auth";
 
@@ -41,7 +57,11 @@ import type { Shop } from "@/models/shop/Shop";
 const createUserWithEmailAndPasswordMock =
   createUserWithEmailAndPassword as jest.Mock;
 const sendPasswordResetEmailMock = sendPasswordResetEmail as jest.Mock;
+const setPersistenceMock = setPersistence as jest.Mock;
+const signInAnonymouslyMock = signInAnonymously as jest.Mock;
 const signInWithEmailAndPasswordMock = signInWithEmailAndPassword as jest.Mock;
+const signInWithPhoneNumberMock = signInWithPhoneNumber as jest.Mock;
+const signInWithPopupMock = signInWithPopup as jest.Mock;
 const signOutMock = signOut as jest.Mock;
 
 function fakeUser(overrides: Partial<User> = {}): User {
@@ -77,6 +97,7 @@ describe("AuthService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (auth as { currentUser: unknown }).currentUser = null;
     users = {
       getById: jest.fn(),
       create: jest.fn(),
@@ -85,6 +106,7 @@ describe("AuthService", () => {
     };
     shops = {
       getById: jest.fn(),
+      getFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     };
@@ -249,6 +271,121 @@ describe("AuthService", () => {
       const user = await service.getUserProfile("uid-1");
       expect(users.getById).toHaveBeenCalledWith("uid-1");
       expect(user?.id).toBe("uid-1");
+    });
+  });
+
+  describe("completeMerchantSignup", () => {
+    it("creates the profile and shop for the currently signed-in Firebase user", async () => {
+      (auth as { currentUser: unknown }).currentUser = {
+        uid: "uid-3",
+        email: null,
+        phoneNumber: "+237600000000",
+      };
+      users.create.mockResolvedValue(
+        fakeUser({ id: "uid-3", email: undefined, phone: "+237600000000" })
+      );
+      shops.create.mockResolvedValue(fakeShop({ id: "shop-2", ownerId: "uid-3" }));
+
+      const result = await service.completeMerchantSignup({
+        displayName: "Moussa",
+        shopName: "Moussa Boutique",
+      });
+
+      // No email for a phone sign-up: the field must be omitted, not set to
+      // `undefined` (Firestore rejects `undefined` field values).
+      expect(users.create).toHaveBeenCalledWith("uid-3", {
+        phone: "+237600000000",
+        displayName: "Moussa",
+        role: "admin",
+      });
+      expect(shops.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Moussa Boutique", ownerId: "uid-3" })
+      );
+      expect(result.shopId).toBe("shop-2");
+    });
+
+    it("rejects when no Firebase user is signed in", async () => {
+      await expect(
+        service.completeMerchantSignup({
+          displayName: "Moussa",
+          shopName: "Moussa Boutique",
+        })
+      ).rejects.toThrow(/connecté/);
+      expect(users.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("setRememberMe", () => {
+    it("uses local persistence when true", async () => {
+      await service.setRememberMe(true);
+      expect(setPersistenceMock).toHaveBeenCalledWith(auth, "local");
+    });
+
+    it("uses session persistence when false", async () => {
+      await service.setRememberMe(false);
+      expect(setPersistenceMock).toHaveBeenCalledWith(auth, "session");
+    });
+  });
+
+  describe("social and anonymous sign-in", () => {
+    it("loginWithGoogle signs in via popup with a Google provider", async () => {
+      signInWithPopupMock.mockResolvedValue({ user: { uid: "uid-4" } });
+      const user = await service.loginWithGoogle();
+      expect(signInWithPopupMock).toHaveBeenCalledWith(
+        auth,
+        expect.objectContaining({ __tag: "google-provider" })
+      );
+      expect(user.uid).toBe("uid-4");
+    });
+
+    it("loginWithFacebook signs in via popup with a Facebook provider", async () => {
+      signInWithPopupMock.mockResolvedValue({ user: { uid: "uid-5" } });
+      const user = await service.loginWithFacebook();
+      expect(signInWithPopupMock).toHaveBeenCalledWith(
+        auth,
+        expect.objectContaining({ __tag: "facebook-provider" })
+      );
+      expect(user.uid).toBe("uid-5");
+    });
+
+    it("loginAnonymously signs in anonymously", async () => {
+      signInAnonymouslyMock.mockResolvedValue({ user: { uid: "uid-6" } });
+      const user = await service.loginAnonymously();
+      expect(signInAnonymouslyMock).toHaveBeenCalledWith(auth);
+      expect(user.uid).toBe("uid-6");
+    });
+  });
+
+  describe("phone sign-in", () => {
+    it("startPhoneSignIn delegates to signInWithPhoneNumber", async () => {
+      const verifier = { __tag: "verifier" };
+      const confirmationResult = { __tag: "confirmation" };
+      signInWithPhoneNumberMock.mockResolvedValue(confirmationResult);
+
+      const result = await service.startPhoneSignIn(
+        "+237600000000",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        verifier as any
+      );
+
+      expect(signInWithPhoneNumberMock).toHaveBeenCalledWith(
+        auth,
+        "+237600000000",
+        verifier
+      );
+      expect(result).toBe(confirmationResult);
+    });
+
+    it("confirmPhoneCode confirms the code and returns the user", async () => {
+      const confirm = jest.fn().mockResolvedValue({ user: { uid: "uid-7" } });
+      const user = await service.confirmPhoneCode(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { confirm } as any,
+        "123456"
+      );
+
+      expect(confirm).toHaveBeenCalledWith("123456");
+      expect(user.uid).toBe("uid-7");
     });
   });
 });
