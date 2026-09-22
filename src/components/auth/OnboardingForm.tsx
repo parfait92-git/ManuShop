@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/components/providers/AuthProvider";
 import {
   CompleteMerchantSignupSchema,
   type CompleteMerchantSignupInput,
@@ -16,6 +17,7 @@ import { authService } from "@/services/AuthService";
 
 export function OnboardingForm() {
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -29,7 +31,12 @@ export function OnboardingForm() {
     setFormError(null);
     try {
       await authService.completeMerchantSignup(data);
-      router.push("/dashboard");
+      // Le profil vient d'être créé dans Firestore : sans ce rafraîchissement,
+      // le contexte d'auth garde `profile === null` et ProtectedRoute
+      // renverrait aussitôt vers /onboarding (boucle). Ce compte est un
+      // client (Module 12) : direction le catalogue, pas le dashboard.
+      await refreshProfile();
+      router.push("/catalogue");
     } catch {
       setFormError("Une erreur est survenue. Veuillez réessayer.");
     }
@@ -56,23 +63,10 @@ export function OnboardingForm() {
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="shopName">Nom de la boutique</Label>
-        <Input
-          id="shopName"
-          autoComplete="organization"
-          aria-invalid={!!errors.shopName}
-          {...register("shopName")}
-        />
-        {errors.shopName && (
-          <p className="text-sm text-destructive">{errors.shopName.message}</p>
-        )}
-      </div>
-
       {formError && <p className="text-sm text-destructive">{formError}</p>}
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? "Création..." : "Créer ma boutique"}
+        {isSubmitting ? "Enregistrement..." : "Continuer"}
       </Button>
     </form>
   );

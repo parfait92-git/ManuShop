@@ -23,6 +23,9 @@ service cloud.firestore {
       allow create: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
         && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow update: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
       allow delete: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
         && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
@@ -33,30 +36,66 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Utilisateurs — chacun gère son propre profil ; un admin peut en plus
-    // lire et créer les comptes Vendeur de sa propre boutique (gestion
-    // d'équipe, BF-03).
+    // Super Admin — PAS un rôle sur `users`, mais l'appartenance à cette
+    // collection dédiée, indexée par email (Module 12, BF-67). Aucune
+    // écriture autorisée depuis l'app, jamais, pour qui que ce soit :
+    // uniquement une modification manuelle depuis la console Firebase par
+    // l'éditeur de la plateforme lui-même. Voir src/models/platform/PlatformAdmin.ts.
+    match /platformAdmins/{email} {
+      allow read: if request.auth != null && request.auth.token.email == email;
+      allow write: if false;
+    }
+
+    // Utilisateurs — chacun gère son propre profil (sauf role/shopId, voir
+    // update) ; l'auto-inscription crée toujours `role: 'client'`, jamais
+    // 'admin' directement (BF-01 révisé — voir Module 12) ; un admin peut en
+    // plus lire et créer les comptes Vendeur de sa propre boutique (gestion
+    // d'équipe, BF-03) ; un Super Admin (voir `platformAdmins` ci-dessus)
+    // peut lire tout le monde et changer le rôle de n'importe qui vers
+    // admin/vendeur/client (BF-68) — jamais "super-admin", qui n'est pas une
+    // valeur valide de `role` et n'existera donc jamais ici.
     match /users/{userId} {
       allow read: if request.auth.uid == userId
         || (request.auth != null
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-          && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId);
+          && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId)
+        || (request.auth != null
+          && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.token.email)));
 
-      allow create: if request.auth.uid == userId
+      allow create: if (request.auth.uid == userId && request.resource.data.role == 'client')
         || (request.auth != null
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
           && request.resource.data.role == 'seller'
           && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId);
 
-      allow update: if request.auth.uid == userId;
+      allow update: if (request.auth.uid == userId
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+          // `shopId` ne peut changer par auto-modification que si on est déjà
+          // admin et que la boutique visée nous appartient réellement (cas :
+          // AuthService.createShop() relie sa nouvelle boutique à son profil,
+          // une fois le rôle admin obtenu par ailleurs — jamais à l'inscription).
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['shopId'])
+              || (resource.data.role == 'admin'
+                  && get(/databases/$(database)/documents/shops/$(request.resource.data.shopId)).data.ownerId == request.auth.uid)))
+        || (request.auth != null
+          && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.token.email))
+          && request.resource.data.role in ['admin', 'seller', 'client']);
     }
 
-    // Shop — lecture publique, écriture admin seulement
+    // Shop — lecture publique ; création par un admin pour sa propre
+    // boutique (ownerId doit être l'auteur) ; modification par le
+    // propriétaire (admin de CETTE boutique, pas n'importe laquelle — trou
+    // de sécurité corrigé lors du passage multi-boutique, Module 12) ou par
+    // un Super Admin (modération).
     match /shops/{shopId} {
       allow read: if true;
-      allow write: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid))
-          .data.role == 'admin';
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && ((get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+              && resource.data.ownerId == request.auth.uid)
+            || exists(/databases/$(database)/documents/platformAdmins/$(request.auth.token.email)));
     }
   }
 }

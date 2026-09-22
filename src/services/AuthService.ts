@@ -18,7 +18,6 @@ import {
 } from "firebase/auth";
 
 import { auth, getSecondaryAuth } from "@/lib/firebase";
-import type { Shop } from "@/models/shop/Shop";
 import type { User } from "@/models/user/User";
 import { shopRepository } from "@/repositories/ShopRepository";
 import type { IShopRepository } from "@/repositories/interfaces/IShopRepository";
@@ -27,14 +26,12 @@ import { userRepository } from "@/repositories/UserRepository";
 
 export interface RegisterShopOwnerInput {
   displayName: string;
-  shopName: string;
   email: string;
   password: string;
 }
 
 export interface CompleteMerchantSignupInput {
   displayName: string;
-  shopName: string;
 }
 
 export interface InviteSellerInput {
@@ -60,10 +57,15 @@ export class AuthService {
     private readonly shops: IShopRepository = shopRepository
   ) {}
 
-  /** Inscrit le gérant (Admin) et crée sa boutique par défaut. */
+  /**
+   * Inscrit un nouveau compte — toujours `role: 'client'` (Module 12 :
+   * l'inscription ne donne plus jamais le rôle admin directement). Devenir
+   * admin d'une boutique passe désormais soit par une attribution manuelle
+   * du Super Admin, soit par un abonnement confirmé — voir
+   * `docs/02-besoins-fonctionnels.md` Module 12 (BF-67, BF-68).
+   */
   async registerShopOwner({
     displayName,
-    shopName,
     email,
     password,
   }: RegisterShopOwnerInput): Promise<User> {
@@ -73,74 +75,89 @@ export class AuthService {
       password
     );
 
-    return this.createShopOwnerProfile(credential.user.uid, {
+    return this.createClientProfile(credential.user.uid, {
       displayName,
-      shopName,
       email,
     });
   }
 
   /**
-   * Termine la création du compte gérant pour l'utilisateur Firebase déjà
-   * connecté (après Google/Facebook/téléphone/anonyme, qui n'ont pas de nom
-   * de boutique à proposer au moment de l'authentification). Voir
-   * `/onboarding`.
+   * Termine la création du profil pour l'utilisateur Firebase déjà connecté
+   * (après Google/Facebook/téléphone/anonyme, qui n'ont pas de nom à
+   * proposer au moment de l'authentification). Toujours `role: 'client'`,
+   * voir `registerShopOwner`. Voir `/onboarding`.
    */
   async completeMerchantSignup({
     displayName,
-    shopName,
   }: CompleteMerchantSignupInput): Promise<User> {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) {
       throw new Error(
-        "Vous devez être connecté pour terminer la création de votre boutique."
+        "Vous devez être connecté pour terminer la création de votre compte."
       );
     }
 
-    return this.createShopOwnerProfile(firebaseUser.uid, {
+    return this.createClientProfile(firebaseUser.uid, {
       displayName,
-      shopName,
       email: firebaseUser.email ?? undefined,
       phone: firebaseUser.phoneNumber ?? undefined,
+      photoURL: firebaseUser.photoURL ?? undefined,
     });
   }
 
   /**
-   * Crée le profil Firestore (rôle admin) et la boutique par défaut pour un
-   * utilisateur Firebase Auth déjà créé, quel que soit la méthode de
-   * connexion utilisée. Le profil doit exister avant la boutique : les
-   * règles Firestore vérifient le rôle admin via users/{uid} pour autoriser
-   * l'écriture sur shops/{shopId}.
+   * Crée le profil Firestore d'un utilisateur Firebase Auth déjà créé, quel
+   * que soit le mode de connexion — toujours `role: 'client'`.
    */
-  private async createShopOwnerProfile(
+  private createClientProfile(
     uid: string,
     {
       displayName,
-      shopName,
       email,
       phone,
-    }: { displayName: string; shopName: string; email?: string; phone?: string }
+      photoURL,
+    }: {
+      displayName: string;
+      email?: string;
+      phone?: string;
+      photoURL?: string;
+    }
   ): Promise<User> {
-    const user = await this.users.create(uid, {
+    return this.users.create(uid, {
       ...(email ? { email } : {}),
       ...(phone ? { phone } : {}),
+      ...(photoURL ? { photoURL } : {}),
       displayName,
-      role: "admin",
+      role: "client",
     });
+  }
 
-    const shop: Shop = await this.shops.create({
+  /**
+   * Crée une boutique pour l'utilisateur actuellement connecté et la lui
+   * associe (`shopId`). Réservé à un compte déjà `role: 'admin'` — les
+   * règles Firestore rejettent la création sinon (Module 12). Appelé une
+   * fois le rôle admin obtenu (attribution Super Admin ou abonnement), pas
+   * à l'inscription.
+   */
+  async createShop(shopName: string): Promise<string> {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      throw new Error("Vous devez être connecté pour créer une boutique.");
+    }
+
+    const shop = await this.shops.create({
       name: shopName,
       logo: "",
       address: "",
       phone: "",
       whatsapp: "",
       currency: "XAF",
-      ownerId: uid,
+      ownerId: firebaseUser.uid,
     });
 
-    await this.users.update(uid, { shopId: shop.id });
+    await this.users.update(firebaseUser.uid, { shopId: shop.id });
 
-    return { ...user, shopId: shop.id };
+    return shop.id;
   }
 
   /**

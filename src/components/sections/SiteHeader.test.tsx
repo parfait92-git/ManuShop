@@ -6,6 +6,16 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+let mockFirebaseUser: unknown = null;
+jest.mock("../providers/AuthProvider", () => ({
+  useAuth: () => ({ firebaseUser: mockFirebaseUser }),
+}));
+
+const logoutMock = jest.fn().mockResolvedValue(undefined);
+jest.mock("../../services/AuthService", () => ({
+  authService: { logout: () => logoutMock() },
+}));
+
 import { SiteHeader } from "./SiteHeader";
 
 function setScrollY(value: number) {
@@ -33,6 +43,8 @@ describe("SiteHeader", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     setScrollY(0);
+    mockFirebaseUser = null;
+    logoutMock.mockClear();
     rafSpy = jest
       .spyOn(window, "requestAnimationFrame")
       .mockImplementation((cb: FrameRequestCallback) => {
@@ -152,5 +164,19 @@ describe("SiteHeader", () => {
       "href",
       "/catalogue"
     );
+  });
+
+  it("shows Se déconnecter instead of a /login link when already authenticated", async () => {
+    mockFirebaseUser = { uid: "u1" };
+    const user = userEvent.setup({ delay: null });
+    render(<SiteHeader />);
+
+    expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
+    const logoutButton = screen.getByRole("button", { name: "Se déconnecter" });
+
+    await user.click(logoutButton);
+
+    expect(logoutMock).toHaveBeenCalled();
+    expect(pushMock).toHaveBeenCalledWith("/");
   });
 });

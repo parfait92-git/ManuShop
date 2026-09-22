@@ -1,18 +1,18 @@
 import {
   CompleteMerchantSignupSchema,
+  CreateShopSchema,
   ForgotPasswordSchema,
   InviteSellerSchema,
   LoginSchema,
   PhoneCodeSchema,
   PhoneLoginSchema,
   RegisterSchema,
-  ShopProfileSchema,
+  ShopSettingsSchema,
 } from "./auth";
 
 describe("RegisterSchema", () => {
   const validInput = {
     displayName: "Awa Diop",
-    shopName: "Awa Boutique",
     email: "awa@example.com",
     password: "azerty12",
     confirmPassword: "azerty12",
@@ -149,49 +149,89 @@ describe("CompleteMerchantSignupSchema", () => {
     expect(
       CompleteMerchantSignupSchema.safeParse({
         displayName: "Moussa Ba",
-        shopName: "Moussa Boutique",
       }).success
     ).toBe(true);
   });
 
-  it("rejects a short shop name", () => {
+  it("rejects a short display name", () => {
     expect(
       CompleteMerchantSignupSchema.safeParse({
-        displayName: "Moussa Ba",
-        shopName: "M",
+        displayName: "M",
       }).success
     ).toBe(false);
   });
 });
 
-describe("ShopProfileSchema", () => {
+describe("CreateShopSchema", () => {
+  it("accepts a valid shop name", () => {
+    expect(
+      CreateShopSchema.safeParse({ shopName: "Moussa Boutique" }).success
+    ).toBe(true);
+  });
+
+  it("rejects a short shop name", () => {
+    expect(CreateShopSchema.safeParse({ shopName: "M" }).success).toBe(false);
+  });
+});
+
+describe("ShopSettingsSchema", () => {
   const validShop = {
     name: "Awa Boutique",
     logo: "https://example.com/logo.png",
     address: "Dakar, Sénégal",
     phone: "+221700000000",
     whatsapp: "+221700000000",
+    language: "fr" as const,
+    currency: "XAF" as const,
+    primarySocialNetwork: "whatsapp" as const,
+    notifyOrdersByEmail: true,
+    notifyOrdersBySocial: true,
+    urgentPhoneAlerts: true,
+    contactEmail: "contact@awa.example",
+    urgentPhone: "+221700000000",
   };
 
-  it("accepts a valid shop profile", () => {
-    expect(ShopProfileSchema.safeParse(validShop).success).toBe(true);
+  it("accepts a valid shop settings payload", () => {
+    expect(ShopSettingsSchema.safeParse(validShop).success).toBe(true);
   });
 
-  it("accepts an empty logo", () => {
+  it("accepts an empty logo and empty contact email", () => {
     expect(
-      ShopProfileSchema.safeParse({ ...validShop, logo: "" }).success
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        logo: "",
+        contactEmail: "",
+      }).success
     ).toBe(true);
   });
 
   it("rejects an invalid logo URL", () => {
     expect(
-      ShopProfileSchema.safeParse({ ...validShop, logo: "not-a-url" }).success
+      ShopSettingsSchema.safeParse({ ...validShop, logo: "not-a-url" }).success
     ).toBe(false);
   });
 
   it("rejects a short address", () => {
     expect(
-      ShopProfileSchema.safeParse({ ...validShop, address: "a" }).success
+      ShopSettingsSchema.safeParse({ ...validShop, address: "a" }).success
+    ).toBe(false);
+  });
+
+  it("rejects an unknown primary social network", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        primarySocialNetwork: "snapchat",
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects an invalid contact email", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        contactEmail: "not-an-email",
+      }).success
     ).toBe(false);
   });
 });

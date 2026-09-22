@@ -8,4 +8,7 @@ export interface IUserRepository {
   create(id: string, data: CreateUserDto): Promise<User>;
   update(id: string, data: UpdateUserDto): Promise<void>;
   listByShop(shopId: string): Promise<User[]>;
+  /** Réservé au Super Admin (BF-68) — la règle Firestore qui l'autorise ne
+   * s'applique qu'à ce rôle. */
+  listAll(): Promise<User[]>;
 }

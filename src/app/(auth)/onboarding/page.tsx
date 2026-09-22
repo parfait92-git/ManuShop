@@ -6,10 +6,16 @@ import { useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { OnboardingForm } from "@/components/auth/OnboardingForm";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
+import { authService } from "@/services/AuthService";
 
 export default function OnboardingPage() {
   const { firebaseUser, profile, loading } = useAuth();
   const router = useRouter();
+
+  async function handleLogout() {
+    await authService.logout();
+    router.push("/login");
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -17,9 +23,12 @@ export default function OnboardingPage() {
       router.replace("/login");
       return;
     }
-    // Un profil existe déjà : rien à faire ici.
+    // Un profil existe déjà : rien à faire ici, sinon rediriger vers le bon
+    // espace — le dashboard pour un admin/vendeur qui a déjà une boutique,
+    // le catalogue pour un client (Module 12 : plus de boutique créée à
+    // l'inscription).
     if (profile) {
-      router.replace("/dashboard");
+      router.replace(profile.shopId ? "/dashboard" : "/catalogue");
     }
   }, [loading, firebaseUser, profile, router]);
 
@@ -34,11 +43,17 @@ export default function OnboardingPage() {
           Plus qu&apos;une étape
         </h1>
         <p className="mt-1 text-sm text-white/70">
-          Donnez un nom à votre boutique pour terminer la création de votre
-          compte.
+          Donnez-nous votre nom pour terminer la création de votre compte.
         </p>
       </div>
       <OnboardingForm />
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="text-sm text-white/60 underline-offset-4 hover:text-white hover:underline"
+      >
+        Se déconnecter
+      </button>
     </LiquidGlassCard>
   );
 }
