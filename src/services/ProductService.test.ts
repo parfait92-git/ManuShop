@@ -154,4 +154,24 @@ describe("ProductService", () => {
       expect(service.getBadge(product)).toBeNull();
     });
   });
+
+  describe("getStockStatus", () => {
+    it("is out-of-stock at zero", () => {
+      expect(service.getStockStatus(fakeProduct({ stock: 0 }))).toBe(
+        "out-of-stock"
+      );
+    });
+
+    it("is low-stock at or below the threshold", () => {
+      expect(
+        service.getStockStatus(fakeProduct({ stock: 2, stockThreshold: 2 }))
+      ).toBe("low-stock");
+    });
+
+    it("is in-stock above the threshold", () => {
+      expect(
+        service.getStockStatus(fakeProduct({ stock: 3, stockThreshold: 2 }))
+      ).toBe("in-stock");
+    });
+  });
 });
