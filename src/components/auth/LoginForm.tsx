@@ -10,11 +10,12 @@ import { Eye, EyeOff, Ghost, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { FacebookIcon, GoogleIcon } from "@/components/icons/BrandIcons";
 import { auth } from "@/lib/firebase";
 import {
@@ -210,7 +211,9 @@ function PhoneLoginForm() {
 
   const phoneForm = useForm<PhoneLoginInput>({
     resolver: zodResolver(PhoneLoginSchema),
+    defaultValues: { phone: "" },
   });
+  const phoneValue = useWatch({ control: phoneForm.control, name: "phone" });
   const codeForm = useForm<PhoneCodeInput>({
     resolver: zodResolver(PhoneCodeSchema),
   });
@@ -286,13 +289,13 @@ function PhoneLoginForm() {
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="phone">Numéro de téléphone</Label>
-        <Input
+        <PhoneInput
           id="phone"
-          type="tel"
-          autoComplete="tel"
-          placeholder="+237 6XX XXX XXX"
+          value={phoneValue ?? ""}
+          onChange={(value) =>
+            phoneForm.setValue("phone", value, { shouldValidate: true })
+          }
           aria-invalid={!!phoneForm.formState.errors.phone}
-          {...phoneForm.register("phone")}
         />
         {phoneForm.formState.errors.phone && (
           <p className="text-sm text-destructive">
