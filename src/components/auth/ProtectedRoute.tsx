@@ -17,6 +17,10 @@ interface ProtectedRouteProps {
  * les règles Firestore. Ce composant ne fait qu'éviter d'afficher du
  * contenu protégé le temps de rediriger un visiteur non autorisé.
  *
+ * Redirige vers `/erreur` avec le code correspondant plutôt que
+ * silencieusement : `401` (non connecté), `403` (rôle non autorisé). Voir
+ * `GuestRoute`, son inverse, pour les pages réservées aux visiteurs.
+ *
  * Un utilisateur Firebase authentifié sans profil Firestore (première
  * connexion via Google/Facebook/téléphone/anonyme) est envoyé vers
  * `/onboarding` pour créer sa boutique, plutôt que d'être silencieusement
@@ -36,7 +40,7 @@ export function ProtectedRoute({
     if (loading) return;
 
     if (!firebaseUser) {
-      router.replace("/login");
+      router.replace("/erreur?code=401");
       return;
     }
 
@@ -46,7 +50,7 @@ export function ProtectedRoute({
     }
 
     if (isUnauthorizedRole) {
-      router.replace("/dashboard");
+      router.replace("/erreur?code=403");
     }
   }, [loading, firebaseUser, profile, isUnauthorizedRole, router]);
 

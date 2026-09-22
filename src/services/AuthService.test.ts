@@ -103,6 +103,7 @@ describe("AuthService", () => {
       create: jest.fn(),
       update: jest.fn(),
       listByShop: jest.fn(),
+      listAll: jest.fn(),
     };
     shops = {
       getById: jest.fn(),
@@ -114,16 +115,14 @@ describe("AuthService", () => {
   });
 
   describe("registerShopOwner", () => {
-    it("creates the Firebase account, the admin profile, then the shop, in that order", async () => {
+    it("creates the Firebase account and a client profile — never admin directly (Module 12)", async () => {
       createUserWithEmailAndPasswordMock.mockResolvedValue({
         user: { uid: "uid-1" },
       });
-      users.create.mockResolvedValue(fakeUser());
-      shops.create.mockResolvedValue(fakeShop());
+      users.create.mockResolvedValue(fakeUser({ role: "client" }));
 
       const result = await service.registerShopOwner({
         displayName: "Ada",
-        shopName: "Ada Boutique",
         email: "a@b.com",
         password: "azerty12",
       });
@@ -134,19 +133,23 @@ describe("AuthService", () => {
         "azerty12"
       );
 
-      // The user profile must exist before the shop: Firestore rules check
-      // the admin role via users/{uid} to authorize the shops/{id} write.
-      const userCreateOrder =
-        users.create.mock.invocationCallOrder[0];
-      const shopCreateOrder =
-        shops.create.mock.invocationCallOrder[0];
-      expect(userCreateOrder).toBeLessThan(shopCreateOrder);
-
       expect(users.create).toHaveBeenCalledWith("uid-1", {
         email: "a@b.com",
         displayName: "Ada",
-        role: "admin",
+        role: "client",
       } satisfies CreateUserDto);
+
+      expect(shops.create).not.toHaveBeenCalled();
+      expect(result.role).toBe("client");
+    });
+  });
+
+  describe("createShop", () => {
+    it("creates a shop for the current user and links it to their profile", async () => {
+      (auth as { currentUser: unknown }).currentUser = { uid: "uid-1" };
+      shops.create.mockResolvedValue(fakeShop());
+
+      const shopId = await service.createShop("Ada Boutique");
 
       expect(shops.create).toHaveBeenCalledWith({
         name: "Ada Boutique",
@@ -157,9 +160,15 @@ describe("AuthService", () => {
         currency: "XAF",
         ownerId: "uid-1",
       } satisfies CreateShopDto);
-
       expect(users.update).toHaveBeenCalledWith("uid-1", { shopId: "shop-1" });
-      expect(result.shopId).toBe("shop-1");
+      expect(shopId).toBe("shop-1");
+    });
+
+    it("rejects when no Firebase user is signed in", async () => {
+      await expect(service.createShop("Ada Boutique")).rejects.toThrow(
+        /connecté/
+      );
+      expect(shops.create).not.toHaveBeenCalled();
     });
   });
 
@@ -275,20 +284,23 @@ describe("AuthService", () => {
   });
 
   describe("completeMerchantSignup", () => {
-    it("creates the profile and shop for the currently signed-in Firebase user", async () => {
+    it("creates a client profile for the currently signed-in Firebase user", async () => {
       (auth as { currentUser: unknown }).currentUser = {
         uid: "uid-3",
         email: null,
         phoneNumber: "+237600000000",
       };
       users.create.mockResolvedValue(
-        fakeUser({ id: "uid-3", email: undefined, phone: "+237600000000" })
+        fakeUser({
+          id: "uid-3",
+          email: undefined,
+          phone: "+237600000000",
+          role: "client",
+        })
       );
-      shops.create.mockResolvedValue(fakeShop({ id: "shop-2", ownerId: "uid-3" }));
 
       const result = await service.completeMerchantSignup({
         displayName: "Moussa",
-        shopName: "Moussa Boutique",
       });
 
       // No email for a phone sign-up: the field must be omitted, not set to
@@ -296,20 +308,15 @@ describe("AuthService", () => {
       expect(users.create).toHaveBeenCalledWith("uid-3", {
         phone: "+237600000000",
         displayName: "Moussa",
-        role: "admin",
+        role: "client",
       });
-      expect(shops.create).toHaveBeenCalledWith(
-        expect.objectContaining({ name: "Moussa Boutique", ownerId: "uid-3" })
-      );
-      expect(result.shopId).toBe("shop-2");
+      expect(shops.create).not.toHaveBeenCalled();
+      expect(result.role).toBe("client");
     });
 
     it("rejects when no Firebase user is signed in", async () => {
       await expect(
-        service.completeMerchantSignup({
-          displayName: "Moussa",
-          shopName: "Moussa Boutique",
-        })
+        service.completeMerchantSignup({ displayName: "Moussa" })
       ).rejects.toThrow(/connecté/);
       expect(users.create).not.toHaveBeenCalled();
     });

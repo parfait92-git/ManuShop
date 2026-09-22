@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { RegisterSchema, type RegisterInput } from "@/lib/validation/auth";
 import { authService } from "@/services/AuthService";
 
@@ -29,6 +30,7 @@ function authErrorMessage(error: unknown): string {
 
 export function RegisterForm() {
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -42,7 +44,12 @@ export function RegisterForm() {
     setFormError(null);
     try {
       await authService.registerShopOwner(data);
-      router.push("/dashboard");
+      // Voir OnboardingForm : sans ce rafraîchissement, le contexte d'auth
+      // garde `profile === null` et ProtectedRoute renverrait vers
+      // /onboarding en boucle. L'inscription crée un compte client (Module
+      // 12) : direction le catalogue, pas le dashboard (réservé aux admins).
+      await refreshProfile();
+      router.push("/catalogue");
     } catch (error) {
       setFormError(authErrorMessage(error));
     }
@@ -66,19 +73,6 @@ export function RegisterForm() {
           <p className="text-sm text-destructive">
             {errors.displayName.message}
           </p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="shopName">Nom de la boutique</Label>
-        <Input
-          id="shopName"
-          autoComplete="organization"
-          aria-invalid={!!errors.shopName}
-          {...register("shopName")}
-        />
-        {errors.shopName && (
-          <p className="text-sm text-destructive">{errors.shopName.message}</p>
         )}
       </div>
 

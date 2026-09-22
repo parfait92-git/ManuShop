@@ -65,11 +65,25 @@ describe("ProductSchema", () => {
 });
 
 describe("CategorySchema", () => {
-  it("accepts a valid category name", () => {
-    expect(CategorySchema.safeParse({ name: "Laitiers" }).success).toBe(true);
+  const validCategory = {
+    name: "Laitiers",
+    description: "Produits laitiers et dérivés.",
+    isActive: true,
+  };
+
+  it("accepts a valid category", () => {
+    expect(CategorySchema.safeParse(validCategory).success).toBe(true);
   });
 
   it("rejects a too-short category name", () => {
-    expect(CategorySchema.safeParse({ name: "L" }).success).toBe(false);
+    expect(
+      CategorySchema.safeParse({ ...validCategory, name: "L" }).success
+    ).toBe(false);
+  });
+
+  it("rejects an empty description", () => {
+    expect(
+      CategorySchema.safeParse({ ...validCategory, description: "" }).success
+    ).toBe(false);
   });
 });

@@ -1,9 +1,7 @@
 import type { Shop } from "@/models/shop/Shop";
 
 export type CreateShopDto = Omit<Shop, "id" | "createdAt">;
-export type UpdateShopDto = Partial<
-  Omit<Shop, "id" | "createdAt" | "ownerId" | "currency">
->;
+export type UpdateShopDto = Partial<Omit<Shop, "id" | "createdAt" | "ownerId">>;
 
 export interface IShopRepository {
   getById(id: string): Promise<Shop | null>;

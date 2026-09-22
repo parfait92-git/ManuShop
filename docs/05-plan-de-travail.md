@@ -32,8 +32,7 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 - [x] Ajouter les mêmes variables en secrets sur Vercel et GitHub Actions (Cloudinary en attente des clés)
 - [x] Écrire les règles de sécurité Firestore (§6) et les déployer (`firebase deploy --only firestore:rules`)
 - [x] Mettre en place le pipeline CI GitHub Actions : lint + tests + build (`.github/workflows/ci.yml`, vert sur `develop`)
-- [x] Configurer Jest + Testing Library (`next/jest`, seuil de couverture 70% dans `jest.config.mjs`)
-- [ ] Configurer Jest + Testing Library (objectif couverture > 70%, BNF-28)
+- [x] Configurer Jest + Testing Library (`next/jest`, seuil de couverture 70% dans `jest.config.mjs`, BNF-28) — 127 tests, couverture globale ~84% au 2026-09-21
 
 **Definition of Done Phase 0** : `npm run build` passe en local et sur Vercel (déploiement preview visible), Firebase répond depuis l'app (lecture/écriture test), CI verte sur une PR `develop → main` de test.
 
@@ -43,16 +42,45 @@ Workflow git : toute fonctionnalité part de `develop`, fusion vers `main` uniqu
 
 Objectif business plan : catalogue produits + gestion stock + facturation.
 
-- [ ] **Module 1 — Auth & Utilisateurs** (BF-01→05) : inscription/connexion gérant, rôles Admin/Vendeur/Client, profil boutique, reset mot de passe
-- [ ] **Module 2 — Catalogue produits** (BF-06→12) : CRUD produit, catégories, recherche, galerie photos, produit en vedette
-- [ ] **Module 3 — Stock** (BF-13→17) : suivi auto, alerte seuil bas, historique, réappro, variantes
+**Prochaine étape (mise à jour 2026-09-21) : Module 12 — Plateforme Multi-Boutique & Super Administration (BF-62→68), voir Phase 1bis ci-dessous.** Le Module 3 — Stock (BF-13→17), pointé comme prochaine étape plus tôt le même jour, reste pas commencé et repasse derrière : le passage au multi-tenant change la façon dont les boutiques et les utilisateurs sont modélisés, mieux vaut le poser avant de continuer à empiler des modules sur l'hypothèse mono-tenant actuelle. `stock`/`stockThreshold` existent déjà sur `Product` (posés au Module 2) pour mémoire quand ce module reviendra en tête de liste.
+
+- [x] **Module 1 — Auth & Utilisateurs** (BF-01→05) : inscription/connexion gérant, rôles Admin/Vendeur/Client, profil boutique, reset mot de passe — *quasi complet : seul le rôle Client n'a pas de flux de création dédié (BF-03 partiel, voir 02-besoins-fonctionnels.md)*
+- [x] **Module 2 — Catalogue produits** (BF-06→12) : CRUD produit, catégories (+ description, affichée/masquée), recherche, galerie photos (recadrage carré obligatoire), produit en vedette — *quasi complet : pas de marqueur manuel "populaire" (BF-12 partiel)*
+- [ ] **Module 3 — Stock** (BF-13→17) : suivi auto, alerte seuil bas, historique, réappro, variantes — **non commencé, prochaine étape**
 - [ ] **Module 4 — Commandes** (BF-18→23) : panier client, commande, statuts, commande manuelle, historique, annulation
 - [ ] **Module 5 — Facturation** (BF-24→29) : génération auto, aperçu, export PDF, numérotation, personnalisation
-- [ ] **Module 7 — Vitrine publique** (BF-35→40) : accueil, catalogue public, fiche produit, filtres, bouton WhatsApp, mode hors-ligne
-- [ ] **Module 10 — Dashboard** (BF-53→57) : vue d'ensemble, rapports ventes/stock, export CSV/PDF
-- [ ] Respect BNF perf (§1), sécurité Firestore par rôle (§3), responsive mobile-first (§4)
+- [~] **Module 7 — Vitrine publique** (BF-35→40) : accueil, catalogue public, fiche produit, filtres, bouton WhatsApp, mode hors-ligne — *anticipé hors de l'ordre initial ; catalogue public et recherche/filtre catégorie faits, fiche produit et filtre prix/disponibilité manquants, bouton WhatsApp adapté en panier + un seul bouton au paiement (voir 02-besoins-fonctionnels.md)*
+- [~] **Module 10 — Dashboard** (BF-53→57) : vue d'ensemble, rapports ventes/stock, export CSV/PDF — *anticipé hors de l'ordre initial ; refonte visuelle faite avec données réelles disponibles (produits, stock) ; rapports ventes/produits populaires/export dépendent du Module 4 (Commandes), pas encore construit*
+- [x] Respect BNF perf (§1), sécurité Firestore par rôle (§3), responsive mobile-first (§4)
 
 **DoD Phase 1** : un gérant peut créer sa boutique, ajouter des produits, recevoir et facturer une commande, un client peut consulter la vitrine et commander en ligne.
+
+---
+
+## Phase 1bis — Plateforme Multi-Boutique (ajoutée 2026-09-21, révisée le même jour, priorité immédiate)
+
+Changement de modèle décidé en session : ManuShop passe de mono-tenant à multi-boutique. Voir [01-business-plan.md](./01-business-plan.md) §10, [02-besoins-fonctionnels.md](./02-besoins-fonctionnels.md) Module 12 (BF-62→70) et [04-besoins-techniques.md](./04-besoins-techniques.md) §11 pour le détail complet.
+
+**Révision du 2026-09-21 (l'utilisateur a précisé le flux après la première rédaction)** : le Super Admin n'est plus un rôle sur `users` mais l'appartenance à une collection Firestore dédiée `platformAdmins` ; l'inscription ne crée plus jamais `role: 'admin'` (tout démarre `client`) ; devenir admin passe par une attribution manuelle du Super Admin (recherche par pseudo/email/téléphone, révocable) OU un abonnement payant avec expiration automatique (BF-69/70, durée au choix).
+
+**À trancher avant de coder** (points ouverts, proposition par défaut documentée dans 04-besoins-techniques.md §11.3 et §11.5, à confirmer avec l'utilisateur) :
+- [ ] Schéma d'encodage du token d'URL opaque (`ownerId`+`shopId`) — encodage réversible simple proposé, à valider
+- [ ] Moyen de paiement pour l'abonnement (BF-69) — aucun choisi, aucune intégration existante dans le projet
+- [ ] Mécanisme de l'expiration automatique de l'abonnement (BF-69) — nécessite un accès Firestore privilégié côté serveur (Vercel Cron + `firebase-admin`, ou Cloud Functions planifiées) que le projet n'a pas aujourd'hui ; aucune option choisie
+
+**Travail à faire, dans l'ordre suggéré (le plus isolé/moins risqué d'abord)** :
+- [x] Étendre `User` (`adminSource`, `subscriptionPlan`, `subscriptionExpiresAt` — plus de `role: 'super-admin'`) et `Shop` (`isPublished`, `publicToken`, liens réseaux sociaux) — 2026-09-21
+- [x] Collection `platformAdmins` (Super Admin) + règles Firestore : verrou strict empêchant toute attribution du privilège Super Admin depuis l'app (BF-67) — 2026-09-21. **Deux bugs de sécurité pré-existants corrigés au passage** (voir journal) : `users` s'auto-modifiait sans restriction (n'importe qui pouvait changer son propre `role`), et `shops` s'écrivait par n'importe quel admin, pas seulement le propriétaire.
+- [x] Couper la création de `role: 'admin'` à l'inscription (`AuthService.registerShopOwner`/`completeMerchantSignup` créent `role: 'client'` ; nouvelle méthode `AuthService.createShop()` pour plus tard) ; formulaires et redirections ajustés en conséquence — 2026-09-21. **Conséquence assumée** : jusqu'à ce que la page Super Admin existe, personne ne peut devenir admin sans éditer Firestore à la main depuis la console.
+- La lecture publique conditionnée à `isPublished` (BF-62) n'est **pas encore faite** — `shops`/`products`/`categories` restent en lecture publique inconditionnelle pour ne pas casser la vitrine mono-tenant actuelle tant que le routing multi-tenant n'existe pas.
+- [x] Page Super Admin (BF-68) : recherche d'un compte par pseudo/email/téléphone, attribution et révocation du rôle Admin — protégée par l'appartenance à `platformAdmins`, pas par `role` — 2026-09-21 (`/super-admin`)
+- [ ] Abonnement payant avec expiration automatique (BF-69) et rétrogradation en fin d'abonnement (BF-70) — bloqué sur les deux points ouverts ci-dessus (moyen de paiement, mécanisme d'expiration)
+- [ ] Bascule "Publier ma boutique" dans Paramètres (BF-62)
+- [ ] Annuaire des boutiques publiées avec boutiques factices en attendant (BF-63), remplaçant/complétant `/onboarding`
+- [ ] Routing multi-tenant par `shopToken` (BF-64) — impact large : `useShop()`, toutes les pages storefront, `ProtectedRoute`/`GuestRoute` (voir 04-besoins-techniques.md §11.6)
+- [ ] Liens réseaux sociaux par article sur la vitrine publiée (BF-65, BF-66) — dépend du champ `publishedChannels` sur `Product`, lui-même dépendant du Module 8 (Publication Multicanal) pas commencé ; comportement honnête en attendant : aucun lien affiché tant que la donnée n'existe pas
+
+**DoD Phase 1bis** : un commerçant devenu admin (attribution manuelle ou abonnement actif) peut publier sa boutique ; un visiteur peut la découvrir depuis l'annuaire, la visiter à son URL dédiée, et y commander comme sur `/catalogue` aujourd'hui ; un abonnement expiré redirige proprement l'ex-admin vers la vue cliente de sa propre boutique.
 
 ---
 

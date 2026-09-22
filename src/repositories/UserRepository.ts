@@ -47,6 +47,11 @@ export class UserRepository implements IUserRepository {
     );
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as User);
   }
+
+  async listAll(): Promise<User[]> {
+    const snapshot = await getDocs(collection(db, USERS_COLLECTION));
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as User);
+  }
 }
 
 export const userRepository = new UserRepository();

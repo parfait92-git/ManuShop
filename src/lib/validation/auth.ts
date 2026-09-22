@@ -5,9 +5,6 @@ export const RegisterSchema = z
     displayName: z.string().trim().min(2, {
       error: "Le nom doit contenir au moins 2 caractères.",
     }),
-    shopName: z.string().trim().min(2, {
-      error: "Le nom de la boutique doit contenir au moins 2 caractères.",
-    }),
     email: z.email({ error: "Veuillez saisir un email valide." }).trim(),
     password: z
       .string()
@@ -69,16 +66,22 @@ export const CompleteMerchantSignupSchema = z.object({
   displayName: z.string().trim().min(2, {
     error: "Le nom doit contenir au moins 2 caractères.",
   }),
-  shopName: z.string().trim().min(2, {
-    error: "Le nom de la boutique doit contenir au moins 2 caractères.",
-  }),
 });
 
 export type CompleteMerchantSignupInput = z.infer<
   typeof CompleteMerchantSignupSchema
 >;
 
-export const ShopProfileSchema = z.object({
+export const CreateShopSchema = z.object({
+  shopName: z.string().trim().min(2, {
+    error: "Le nom de la boutique doit contenir au moins 2 caractères.",
+  }),
+});
+
+export type CreateShopInput = z.infer<typeof CreateShopSchema>;
+
+export const ShopSettingsSchema = z.object({
+  // Profil de la boutique (BF-04) — inchangé, juste réuni sur la même page.
   name: z.string().trim().min(2, {
     error: "Le nom de la boutique doit contenir au moins 2 caractères.",
   }),
@@ -92,6 +95,25 @@ export const ShopProfileSchema = z.object({
   whatsapp: z.string().trim().min(6, {
     error: "Le numéro WhatsApp n'est pas valide.",
   }),
+  // Régionalisation
+  language: z.enum(["fr", "en"]),
+  currency: z.enum(["XAF", "EUR", "USD"]),
+  // Publication multicanale
+  primarySocialNetwork: z.enum([
+    "whatsapp",
+    "facebook",
+    "instagram",
+    "tiktok",
+  ]),
+  // Notifications de commande
+  notifyOrdersByEmail: z.boolean(),
+  notifyOrdersBySocial: z.boolean(),
+  urgentPhoneAlerts: z.boolean(),
+  // Contacts de commande
+  contactEmail: z
+    .email({ error: "Veuillez saisir un email valide." })
+    .or(z.literal("")),
+  urgentPhone: z.string().trim(),
 });
 
-export type ShopProfileInput = z.infer<typeof ShopProfileSchema>;
+export type ShopSettingsInput = z.infer<typeof ShopSettingsSchema>;

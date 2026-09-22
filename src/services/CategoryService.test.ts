@@ -18,6 +18,7 @@ describe("CategoryService", () => {
     categories = {
       listByShop: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       remove: jest.fn(),
     };
     service = new CategoryService(categories);
@@ -28,6 +29,8 @@ describe("CategoryService", () => {
       id: "c1",
       shopId: "shop-1",
       name: "Mode",
+      description: "Vêtements",
+      isActive: true,
       createdAt: {} as Timestamp,
     };
     categories.listByShop.mockResolvedValue([category]);
@@ -38,13 +41,31 @@ describe("CategoryService", () => {
     expect(result).toEqual([category]);
   });
 
-  it("creates a category with a trimmed name", async () => {
-    await service.createCategory("shop-1", "  Mode  ");
+  it("creates a category with trimmed name/description", async () => {
+    await service.createCategory("shop-1", {
+      name: "  Mode  ",
+      description: "  Vêtements  ",
+      isActive: true,
+    });
 
     expect(categories.create).toHaveBeenCalledWith({
       shopId: "shop-1",
       name: "Mode",
+      description: "Vêtements",
+      isActive: true,
     });
+  });
+
+  it("updates a category", async () => {
+    await service.updateCategory("c1", { name: "Nouveau nom" });
+    expect(categories.update).toHaveBeenCalledWith("c1", {
+      name: "Nouveau nom",
+    });
+  });
+
+  it("toggles active state", async () => {
+    await service.setCategoryActive("c1", false);
+    expect(categories.update).toHaveBeenCalledWith("c1", { isActive: false });
   });
 
   it("deletes a category by id", async () => {

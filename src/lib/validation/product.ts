@@ -52,6 +52,10 @@ export const CategorySchema = z.object({
   name: z.string().trim().min(2, {
     error: "Le nom de la catégorie doit contenir au moins 2 caractères.",
   }),
+  description: z.string().trim().min(1, {
+    error: "La description est requise.",
+  }),
+  isActive: z.boolean(),
 });
 
 export type CategoryInput = z.infer<typeof CategorySchema>;

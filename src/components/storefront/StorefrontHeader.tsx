@@ -1,11 +1,13 @@
 "use client";
 
-import { Bell, ShoppingBag, Store, User } from "lucide-react";
+import { Bell, ChevronDown, ShoppingBag, Store, User } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { CartPanel } from "@/components/storefront/CartPanel";
+import { authService } from "@/services/AuthService";
 import { useCartItemCount } from "@/store/cartStore";
 
 // Pas de page /promotions dédiée pour l'instant (aucune maquette fournie) :
@@ -16,6 +18,87 @@ const NAV_LINKS = [
   { href: "/catalogue", label: "Catalogue" },
   { href: "/catalogue?promo=1", label: "Promotions" },
 ] as const;
+
+function AccountMenu() {
+  const { firebaseUser, profile } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  // Non connecté : simple lien vers /login (GuestRoute s'occupe de renvoyer
+  // un visiteur déjà connecté ailleurs — inutile de dupliquer cette logique
+  // ici, mais il ne faut surtout pas y pointer quand on EST connecté, sans
+  // quoi ce lien rebondit systématiquement sur /erreur?code=already-authenticated).
+  if (!firebaseUser) {
+    return (
+      <Link
+        href="/login"
+        aria-label="Mon compte"
+        className="flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
+      >
+        <User className="size-4" />
+      </Link>
+    );
+  }
+
+  async function handleLogout() {
+    await authService.logout();
+    router.push("/");
+  }
+
+  const canManageShop = profile?.role === "admin" || profile?.role === "seller";
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label="Mon compte"
+        className="flex h-9 items-center gap-1 rounded-full border border-border px-2 text-muted-foreground hover:text-foreground"
+      >
+        <User className="size-4" />
+        <ChevronDown className="size-3.5" />
+      </button>
+
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-border bg-background py-2 shadow-lg">
+            <div className="px-3 py-1.5">
+              <p className="truncate text-sm font-medium">
+                {profile?.displayName ?? firebaseUser.displayName ?? "Mon compte"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {profile?.email ?? profile?.phone ?? firebaseUser.email ?? ""}
+              </p>
+            </div>
+            {canManageShop && (
+              <Link
+                href="/dashboard"
+                className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
+                onClick={() => setOpen(false)}
+              >
+                Tableau de bord
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="block w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+            >
+              Se déconnecter
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function StorefrontHeader() {
   const pathname = usePathname();
@@ -56,13 +139,7 @@ export function StorefrontHeader() {
           >
             <Bell className="size-4" />
           </button>
-          <Link
-            href="/login"
-            aria-label="Mon compte"
-            className="flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
-          >
-            <User className="size-4" />
-          </Link>
+          <AccountMenu />
           <div className="relative">
             <button
               type="button"

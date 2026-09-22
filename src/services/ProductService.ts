@@ -6,6 +6,8 @@ import type {
   UpdateProductDto,
 } from "@/repositories/interfaces/IProductRepository";
 
+export type StockStatus = "in-stock" | "low-stock" | "out-of-stock";
+
 export class ProductService {
   constructor(private readonly products: IProductRepository = productRepository) {}
 
@@ -65,6 +67,14 @@ export class ProductService {
     }
 
     return null;
+  }
+
+  /** Dérivé de `stock`/`stockThreshold`, pas d'un module Stock dédié (pas
+   * encore construit) — la seule donnée fiable disponible aujourd'hui. */
+  getStockStatus(product: Product): StockStatus {
+    if (product.stock <= 0) return "out-of-stock";
+    if (product.stock <= product.stockThreshold) return "low-stock";
+    return "in-stock";
   }
 }
 

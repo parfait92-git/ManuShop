@@ -1,6 +1,15 @@
 import type { Category } from "@/models/category/Category";
 import { categoryRepository } from "@/repositories/CategoryRepository";
-import type { ICategoryRepository } from "@/repositories/interfaces/ICategoryRepository";
+import type {
+  ICategoryRepository,
+  UpdateCategoryDto,
+} from "@/repositories/interfaces/ICategoryRepository";
+
+export interface CreateCategoryInput {
+  name: string;
+  description: string;
+  isActive: boolean;
+}
 
 export class CategoryService {
   constructor(
@@ -11,8 +20,27 @@ export class CategoryService {
     return this.categories.listByShop(shopId);
   }
 
-  createCategory(shopId: string, name: string): Promise<Category> {
-    return this.categories.create({ shopId, name: name.trim() });
+  createCategory(
+    shopId: string,
+    { name, description, isActive }: CreateCategoryInput
+  ): Promise<Category> {
+    return this.categories.create({
+      shopId,
+      name: name.trim(),
+      description: description.trim(),
+      isActive,
+    });
+  }
+
+  updateCategory(id: string, data: UpdateCategoryDto): Promise<void> {
+    return this.categories.update(id, data);
+  }
+
+  /** Bascule visible/masquée (BF-09) : préférée à la suppression pour une
+   * catégorie saisonnière, comme suggéré dans la page elle-même — les
+   * produits qui y sont déjà rattachés ne perdent pas leur catégorie. */
+  setCategoryActive(id: string, isActive: boolean): Promise<void> {
+    return this.categories.update(id, { isActive });
   }
 
   deleteCategory(id: string): Promise<void> {

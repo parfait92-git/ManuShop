@@ -20,8 +20,21 @@ export function CategoriesPageContent({ shopId }: { shopId: string }) {
   }, [shopId]);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Catégories</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div>
+        <p className="text-sm font-medium text-primary">
+          Configuration du catalogue
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          Catégories produits
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Créez des familles claires pour organiser vos produits. Une
+          catégorie active pourra être sélectionnée dans le formulaire «
+          Nouveau produit ».
+        </p>
+      </div>
+
       {categories === null ? (
         <p className="text-sm text-muted-foreground">Chargement...</p>
       ) : (

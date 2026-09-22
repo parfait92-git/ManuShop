@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import { Menu, ShoppingBag, Store, X } from "lucide-react"
 import { cn } from "cn"
 
+import { useAuth } from "@/components/providers/AuthProvider"
+import { authService } from "@/services/AuthService"
 import styles from "@/styles/SiteHeader.module.scss"
 
 export type SiteHeaderProps = React.HTMLAttributes<HTMLElement>
@@ -17,9 +19,15 @@ const TOP_OFFSET_THRESHOLD = 50;
 
 export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
   const router = useRouter()
+  const { firebaseUser } = useAuth()
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [visible, setVisible] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
+
+  async function handleLogout() {
+    await authService.logout()
+    router.push("/")
+  }
 
   React.useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -85,9 +93,18 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
         </nav>
 
         <div className={styles.actions}>
-          <Link className={styles.login} href="/login">
-            Se connecter
-          </Link>
+          {/* Un lien inconditionnel vers /login rebondit sur
+          /erreur?code=already-authenticated pour un visiteur déjà connecté
+          (GuestRoute) — d'où la vérification de l'état d'authentification. */}
+          {firebaseUser ? (
+            <button type="button" className={styles.login} onClick={handleLogout}>
+              Se déconnecter
+            </button>
+          ) : (
+            <Link className={styles.login} href="/login">
+              Se connecter
+            </Link>
+          )}
           <form
             className={styles.search}
             onSubmit={(event) => {
@@ -155,9 +172,22 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
           <a className={styles.navLink} href="#apropos" onClick={closeMenu}>
             À propos
           </a>
-          <Link className={styles.navLink} href="/login" onClick={closeMenu}>
-            Se connecter
-          </Link>
+          {firebaseUser ? (
+            <button
+              type="button"
+              className={styles.navLink}
+              onClick={() => {
+                closeMenu();
+                handleLogout();
+              }}
+            >
+              Se déconnecter
+            </button>
+          ) : (
+            <Link className={styles.navLink} href="/login" onClick={closeMenu}>
+              Se connecter
+            </Link>
+          )}
         </nav>
       ) : null}
     </header>

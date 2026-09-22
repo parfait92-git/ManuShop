@@ -8,6 +8,14 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+jest.mock("../components/providers/AuthProvider", () => ({
+  useAuth: () => ({ firebaseUser: null }),
+}));
+
+jest.mock("../services/AuthService", () => ({
+  authService: { logout: jest.fn() },
+}));
+
 import Home from "./page";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { Badge } from "@/components/ui/Badge";

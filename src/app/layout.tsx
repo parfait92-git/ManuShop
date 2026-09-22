@@ -12,7 +12,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className="h-full antialiased" data-scroll-behavior="smooth">
-      <body className="min-h-full flex flex-col font-sans">
+      {/* suppressHydrationWarning : certaines extensions navigateur (Grammarly,
+      gestionnaires de mots de passe...) injectent des attributs sur <body>
+      avant l'hydratation React — un faux positif inoffensif, pas un bug de
+      l'app. Ça ne masque que les avertissements sur CET élément, pas ceux
+      sur ses enfants. */}
+      <body
+        className="min-h-full flex flex-col font-sans"
+        suppressHydrationWarning
+      >
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
