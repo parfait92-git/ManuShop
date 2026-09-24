@@ -638,3 +638,27 @@ Suite logique de l'entrée précédente : étendre `mockData.ts` puis appliquer 
 Tests ajoutés : `ProductsPageContent.test.tsx`, `CategoriesPageContent.test.tsx`, `TeamPageContent.test.tsx` (aucun n'existait avant) + un cas ajouté à `SuperAdminPanel.test.tsx` vérifiant explicitement l'absence des boutons Donner/Retirer l'admin sur l'aperçu.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (24 routes, aucune nouvelle route) et `npm run test:coverage` (192 tests, +6, aucune régression). Rien de commité.
+
+### 2026-09-24 — Landing page : la vitrine "La sélection du moment" devient dynamique
+
+La section produits de la landing page (`src/app/page.tsx`, "Vendez plus simplement.") affichait 3 articles entièrement inventés à la main ("Ensemble Wax Moderne", etc., prix et dégradés codés en dur). Demande : que ce soit les 3 meilleurs articles des 3 meilleures boutiques, rempli avec les données de démo en attendant.
+
+**Aucune vraie donnée de vente n'existe** (`Order` est défini dans le modèle mais n'est branché nulle part, voir §7 de l'entrée du 2026-09-24 précédente) — donc "meilleur" n'a pas de métrique réelle disponible aujourd'hui. Nouvelle fonction `getFeaturedArticles(limit)` dans `mockData.ts`, avec un classement délibérément transparent et documenté comme approximatif : une promo active d'abord, puis le plus récent, puis le prix le plus élevé en dernier recours. Un seul article "meilleur" est retenu par boutique avant le classement final, pour garantir des boutiques distinctes plutôt que plusieurs articles de la même — correspond à la demande "3 meilleures boutiques", pas juste "3 meilleurs articles" qui auraient pu venir de la même boutique.
+
+Résultat actuel avec les données de démo (vérifié) : Powerbank 10000mAh (TechPoint, promo, 9 990 FCFA), Chemise homme coton (Mode 237, promo, 6 800 FCFA), Huile de karité pure (Beauté Naturelle, 2 500 FCFA, ajoutée il y a 3 jours).
+
+`src/app/page.tsx` reste un Server Component (aucun `"use client"` nécessaire) : seuls des champs texte simples (`category`, `name`, `priceLabel` déjà formaté, `gradient`) traversent vers `ProductShowcase`/`ProductCard` — jamais l'objet `Product` complet avec son `Timestamp`, qui aurait reproduit le bug de sérialisation RSC déjà rencontré avec `/demo-catalogue`. Un dégradé par boutique (`SHOWCASE_GRADIENTS`, 6 entrées) plutôt que par position dans le tableau, pour que la carte reste visuellement liée à la boutique même quand le classement change qui apparaît.
+
+Prêt à être remplacé par un vrai classement (ventes, vues...) sans toucher à `ProductShowcase` — seul `showcaseProducts` dans `page.tsx` devra changer de source.
+
+`page.test.tsx` : l'assertion sur le nom du produit codé en dur mise à jour ("Powerbank 10000mAh" au lieu de "Ensemble Wax Moderne").
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (24 routes, aucune nouvelle route) et `npm run test:coverage` (192 tests, aucune régression). Vérifié aussi visuellement (capture Playwright contre le serveur dev réel) : dégradés distincts par boutique, prix promo affichés correctement. Rien de commité.
+
+### 2026-09-24 — Photos des articles sur les cartes de la vitrine landing page
+
+Suite immédiate de l'entrée précédente : les cartes de "La sélection du moment" n'affichaient qu'un dégradé décoratif, sans la vraie photo de l'article. `ProductCard.tsx` (`src/components/ui/ProductCard.tsx`) n'avait jamais eu de notion d'image — seul appelant réel : `ProductShowcase.tsx`.
+
+**`image?: string` ajouté à `ProductCardProps` et `ShowcaseProduct`**, rétrocompatible : sans cette prop, la carte reste un pur dégradé plein cadre comme avant (aucun autre appelant du composant à ce jour, mais le comportement par défaut est préservé). Avec elle : la photo (`next/image`, `fill` + `object-cover`) remplit la carte, et le dégradé devient un voile coloré semi-transparent (opacité 0.72) par-dessus plutôt que le fond lui-même — garde le texte lisible et l'identité colorée par boutique, tout en laissant deviner la vraie photo en dessous. `src/app/page.tsx` passe `image: article.images[0]` (déjà résolu par `getFeaturedArticles`, via `picsum.photos`, déjà autorisé dans `next.config.ts` depuis `/demo-catalogue`).
+
+Vérifié visuellement (capture Playwright) : les 3 photos s'affichent correctement sous leur teinte respective, texte toujours lisible. `npm run lint`, `npx tsc --noEmit`, `npm run build` (24 routes) et `npm run test:coverage` (192 tests, aucune régression — pas de test dédié à `ProductCard` à mettre à jour, sa seule couverture passe par `page.test.tsx`, dont les assertions ne portaient pas sur l'image). Rien de commité.

@@ -21,6 +21,7 @@ import {
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
 import { LaunchPromo } from "@/components/sections/LaunchPromo";
 import { SiteFooter } from "@/components/sections/SiteFooter";
+import { getFeaturedArticles } from "@/data/mockData";
 
 const features: FeatureGridItem[] = [
   {
@@ -61,26 +62,31 @@ const features: FeatureGridItem[] = [
   },
 ];
 
-const showcaseProducts = [
-  {
-    category: "Mode",
-    name: "Ensemble Wax Moderne",
-    priceLabel: "24 800 FCFA",
-    gradient: "linear-gradient(160deg, #d946ef 0%, #7c3aed 100%)",
-  },
-  {
-    category: "Accessoires",
-    name: "Sac à main artisanal",
-    priceLabel: "12 500 FCFA",
-    gradient: "linear-gradient(160deg, #22d3ee 0%, #2563eb 100%)",
-  },
-  {
-    category: "Chaussures",
-    name: "Sandales en cuir",
-    priceLabel: "9 400 FCFA",
-    gradient: "linear-gradient(160deg, #fb923c 0%, #f59e0b 55%, #f472b6 100%)",
-  },
-];
+// Un dégradé par boutique de démo plutôt que par position dans la liste,
+// pour que la carte reste visuellement liée à la boutique même si le
+// classement (voir getFeaturedArticles) change lequel des 6 apparaît ici.
+const SHOWCASE_GRADIENTS: Record<string, string> = {
+  "shop-laiterie-wouri": "linear-gradient(160deg, #38bdf8 0%, #2563eb 100%)",
+  "shop-embacam": "linear-gradient(160deg, #34d399 0%, #059669 100%)",
+  "shop-aromes-saveurs": "linear-gradient(160deg, #fbbf24 0%, #d97706 100%)",
+  "shop-mode-237": "linear-gradient(160deg, #d946ef 0%, #7c3aed 100%)",
+  "shop-techpoint": "linear-gradient(160deg, #22d3ee 0%, #2563eb 100%)",
+  "shop-beaute-naturelle":
+    "linear-gradient(160deg, #fb923c 0%, #f59e0b 55%, #f472b6 100%)",
+};
+
+// "Meilleurs articles des meilleures boutiques" — pas encore de vraies
+// données de vente à classer (voir le commentaire sur getFeaturedArticles),
+// donc alimenté avec les données de démo en attendant. Prêt à être remplacé
+// par une vraie requête (ex. top ventes du mois) sans changer ProductShowcase.
+const showcaseProducts = getFeaturedArticles(3).map((article) => ({
+  category: article.category,
+  name: article.name,
+  priceLabel: `${(article.isPromo && article.promoPrice ? article.promoPrice : article.price).toLocaleString("fr-FR")} FCFA`,
+  gradient:
+    SHOWCASE_GRADIENTS[article.shopId] ?? SHOWCASE_GRADIENTS["shop-mode-237"],
+  image: article.images[0],
+}));
 
 export default function Home() {
   return (
