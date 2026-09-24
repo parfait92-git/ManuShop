@@ -619,3 +619,22 @@ Demande initiale : un fichier de données mockées pour démontrer le catalogue 
 Tests ajoutés (`catalogue/page.test.tsx`, `CataloguePageContent.test.tsx`, aucun n'existait avant sur ces deux fichiers) : chargement, absence de boutique, boutique dépubliée, boutique publiée avec produits, boutique publiée sans produit, et le cas de non-régression recherche-vide-mais-pas-boutique-vide.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (24 routes, +1 — `/demo-catalogue`) et `npm run test:coverage` (186 tests, +7, aucune régression). Rien de commité.
+
+### 2026-09-24 — Données de démo pour le dashboard admin + Super Admin, et aperçu en lecture seule (pas de redirection)
+
+Suite logique de l'entrée précédente : étendre `mockData.ts` puis appliquer "la même logique" au dashboard admin et à `/super-admin`. Décision prise avec l'utilisateur avant de coder : **pas** la même mécanique que `/catalogue` (redirection complète vers une page de démo) — un visiteur anonyme n'a rien à perdre à être redirigé, mais un admin sur son propre dashboard vide perdrait l'accès à ses vrais boutons ("ajouter mon premier produit", etc.) au moment précis où il en a besoin. Et `/super-admin` a un problème supplémentaire : ses boutons Donner/Retirer l'admin déclenchent de vraies écritures Firestore privilégiées (Server Actions) — y afficher des utilisateurs fictifs avec ces boutons actifs risquerait un clic sur un id qui n'existe pas réellement.
+
+**Retenu** : la vraie page reste toujours affichée (formulaire d'ajout, recherche...) ; si la vraie liste est vide (dashboard) ou si une recherche ne trouve personne (Super Admin), un aperçu en lecture seule apparaît en plus, avec un bandeau "Exemple" (`DemoPreviewBanner.tsx`, nouveau composant partagé) et aucune action possible dessus.
+
+**`mockData.ts` étendu** (mêmes principes que la première extraction : réutiliser les vrais types du domaine, vérifier les usages réels avant d'écrire une seule donnée) :
+- `mockCategories: Category[]` — 2 par boutique, noms strictement identiques à `mockArticles[].category` (`ProductList` filtre par `product.category === category.name` — un écart aurait cassé silencieusement le filtre). `mockArticles[].category` mis à jour en conséquence (catégories plus fines par boutique — ex. "Lait & Yaourts"/"Fromages" au lieu d'un seul "Produits laitiers" — plus utile pour démontrer un vrai filtre). Une catégorie volontairement `isActive: false` pour montrer l'état masqué.
+- `mockUsers: User[]` (17) — sert à la fois les aperçus dashboard (équipe) et Super Admin (recherche). `id` des 6 admins == `Shop.ownerId` de leur boutique (cohérence vérifiée par script). Les deux origines du rôle admin représentées : `adminSource: "manual"` et `"subscription"` (avec `subscriptionExpiresAt` dans le futur, pour que le badge "(abonnement)" de `SuperAdminPanel` ait quelque chose à montrer). Vendeurs et clients aussi, ces derniers jamais avec `shopId` (respecte l'invariant documenté sur le modèle `User` réel).
+- `getCategoriesByShop`/`getTeamMembersByShop` (miroir de `getArticlesByShop`).
+
+**Dashboard** (`ProductsPageContent`, `CategoriesPageContent`, `TeamPageContent`) : aucune modification de `ProductList`/`CategoryManager`/`TeamList` eux-mêmes (composants réels intacts, avec leurs vraies actions). L'aperçu de démo est un rendu strictement séparé, construit à la main sans bouton ni lien — délibéré : réutiliser les composants réels avec des données fictives aurait câblé leurs boutons Modifier/Supprimer/Activer sur des ids qui n'existent pas vraiment en base. Boutique de démo choisie pour la cohérence du récit : "Mode 237" (la plus fournie : 2 catégories, une promo, 2 vendeurs) réutilisée pour les trois sections.
+
+**`SuperAdminPanel.tsx`** : nouvel aperçu affiché uniquement quand une recherche renvoie 0 résultat (jamais avant la première recherche) — 4 comptes représentatifs (un admin manuel, un admin par abonnement, un vendeur, un client) via un `DemoUserRow` séparé de `UserRow`, sans les boutons Donner/Retirer l'admin.
+
+Tests ajoutés : `ProductsPageContent.test.tsx`, `CategoriesPageContent.test.tsx`, `TeamPageContent.test.tsx` (aucun n'existait avant) + un cas ajouté à `SuperAdminPanel.test.tsx` vérifiant explicitement l'absence des boutons Donner/Retirer l'admin sur l'aperçu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (24 routes, aucune nouvelle route) et `npm run test:coverage` (192 tests, +6, aucune régression). Rien de commité.

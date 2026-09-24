@@ -3,8 +3,10 @@
 import { Search, ShieldCheck, ShieldOff } from "lucide-react";
 import { useState } from "react";
 
+import { DemoPreviewBanner } from "@/components/dashboard/DemoPreviewBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { mockUsers } from "@/data/mockData";
 import type { User } from "@/models/user/User";
 import { platformAdminService } from "@/services/PlatformAdminService";
 
@@ -13,6 +15,40 @@ const ROLE_LABELS: Record<User["role"], string> = {
   seller: "Vendeur",
   client: "Client",
 };
+
+// Échantillon représentatif (un admin manuel, un admin par abonnement, un
+// vendeur, un client) plutôt que les ~17 comptes de démo au complet.
+const DEMO_USER_IDS = [
+  "owner-laiterie-wouri",
+  "owner-embacam",
+  "user-christelle-manga",
+  "user-armand-ekwalla",
+];
+const DEMO_USERS = mockUsers.filter((user) => DEMO_USER_IDS.includes(user.id));
+
+/** Contrairement à `UserRow`, aucun bouton Donner/Retirer l'admin : ce sont
+ * de vraies écritures Firestore privilégiées (Server Actions), donc jamais
+ * branchées sur un id fictif — cet aperçu n'est affiché que quand une
+ * recherche réelle ne trouve personne, purement illustratif. */
+function DemoUserRow({ user }: { user: User }) {
+  return (
+    <li className="flex flex-col gap-2 px-4 py-3 opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="flex flex-col">
+        <span className="text-sm font-medium">{user.displayName}</span>
+        <span className="text-sm text-muted-foreground">
+          {user.email ?? user.phone ?? "—"}
+        </span>
+      </div>
+      <span className="text-xs font-medium text-muted-foreground">
+        {ROLE_LABELS[user.role]}
+        {user.role === "admin" && user.adminSource === "manual" && " (manuel)"}
+        {user.role === "admin" &&
+          user.adminSource === "subscription" &&
+          " (abonnement)"}
+      </span>
+    </li>
+  );
+}
 
 function UserRow({
   user,
@@ -167,9 +203,20 @@ export function SuperAdminPanel() {
       {results !== null && (
         <div className="rounded-xl border border-border bg-background">
           {results.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-              Aucun utilisateur ne correspond à cette recherche.
-            </p>
+            <div className="flex flex-col gap-4 p-4">
+              <p className="text-center text-sm text-muted-foreground">
+                Aucun utilisateur ne correspond à cette recherche.
+              </p>
+              <DemoPreviewBanner
+                title="Exemple — à quoi ressembleront les résultats"
+                description="Aperçu en lecture seule avec des comptes de démonstration (aucune action possible dessus)."
+              />
+              <ul className="divide-y divide-border rounded-lg border border-dashed border-border">
+                {DEMO_USERS.map((user) => (
+                  <DemoUserRow key={user.id} user={user} />
+                ))}
+              </ul>
+            </div>
           ) : (
             <ul className="divide-y divide-border">
               {results.map((user) => (
