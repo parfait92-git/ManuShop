@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles, Truck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { CategoryFilterPills } from "@/components/storefront/CategoryFilterPills";
@@ -31,6 +32,7 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
 }
 
 export function CataloguePageContent({ shopId }: { shopId: string }) {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [term, setTerm] = useState("");
@@ -77,6 +79,25 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       : byCategory;
     return sortProducts(byPromo, sortOrder);
   }, [products, term, category, sortOrder, promoOnly]);
+
+  // La boutique existe et est publiée (vérifié par CataloguePage), mais n'a
+  // encore aucun produit — le total réel (`products`), pas `visibleProducts`
+  // qui peut être vide à cause d'une recherche/filtre sans rapport avec ça.
+  const isEmptyShop = products !== null && products.length === 0;
+
+  useEffect(() => {
+    if (isEmptyShop) {
+      router.replace("/demo-catalogue");
+    }
+  }, [isEmptyShop, router]);
+
+  if (isEmptyShop) {
+    return (
+      <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+        Chargement...
+      </p>
+    );
+  }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10">

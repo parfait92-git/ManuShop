@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
         hostname: "platform-lookaside.fbsbx.com",
         pathname: "/**",
       },
+      {
+        // Images de démo (src/data/mockData.ts) — jamais utilisé pour de
+        // vraies données produit/boutique.
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "/**",
+      },
     ],
   },
 };
