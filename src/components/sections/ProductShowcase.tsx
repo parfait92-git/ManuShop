@@ -11,6 +11,7 @@ export interface ShowcaseProduct {
   name: string
   priceLabel: string
   gradient: string
+  image?: string
 }
 
 export interface ProductShowcaseProps

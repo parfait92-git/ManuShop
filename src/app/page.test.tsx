@@ -46,7 +46,10 @@ describe("Home page", () => {
       "href",
       "/catalogue"
     );
-    expect(screen.getByText("Ensemble Wax Moderne")).toBeInTheDocument();
+    // Les 3 cartes viennent désormais de getFeaturedArticles() (données de
+    // démo, voir src/data/mockData.ts) plutôt que d'un tableau figé —
+    // "Powerbank 10000mAh" (TechPoint, en promo) est en tête du classement.
+    expect(screen.getByText("Powerbank 10000mAh")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         name: "Votre première vitrine digitale commence ici.",

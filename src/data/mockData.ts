@@ -686,3 +686,28 @@ export function getCategoriesByShop(shopId: string): Category[] {
 export function getTeamMembersByShop(shopId: string): User[] {
   return mockUsers.filter((user) => user.shopId === shopId);
 }
+
+/** Aucune vraie donnée de vente n'existe encore (le modèle `Order` n'est
+ * branché nulle part) : "meilleur" n'a donc pas de métrique réelle à ce
+ * stade. Approximé avec les seuls signaux disponibles sur `Product`, dans
+ * cet ordre — une promo active en cours (mis en avant), puis le plus
+ * récemment ajouté, puis le prix le plus élevé (à trancher en dernier
+ * recours). À remplacer par un vrai classement (ventes, vues...) une fois
+ * ces données réellement suivies. */
+function compareArticleRank(a: Product, b: Product): number {
+  if (a.isPromo !== b.isPromo) return a.isPromo ? -1 : 1;
+  const dateDiff = b.createdAt.toMillis() - a.createdAt.toMillis();
+  if (dateDiff !== 0) return dateDiff;
+  return b.price - a.price;
+}
+
+/** Le meilleur article de chaque boutique (voir `compareArticleRank`), puis
+ * les `limit` meilleurs parmi eux — garantit des boutiques distinctes
+ * plutôt que plusieurs articles d'une même boutique. */
+export function getFeaturedArticles(limit = 3): Product[] {
+  const topPerShop = mockShops
+    .map((shop) => [...getArticlesByShop(shop.id)].sort(compareArticleRank)[0])
+    .filter((article): article is Product => Boolean(article));
+
+  return topPerShop.sort(compareArticleRank).slice(0, limit);
+}

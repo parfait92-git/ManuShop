@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Plus } from "lucide-react"
 import { cn } from "cn"
+import Image from "next/image"
 
 import styles from "@/styles/ProductCard.module.scss"
 
@@ -9,6 +10,11 @@ export interface ProductCardProps extends React.HTMLAttributes<HTMLElement> {
   name: string
   priceLabel: string
   gradient: string
+  /** Optionnelle : sans elle, la carte reste un pur dégradé (comportement
+   * d'origine). Avec elle, le dégradé devient un voile coloré semi-
+   * transparent au-dessus de la photo plutôt que le fond lui-même — garde
+   * le texte lisible sans masquer complètement l'image. */
+  image?: string
   href?: string
 }
 
@@ -17,6 +23,7 @@ export function ProductCard({
   name,
   priceLabel,
   gradient,
+  image,
   href = "/catalogue",
   className,
   ...props
@@ -24,9 +31,24 @@ export function ProductCard({
   return (
     <article
       className={cn(styles.card, className)}
-      style={{ backgroundImage: gradient }}
+      style={image ? undefined : { backgroundImage: gradient }}
       {...props}
     >
+      {image && (
+        <Image
+          src={image}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 33vw, 100vw"
+          className={styles.card__image}
+        />
+      )}
+      {image && (
+        <div
+          className={styles.card__overlay}
+          style={{ backgroundImage: gradient }}
+        />
+      )}
       <p className={styles.card__category}>{category}</p>
       <div className={styles.card__row}>
         <div>
