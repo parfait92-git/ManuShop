@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+import { DemoPreviewBanner } from "@/components/dashboard/DemoPreviewBanner";
 import { InviteSellerForm } from "@/components/dashboard/InviteSellerForm";
 import { TeamList } from "@/components/dashboard/TeamList";
+import { getTeamMembersByShop, mockShops } from "@/data/mockData";
 import type { User } from "@/models/user/User";
 import { authService } from "@/services/AuthService";
+
+const DEMO_SHOP = mockShops.find((shop) => shop.id === "shop-mode-237")!;
+const DEMO_MEMBERS = getTeamMembersByShop(DEMO_SHOP.id);
 
 export function TeamPageContent({ shopId }: { shopId: string }) {
   const [members, setMembers] = useState<User[] | null>(null);
@@ -40,7 +45,18 @@ export function TeamPageContent({ shopId }: { shopId: string }) {
         {members === null ? (
           <p className="text-sm text-muted-foreground">Chargement...</p>
         ) : (
-          <TeamList members={members} />
+          <>
+            <TeamList members={members} />
+            {members.length === 0 && (
+              <div className="mt-3 flex flex-col gap-3">
+                <DemoPreviewBanner
+                  title="Exemple — à quoi ressemblera votre équipe"
+                  description={`Aperçu basé sur « ${DEMO_SHOP.name} », une boutique de démonstration. Invitez votre premier vendeur ci-dessus pour le remplacer.`}
+                />
+                <TeamList members={DEMO_MEMBERS} />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

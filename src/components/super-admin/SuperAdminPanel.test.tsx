@@ -49,6 +49,18 @@ describe("SuperAdminPanel", () => {
       await screen.findByText(/Aucun utilisateur ne correspond/)
     ).toBeInTheDocument();
     expect(mockedService.searchUsers).toHaveBeenCalledWith("inconnu");
+
+    // Aperçu de démo en lecture seule — aucun bouton Donner/Retirer l'admin
+    // dessus, ce sont de vraies écritures privilégiées.
+    expect(
+      screen.getByText("Exemple — à quoi ressembleront les résultats")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Donner l'admin/ })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Retirer l'admin/ })
+    ).not.toBeInTheDocument();
   });
 
   it("grants admin to a matching client", async () => {
