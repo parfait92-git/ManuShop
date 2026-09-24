@@ -20,6 +20,7 @@
     "cn": "^0.3.0",
     "date-fns": "^4.4.0",
     "firebase": "^12.19.0",
+    "firebase-admin": "^14.4.0",
     "jose": "^6.2.12",
     "libphonenumber-js": "^1.13.13",
     "lucide-react": "^1.45.0",

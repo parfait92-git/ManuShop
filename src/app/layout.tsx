@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 export const metadata: Metadata = {
   title: "ManuShop — Boutique numérique multicanal",
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         suppressHydrationWarning
       >
         <AuthProvider>{children}</AuthProvider>
+        <InstallPrompt />
       </body>
     </html>
   );
