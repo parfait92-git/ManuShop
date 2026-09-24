@@ -41,6 +41,13 @@ service cloud.firestore {
     // écriture autorisée depuis l'app, jamais, pour qui que ce soit :
     // uniquement une modification manuelle depuis la console Firebase par
     // l'éditeur de la plateforme lui-même. Voir src/models/platform/PlatformAdmin.ts.
+    //
+    // Depuis l'introduction de la couche serveur (src/server/auth/
+    // requireSuperAdmin.ts), grantAdmin/revokeAdmin passent par
+    // firebase-admin, qui CONTOURNE ces règles — elles ne sont donc plus la
+    // seule vérification pour ce chemin précis, mais restent le seul rempart
+    // contre tout autre chemin d'écriture (client direct, code pas encore
+    // migré). Ne pas les assouplir pour autant.
     match /platformAdmins/{email} {
       allow read: if request.auth != null && request.auth.token.email == email;
       allow write: if false;
