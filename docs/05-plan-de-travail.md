@@ -46,11 +46,11 @@ Objectif business plan : catalogue produits + gestion stock + facturation.
 
 - [x] **Module 1 — Auth & Utilisateurs** (BF-01→05) : inscription/connexion gérant, rôles Admin/Vendeur/Client, profil boutique, reset mot de passe — *quasi complet : seul le rôle Client n'a pas de flux de création dédié (BF-03 partiel, voir 02-besoins-fonctionnels.md)*
 - [x] **Module 2 — Catalogue produits** (BF-06→12) : CRUD produit, catégories (+ description, affichée/masquée), recherche, galerie photos (recadrage carré obligatoire), produit en vedette — *quasi complet : pas de marqueur manuel "populaire" (BF-12 partiel)*
-- [ ] **Module 3 — Stock** (BF-13→17) : suivi auto, alerte seuil bas, historique, réappro, variantes — **non commencé, prochaine étape**
-- [ ] **Module 4 — Commandes** (BF-18→23) : panier client, commande, statuts, commande manuelle, historique, annulation
+- [ ] **Module 3 — Stock** (BF-13→17) : suivi auto, alerte seuil bas, historique, réappro, variantes — **toujours pas construit comme module à part entière** ; une mécanique minimale (décrément/incrément automatique de `Product.stock` à la commande/annulation/retour, sans historique ni réappro ni variantes) vit désormais dans le Module 4 (`orderActions.ts`), en attendant ce module
+- [x] **Module 4 — Commandes** (BF-18→23) : panier client, commande, statuts, commande manuelle, historique, annulation — **fait le 2026-09-25**, construit directement avec le vocabulaire de statuts révisé (BF-95→97, Phase 1ter §5 ci-dessous), notification WhatsApp Business au commerçant à la création (Meta Cloud API, identifiants pas encore configurés)
 - [ ] **Module 5 — Facturation** (BF-24→29) : génération auto, aperçu, export PDF, numérotation, personnalisation
 - [~] **Module 7 — Vitrine publique** (BF-35→40) : accueil, catalogue public, fiche produit, filtres, bouton WhatsApp, mode hors-ligne — *anticipé hors de l'ordre initial ; catalogue public et recherche/filtre catégorie faits, fiche produit et filtre prix/disponibilité manquants, bouton WhatsApp adapté en panier + un seul bouton au paiement (voir 02-besoins-fonctionnels.md)*
-- [~] **Module 10 — Dashboard** (BF-53→57) : vue d'ensemble, rapports ventes/stock, export CSV/PDF — *anticipé hors de l'ordre initial ; refonte visuelle faite avec données réelles disponibles (produits, stock) ; rapports ventes/produits populaires/export dépendent du Module 4 (Commandes), pas encore construit*
+- [~] **Module 10 — Dashboard** (BF-53→57) : vue d'ensemble, rapports ventes/stock, export CSV/PDF — *ventes du mois/commandes/nouveaux clients/produits actifs réels depuis le 2026-09-25 (débloqué par le Module 4) ; rapport par intervalle personnalisé, produits populaires et export CSV/PDF restent non construits*
 - [x] Respect BNF perf (§1), sécurité Firestore par rôle (§3), responsive mobile-first (§4)
 
 **DoD Phase 1** : un gérant peut créer sa boutique, ajouter des produits, recevoir et facturer une commande, un client peut consulter la vitrine et commander en ligne.
@@ -77,7 +77,7 @@ Changement de modèle décidé en session : ManuShop passe de mono-tenant à mul
 - [ ] Abonnement payant avec expiration automatique (BF-69) et rétrogradation en fin d'abonnement (BF-70) — bloqué sur les deux points ouverts ci-dessus (moyen de paiement, mécanisme d'expiration)
 - [ ] Bascule "Publier ma boutique" dans Paramètres (BF-62)
 - [ ] Annuaire des boutiques publiées avec boutiques factices en attendant (BF-63), remplaçant/complétant `/onboarding`
-- [ ] Routing multi-tenant par `shopToken` (BF-64) — impact large : `useShop()`, toutes les pages storefront, `ProtectedRoute`/`GuestRoute` (voir 04-besoins-techniques.md §11.6)
+- [x] **Version ciblée faite le 2026-09-25** (04-besoins-techniques.md §18) : `/boutique/{shopId}` (id Firestore tel quel, pas de token opaque `ownerId`+`shopId`) + `ShareShopLinkButton` (BF-91). Route additionnelle, `/catalogue` inchangé. **Reste non fait** : la migration complète (`useShop()`, toutes les pages storefront vers un `shopToken`, `ProtectedRoute`/`GuestRoute` — voir 04-besoins-techniques.md §11.6) — pas nécessaire tant qu'une seule page (le catalogue) a besoin d'être scopée par boutique.
 - [ ] Liens réseaux sociaux par article sur la vitrine publiée (BF-65, BF-66) — dépend du champ `publishedChannels` sur `Product`, lui-même dépendant du Module 8 (Publication Multicanal) pas commencé ; comportement honnête en attendant : aucun lien affiché tant que la donnée n'existe pas
 
 **DoD Phase 1bis** : un commerçant devenu admin (attribution manuelle ou abonnement actif) peut publier sa boutique ; un visiteur peut la découvrir depuis l'annuaire, la visiter à son URL dédiée, et y commander comme sur `/catalogue` aujourd'hui ; un abonnement expiré redirige proprement l'ex-admin vers la vue cliente de sa propre boutique.
@@ -110,22 +110,25 @@ Spécification fonctionnelle complète fournie par l'utilisateur (voir Modules 1
 - [x] **Fait (session non journalisée, reprise et complétée le 2026-09-25).** `Product.isPublished` (distinct de la suppression, `ProductService.setPublished`/`isVisibleToCustomers`) ; `/catalogue` filtre dessus. **Marché (`/demo-catalogue` → vraies données) pas encore branché** — dépend du §7 ci-dessous, non commencé.
 - [ ] Collection `CategoryTag` (Super Admin uniquement) + `Category.tagId` — **pas encore construit**
 
-**4. Module 3 — Stock (BF-13→17)** *(déjà en tête de la Phase 1, toujours non commencé — inchangé par cette révision)*
+**4. Module 3 — Stock (BF-13→17)** *(toujours non commencé comme module à part entière — voir Phase 1 ci-dessus : une mécanique minimale de décrément/incrément vit maintenant dans le Module 4)*
 
 **5. Module 4 — Commandes, avec le vocabulaire de statuts révisé (BF-18→23, BF-95→97)**
-- [ ] `OrderStatus` révisé dès la construction initiale du module (04-besoins-techniques.md §12.3) — pas de statuts `pending/confirmed/...` à migrer après coup
-- [ ] Traitement des retours : commentaire de motif obligatoire, choix `Retourné`/`Défectueux`, réincrémentation automatique du stock
+- [x] **Fait le 2026-09-25.** `OrderStatus` révisé dès la construction initiale du module (04-besoins-techniques.md §12.3) — jamais construit avec l'ancien vocabulaire `pending/confirmed/...`. `Order.clientId` optionnel (absent = commande manuelle, BF-21). Mutations (création, changement de statut) via Server Actions (`orderActions.ts`, `firebase-admin`, batch atomique avec l'ajustement de stock) plutôt que des écritures client directes — `firestore.rules` verrouille `orders` en écriture pour cette raison.
+- [x] **Fait le 2026-09-25.** Traitement des retours : commentaire de motif obligatoire (`OrderReasonDialog`), choix `Retourné`/`Défectueux`, réincrémentation automatique du stock (`FieldValue.increment`).
+- [x] **Fait le 2026-09-25 (clarifié avec l'utilisateur, hors périmètre initial de BF-95).** Annulation (BF-23) : `cancelled` ajouté comme 7ᵉ statut, accessible au client ou au commerçant tant que la commande est `under_review`, motif obligatoire, stock réincrémenté.
+- [x] **Fait le 2026-09-25 (session parallèle).** Notification WhatsApp Business au commerçant à la création d'une commande (`src/lib/whatsappBusiness.ts`, Meta Cloud API) — identifiants Meta/WhatsApp pas encore configurés, voir 04-besoins-techniques.md §15.
 
 **6. Fiche produit, avis & suivi client (BF-71→78)**
 - [x] Page détail produit (BF-71, complète BF-37) + avis en lecture seule (BF-72) + rupture désactivée (BF-73) — 2026-09-25 (`/catalogue/[productId]`, nouveau modèle `Review`)
-- [ ] Suivi de commande côté client + feedback post-livraison (BF-75/76) + demande de retour (BF-77) — **reporté** : bloqué sur le Module 4 (Commandes), toujours inexistant en code (voir §0-5 ci-dessus, pas encore atteint)
-- [x] Interface de sélection du mode de paiement (BF-78) — 2026-09-25 (`/checkout/payment`), sans intégration réelle comme prévu §12.6
+- [x] **Fait le 2026-09-25**, débloqué par le Module 4 : suivi de commande côté client (BF-75, `/mes-commandes`) et annulation (BF-23). **Toujours reporté** : feedback post-livraison (BF-76, soumission d'avis) et demande de retour côté client (BF-77, distinct de BF-96 qui est l'action commerçant) — non construits.
+- [x] Interface de sélection du mode de paiement (BF-78) — 2026-09-25 (`/checkout/payment`), sans intégration réelle comme prévu §12.6 ; devenu le point d'entrée réel de BF-19 ("Confirmer ma commande" écrit une vraie commande).
 
 **7. Page Marché (BF-108)** — dépend de #3 (produits publiés + tags)
 - [ ] Généralise `/demo-catalogue` (données de démo, déjà construit le 2026-09-24) à de vraies données : 4 meilleures boutiques en tête, tous les produits publiés en dessous, triés par tag système
 
-**8. Tableau de bord, factures & journal (BF-98, BF-102→104)** — dépend du Module 4
-- [ ] Filtre de ventes par intervalle (premium), factures groupées par période, journal d'activité imprimable
+**8. Tableau de bord, factures & journal (BF-98, BF-102→104)** — dépendance sur le Module 4 levée le 2026-09-25
+- [x] Journal d'activité (BF-98) étendu aux événements de commande (`order.created`/`order.status_changed`/`order.cancelled`/`order.returned`) — fait le 2026-09-25, en même temps que le Module 4.
+- [ ] Filtre de ventes par intervalle (premium), factures groupées par période, journal d'activité imprimable — toujours pas construit
 
 **9. Paramètres marchand avancés (BF-105→107, premium)**
 - [ ] Moyens de contact configurables, réseaux sociaux avec validation de lien, statistiques de consultation

@@ -21,6 +21,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
+import { ShareShopLinkButton } from "@/components/dashboard/ShareShopLinkButton";
 import {
   ShopSettingsSchema,
   type ShopSettingsInput,
@@ -202,6 +203,14 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                 aria-label="Publier la boutique"
               />
             </div>
+
+            {/* BF-91 : uniquement quand la boutique est réellement publiée
+            au moment de l'affichage (`shop.isPublished`, pas `isPublished`
+            du formulaire, qui peut refléter un changement pas encore
+            enregistré) — pas de lien à partager sinon. */}
+            {shop.isPublished && (
+              <ShareShopLinkButton shopId={shop.id} shopName={shop.name} />
+            )}
           </section>
 
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">

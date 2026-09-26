@@ -23,8 +23,8 @@ export class PlatformAdminService {
     private readonly platformAdmins: IPlatformAdminRepository = platformAdminRepository
   ) {}
 
-  /** Un compte sans email (téléphone, anonyme) ne peut jamais être Super
-   * Admin — la collection `platformAdmins` est indexée par email. Lecture
+  /** Un compte sans email ne peut jamais être Super Admin — la collection
+   * `platformAdmins` est indexée par email. Lecture
    * directe côté client (pas via le serveur) : déjà étroitement scopée par
    * la règle Firestore (`request.auth.token.email == email`), pas une
    * mutation — passer par le serveur n'ajouterait que de la latence à

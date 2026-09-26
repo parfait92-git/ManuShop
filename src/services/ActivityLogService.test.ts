@@ -90,4 +90,49 @@ describe("ActivityLogService", () => {
       metadata: undefined,
     });
   });
+
+  it("logs an order creation event with the client name in metadata", async () => {
+    await service.logOrderCreated(CONTEXT, "o1", "Fatou Ba");
+    expect(logs.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "order.created",
+        targetType: "order",
+        targetId: "o1",
+        metadata: { clientName: "Fatou Ba" },
+      })
+    );
+  });
+
+  it("logs an order status change with the new status in metadata", async () => {
+    await service.logOrderStatusChanged(CONTEXT, "o1", "delivering");
+    expect(logs.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "order.status_changed",
+        targetType: "order",
+        metadata: { status: "delivering" },
+      })
+    );
+  });
+
+  it("logs an order cancellation with the reason in metadata", async () => {
+    await service.logOrderCancelled(CONTEXT, "o1", "Client injoignable");
+    expect(logs.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "order.cancelled",
+        targetType: "order",
+        metadata: { reason: "Client injoignable" },
+      })
+    );
+  });
+
+  it("logs a return/defective outcome with the reason in metadata", async () => {
+    await service.logOrderReturned(CONTEXT, "o1", "defective", "Produit cassé");
+    expect(logs.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "order.returned",
+        targetType: "order",
+        metadata: { outcome: "defective", reason: "Produit cassé" },
+      })
+    );
+  });
 });

@@ -7,13 +7,9 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   setPersistence,
-  signInAnonymously,
   signInWithEmailAndPassword,
-  signInWithPhoneNumber,
   signInWithPopup,
   signOut,
-  type ConfirmationResult,
-  type RecaptchaVerifier,
   type User as FirebaseUser,
 } from "firebase/auth";
 
@@ -21,7 +17,10 @@ import { auth, getSecondaryAuth } from "@/lib/firebase";
 import type { User } from "@/models/user/User";
 import { shopRepository } from "@/repositories/ShopRepository";
 import type { IShopRepository } from "@/repositories/interfaces/IShopRepository";
-import type { IUserRepository } from "@/repositories/interfaces/IUserRepository";
+import type {
+  IUserRepository,
+  UpdateUserDto,
+} from "@/repositories/interfaces/IUserRepository";
 import { userRepository } from "@/repositories/UserRepository";
 import {
   createShopAction,
@@ -274,27 +273,6 @@ export class AuthService {
     return credential.user;
   }
 
-  async loginAnonymously(): Promise<FirebaseUser> {
-    const credential = await signInAnonymously(auth);
-    return credential.user;
-  }
-
-  /** Envoie le code de vérification SMS. `verifier` est un RecaptchaVerifier
-   * créé côté composant (nécessite le DOM). */
-  startPhoneSignIn(
-    phoneNumber: string,
-    verifier: RecaptchaVerifier
-  ): Promise<ConfirmationResult> {
-    return signInWithPhoneNumber(auth, phoneNumber, verifier);
-  }
-
-  async confirmPhoneCode(
-    confirmation: ConfirmationResult,
-    code: string
-  ): Promise<FirebaseUser> {
-    const credential = await confirmation.confirm(code);
-    return credential.user;
-  }
 
   async logout(): Promise<void> {
     await signOut(auth);
@@ -310,6 +288,12 @@ export class AuthService {
 
   getUserProfile(uid: string): Promise<User | null> {
     return this.users.getById(uid);
+  }
+
+  /** Profil personnel (nom, téléphone, photo, préférence de notification) —
+   * distinct des paramètres de boutique (`ShopService.updateProfile`). */
+  updateProfile(uid: string, data: UpdateUserDto): Promise<void> {
+    return this.users.update(uid, data);
   }
 }
 

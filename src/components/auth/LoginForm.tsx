@@ -2,30 +2,17 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FirebaseError } from "firebase/app";
-import {
-  RecaptchaVerifier,
-  type ConfirmationResult,
-} from "firebase/auth";
-import { Eye, EyeOff, Ghost, Mail, Phone } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhoneInput } from "@/components/ui/phone-input";
 import { FacebookIcon, GoogleIcon } from "@/components/icons/BrandIcons";
-import { auth } from "@/lib/firebase";
-import {
-  LoginSchema,
-  PhoneCodeSchema,
-  PhoneLoginSchema,
-  type LoginInput,
-  type PhoneCodeInput,
-  type PhoneLoginInput,
-} from "@/lib/validation/auth";
+import { LoginSchema, type LoginInput } from "@/lib/validation/auth";
 import { authService } from "@/services/AuthService";
 
 function authErrorMessage(error: unknown): string {
@@ -39,8 +26,6 @@ function authErrorMessage(error: unknown): string {
         return "Trop de tentatives. Réessayez plus tard.";
       case "auth/popup-closed-by-user":
         return "Fenêtre de connexion fermée avant la fin.";
-      case "auth/invalid-verification-code":
-        return "Code incorrect.";
       case "auth/account-exists-with-different-credential":
         return "Un compte existe déjà avec un autre mode de connexion pour cet email.";
       default:
@@ -50,41 +35,10 @@ function authErrorMessage(error: unknown): string {
   return "Une erreur est survenue. Veuillez réessayer.";
 }
 
-type Tab = "email" | "phone";
-
 export function LoginForm() {
-  const [tab, setTab] = useState<Tab>("email");
-
   return (
     <div className="flex w-full max-w-sm flex-col gap-5">
-      <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-        <button
-          type="button"
-          onClick={() => setTab("email")}
-          className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium transition-colors ${
-            tab === "email"
-              ? "bg-background text-foreground shadow-xs"
-              : "text-muted-foreground"
-          }`}
-        >
-          <Mail className="size-4" />
-          Email
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("phone")}
-          className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium transition-colors ${
-            tab === "phone"
-              ? "bg-background text-foreground shadow-xs"
-              : "text-muted-foreground"
-          }`}
-        >
-          <Phone className="size-4" />
-          Téléphone
-        </button>
-      </div>
-
-      {tab === "email" ? <EmailLoginForm /> : <PhoneLoginForm />}
+      <EmailLoginForm />
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
@@ -103,9 +57,6 @@ export function LoginForm() {
           Créer mon espace
         </Link>
       </p>
-
-      {/* Ancre invisible pour le reCAPTCHA de la connexion par téléphone. */}
-      <div id="recaptcha-container" />
     </div>
   );
 }
@@ -202,123 +153,6 @@ function EmailLoginForm() {
   );
 }
 
-function PhoneLoginForm() {
-  const router = useRouter();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
-    null
-  );
-
-  const phoneForm = useForm<PhoneLoginInput>({
-    resolver: zodResolver(PhoneLoginSchema),
-    defaultValues: { phone: "" },
-  });
-  const phoneValue = useWatch({ control: phoneForm.control, name: "phone" });
-  const codeForm = useForm<PhoneCodeInput>({
-    resolver: zodResolver(PhoneCodeSchema),
-  });
-
-  async function onSubmitPhone(data: PhoneLoginInput) {
-    setFormError(null);
-    try {
-      // Recreated on every attempt rather than cached in a ref: simpler,
-      // and Firebase recommends a fresh verifier after a failed attempt.
-      const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-        size: "invisible",
-      });
-      const result = await authService.startPhoneSignIn(data.phone, verifier);
-      setConfirmation(result);
-    } catch (error) {
-      setFormError(authErrorMessage(error));
-    }
-  }
-
-  async function onSubmitCode(data: PhoneCodeInput) {
-    if (!confirmation) return;
-    setFormError(null);
-    try {
-      await authService.confirmPhoneCode(confirmation, data.code);
-      router.push("/dashboard");
-    } catch (error) {
-      setFormError(authErrorMessage(error));
-    }
-  }
-
-  if (confirmation) {
-    return (
-      <form
-        onSubmit={codeForm.handleSubmit(onSubmitCode)}
-        className="flex flex-col gap-4"
-        noValidate
-      >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="code">Code de vérification</Label>
-          <Input
-            id="code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            placeholder="123456"
-            aria-invalid={!!codeForm.formState.errors.code}
-            {...codeForm.register("code")}
-          />
-          {codeForm.formState.errors.code && (
-            <p className="text-sm text-destructive">
-              {codeForm.formState.errors.code.message}
-            </p>
-          )}
-        </div>
-
-        {formError && <p className="text-sm text-destructive">{formError}</p>}
-
-        <Button
-          type="submit"
-          disabled={codeForm.formState.isSubmitting}
-          className="w-full"
-        >
-          {codeForm.formState.isSubmitting ? "Vérification..." : "Valider le code"}
-        </Button>
-      </form>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={phoneForm.handleSubmit(onSubmitPhone)}
-      className="flex flex-col gap-4"
-      noValidate
-    >
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="phone">Numéro de téléphone</Label>
-        <PhoneInput
-          id="phone"
-          value={phoneValue ?? ""}
-          onChange={(value) =>
-            phoneForm.setValue("phone", value, { shouldValidate: true })
-          }
-          aria-invalid={!!phoneForm.formState.errors.phone}
-        />
-        {phoneForm.formState.errors.phone && (
-          <p className="text-sm text-destructive">
-            {phoneForm.formState.errors.phone.message}
-          </p>
-        )}
-      </div>
-
-      {formError && <p className="text-sm text-destructive">{formError}</p>}
-
-      <Button
-        type="submit"
-        disabled={phoneForm.formState.isSubmitting}
-        className="w-full"
-      >
-        {phoneForm.formState.isSubmitting
-          ? "Envoi du code..."
-          : "Recevoir le code par SMS"}
-      </Button>
-    </form>
-  );
-}
-
 function SocialLoginButtons() {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -342,7 +176,7 @@ function SocialLoginButtons() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Button
           type="button"
           variant="outline"
@@ -362,16 +196,6 @@ function SocialLoginButtons() {
         >
           <FacebookIcon className="size-4 text-[#1877F2]" />
           Facebook
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={!!pending}
-          onClick={() => handle("anonymous", () => authService.loginAnonymously())}
-        >
-          <Ghost className="size-4" />
-          Anonyme
         </Button>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}

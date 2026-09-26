@@ -189,6 +189,9 @@ interface Product {
 ```
 
 ### Collection `orders`
+
+⚠️ **Ébauche Phase 0, jamais implémentée telle quelle — voir §16 pour le schéma réel** (`status` a un vocabulaire différent, `clientId` a été ajouté, etc.). Gardée ici pour l'historique.
+
 ```typescript
 interface Order {
   id: string
@@ -256,6 +259,8 @@ interface User {
 ---
 
 ## 6. Règles de Sécurité Firestore
+
+⚠️ **Ébauche Phase 0** — le fichier réel `firestore.rules` a beaucoup évolué depuis (scoping par boutique, Super Admin, corbeille, commandes verrouillées en écriture au profit de Server Actions...). Toujours s'y référer directement plutôt qu'à l'extrait ci-dessous, gardé pour l'historique.
 
 ```javascript
 rules_version = '2';
@@ -347,6 +352,7 @@ META_ACCESS_TOKEN=
 # WhatsApp Business
 WHATSAPP_API_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_ORDER_TEMPLATE_NAME=
 
 # TikTok
 TIKTOK_CLIENT_KEY=
@@ -746,3 +752,131 @@ interface ActivityLogEntry {
 }
 ```
 Alimenté en écriture à chaque opération commerçant pertinente (produit, catégorie, commande, retour...) ; le rapport imprimable (BF-98) est une mise en forme de cette collection filtrée par boutique et par période, dans le même esprit que les factures groupées par période (BF-104).
+
+### 12.9 Paramètres du compte personnel (BF-120, fait le 2026-09-25)
+
+Distinct des paramètres de boutique (`ShopSettingsForm`, BF-04) : `/mon-compte` (`AccountSettingsForm`, `src/components/account/`), accessible à tout utilisateur connecté quel que soit son rôle. `User` gagne `notifyByEmail?: boolean` (absent traité comme `true`, même convention que `Product.isPublished`) — préférence enregistrée dès maintenant mais pas encore consommée par un envoi réel (voir §13). Upload de photo de profil : même pipeline recadrage carré que le logo boutique (`cropImageToSquare`, dossier Cloudinary `manushop/users` ajouté à la liste blanche de `/api/uploads`). L'email n'est **pas éditable** depuis cette page (resterait désynchronisé de l'email Firebase Auth réel sans un flux `updateEmail` + réauthentification, hors scope de cette tranche) — affiché en lecture seule, avec un bouton "Changer le mot de passe" (réutilise `AuthService.sendPasswordReset`) visible seulement pour les comptes email/mot de passe (`firebaseUser.providerData` contient `"password"`).
+
+## 13. Notification de nouvelle version par email (BF-121, non commencé)
+
+Demande de l'utilisateur (2026-09-25) : à chaque nouvelle version de la plateforme, notifier tous les utilisateurs par email. **Décisions actées avec l'utilisateur, implémentation reportée** :
+- **Source de version** : le champ `version` de `package.json` (actuellement `0.1.0`) fait foi — pas de champ dédié en base à maintenir manuellement.
+- **Audience** : tous les comptes `users` ayant un `email` renseigné — pas de filtre par rôle. Depuis le retrait de l'authentification téléphone/anonyme (2026-09-25, voir §14), quasiment tout compte a un email ; seul un cas limite Facebook (permission email refusée) peut encore en manquer.
+- **Fournisseur d'email : aucun choisi.** Le projet n'a actuellement aucune capacité d'envoi d'email (pas de Resend/SendGrid/SMTP/etc.) — un compte et une clé API côté utilisateur sont nécessaires avant de construire l'envoi réel.
+- **Mécanisme de déclenchement non tranché** : "à chaque mise à jour" suggère un déclenchement au déploiement, mais Vercel n'a pas de hook post-déploiement simple compatible avec une écriture Firestore privilégiée. Piste retenue par défaut (à confirmer) : même schéma que le job d'expiration d'abonnement non construit (§11.5, BF-69) — une route `/api/cron/*` protégée par un secret dédié, déclenchée par Vercel Cron à intervalle régulier, qui compare `package.json` à une version mémorisée dans Firestore (`platformConfig/releaseNotifications.lastNotifiedVersion`) plutôt qu'un vrai hook de déploiement.
+- **Fait dès maintenant, en attendant** : `User.notifyByEmail` (§12.9, BF-120) — la préférence est déjà collectée côté compte, pour ne pas avoir à redemander aux utilisateurs une fois l'envoi réel construit.
+
+## 14. Retrait de l'authentification téléphone et anonyme (2026-09-25)
+
+Demande explicite de l'utilisateur : supprimer les méthodes de connexion par téléphone (SMS OTP, ajoutée le 2026-09-21) et anonyme. Retiré :
+- `AuthService.startPhoneSignIn`/`confirmPhoneCode`/`loginAnonymously`, et les imports Firebase Auth correspondants (`signInWithPhoneNumber`, `signInAnonymously`, `ConfirmationResult`, `RecaptchaVerifier`).
+- `PhoneLoginSchema`/`PhoneCodeSchema` (`src/lib/validation/auth.ts`).
+- L'onglet "Téléphone" et le bouton "Anonyme" de `/login` (`LoginForm.tsx`) — ne reste que email/mot de passe, Google, Facebook.
+
+**Pas touché, volontairement** : `PhoneInput`/`User.phone`/`Shop.phone`/`Shop.whatsapp` restent — ce sont des numéros de **contact** (profil, boutique), sans rapport avec l'authentification. `User.email` reste optionnel (cas limite Facebook, permission email refusée) plutôt que redevenir obligatoire, pour ne pas casser les comptes déjà créés par téléphone/anonyme avant ce retrait — ces comptes existants perdent simplement tout moyen de se reconnecter, aucune migration de données n'a été faite.
+
+## 15. Notification de nouvelle commande par WhatsApp (2026-09-25)
+
+Demande de l'utilisateur : notifier les commandes vers WhatsApp Business, Facebook, Instagram ou TikTok. **Périmètre réduit avec l'utilisateur avant de coder** : seul WhatsApp Business Cloud API permet un envoi transactionnel fiable côté commerçant — les API Messenger (Facebook) et Messaging (Instagram) exigent une fenêtre de conversation ouverte par le destinataire (24h) ou un tag approuvé, inadaptées à une alerte "nouvelle commande" initiée par le serveur ; TikTok n'appartient pas à Meta et n'expose aucune API de messagerie transactionnelle comparable. Implémenté : WhatsApp uniquement. Facebook/Instagram/TikTok restent hors-scope pour la **notification** de commande — à ne pas confondre avec le Module 8 (Publication Multicanal, BF-41→47, §4.5), qui vise la **publication** de contenu sur ces réseaux et reste non commencé.
+
+**Fait** :
+- `src/lib/whatsappBusiness.ts` — `sendOrderNotification()`, appelle l'API Cloud de Meta (`POST /{WHATSAPP_PHONE_NUMBER_ID}/messages`) avec un message **template** (obligatoire pour un message business-initiated hors fenêtre de 24h — un texte libre serait rejeté par Meta). Nom du template configurable (`WHATSAPP_ORDER_TEMPLATE_NAME`, sinon `new_order_notification`), variables `{{1}}` client, `{{2}}` n° commande, `{{3}}` montant. N'échoue jamais bruyamment : identifiants absents, numéro invalide ou appel réseau en échec → log et retour silencieux, la création de la commande n'est jamais bloquée par une notification qui rate.
+- Branché dans `createOrderAction` (`src/server/actions/orderActions.ts`), juste après la création atomique de la commande : lit `shops/{shopId}`, envoie vers `Shop.whatsapp` (numéro déjà affiché aux clients pour "Commander via WhatsApp", réutilisé plutôt que d'ajouter un champ dédié — décision utilisateur) si `Shop.notifyOrdersBySocial !== false`. Cette préférence existait déjà sur `ShopSettingsForm` (ajoutée avant que le Module 4 n'existe, jusqu'ici sans effet réel) — elle pilote maintenant un envoi effectif.
+
+**Point ouvert, à faire manuellement par l'utilisateur avant que ça fonctionne réellement** : créer et faire approuver le template WhatsApp (ex. `new_order_notification`) dans Meta Business Manager, avec un compte WhatsApp Business connecté à l'app Meta (`META_APP_ID`/`META_APP_SECRET`), puis renseigner `WHATSAPP_API_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID`/`WHATSAPP_ORDER_TEMPLATE_NAME` dans `.env.local`. Aucun de ces identifiants n'est configuré à ce jour (tous vides) — le code est prêt mais n'enverra rien tant que ce n'est pas fait.
+
+Tests : `whatsappBusiness.test.ts` (nouveau — identifiants absents, appel réussi, nom de template personnalisé, échec API, échec réseau, numéro invalide), `orderActions.test.ts` étendu (notification envoyée à la création, ignorée si `notifyOrdersBySocial: false`).
+
+Vérifié : `npx tsc --noEmit`, `npm run lint` et la suite de tests concernée, aucune régression introduite par ce changement. Suite complète (`npm run test:coverage`) : 6 échecs pré-existants dans `PaymentMethodPageContent.test.tsx`/`phone-input.test.tsx` (erreur d'import `@firebase/auth` côté Node, sans rapport avec ce changement — confirmé en isolant les nouveaux fichiers). Rien de commité.
+
+## 16. Module 4 — Commandes, implémentation réelle (2026-09-25)
+
+Schéma réel de `Order` (`src/models/order/Order.ts`, remplace l'ébauche du §5) :
+
+```typescript
+type OrderStatus =
+  | "under_review"        // En cours d'analyse (statut initial)
+  | "ready_for_delivery"   // Prêt pour la livraison
+  | "delivering"           // Livraison en cours
+  | "delivered"            // Livré
+  | "returned"             // Retourné (BF-96)
+  | "defective"            // Défectueux (BF-97)
+  | "cancelled";           // Annulée (BF-23 — ajoutée hors du périmètre initial de BF-95)
+
+interface Order {
+  id: string
+  shopId: string
+  clientId?: string        // absent = commande manuelle (BF-21, client sans compte)
+  clientName: string
+  clientPhone: string
+  clientAddress: string
+  items: OrderItem[]
+  subtotal: number
+  discount: number
+  total: number
+  status: OrderStatus
+  cancelReason?: string    // requis avant 'cancelled'
+  returnReason?: string    // requis avant 'returned'/'defective'
+  restockedAt?: Timestamp  // posé quand le stock a été réincrémenté
+  invoiceUrl?: string
+  notes?: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+```
+
+**Écriture verrouillée côté client, tout passe par des Server Actions** (`src/server/actions/orderActions.ts`, `firebase-admin`) — décision structurante de cette tranche : la création d'une commande doit décrémenter le stock des articles de façon atomique (`db.batch()`), et un changement de statut doit revalider en code qui a le droit de faire quoi (client propriétaire vs commerçant de la boutique), pas seulement via `firestore.rules`. `IOrderRepository`/`OrderRepository` (`src/repositories/`) sont donc **lecture seule** (`getById`/`listByShop`/`listByClient`), sans `create`/`update` — à la différence de `IProductRepository`/`ICategoryRepository`. `firestore.rules` : `allow read` scopé (`clientId == uid` OU `role in ['admin','seller']` + `shopId` correspondant), `allow write: if false`.
+
+- `createOrderAction(idToken, input)` : crée la commande (`status: "under_review"`) et décrémente `Product.stock` de chaque article dans le même batch. `input.manual: true` (BF-21) bascule sur une vérification "l'appelant est admin/seller de cette boutique" au lieu de lier `clientId` au compte de l'appelant. **Limite connue, documentée** : pas de vérification de survente (le stock peut devenir négatif) — mécanique minimale en attendant le Module 3 (Stock), pas un oubli.
+- `updateOrderStatusAction(idToken, orderId, {status, reason})` : progression normale (`ready_for_delivery`/`delivering`/`delivered`) réservée au commerçant de la boutique ; `cancelled` accessible au client propriétaire OU au commerçant, uniquement depuis `under_review`, motif obligatoire ; `returned`/`defective` réservés au commerçant, uniquement depuis `delivered`, motif obligatoire — réincrémente `Product.stock` dans les trois cas (`cancelled`/`returned`/`defective`).
+
+**Service côté client** (`OrderService`, même patron que `PlatformAdminService` — résout son propre `idToken` via `auth.currentUser`) : lectures directes via le repository, mutations via les Server Actions.
+
+**Notification interne (cloche)** : `useNewOrdersCount(shopId)` (`src/hooks/`) — seul usage de `onSnapshot` du projet, choisi délibérément ici parce que l'utilisateur a demandé une notification "directe" pour le commerçant ; partout ailleurs dans le projet, un simple `.then()` au montage suffit. Alimente un badge sur la cloche de `DashboardTopbar`, avec lien direct vers `/dashboard/orders?status=under_review`.
+
+**UI** :
+- `/dashboard/orders` (`OrdersPageContent`) : table filtrable par statut, actions de progression, `OrderReasonDialog` (motif obligatoire, partagé avec le suivi client) pour annulation/retour/défectueux, `ManualOrderDialog` (BF-21).
+- `/checkout/payment` (`PaymentMethodPageContent`) : "Confirmer ma commande" (ex-"Payer") collecte nom/téléphone/adresse et crée la commande — reste sans intégration de paiement réelle (BF-78 inchangé), le paiement se fait à la livraison en attendant.
+- `/mes-commandes` (`MyOrdersPageContent`, BF-75) : suivi client, annulation tant que `under_review`.
+- `ActivityLogService` étendu (`order.created`/`order.status_changed`/`order.cancelled`/`order.returned`) — jamais pour la création d'une commande par un client (les règles `activityLog` l'interdisent, réservé aux actions commerçant).
+
+**Reporté, documenté comme tel plutôt que codé à moitié** : BF-76 (soumission d'avis client après livraison), BF-77 (demande de retour côté client, distincte de BF-96 qui est l'action commerçant), BF-101 (le commerçant consulte les avis reçus) — tous bloqués sur la construction de la soumission d'avis, hors scope de cette tranche.
+
+## 17. Émulateurs Firebase locaux, pour les tests QA sans identifiants réels (2026-09-25)
+
+Demande de l'utilisateur : pouvoir dérouler ses scénarios de test (commandes, création de boutique) alors que `FIREBASE_SERVICE_ACCOUNT_KEY_BASE64` (compte de service, requis par `getAdminDb()`) n'est pas configuré en local — bloquant *toutes* les Server Actions privilégiées (`createShopAction`, `createOrderAction`, `updateOrderStatusAction`, `grantAdminAction`/`revokeAdminAction`/`searchUsersAction`), pas seulement les commandes.
+
+**Solution retenue : la suite d'émulateurs Firebase** (Firestore + Auth), plutôt qu'un contournement applicatif — c'est le seul moyen de tester le comportement *réel* du code (règles Firestore comprises) sans toucher au projet Firebase de production ni nécessiter le moindre identifiant réel. `firebase-tools` était déjà utilisable via `npx` depuis la Phase 0.
+
+**Fait :**
+- `firebase.json` : bloc `emulators` (Auth :9099, Firestore :8080, UI :4000, `singleProjectMode`).
+- `npm run emulators` (`npx firebase-tools emulators:start --only auth,firestore --project manushop-eb15a`).
+- `src/lib/firebaseAdmin.ts` (`getAdminApp`) : si `FIRESTORE_EMULATOR_HOST` est présent, initialise sans compte de service (`initializeApp({ projectId })` seul) — le SDK Admin route alors automatiquement vers l'émulateur. Nouvel export `getAdminAuth()` (même app, `firebase-admin/auth`).
+- `src/lib/verifyIdToken.ts` : si `FIREBASE_AUTH_EMULATOR_HOST` est présent, délègue à `getAdminAuth().verifyIdToken()` (qui sait vérifier un token émulateur) au lieu de la vérification JWKS habituelle contre les clés de production Google — un token émulateur ne sera *jamais* accepté par cette dernière, peu importe `FIRESTORE_EMULATOR_HOST`. Les deux variables sont donc nécessaires ensemble pour qu'une Server Action fonctionne de bout en bout (identité **et** données). Chemin de production totalement inchangé quand ces variables sont absentes.
+- `src/lib/firebase.ts` (SDK client) : si `NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"`, connecte `auth`/`db`/`getSecondaryAuth()` aux émulateurs via `connectAuthEmulator`/`connectFirestoreEmulator` — protégé par un drapeau module-level contre le double-appel (hot reload Next.js, qui fait sinon lever `connectXEmulator`).
+- `.env.example`/`.env.local` : `NEXT_PUBLIC_USE_FIREBASE_EMULATOR`, `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST` — activés dans `.env.local` de l'utilisateur (`true`/`127.0.0.1:8080`/`127.0.0.1:9099`), à repasser à vide pour retravailler contre le vrai projet.
+- `.gitignore` : `.firebase/`, `*-debug.log`.
+
+**Vérifié en conditions réelles** (pas seulement en test unitaire) : émulateurs démarrés (`npm run emulators`, confirmé opérationnels sur les 3 ports), script Node ad hoc utilisant `firebase-admin` exactement comme `getAdminDb()`/`getAdminAuth()` — écriture/lecture Firestore round-trip réussie, `verifyIdToken` atteint bien l'émulateur Auth (rejette proprement un faux token avec `auth/argument-error`, pas une erreur réseau/JWKS). Tests : `verifyIdToken.test.ts` (+2 cas, 100% de couverture).
+
+**Limite connue, hors scope de cette demande** : `/api/uploads` (upload Cloudinary) réutilise `verifyIdToken`, donc fonctionne déjà avec un token émulateur — mais Google/Facebook (OAuth réel) ne sont pas praticables via l'émulateur Auth sans sa page de connexion factice dédiée ; email/mot de passe suffit pour les scénarios commandes/création de boutique visés ici. La notification WhatsApp Business (§15) reste elle aussi non fonctionnelle sans ses propres identifiants Meta — comportement inchangé, déjà silencieux/non bloquant.
+
+**Pour l'utilisateur, à chaque session de test** : `npm run emulators` dans un terminal séparé, puis (re)démarrer `next dev` pour que les 3 variables soient prises en compte. Base vide à chaque redémarrage de l'émulateur (pas de persistance par défaut) — créer un compte normalement depuis l'app suffit, `role: 'client'` à l'inscription comme en production ; passer admin nécessite soit l'assistant "Créer ma boutique", soit un document `platformAdmins` ajouté à la main via l'UI de l'émulateur (`http://127.0.0.1:4000/firestore`).
+
+## 18. URL publique par boutique (BF-64, version ciblée) et partage (BF-91), 2026-09-25
+
+Demande : permettre à un commerçant de partager le lien de sa boutique publiée sans devoir ouvrir sa vitrine et copier l'URL manuellement. **Constat avant de coder** : aucune URL publique par boutique n'existait — `/catalogue` reste mono-tenant (`ShopService.getPrimaryShop()` → `ShopRepository.getFirst()`, un `limit(1)` sans rapport avec le visiteur), et `Shop.publicToken` (posé le 2026-09-21 pour BF-64) n'était lu/écrit nulle part. BF-64 (routage `/{tokenOpaque}/{nomDePage}/{nomDuComposant}`, §11.3) reste donc "non commencé" tel quel — ce qui suit est une version délibérément réduite, confirmée avec l'utilisateur.
+
+**Décisions actées avec l'utilisateur** :
+- Identifiant dans l'URL : l'id Firestore de la boutique tel quel (`/boutique/{shopId}`), pas un encodage `ownerId`+`shopId` — les id Firestore auto-générés sont déjà des chaînes non séquentielles, donc déjà "opaques" en pratique ; un encodage réversible supplémentaire (§11.3) resterait décodable de toute façon, sans bénéfice de sécurité réel.
+- Portée : nouvelle route additionnelle, `/catalogue` (mono-tenant) volontairement inchangé — pas de migration du routage storefront cette fois (§11.3/§11.6 restent le plan pour une migration complète future, si besoin).
+
+**Fait :**
+- `src/app/(storefront)/boutique/[shopId]/page.tsx` : résout la boutique via `ShopService.getShop(shopId)` (déjà existant), affiche `CataloguePageContent` (déjà shop-agnostique, prenait déjà un `shopId` en prop) si publiée, un état honnête "Boutique introuvable ou non publiée" sinon — jamais de redirection silencieuse vers `/demo-catalogue` ici (contrairement à `/catalogue`) : un lien partagé cassé doit le dire, pas rediriger vers une autre boutique sans rapport.
+- `ShareShopLinkButton` (`src/components/dashboard/`) : menu (copier le lien, WhatsApp, email, partage natif `navigator.share` si disponible — détecté dans un effet, jamais au premier rendu, même précaution d'hydratation que `ScrollReveal`/`usePwaInstall`). Construit l'URL via `NEXT_PUBLIC_APP_URL` (déclarée depuis la Phase 0, jamais consommée jusqu'ici). Affiché uniquement quand la boutique est réellement publiée (`ShopSettingsForm`, section Visibilité ; `ShopManagementPageContent`, par carte de boutique).
+
+**Trouvé en écrivant les tests, à retenir pour la suite** : appeler `userEvent.setup()` dans un test de ce composant — même sans jamais utiliser l'instance retournée — empêche silencieusement les clics `fireEvent` suivants d'atteindre les gestionnaires `onClick` (aucune erreur, juste aucun effet). Reproduit isolément (six scripts de débogage), cause exacte non identifiée (probablement lié au menu positionné en `absolute` par-dessus l'overlay `fixed inset-0` qui le referme au clic extérieur, combiné à l'absence de moteur de layout réel dans jsdom). Contournement : test entièrement en `fireEvent` (pas de `userEvent` du tout), commenté dans `ShareShopLinkButton.test.tsx` pour la prochaine session qui touchera un menu déroulant similaire (`AccountMenu`, `DashboardTopbar` utilisent le même pattern, jamais testés jusqu'ici).
+
+Tests : `ShareShopLinkButton.test.tsx` (6 cas), `boutique/[shopId]/page.test.tsx` (4 cas — chargement, introuvable, non publiée, rendu réel).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (31 routes, +1 — `/boutique/[shopId]`) et `npm run test:coverage` (334 tests, +10, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.

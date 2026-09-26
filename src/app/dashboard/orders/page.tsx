@@ -1,16 +1,19 @@
-import { ShoppingBag } from "lucide-react";
+"use client";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { ComingSoonCard } from "@/components/dashboard/ComingSoonCard";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { OrdersPageContent } from "@/components/dashboard/OrdersPageContent";
 
 export default function OrdersPage() {
+  const { profile } = useAuth();
+
   return (
     <ProtectedRoute allowedRoles={["admin", "seller"]}>
-      <ComingSoonCard
-        icon={ShoppingBag}
-        title="Commandes"
-        description="Le suivi des commandes arrive avec le module Commandes."
-      />
+      {profile?.shopId ? (
+        <OrdersPageContent shopId={profile.shopId} />
+      ) : (
+        <p className="text-sm text-muted-foreground">Chargement...</p>
+      )}
     </ProtectedRoute>
   );
 }

@@ -646,8 +646,8 @@ export const mockUsers: User[] = [
     createdAt: timestampDaysAgo(15),
   },
 
-  // Clients (role: "client") — jamais de shopId, certains inscrits par
-  // téléphone/anonyme donc sans email (comme le documente le modèle User).
+  // Clients (role: "client") — jamais de shopId, certains sans email
+  // (champ optionnel sur le modèle User).
   {
     id: "user-armand-ekwalla",
     displayName: "Armand Ekwalla",

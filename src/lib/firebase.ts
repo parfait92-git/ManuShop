@@ -4,8 +4,8 @@ import {
   getApp,
   type FirebaseOptions,
 } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,6 +22,25 @@ export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseC
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 
+/**
+ * Émulateurs Firebase locaux (`npm run emulators`) — pour tester commandes/
+ * création de boutique/etc. sans compte de service ni API externes réelles
+ * (voir docs/04-besoins-techniques.md §17). N'a aucun effet tant que
+ * `NEXT_PUBLIC_USE_FIREBASE_EMULATOR` n'est pas positionné à `"true"` dans
+ * `.env.local` — jamais actif en production. `connectXEmulator` lève si
+ * appelé deux fois sur la même instance (hot reload Next.js), d'où le drapeau
+ * module-level plutôt qu'un appel inconditionnel.
+ */
+let emulatorsConnected = false;
+if (
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true" &&
+  !emulatorsConnected
+) {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  emulatorsConnected = true;
+}
+
 const SECONDARY_APP_NAME = "Secondary";
 
 /**
@@ -35,5 +54,14 @@ const SECONDARY_APP_NAME = "Secondary";
 export function getSecondaryAuth(): Auth {
   const existing = getApps().find((app) => app.name === SECONDARY_APP_NAME);
   const secondaryApp = existing ?? initializeApp(firebaseConfig, SECONDARY_APP_NAME);
-  return getAuth(secondaryApp);
+  const secondaryAuth = getAuth(secondaryApp);
+  if (
+    !existing &&
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
+  ) {
+    connectAuthEmulator(secondaryAuth, "http://127.0.0.1:9099", {
+      disableWarnings: true,
+    });
+  }
+  return secondaryAuth;
 }

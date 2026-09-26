@@ -11,6 +11,8 @@
 | BF-03 | Rôles | 3 rôles : **Admin** (gérant), **Vendeur**, **Client** (partiel — Admin/Vendeur opérationnels ; le rôle Client n'a pas de flux de création dédié, voir Module 7) |
 | BF-04 | Profil boutique | Configurer nom, logo, adresse, contacts de la boutique (terminé) |
 | BF-05 | Récupération mot de passe | Réinitialisation par email (terminé) |
+| BF-120 | Paramètres du compte (profil personnel) | Tout utilisateur connecté (client, vendeur, admin) peut modifier son nom, sa photo et son téléphone, consulter son identifiant de connexion/rôle/ancienneté, et changer son mot de passe (comptes email) — distinct des paramètres de boutique (BF-04). **Fait le 2026-09-25** : `/mon-compte`, accessible depuis le menu "Mon compte" (vitrine) et le menu du tableau de bord. |
+| BF-121 | Notification de nouvelle version par email | À chaque nouvelle version de la plateforme, tous les comptes ayant un email renseigné sont notifiés. **Non commencé** — bloqué sur le choix d'un fournisseur d'email (aucun dans le projet actuellement, voir 04-besoins-techniques.md §13) ; la préférence "notifications par email" (`User.notifyByEmail`, opt-out) existe déjà côté compte via BF-120, prête à être consultée une fois le fournisseur choisi. Source de version envisagée : le champ `version` de `package.json`. |
 
 ---
 
@@ -42,14 +44,16 @@
 
 ## Module 4 — Gestion des Commandes
 
+**Fait le 2026-09-25** — construit directement avec le vocabulaire de statuts révisé (BF-95, voir Module 17) plutôt que l'ancien `pending/confirmed/delivering/delivered/cancelled` ci-dessous, resté en description historique de BF-20 uniquement.
+
 | ID | Besoin | Description |
 |---|---|---|
-| BF-18 | Panier client | Le client ajoute des produits au panier |
-| BF-19 | Passer commande | Le client soumet une commande avec ses coordonnées |
-| BF-20 | Suivi commande | Statuts : **En attente → Confirmée → En livraison → Livrée** |
-| BF-21 | Commande manuelle | Le gérant crée une commande pour un client physique |
-| BF-22 | Historique commandes | Liste de toutes les commandes avec filtres |
-| BF-23 | Annulation commande | Annuler une commande avec motif |
+| BF-18 | Panier client | Le client ajoute des produits au panier. **Fait** (Module 7, `cartStore`, antérieur à cette tranche). |
+| BF-19 | Passer commande | Le client soumet une commande avec ses coordonnées. **Fait** : `/checkout/payment` ("Confirmer ma commande") collecte nom/téléphone/adresse et écrit une vraie commande (`createOrderAction`), stock décrémenté atomiquement. |
+| BF-20 | Suivi commande | Statuts : ~~En attente → Confirmée → En livraison → Livrée~~ — remplacé par le vocabulaire BF-95 dès la construction. **Fait** : `/mes-commandes` (client), `/dashboard/orders` (commerçant). |
+| BF-21 | Commande manuelle | Le gérant crée une commande pour un client physique. **Fait** : bouton "Commande manuelle" sur `/dashboard/orders` (`ManualOrderDialog`), sans compte lié (`clientId` absent). |
+| BF-22 | Historique commandes | Liste de toutes les commandes avec filtres. **Fait** : `/dashboard/orders`, filtre par statut (dont lien direct depuis la cloche de notification, `?status=under_review`). |
+| BF-23 | Annulation commande | Annuler une commande avec motif. **Fait** : client (tant que `under_review`, `/mes-commandes`) ou commerçant (`/dashboard/orders`), motif obligatoire, stock réincrémenté. |
 
 ---
 
@@ -125,9 +129,9 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-53 | Dashboard général | Chiffre d'affaires, commandes, stock en un coup d'œil (partiel — carte "Produits actifs" et alerte de stock ("Conseil du jour") réelles ; chiffre d'affaires/nouveaux clients/commandes affichent "Bientôt" faute du Module 4 — Commandes, pas encore construit. Aucune donnée fictive n'a été affichée à la place) |
-| BF-54 | Rapport ventes | Ventes par jour, semaine, mois (non commencé — dépend du Module 4, Commandes) |
-| BF-55 | Produits populaires | Top produits les plus vendus (non commencé — dépend du Module 4, Commandes) |
+| BF-53 | Dashboard général | Chiffre d'affaires, commandes, stock en un coup d'œil. **Fait le 2026-09-25** : cartes "Ventes du mois" (total des commandes `delivered` du mois), "Commandes du mois", "Nouveaux clients" (`clientId` distincts du mois) et "Produits actifs" toutes réelles, plus "Ventes récentes" (5 dernières commandes) — débloqué par le Module 4. |
+| BF-54 | Rapport ventes | Ventes par jour, semaine, mois (non commencé — filtre par intervalle personnalisé pas construit ; seul le mois courant est affiché sur le dashboard, voir BF-53/BF-102) |
+| BF-55 | Produits populaires | Top produits les plus vendus (non commencé — les commandes existent désormais, mais aucun classement par produit n'est encore calculé) |
 | BF-56 | Rapport stock | Produits en rupture ou stock bas (partiel — compte affiché sur le tableau de bord + colonne "Statut" dans la table produits ; pas de page de rapport dédiée) |
 | BF-57 | Export données | Exporter les rapports en CSV ou PDF (non commencé) |
 
@@ -152,7 +156,7 @@
 |---|---|---|
 | BF-62 | Publication de la boutique | Depuis Paramètres, le gérant active/désactive la visibilité publique de sa boutique (brouillon vs. publiée). Non commencé. |
 | BF-63 | Annuaire des boutiques | Remplace/complète l'actuel `/onboarding` : liste les boutiques publiées. Tant qu'il y en a peu ou pas, affiche des boutiques factices non cliquables ("virtuelles") pour ne pas paraître vide — un clic dessus redirige vers un article Google externe plutôt que vers une page interne inexistante. Non commencé. |
-| BF-64 | URL dédiée par boutique | Chaque boutique publiée est accessible via une URL propre construite à partir d'un identifiant opaque (pas l'ID Firestore brut) combinant l'ID du propriétaire et l'ID de la boutique, suivi du nom de la page puis, si besoin, d'un identifiant de contenu précis (ex. un produit). Non commencé. |
+| BF-64 | URL dédiée par boutique | Chaque boutique publiée est accessible via une URL propre. **Fait le 2026-09-25, version simplifiée** (clarifié avec l'utilisateur) : `/boutique/{shopId}` — l'id Firestore de la boutique tel quel plutôt que le token opaque `ownerId`+`shopId` envisagé initialement (déjà une chaîne non séquentielle, donc déjà "opaque" en pratique ; encodage supplémentaire jugé sans bénéfice réel). Route additionnelle, `/catalogue` (mono-tenant) inchangé. Schéma `/{tokenOpaque}/{nomDePage}/{nomDuComposant}` (nom de page/composant précis) resté hors scope — une seule page (le catalogue) pour l'instant, pas de migration complète du routage storefront. |
 | BF-65 | Page d'accueil de la boutique publiée | Vitrine publique de la boutique : logo, nom, tous les articles, et les autres éléments que la plateforme permet de publier. Non commencé. |
 | BF-66 | Actions client sur une boutique publiée | Un client peut consulter le catalogue, ajouter au panier, commander (WhatsApp, comme BF-39), et visiter la page Facebook/Instagram/TikTok/WhatsApp Business de la boutique — uniquement les réseaux réellement renseignés par le gérant et sur lesquels l'article concerné a été publié. Non commencé. |
 | BF-67 | Rôle Super Admin | Unique, réservé à l'éditeur de la plateforme. **Ce n'est pas un rôle sur le compte utilisateur** : c'est l'appartenance à une collection Firestore dédiée (`platformAdmins`, indexée par email), renseignée uniquement à la main depuis la console Firebase. Aucun chemin applicatif, aucune règle Firestore, ne doit permettre de l'obtenir ou de l'accorder — même à un Super Admin déjà en place. **Fait le 2026-09-21** : collection et règles en place ; page de gestion pas encore construite. |
@@ -161,6 +165,8 @@
 | BF-70 | Rétrogradation en fin d'abonnement | Un ex-admin dont l'abonnement a expiré est redirigé vers la page cliente de sa propre boutique (toujours publiée) lorsqu'il tente d'accéder à son ancien tableau de bord : il peut consulter ses articles, plus rien d'autre. Non commencé. |
 
 **Révisions du 2026-09-21 par rapport à la première rédaction de ce module, à ne pas reproduire** : l'inscription (email/mot de passe, Google, Facebook, téléphone, anonyme) **ne crée plus jamais** un compte `role: 'admin'` directement — corrigé dans `AuthService` et `firestore.rules` le même jour (voir journal). Le rôle Super Admin n'est plus non plus une valeur possible du champ `role` sur `users` (supprimé de `UserRole`) : remplacé par la collection `platformAdmins` décrite en BF-67.
+
+**Révision du 2026-09-25** : les méthodes de connexion par téléphone et anonyme, ajoutées le 2026-09-21 (paragraphe ci-dessus), ont été **retirées** sur demande explicite de l'utilisateur — `/login` ne propose plus que email/mot de passe, Google et Facebook. Voir le journal pour le détail.
 
 ---
 
@@ -186,10 +192,10 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-74 | Commande réservée aux comptes complets | Un visiteur non connecté est redirigé vers la connexion avant de valider une commande ; un compte anonyme doit d'abord compléter son profil (Paramètres) avant de pouvoir commander. **Partiel, 2026-09-25** : `/checkout/payment` protégé par `ProtectedRoute` (authentification de base uniquement) ; la nuance "compte anonyme doit compléter son profil" n'est pas construite. |
-| BF-75 | Suivi de commande | Le client consulte l'état de sa commande (vocabulaire des statuts : voir Module 17, BF-95). **Non commencé, bloqué sur le Module 4** (Commandes) — aucune commande n'est jamais écrite dans Firestore aujourd'hui ("Commander" n'ouvre qu'un lien WhatsApp), donc rien de réel à suivre. |
+| BF-74 | Commande réservée aux comptes complets | Un visiteur non connecté est redirigé vers la connexion avant de valider une commande. **Fait le 2026-09-25** : `/checkout/payment` protégé par `ProtectedRoute`. La nuance "compte anonyme doit d'abord compléter son profil" n'a plus lieu d'être — l'authentification anonyme a été retirée le 2026-09-25 (voir journal), tout compte connecté a donc nécessairement un profil complet. |
+| BF-75 | Suivi de commande | Le client consulte l'état de sa commande (vocabulaire des statuts : voir Module 17, BF-95). **Fait le 2026-09-25** : `/mes-commandes` (`MyOrdersPageContent`), débloqué par le Module 4. |
 | BF-76 | Feedback après livraison | Une fois la commande livrée, le client peut laisser un avis ; si le motif choisi est "commande défectueuse", un commentaire est transmis au vendeur via le moyen de contact qu'il a configuré (BF-106). **Non commencé, bloqué sur le Module 4** — nécessite une vraie commande livrée pour avoir un sens. |
-| BF-77 | Retour & remboursement | Le client peut demander le retour d'un article livré et un remboursement. **Non commencé, bloqué sur le Module 4**, même raison que BF-75/76. |
+| BF-77 | Retour & remboursement | Le client peut demander le retour d'un article livré et un remboursement. **Non commencé** — distinct de BF-96 (Module 17, fait) : BF-96 est une action **commerçant** (marquer une commande livrée comme Retournée/Défectueuse) ; BF-77 est la **demande côté client** qui déclencherait ça, pas encore construite. |
 | BF-78 | Sélection du mode de paiement (interface uniquement) | Choix entre Visa, Orange Money, MTN Mobile Money à l'écran de paiement. **Aucune intégration réelle pour l'instant** — l'utilisateur compte choisir une API de paiement gratuite ou peu coûteuse en fin de développement ; seule l'interface de sélection est construite maintenant (voir 04-besoins-techniques.md §12.6). **Fait le 2026-09-25** : `/checkout/payment`, accessible depuis `CartPanel` ("Choisir un mode de paiement", à côté du bouton WhatsApp existant qu'il ne remplace pas) ; le bouton "Payer" affiche honnêtement que ce n'est pas encore disponible plutôt que de simuler un succès. |
 
 ### Module 15 — Création de Boutique en Plusieurs Étapes
@@ -213,7 +219,7 @@
 | BF-88 | Publier/dépublier une boutique | Un bouton et une notification incitent le commerçant à publier sa boutique (BF-62) ; le réglage se trouve dans les Paramètres généraux de la boutique, où il peut aussi la dépublier lui-même à tout moment. |
 | BF-89 | Catégorie active avant création d'un produit | Un produit ne peut être créé que s'il est associé à une catégorie déjà **active** — cohérent avec BF-09/le comportement déjà construit de `CategoryManager` (une catégorie créée n'est visible que dans la page Catégories tant qu'elle n'est pas activée). |
 | BF-90 | Publication d'un produit distincte de sa suppression | Un produit créé n'est visible côté client qu'une fois **publié** ; le retirer de la vente ne fait que dépublier le produit, sans le supprimer (le stock/l'historique restent intacts). Nécessite un champ de publication sur `Product`, absent du modèle actuel (voir 04-besoins-techniques.md §12.2). |
-| BF-91 | Partager le lien de la boutique | Bouton dédié copiant/partageant l'URL publique de la boutique (BF-64). |
+| BF-91 | Partager le lien de la boutique | Bouton dédié copiant/partageant l'URL publique de la boutique (BF-64). **Fait le 2026-09-25** : `ShareShopLinkButton` (copier le lien, WhatsApp, email, partage natif si disponible) dans les paramètres de boutique et la gestion multi-boutique — affiché uniquement quand la boutique est réellement publiée. |
 | BF-92 | Gestion du stock | Suivi du stock comme dans une boutique physique — rejoint le Module 3 (BF-13→17), toujours non commencé. |
 | BF-93 | Fin d'abonnement, accès restreint | Une boutique dont l'abonnement a expiré reste consultable (commandes, stock) mais ne peut plus rien publier de nouveau ; les menus nécessitant un abonnement actif disparaissent de son espace admin. Révise BF-70 : la restriction s'applique désormais **par boutique**, pas en rétrogradant tout le compte. |
 | BF-94 | Toute publication est premium | La visibilité publique (boutique comme produits) nécessite un abonnement actif sur la boutique concernée. |
@@ -222,13 +228,13 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-95 | Statuts de commande étendus | `En cours d'analyse → Prêt pour la livraison → Livraison en cours → Livré`, puis `Retourné` ou `Défectueux` comme issue possible depuis "Livré". **Remplace** le jeu de statuts actuel de `Order.status` (`pending/confirmed/delivering/delivered/cancelled`, posé au Module 4) — voir la migration proposée en 04-besoins-techniques.md §12.3. |
-| BF-96 | Traitement d'un retour | Le commerçant renseigne un commentaire expliquant le motif du retour avant de rembourser le client ; une fois le remboursement effectué, le statut passe à `Retourné` et le stock du produit concerné est automatiquement réincrémenté. |
-| BF-97 | Motif "défectueux" | Si le retour est motivé par un défaut du produit, le commerçant choisit explicitement le statut `Défectueux` plutôt que `Retourné` (deux issues distinctes, pas une simple note sur "Retourné"). |
+| BF-95 | Statuts de commande étendus | `En cours d'analyse → Prêt pour la livraison → Livraison en cours → Livré`, puis `Retourné` ou `Défectueux` comme issue possible depuis "Livré". **Fait le 2026-09-25** : implémenté dès la construction du Module 4 (`OrderStatus`), sans jamais passer par l'ancien vocabulaire. `Annulée` ajoutée en 7ᵉ valeur pour couvrir BF-23 (clarifié avec l'utilisateur — hors périmètre initial de BF-95). |
+| BF-96 | Traitement d'un retour | Le commerçant renseigne un commentaire expliquant le motif du retour avant de rembourser le client ; une fois le remboursement effectué, le statut passe à `Retourné` et le stock du produit concerné est automatiquement réincrémenté. **Fait le 2026-09-25** : motif obligatoire (`OrderReasonDialog`), stock réincrémenté atomiquement (`FieldValue.increment`) — remboursement lui-même hors scope (pas d'intégration de paiement réelle, voir BF-78). |
+| BF-97 | Motif "défectueux" | Si le retour est motivé par un défaut du produit, le commerçant choisit explicitement le statut `Défectueux` plutôt que `Retourné` (deux issues distinctes, pas une simple note sur "Retourné"). **Fait le 2026-09-25**, en même temps que BF-96. |
 | BF-98 | Journal des opérations commerçant | Chaque action du commerçant (produit, catégorie, commande, retour...) est consignée dans un journal structuré, exploitable pour imprimer un rapport. |
 | BF-99 | Corbeille générique | Tout élément supprimé (produit, catégorie, et tout ce qui suivra le même schéma) est déplacé dans une corbeille plutôt que supprimé immédiatement. Depuis la corbeille : restauration, ou suppression définitive après confirmation. |
 | BF-100 | Confirmation à compte à rebours | La suppression définitive depuis la corbeille déclenche un compte à rebours annulable ; cliquer sur Annuler avant qu'il n'atteigne zéro arrête le processus, rien n'est supprimé. |
-| BF-101 | Feedback marchand sur commande livrée | Le commerçant reçoit et consulte les avis clients laissés sur les commandes livrées de sa boutique (miroir de BF-72/76 côté client). |
+| BF-101 | Feedback marchand sur commande livrée | Le commerçant reçoit et consulte les avis clients laissés sur les commandes livrées de sa boutique (miroir de BF-72/76 côté client). **Non commencé** — dépend de BF-76 (soumission d'avis client), elle-même toujours non construite (voir Module 13). |
 
 ### Module 18 — Tableau de Bord, Rapports & Facturation Avancée
 

@@ -13,10 +13,22 @@ import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ProductList } from "@/components/dashboard/ProductList";
+import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Category } from "@/models/category/Category";
+import type { Order } from "@/models/order/Order";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
+import { orderService } from "@/services/OrderService";
 import { productService } from "@/services/ProductService";
+
+function isThisMonth(order: Order): boolean {
+  const now = new Date();
+  const date = order.createdAt.toDate();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth()
+  );
+}
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -58,21 +70,37 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
   const { profile } = useAuth();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [orders, setOrders] = useState<Order[] | null>(null);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       productService.listActive(shopId),
       categoryService.listCategories(shopId),
-    ]).then(([productList, categoryList]) => {
+      orderService.listByShop(shopId),
+    ]).then(([productList, categoryList, orderList]) => {
       if (!active) return;
       setProducts(productList);
       setCategories(categoryList);
+      setOrders(
+        [...orderList].sort(
+          (a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()
+        )
+      );
     });
     return () => {
       active = false;
     };
   }, [shopId]);
+
+  const ordersThisMonth = orders?.filter(isThisMonth) ?? [];
+  const revenueThisMonth = ordersThisMonth
+    .filter((o) => o.status === "delivered")
+    .reduce((sum, o) => sum + o.total, 0);
+  const newClientsThisMonth = new Set(
+    ordersThisMonth.map((o) => o.clientId).filter(Boolean)
+  ).size;
+  const recentOrders = orders?.slice(0, 5) ?? [];
 
   const firstName = profile?.displayName.split(" ")[0] ?? "";
   const today = capitalize(
@@ -117,8 +145,9 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
         <StatCard
           icon={ShoppingBag}
           label="Ventes du mois"
-          value="Bientôt"
-          muted
+          value={
+            orders ? `${revenueThisMonth.toLocaleString("fr-FR")} FCFA` : "…"
+          }
         />
         <StatCard
           icon={Package}
@@ -128,14 +157,12 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
         <StatCard
           icon={Users}
           label="Nouveaux clients"
-          value="Bientôt"
-          muted
+          value={orders ? String(newClientsThisMonth) : "…"}
         />
         <StatCard
           icon={ShoppingBag}
-          label="Commandes"
-          value="Bientôt"
-          muted
+          label="Commandes du mois"
+          value={orders ? String(ordersThisMonth.length) : "…"}
         />
       </div>
 
@@ -163,9 +190,34 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
               Tout voir
             </Link>
           </div>
-          <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-            Aucune vente pour le moment — le module Commandes arrive bientôt.
-          </p>
+          {recentOrders.length === 0 ? (
+            <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+              Aucune commande pour le moment.
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-slate-100">
+              {recentOrders.map((order) => (
+                <li
+                  key={order.id}
+                  className="flex items-center justify-between gap-3 py-2.5"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {order.clientName}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {order.total.toLocaleString("fr-FR")} FCFA
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_BADGE_CLASS[order.status]}`}
+                  >
+                    {ORDER_STATUS_LABEL[order.status]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 rounded-xl bg-slate-950 p-4 text-white sm:p-6">

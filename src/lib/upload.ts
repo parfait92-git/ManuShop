@@ -42,3 +42,7 @@ export function uploadProductImage(file: Blob): Promise<string> {
 export function uploadShopLogo(file: Blob): Promise<string> {
   return uploadImage(file, "shop-logo.jpg", "manushop/shops");
 }
+
+export function uploadAvatar(file: Blob): Promise<string> {
+  return uploadImage(file, "avatar.jpg", "manushop/users");
+}

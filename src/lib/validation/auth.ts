@@ -28,25 +28,6 @@ export const LoginSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 
-export const PhoneLoginSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+[1-9]\d{6,14}$/, {
-      error: "Format international requis, ex. +237600000000.",
-    }),
-});
-
-export type PhoneLoginInput = z.infer<typeof PhoneLoginSchema>;
-
-export const PhoneCodeSchema = z.object({
-  code: z.string().trim().regex(/^\d{6}$/, {
-    error: "Le code doit contenir 6 chiffres.",
-  }),
-});
-
-export type PhoneCodeInput = z.infer<typeof PhoneCodeSchema>;
-
 export const ForgotPasswordSchema = z.object({
   email: z.email({ error: "Veuillez saisir un email valide." }).trim(),
 });
@@ -147,3 +128,18 @@ export const ShopSettingsSchema = z.object({
 });
 
 export type ShopSettingsInput = z.infer<typeof ShopSettingsSchema>;
+
+export const AccountSettingsSchema = z.object({
+  displayName: z.string().trim().min(2, {
+    error: "Le nom doit contenir au moins 2 caractères.",
+  }),
+  // Optionnel : un compte créé par email/Google/Facebook n'a pas forcément
+  // de téléphone renseigné.
+  phone: z.string().trim().optional(),
+  photoURL: z
+    .union([z.url({ error: "L'URL de la photo n'est pas valide." }), z.literal("")])
+    .optional(),
+  notifyByEmail: z.boolean(),
+});
+
+export type AccountSettingsInput = z.infer<typeof AccountSettingsSchema>;

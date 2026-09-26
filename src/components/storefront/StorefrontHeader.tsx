@@ -102,6 +102,20 @@ function AccountMenu() {
                 Créer ma boutique
               </button>
             )}
+            <Link
+              href="/mes-commandes"
+              className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
+              onClick={() => setOpen(false)}
+            >
+              Mes commandes
+            </Link>
+            <Link
+              href="/mon-compte"
+              className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
+              onClick={() => setOpen(false)}
+            >
+              Paramètres du compte
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
