@@ -30,5 +30,11 @@ export interface User {
   // notification de nouvelle version, pas encore construite (pas de
   // fournisseur d'email choisi).
   notifyByEmail?: boolean;
+  // Session unique par compte (un seul navigateur/appareil à la fois,
+  // demande utilisateur du 2026-09-26) : id aléatoire régénéré à chaque
+  // connexion sur un navigateur qui n'en a pas encore stocké localement
+  // (voir `AuthProvider`/`src/lib/sessionId.ts`). Un autre navigateur qui
+  // détecte un id différent du sien se déconnecte automatiquement.
+  activeSessionId?: string;
   createdAt: Timestamp;
 }

@@ -24,6 +24,11 @@ jest.mock("firebase/auth", () => ({
   signOut: jest.fn(),
 }));
 
+const clearLocalSessionIdMock = jest.fn();
+jest.mock("../lib/sessionId", () => ({
+  clearLocalSessionId: (...args: unknown[]) => clearLocalSessionIdMock(...args),
+}));
+
 const secondaryAuthInstance = { __tag: "secondary" };
 
 // `jest.mock` resolves its module argument through Jest's own resolver, not
@@ -316,6 +321,11 @@ describe("AuthService", () => {
     it("signs out of the primary auth instance", async () => {
       await service.logout();
       expect(signOutMock).toHaveBeenCalledWith(auth);
+    });
+
+    it("clears the local session id (single-session enforcement)", async () => {
+      await service.logout();
+      expect(clearLocalSessionIdMock).toHaveBeenCalled();
     });
   });
 

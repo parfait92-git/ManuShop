@@ -872,3 +872,52 @@ Question posée par l'utilisateur : comment un commerçant partage-t-il le lien 
 Tests : `ShareShopLinkButton.test.tsx` (6 cas), `boutique/[shopId]/page.test.tsx` (4 cas).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (31 routes, +1) et `npm run test:coverage` (334 tests, +10, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+### 2026-09-26 — Dépannage : "Une erreur est survenue" sur la création de boutique (serveur dev obsolète)
+
+Signalé par l'utilisateur (capture d'écran) : échec de la création de boutique à l'étape Abonnement, malgré les émulateurs configurés la veille. **Cause** : le `next dev` de l'utilisateur tournait depuis 19h57 (avant l'édition de `.env.local` à 22h05 qui a activé les variables d'émulateur) — Next.js ne relit `.env.local` qu'au démarrage du processus, donc ce serveur n'a jamais vu `FIRESTORE_EMULATOR_HOST`/`FIREBASE_AUTH_EMULATOR_HOST`/`NEXT_PUBLIC_USE_FIREBASE_EMULATOR`. Émulateurs eux-mêmes toujours actifs (confirmé). Processus `next dev` arrêté puis relancé (en arrière-plan) pour recharger `.env.local`. **À retenir pour la suite** : après toute modification de `.env.local` touchant les émulateurs, le serveur `next dev` doit être redémarré — déjà documenté au §17 de `04-besoins-techniques.md`, mais facile à oublier d'une session à l'autre. Rien de codé, aucune vérification lint/test applicable.
+
+### 2026-09-26 — Catalogue de démo conditionnel (BF-122) + session unique par compte (BF-123)
+
+Trois demandes en une : (1) ne plus afficher `/demo-catalogue` une fois qu'une vraie boutique publiée existe, (2) une collection `configuration` pour activer/désactiver la démo à la main, (3) empêcher qu'un même compte soit connecté sur plusieurs navigateurs à la fois. **Décisions actées avant de coder** : détection (1) plateforme-wide, pas juste la boutique mono-tenant résolue par `/catalogue` ; interrupteur (2) prioritaire seulement s'il désactive explicitement (absent/actif laisse la détection automatique décider), même schéma verrouillé que `platformAdmins` ; "plateformes" (3) = navigateurs/appareils, pas onglets d'un même navigateur.
+
+**BF-122, fait :**
+- `configuration/general` (Firestore, lecture publique/écriture interdite) + `ConfigurationService`/`useDemoCatalogueAvailable()` (`src/hooks/`) : combine l'interrupteur manuel et une détection réelle (liste les boutiques publiées, vérifie si l'une a un produit visible).
+- Trois points de consommation mis à jour : `/catalogue` (repli conditionné, sinon "Aucune boutique disponible" plutôt qu'une page cassée), `CataloguePageContent` (même logique pour une boutique publiée mais vide — n'écrase plus la démo par un mauvais raisonnement si une AUTRE boutique de la plateforme a déjà de vrais produits), `/demo-catalogue` elle-même (auto-repli vers `/catalogue`, couvre aussi l'accès direct par URL).
+
+**BF-123, fait :**
+- `User.activeSessionId` (id aléatoire, `crypto.randomUUID()`) stocké aussi en `localStorage` côté client (`src/lib/sessionId.ts`) — un navigateur sans id local en mine un nouveau à la connexion et l'écrit sur Firestore ; un navigateur qui a déjà un id (rechargement, autre onglet du même navigateur) ne réécrit rien, pour ne pas invalider les autres sessions à chaque simple rechargement de page.
+- `AuthProvider` écoute en direct son propre `users/{uid}` (`onSnapshot`, 2ᵉ usage du projet après `useNewOrdersCount`) : dès que l'id change (connexion ailleurs), déconnexion forcée + message d'erreur.
+- `AuthService.logout()` efface systématiquement l'id local en premier — couvre déconnexion volontaire et forcée par conflit, sans avoir besoin de toucher Firestore à la déconnexion.
+- **Aucun changement de `firestore.rules` nécessaire** : `activeSessionId` n'est ni `role` ni `shopId`, déjà couvert par la règle d'auto-modification existante sur `users`.
+
+**Limite assumée (BF-123)** : pas de migration pour les comptes déjà connectés avant ce changement — leur session actuelle devient "la" session active au prochain chargement de page, pas de déconnexion surprise.
+
+Tests ajoutés : `ConfigurationService.test.ts`, `useDemoCatalogueAvailable.test.ts`, `demo-catalogue/page.test.tsx` (nouveau), `sessionId.test.ts` (100% de couverture), `AuthProvider.test.tsx` (nouveau — premier test de ce composant central), `catalogue/page.test.tsx`/`CataloguePageContent.test.tsx`/`AuthService.test.ts` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (361 tests, +27, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session — la session unique en particulier mériterait un test manuel en conditions réelles, deux navigateurs différents, avant mise en production). Rien de commité.
+
+### 2026-09-26 — Bug trouvé en QA réelle : `useDemoCatalogueAvailable` restait bloqué sur "Chargement..." si une lecture Firestore échouait
+
+Signalé par l'utilisateur (capture d'écran, `/demo-catalogue` figé sur "Chargement...", console : `FirebaseError: Missing or insufficient permissions` à `useDemoCatalogueAvailable.ts`). **Cause immédiate** : les règles Firestore modifiées pendant les sessions précédentes (dont le nouveau bloc `configuration`) n'avaient jamais été publiées sur la vraie console Firebase (habituel dans ce projet, voir les nombreuses entrées précédentes du journal sur ce même piège) — après être repassé de l'émulateur au vrai projet pour tester la session unique, la lecture de `configuration/general` était refusée. Contenu complet de `firestore.rules` redonné à l'utilisateur pour republication manuelle.
+
+**Bug réel trouvé au passage, corrigé indépendamment de la cause ci-dessus** : `useDemoCatalogueAvailable()` n'avait aucune gestion d'erreur — une lecture Firestore refusée (ou tout autre échec réseau) faisait échouer la promesse silencieusement, `setAvailable` n'était jamais appelé, et le hook restait bloqué à `undefined` pour toujours. Toute page consommatrice (`/catalogue`, `CataloguePageContent`, `/demo-catalogue`) restait donc figée sur "Chargement..." indéfiniment plutôt que de se dégrader proprement. Corrigé : `try/catch` autour de la résolution, repli sur `true` (comportement historique — afficher la démo) en cas d'échec, pour ne jamais bloquer une page sur un état indéterminé.
+
+Tests : `useDemoCatalogueAvailable.test.ts` (+1 cas — repli sur `true` quand une lecture échoue).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (31 routes) et `npm run test:coverage` (362 tests, +1, aucune régression). Rien de commité.
+
+### 2026-09-26 — Identité visible dans l'en-tête vitrine (BF-124)
+
+Signalé par l'utilisateur : ni la photo de profil ni le nom de l'utilisateur connecté ne s'affichaient dans `StorefrontHeader` (bouton "Mon compte" réduit à une icône générique — nom/email visibles seulement une fois le menu ouvert) ; sur `/boutique/[shopId]` (BF-64), l'en-tête affichait toujours la marque générique "Manu Shop" au lieu du logo/nom de la boutique consultée. Repli par défaut (icône/initiale) exigé quand photo/logo absent.
+
+**Obstacle d'architecture** : `StorefrontHeader` est rendu par le layout `(storefront)`, un ancêtre de `/boutique/[shopId]/page.tsx` — pas un parent direct, donc aucune prop ne peut circuler de la page vers l'en-tête dans l'App Router.
+
+**Fait :**
+- Nouveau `ShopBrandingProvider` (contexte React, `src/components/providers/`) posé dans `(storefront)/layout.tsx` : `/boutique/[shopId]/page.tsx` y publie `{shopId, name, logo}` une fois la boutique chargée, et nettoie (`setBranding(null)`) au démontage pour ne pas laisser la marque d'une boutique "coller" en naviguant ailleurs sur la vitrine.
+- `StorefrontHeader` : bloc de marque à gauche conditionné par ce contexte — logo de la boutique (repli sur l'icône `Store` générique si absent) + nom, lien vers `/boutique/{shopId}` ; comportement générique inchangé ("Manu Shop" → `/`) hors de cette page.
+- `AccountMenu` : le bouton déclencheur affiche désormais directement l'avatar (photo ou cercle avec l'initiale du nom, même pattern que `DashboardTopbar`) + le nom — plus besoin d'ouvrir le menu pour voir qui est connecté.
+
+Tests : `ShopBrandingProvider.test.tsx` (nouveau), `StorefrontHeader.test.tsx` (nouveau — premier test de ce composant), `boutique/[shopId]/page.test.tsx` étendu (rendu désormais sous `ShopBrandingProvider`, requis par `useShopBranding()`).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (369 tests, +8, aucune régression, seuil global 86%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.

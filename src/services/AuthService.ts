@@ -14,6 +14,7 @@ import {
 } from "firebase/auth";
 
 import { auth, getSecondaryAuth } from "@/lib/firebase";
+import { clearLocalSessionId } from "@/lib/sessionId";
 import type { User } from "@/models/user/User";
 import { shopRepository } from "@/repositories/ShopRepository";
 import type { IShopRepository } from "@/repositories/interfaces/IShopRepository";
@@ -275,6 +276,10 @@ export class AuthService {
 
 
   async logout(): Promise<void> {
+    // Toujours en premier : une déconnexion (volontaire ou forcée par
+    // `AuthProvider` suite à une connexion ailleurs) doit libérer cet
+    // appareil pour une future connexion fraîche, qu'elle réussisse ou non.
+    clearLocalSessionId();
     await signOut(auth);
   }
 

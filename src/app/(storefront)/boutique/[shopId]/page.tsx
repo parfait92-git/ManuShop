@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { CataloguePageContent } from "@/components/storefront/CataloguePageContent";
 import type { Shop } from "@/models/shop/Shop";
 import { shopService } from "@/services/ShopService";
@@ -19,6 +20,7 @@ import { shopService } from "@/services/ShopService";
 export default function ShopStorefrontPage() {
   const { shopId } = useParams<{ shopId: string }>();
   const [shop, setShop] = useState<Shop | null | undefined>(undefined);
+  const { setBranding } = useShopBranding();
 
   useEffect(() => {
     let active = true;
@@ -30,6 +32,17 @@ export default function ShopStorefrontPage() {
       active = false;
     };
   }, [shopId]);
+
+  // Affiché par `StorefrontHeader` (logo/nom de LA boutique plutôt que la
+  // marque générique ManuShop) tant que cette page reste montée — nettoyé
+  // au démontage pour ne pas laisser la marque d'une boutique "coller" sur
+  // une autre page storefront après navigation.
+  useEffect(() => {
+    if (shop) {
+      setBranding({ shopId: shop.id, name: shop.name, logo: shop.logo });
+    }
+    return () => setBranding(null);
+  }, [shop, setBranding]);
 
   if (shop === undefined) {
     return (

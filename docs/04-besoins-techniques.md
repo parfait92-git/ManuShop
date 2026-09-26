@@ -880,3 +880,45 @@ Demande : permettre à un commerçant de partager le lien de sa boutique publié
 Tests : `ShareShopLinkButton.test.tsx` (6 cas), `boutique/[shopId]/page.test.tsx` (4 cas — chargement, introuvable, non publiée, rendu réel).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (31 routes, +1 — `/boutique/[shopId]`) et `npm run test:coverage` (334 tests, +10, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+## 19. Catalogue de démo conditionnel (BF-122), 2026-09-26
+
+Demande utilisateur : `/demo-catalogue` ne doit plus s'afficher une fois qu'au moins une vraie boutique publiée de la plateforme a un produit visible réel, et une collection `configuration` doit permettre de l'activer/désactiver. **Décisions actées avant de coder** : détection plateforme-wide (n'importe quelle boutique publiée, pas seulement celle que `/catalogue` résout aujourd'hui) ; l'interrupteur manuel (`configuration/general.demoCatalogueEnabled`) n'a d'effet que s'il est explicitement à `false` (coupe la démo dans tous les cas) — absent/`true` laisse la détection automatique décider, cohérent avec le schéma déjà établi pour `platformAdmins` (collection verrouillée en écriture, réglée à la main depuis la console Firebase).
+
+**Fait :**
+- `PlatformConfiguration`/`ConfigurationRepository`/`ConfigurationService` (`src/models/configuration/`, `src/repositories/`, `src/services/`) — lecture seule, même schéma que `platformAdmins`. `firestore.rules` : `configuration/{docId}` lecture publique (consultée par des visiteurs non connectés), écriture interdite pour tout le monde.
+- `useDemoCatalogueAvailable()` (`src/hooks/`) : combine l'interrupteur manuel et la détection automatique (liste les boutiques publiées via `ShopService.listPublishedShops()`, déjà existant, puis vérifie si l'une a au moins un produit `isVisibleToCustomers`). Renvoie `undefined` tant que la réponse n'est pas connue — jamais de redirection ni d'affichage sur la base d'une valeur par défaut.
+- Trois points de consommation : `/catalogue` (repli vers la démo conditionné, sinon état honnête "Aucune boutique disponible" plutôt qu'une page cassée), `CataloguePageContent` (même logique pour le cas "boutique publiée mais vide" — si une AUTRE boutique de la plateforme a de vrais produits, affiche "Cette boutique n'a pas encore de produit" plutôt que de rediriger vers une démo qui n'a plus de sens), `/demo-catalogue` elle-même (auto-repli vers `/catalogue` si elle n'est plus disponible — couvre aussi l'accès direct par URL, pas seulement le repli depuis `/catalogue`).
+
+Tests : `ConfigurationService.test.ts`, `useDemoCatalogueAvailable.test.ts`, `demo-catalogue/page.test.tsx` (nouveau, aucun test n'existait avant), `catalogue/page.test.tsx`/`CataloguePageContent.test.tsx` étendus.
+
+## 20. Session unique par compte (BF-123), 2026-09-26
+
+Demande utilisateur : empêcher qu'un même compte soit connecté sur plusieurs navigateurs/appareils à la fois. **Clarifié avant de coder** : "plateformes" = navigateurs/appareils (pas onglets du même navigateur, qui doivent rester tous valides ensemble).
+
+**Fait :**
+- `User.activeSessionId?: string` — id aléatoire (`crypto.randomUUID()`). `src/lib/sessionId.ts` : stocké en `localStorage` (partagé entre onglets du même navigateur exprès, contrairement à `sessionStorage`) — jamais d'exception si le stockage est indisponible (navigation privée stricte), dégradation silencieuse plutôt que de bloquer la connexion.
+- `AuthProvider` : à chaque connexion (`onAuthStateChanged`), si ce navigateur n'a **encore aucun** id local stocké, en génère un frais et l'écrit sur `users/{uid}.activeSessionId` (`AuthService.updateProfile`, déjà autorisé par `firestore.rules` — `activeSessionId` n'est ni `role` ni `shopId`, aucun changement de règles nécessaire). Si un id local existe déjà (rechargement de page, autre onglet du même navigateur), rien n'est réécrit — la reconnexion silencieuse habituelle de Firebase Auth au chargement ne doit pas se comporter comme une "nouvelle connexion" et invalider les autres sessions.
+- Écoute en direct (`onSnapshot` sur son propre `users/{uid}`, second usage du projet après `useNewOrdersCount`) : dès que `activeSessionId` change pour une valeur différente de celle stockée localement (connexion depuis un autre navigateur), déconnexion forcée (`AuthService.logout()`) + message d'erreur (`sonner`).
+- `AuthService.logout()` efface systématiquement l'id local en premier (avant même `signOut`) — couvre à la fois la déconnexion volontaire et la déconnexion forcée par conflit de session, pour qu'une reconnexion ultérieure sur ce même navigateur reparte sur un id frais sans avoir besoin de toucher Firestore à la déconnexion.
+
+**Limite assumée** : aucune migration pour les comptes déjà connectés avant ce changement — leur session actuelle devient "la" session active dès le prochain chargement de page (pas de déconnexion surprise), exactement comme pour les précédents changements de modèle du projet (BF-93, retrait auth téléphone/anonyme...).
+
+Tests : `sessionId.test.ts` (100% de couverture), `AuthProvider.test.tsx` (nouveau — aucun test n'existait avant pour ce composant central), `AuthService.test.ts` étendu (`logout` efface l'id local).
+
+Vérifié (les deux sections ci-dessus) : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (361 tests, +27, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+## 21. Identité visible dans l'en-tête vitrine (BF-124), 2026-09-26
+
+Demande utilisateur : la photo de profil et le nom de l'utilisateur connecté ne s'affichaient nulle part dans `StorefrontHeader` (bouton "Mon compte" = icône générique seule, nom/email visibles uniquement une fois le menu déroulant ouvert) ; sur la page boutique dédiée (BF-64), l'en-tête affichait toujours la marque générique "Manu Shop" plutôt que le logo/nom de la boutique consultée. Repli par défaut (icône/initiale) exigé si photo/logo absent.
+
+**Problème d'architecture** : `StorefrontHeader` est rendu par `src/app/(storefront)/layout.tsx`, un ancêtre de `/boutique/[shopId]/page.tsx` — pas un parent direct, donc aucune prop ne peut circuler de la page vers l'en-tête.
+
+**Fait :**
+- `ShopBrandingProvider` (`src/components/providers/`) : contexte React `{branding: {shopId, name, logo?} | null, setBranding}`, posé dans `(storefront)/layout.tsx` autour de `StorefrontHeader` + `children`. `/boutique/[shopId]/page.tsx` appelle `setBranding(...)` une fois la boutique chargée, et le nettoie (`setBranding(null)`) au démontage — pour ne pas laisser la marque d'une boutique "coller" en naviguant vers une autre page vitrine.
+- `StorefrontHeader` : bloc de marque à gauche conditionné par `useShopBranding()` — logo de la boutique (`next/image`, repli sur l'icône `Store` générique si `logo` absent/vide) + nom, lien vers `/boutique/{shopId}` ; sans branding actif, comportement inchangé ("Manu Shop" → `/`).
+- `AccountMenu` : le bouton déclencheur (pas seulement le menu ouvert) affiche désormais l'avatar (`profile.photoURL`/`firebaseUser.photoURL`, repli sur un cercle avec l'initiale du nom — même pattern que `DashboardTopbar`, adapté à la palette claire de la vitrine) + le nom (masqué en dessous de `sm:` faute de place, avatar/chevron toujours visibles).
+
+Tests : `ShopBrandingProvider.test.tsx` (nouveau), `StorefrontHeader.test.tsx` (nouveau — aucun test n'existait avant pour ce composant), `boutique/[shopId]/page.test.tsx` étendu (rendu désormais sous `ShopBrandingProvider`, requis depuis que la page consomme `useShopBranding()`).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (369 tests, +8, aucune régression, seuil global 86%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
