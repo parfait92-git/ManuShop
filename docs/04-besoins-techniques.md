@@ -907,3 +907,18 @@ Demande utilisateur : empêcher qu'un même compte soit connecté sur plusieurs 
 Tests : `sessionId.test.ts` (100% de couverture), `AuthProvider.test.tsx` (nouveau — aucun test n'existait avant pour ce composant central), `AuthService.test.ts` étendu (`logout` efface l'id local).
 
 Vérifié (les deux sections ci-dessus) : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (361 tests, +27, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+## 21. Identité visible dans l'en-tête vitrine (BF-124), 2026-09-26
+
+Demande utilisateur : la photo de profil et le nom de l'utilisateur connecté ne s'affichaient nulle part dans `StorefrontHeader` (bouton "Mon compte" = icône générique seule, nom/email visibles uniquement une fois le menu déroulant ouvert) ; sur la page boutique dédiée (BF-64), l'en-tête affichait toujours la marque générique "Manu Shop" plutôt que le logo/nom de la boutique consultée. Repli par défaut (icône/initiale) exigé si photo/logo absent.
+
+**Problème d'architecture** : `StorefrontHeader` est rendu par `src/app/(storefront)/layout.tsx`, un ancêtre de `/boutique/[shopId]/page.tsx` — pas un parent direct, donc aucune prop ne peut circuler de la page vers l'en-tête.
+
+**Fait :**
+- `ShopBrandingProvider` (`src/components/providers/`) : contexte React `{branding: {shopId, name, logo?} | null, setBranding}`, posé dans `(storefront)/layout.tsx` autour de `StorefrontHeader` + `children`. `/boutique/[shopId]/page.tsx` appelle `setBranding(...)` une fois la boutique chargée, et le nettoie (`setBranding(null)`) au démontage — pour ne pas laisser la marque d'une boutique "coller" en naviguant vers une autre page vitrine.
+- `StorefrontHeader` : bloc de marque à gauche conditionné par `useShopBranding()` — logo de la boutique (`next/image`, repli sur l'icône `Store` générique si `logo` absent/vide) + nom, lien vers `/boutique/{shopId}` ; sans branding actif, comportement inchangé ("Manu Shop" → `/`).
+- `AccountMenu` : le bouton déclencheur (pas seulement le menu ouvert) affiche désormais l'avatar (`profile.photoURL`/`firebaseUser.photoURL`, repli sur un cercle avec l'initiale du nom — même pattern que `DashboardTopbar`, adapté à la palette claire de la vitrine) + le nom (masqué en dessous de `sm:` faute de place, avatar/chevron toujours visibles).
+
+Tests : `ShopBrandingProvider.test.tsx` (nouveau), `StorefrontHeader.test.tsx` (nouveau — aucun test n'existait avant pour ce composant), `boutique/[shopId]/page.test.tsx` étendu (rendu désormais sous `ShopBrandingProvider`, requis depuis que la page consomme `useShopBranding()`).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (369 tests, +8, aucune régression, seuil global 86%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.

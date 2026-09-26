@@ -1,11 +1,13 @@
 "use client";
 
 import { Bell, ChevronDown, ShoppingBag, Store, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { CartPanel } from "@/components/storefront/CartPanel";
 import { CreateShopWizard } from "@/components/storefront/CreateShopWizard";
 import { authService } from "@/services/AuthService";
@@ -48,6 +50,8 @@ function AccountMenu() {
   }
 
   const canManageShop = profile?.role === "admin" || profile?.role === "seller";
+  const displayName = profile?.displayName ?? firebaseUser.displayName ?? "Mon compte";
+  const photoURL = profile?.photoURL ?? firebaseUser.photoURL ?? undefined;
 
   return (
     <div className="relative">
@@ -55,9 +59,24 @@ function AccountMenu() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label="Mon compte"
-        className="flex h-9 items-center gap-1 rounded-full border border-border px-2 text-muted-foreground hover:text-foreground"
+        className="flex h-9 items-center gap-1.5 rounded-full border border-border pr-2 pl-1 text-muted-foreground hover:text-foreground"
       >
-        <User className="size-4" />
+        {photoURL ? (
+          <Image
+            src={photoURL}
+            alt=""
+            width={28}
+            height={28}
+            className="size-7 rounded-full object-cover"
+          />
+        ) : (
+          <span className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            {displayName.charAt(0).toUpperCase()}
+          </span>
+        )}
+        <span className="hidden max-w-24 truncate text-sm font-medium text-foreground sm:block">
+          {displayName}
+        </span>
         <ChevronDown className="size-3.5" />
       </button>
 
@@ -136,16 +155,39 @@ export function StorefrontHeader() {
   const pathname = usePathname();
   const [cartOpen, setCartOpen] = useState(false);
   const itemCount = useCartItemCount();
+  const { branding } = useShopBranding();
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="flex size-7 items-center justify-center rounded-full bg-primary/10">
-            <Store className="size-4 text-primary" />
-          </span>
-          Manu <span className="text-primary">Shop</span>
-        </Link>
+        {branding ? (
+          <Link
+            href={`/boutique/${branding.shopId}`}
+            className="flex min-w-0 items-center gap-2 font-semibold"
+          >
+            {branding.logo ? (
+              <Image
+                src={branding.logo}
+                alt=""
+                width={28}
+                height={28}
+                className="size-7 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Store className="size-4 text-primary" />
+              </span>
+            )}
+            <span className="truncate">{branding.name}</span>
+          </Link>
+        ) : (
+          <Link href="/" className="flex items-center gap-2 font-semibold">
+            <span className="flex size-7 items-center justify-center rounded-full bg-primary/10">
+              <Store className="size-4 text-primary" />
+            </span>
+            Manu <span className="text-primary">Shop</span>
+          </Link>
+        )}
 
         <nav className="hidden items-center gap-6 text-sm sm:flex">
           {NAV_LINKS.map((link) => (

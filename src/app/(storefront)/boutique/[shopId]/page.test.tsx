@@ -15,7 +15,16 @@ jest.mock("../../../../components/storefront/CataloguePageContent", () => ({
 
 import { render, screen } from "@testing-library/react";
 
+import { ShopBrandingProvider } from "../../../../components/providers/ShopBrandingProvider";
 import ShopStorefrontPage from "./page";
+
+function renderPage() {
+  return render(
+    <ShopBrandingProvider>
+      <ShopStorefrontPage />
+    </ShopBrandingProvider>
+  );
+}
 
 describe("ShopStorefrontPage", () => {
   beforeEach(() => {
@@ -24,13 +33,13 @@ describe("ShopStorefrontPage", () => {
 
   it("shows a loading state while the shop resolves", () => {
     getShopMock.mockReturnValue(new Promise(() => {}));
-    render(<ShopStorefrontPage />);
+    renderPage();
     expect(screen.getByText("Chargement...")).toBeInTheDocument();
   });
 
   it("shows a not-found message when the shop doesn't exist", async () => {
     getShopMock.mockResolvedValue(null);
-    render(<ShopStorefrontPage />);
+    renderPage();
 
     expect(
       await screen.findByText("Boutique introuvable ou non publiée.")
@@ -40,7 +49,7 @@ describe("ShopStorefrontPage", () => {
 
   it("shows a not-found message when the shop exists but isn't published", async () => {
     getShopMock.mockResolvedValue({ id: "shop-1", isPublished: false });
-    render(<ShopStorefrontPage />);
+    renderPage();
 
     expect(
       await screen.findByText("Boutique introuvable ou non publiée.")
@@ -48,8 +57,12 @@ describe("ShopStorefrontPage", () => {
   });
 
   it("renders the shop's catalogue when published", async () => {
-    getShopMock.mockResolvedValue({ id: "shop-1", isPublished: true });
-    render(<ShopStorefrontPage />);
+    getShopMock.mockResolvedValue({
+      id: "shop-1",
+      isPublished: true,
+      name: "Ma Boutique",
+    });
+    renderPage();
 
     expect(await screen.findByTestId("catalogue-content")).toHaveTextContent(
       "shop-1"

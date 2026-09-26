@@ -906,3 +906,18 @@ Signalé par l'utilisateur (capture d'écran, `/demo-catalogue` figé sur "Charg
 Tests : `useDemoCatalogueAvailable.test.ts` (+1 cas — repli sur `true` quand une lecture échoue).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (31 routes) et `npm run test:coverage` (362 tests, +1, aucune régression). Rien de commité.
+
+### 2026-09-26 — Identité visible dans l'en-tête vitrine (BF-124)
+
+Signalé par l'utilisateur : ni la photo de profil ni le nom de l'utilisateur connecté ne s'affichaient dans `StorefrontHeader` (bouton "Mon compte" réduit à une icône générique — nom/email visibles seulement une fois le menu ouvert) ; sur `/boutique/[shopId]` (BF-64), l'en-tête affichait toujours la marque générique "Manu Shop" au lieu du logo/nom de la boutique consultée. Repli par défaut (icône/initiale) exigé quand photo/logo absent.
+
+**Obstacle d'architecture** : `StorefrontHeader` est rendu par le layout `(storefront)`, un ancêtre de `/boutique/[shopId]/page.tsx` — pas un parent direct, donc aucune prop ne peut circuler de la page vers l'en-tête dans l'App Router.
+
+**Fait :**
+- Nouveau `ShopBrandingProvider` (contexte React, `src/components/providers/`) posé dans `(storefront)/layout.tsx` : `/boutique/[shopId]/page.tsx` y publie `{shopId, name, logo}` une fois la boutique chargée, et nettoie (`setBranding(null)`) au démontage pour ne pas laisser la marque d'une boutique "coller" en naviguant ailleurs sur la vitrine.
+- `StorefrontHeader` : bloc de marque à gauche conditionné par ce contexte — logo de la boutique (repli sur l'icône `Store` générique si absent) + nom, lien vers `/boutique/{shopId}` ; comportement générique inchangé ("Manu Shop" → `/`) hors de cette page.
+- `AccountMenu` : le bouton déclencheur affiche désormais directement l'avatar (photo ou cercle avec l'initiale du nom, même pattern que `DashboardTopbar`) + le nom — plus besoin d'ouvrir le menu pour voir qui est connecté.
+
+Tests : `ShopBrandingProvider.test.tsx` (nouveau), `StorefrontHeader.test.tsx` (nouveau — premier test de ce composant), `boutique/[shopId]/page.test.tsx` étendu (rendu désormais sous `ShopBrandingProvider`, requis par `useShopBranding()`).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (369 tests, +8, aucune régression, seuil global 86%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
