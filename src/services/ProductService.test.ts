@@ -204,6 +204,46 @@ describe("ProductService", () => {
     });
   });
 
+  describe("compareByRelevance", () => {
+    it("ranks a promo product before a non-promo one", () => {
+      const promo = fakeProduct({ id: "promo", isPromo: true });
+      const regular = fakeProduct({ id: "regular", isPromo: false });
+      expect(service.compareByRelevance(promo, regular)).toBeLessThan(0);
+      expect(service.compareByRelevance(regular, promo)).toBeGreaterThan(0);
+    });
+
+    it("ranks the most recent product first when promo status is equal", () => {
+      const older = fakeProduct({
+        id: "older",
+        isPromo: false,
+        createdAt: Timestamp.fromDate(new Date("2020-01-01T00:00:00Z")),
+      });
+      const newer = fakeProduct({
+        id: "newer",
+        isPromo: false,
+        createdAt: Timestamp.fromDate(new Date("2021-01-01T00:00:00Z")),
+      });
+      expect(service.compareByRelevance(newer, older)).toBeLessThan(0);
+    });
+
+    it("falls back to the highest price when promo status and date are equal", () => {
+      const sameDate = Timestamp.fromDate(new Date("2020-01-01T00:00:00Z"));
+      const cheaper = fakeProduct({
+        id: "cheaper",
+        isPromo: false,
+        createdAt: sameDate,
+        price: 5000,
+      });
+      const pricier = fakeProduct({
+        id: "pricier",
+        isPromo: false,
+        createdAt: sameDate,
+        price: 8000,
+      });
+      expect(service.compareByRelevance(pricier, cheaper)).toBeLessThan(0);
+    });
+  });
+
   describe("getStockStatus", () => {
     it("is out-of-stock at zero", () => {
       expect(service.getStockStatus(fakeProduct({ stock: 0 }))).toBe(

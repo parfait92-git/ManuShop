@@ -3,25 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { CataloguePageContent } from "@/components/storefront/CataloguePageContent";
+import { MarketCataloguePageContent } from "@/components/storefront/MarketCataloguePageContent";
 import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
-import { useShop } from "@/hooks/useShop";
 
+/**
+ * Marché multi-boutique (BF-108, version réduite) : agrège toutes les
+ * boutiques publiées de la plateforme plutôt qu'une seule "boutique
+ * primaire" (`useShop()`, mono-tenant — utilisé ailleurs pour le panier/
+ * paiement, hors scope ici, voir 04-besoins-techniques.md §22). Bascule
+ * vers `/demo-catalogue` tant qu'aucune vraie boutique publiée n'a de
+ * produit visible réel quelque part sur la plateforme (même signal que
+ * `MarketCataloguePageContent` utiliserait pour se retrouver vide).
+ */
 export default function CataloguePage() {
-  const { shop, loading } = useShop();
   const demoAvailable = useDemoCatalogueAvailable();
   const router = useRouter();
 
-  const shopUnusable = !loading && (!shop || !shop.isPublished);
-  // Rien de réel à montrer (pas de boutique encore, ou volontairement
-  // dépubliée) : plutôt qu'une page vide, on bascule sur le catalogue de
-  // démo — mais seulement tant qu'elle a encore lieu d'être (voir
-  // `useDemoCatalogueAvailable` : désactivée dès qu'une vraie boutique
-  // publiée existe quelque part sur la plateforme, ou coupée à la main par
-  // le Super Admin). Sinon, état honnête plutôt qu'une démo qui n'a plus
-  // de sens une fois de vraies boutiques en ligne.
-  const redirectToDemo = shopUnusable && demoAvailable === true;
-  const stillDeciding = shopUnusable && demoAvailable === undefined;
+  const redirectToDemo = demoAvailable === true;
 
   useEffect(() => {
     if (redirectToDemo) {
@@ -29,7 +27,7 @@ export default function CataloguePage() {
     }
   }, [redirectToDemo, router]);
 
-  if (loading || stillDeciding || redirectToDemo) {
+  if (demoAvailable === undefined || redirectToDemo) {
     return (
       <p className="px-6 py-10 text-center text-sm text-muted-foreground">
         Chargement...
@@ -37,13 +35,5 @@ export default function CataloguePage() {
     );
   }
 
-  if (!shop || !shop.isPublished) {
-    return (
-      <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-        Aucune boutique disponible pour le moment.
-      </p>
-    );
-  }
-
-  return <CataloguePageContent shopId={shop.id} />;
+  return <MarketCataloguePageContent />;
 }
