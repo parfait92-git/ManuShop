@@ -14,6 +14,7 @@ import { useCartStore } from "@/store/cartStore";
 export function StorefrontProductCard({
   product,
   shop,
+  shopHref,
 }: {
   product: Product;
   /** Fourni uniquement par un contexte multi-boutique (ex. `/catalogue`
@@ -21,6 +22,10 @@ export function StorefrontProductCard({
    * boutique (`/boutique/[shopId]`, `/demo-catalogue`), pour ne pas répéter
    * une info déjà visible dans l'en-tête de la page. */
   shop?: Shop;
+  /** Par défaut `/boutique/{shop.id}` — la démo (BF-125) la remplace par
+   * l'équivalent `/demo-catalogue/boutique/{shop.id}`. Ignoré si `shop`
+   * n'est pas fourni. */
+  shopHref?: string;
 }) {
   const addItem = useCartStore((state) => state.addItem);
   const [liked, setLiked] = useState(false);
@@ -79,7 +84,7 @@ export function StorefrontProductCard({
           // même raison que le bouton favoris : deux <a> ne peuvent pas
           // s'imbriquer en HTML valide.
           <Link
-            href={`/boutique/${shop.id}`}
+            href={shopHref ?? `/boutique/${shop.id}`}
             className="truncate text-xs text-muted-foreground hover:text-foreground"
           >
             {shop.name}

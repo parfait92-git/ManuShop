@@ -941,3 +941,31 @@ Demande utilisateur : afficher les vraies informations des boutiques publiées e
 Tests : `ProductService.test.ts` étendu (`compareByRelevance`), `useMarketCatalogue.test.ts` (nouveau), `MarketCataloguePageContent.test.tsx` (nouveau), `StorefrontProductCard.test.tsx` étendu (attribution boutique), `FeaturedShowcase.test.tsx` (nouveau), `catalogue/page.test.tsx` réécrit (plus de `useShop`), `page.test.tsx` (landing) adapté (mock des hooks plutôt que calcul statique).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (387 tests, +18, aucune régression, seuil global 87%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session — un test manuel avec plusieurs vraies boutiques publiées reste recommandé avant mise en production). Rien de commité.
+
+## 23. Découverte des boutiques depuis le catalogue (BF-125), 2026-09-26
+
+Demande utilisateur : dans `/catalogue` (BF-108, §22), au niveau du bloc boutique, ajouter une flèche "voir plus" vers une page listant toutes les boutiques ; depuis cette page, choisir une boutique doit renvoyer vers sa page dédiée déjà construite (`/boutique/[shopId]`, BF-64).
+
+**Fait :**
+- `ShopSummaryCard` (`src/components/storefront/`) : carte partagée (logo ou icône `Store` de repli, nom, secteur/adresse si connus) — renvoie systématiquement vers `/boutique/{shopId}`.
+- `MarketCataloguePageContent` : nouveau bloc "Boutiques" entre le hero et les filtres — jusqu'à 6 boutiques déduites (dédupliquées) des produits déjà chargés par `useMarketCatalogue()`, pas de lecture Firestore supplémentaire. Lien "Voir toutes les boutiques →" vers `/boutiques`, masqué si le marché est vide.
+- `/boutiques` (`AllShopsPageContent`) : nouvelle page listant toutes les boutiques publiées (`shopService.listPublishedShops()`), même carte que le mini-bloc.
+
+Tests : `ShopSummaryCard.test.tsx` (nouveau), `AllShopsPageContent.test.tsx` (nouveau), `MarketCataloguePageContent.test.tsx` étendu (bloc dédupliqué, lien vers `/boutiques`, masqué à vide). Pas de test dédié pour `/boutiques/page.tsx` — passe-plat sans logique, même convention que `/catalogue/[productId]/page.tsx`.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (32 routes, +1 — `/boutiques`) et `npm run test:coverage` (398 tests, +11, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+## 24. Simulation de BF-108/BF-125 dans le catalogue de démo (BF-126), 2026-09-26
+
+Demande utilisateur : simuler dans `/demo-catalogue` le même comportement que le vrai catalogue multi-boutique (BF-108 §22, BF-125 §23) — grille de produits mélangés, bloc "Boutiques" + flèche vers une page listant toutes les boutiques, clic sur une boutique → sa propre page. **Clarifié avec l'utilisateur (réplique complète vs. version allégée)** : réplique complète — le catalogue de démo change de structure (jusque-là des sections par boutique avec ancres `#shopId` sur une seule page) plutôt que de simplement ajouter le bloc au-dessus de l'existant.
+
+**Fait :**
+- `CatalogueExplorer` (`src/components/storefront/`) : la grille/recherche/filtre/tri/bloc "Boutiques" de `MarketCataloguePageContent` extraite en composant partagé, purement présentationnel — ne touche jamais Firestore lui-même, `items: MarketProduct[] | undefined` est déjà résolu par l'appelant (le hook réel côté `/catalogue`, un tableau synchrone côté démo). `MarketCataloguePageContent` devient un simple wrapper (`useMarketCatalogue()` + hero réel).
+- `ShopSummaryCard`/`StorefrontProductCard` : nouvelle prop optionnelle `href`/`shopHref` — par défaut `/boutique/{shopId}` (vraies boutiques), remplacée par `/demo-catalogue/boutique/{shopId}` côté démo. Sans cette prop, les cartes de démo auraient pointé vers la vraie route Firestore et affiché "Boutique introuvable".
+- `/demo-catalogue` réécrite : construit `MarketProduct[]` en mémoire depuis `mockShops`/`getArticlesByShop` (`src/data/mockData.ts`, toujours aucun accès Firestore) puis délègue tout le rendu à `CatalogueExplorer`. Garde le repli auto vers `/catalogue` (inchangé).
+- `/demo-catalogue/boutiques` (nouvelle) : équivalent démo de `/boutiques` — liste `mockShops`, cartes vers `/demo-catalogue/boutique/{shopId}`. Même repli auto vers `/catalogue`, couvre aussi l'accès direct par URL (cohérent avec `/demo-catalogue` elle-même).
+- `/demo-catalogue/boutique/[shopId]` (nouvelle) : équivalent démo de `/boutique/[shopId]` — résout la boutique dans `mockShops`, affiche ses articles (`getArticlesByShop`), fait remonter son logo/nom vers `StorefrontHeader` via `ShopBrandingProvider` (même mécanisme que BF-124, §21) pour une simulation fidèle. "Boutique de démo introuvable" si l'id ne correspond à aucune boutique de démo, plutôt qu'une page cassée.
+
+Tests : `demo-catalogue/page.test.tsx` réécrit (grille mélangée, bloc "Boutiques" vers `/demo-catalogue/boutiques`, attribution vers `/demo-catalogue/boutique/{shopId}`), `demo-catalogue/boutiques/page.test.tsx` (nouveau), `demo-catalogue/boutique/[shopId]/page.test.tsx` (nouveau), `ShopSummaryCard.test.tsx`/`StorefrontProductCard.test.tsx` étendus (prop `href`/`shopHref`).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (34 routes, +2) et `npm run test:coverage` (409 tests, +11, aucune régression, seuil global 87%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.

@@ -5,7 +5,7 @@ jest.mock("../../hooks/useMarketCatalogue", () => ({
 
 jest.mock("../../lib/firebase", () => ({ db: {}, auth: {} }));
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { MarketCataloguePageContent } from "./MarketCataloguePageContent";
 
@@ -70,9 +70,36 @@ describe("MarketCataloguePageContent", () => {
 
     expect(screen.getByText("Sac")).toBeInTheDocument();
     expect(screen.getByText("Chaussures")).toBeInTheDocument();
-    expect(screen.getByText("Boutique A")).toBeInTheDocument();
-    expect(screen.getByText("Boutique B")).toBeInTheDocument();
+    // "Boutique A"/"B" apparaissent deux fois chacune : dans le mini-bloc
+    // "Boutiques" et dans l'attribution de chaque carte produit.
+    expect(screen.getAllByText("Boutique A")).toHaveLength(2);
+    expect(screen.getAllByText("Boutique B")).toHaveLength(2);
     expect(screen.getByText("2 articles disponibles")).toBeInTheDocument();
+  });
+
+  it("shows a deduplicated 'Boutiques' block with a link to see all shops", () => {
+    useMarketCatalogueMock.mockReturnValue([
+      marketItem({ id: "p1", shopId: "shop-1", shopName: "Boutique A", name: "Sac" }),
+      marketItem({ id: "p2", shopId: "shop-1", shopName: "Boutique A", name: "Chapeau" }),
+      marketItem({ id: "p3", shopId: "shop-2", shopName: "Boutique B", name: "Chaussures" }),
+    ]);
+    render(<MarketCataloguePageContent />);
+
+    // Une seule carte "Boutiques" pour shop-1 malgré ses 2 produits.
+    const shopsSection = screen.getByRole("heading", { name: "Boutiques" }).closest("section")!;
+    expect(within(shopsSection).getAllByRole("link", { name: "Boutique A" })).toHaveLength(1);
+    expect(within(shopsSection).getAllByRole("link", { name: "Boutique B" })).toHaveLength(1);
+
+    const seeAllLink = screen.getByRole("link", { name: /Voir toutes les boutiques/ });
+    expect(seeAllLink).toHaveAttribute("href", "/boutiques");
+  });
+
+  it("does not show the 'Boutiques' block when the market is empty", () => {
+    useMarketCatalogueMock.mockReturnValue([]);
+    render(<MarketCataloguePageContent />);
+    expect(
+      screen.queryByRole("link", { name: /Voir toutes les boutiques/ })
+    ).not.toBeInTheDocument();
   });
 
   it("filters by category across shops", () => {

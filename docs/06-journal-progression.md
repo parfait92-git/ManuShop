@@ -940,3 +940,29 @@ Demande de l'utilisateur : afficher les vraies données des boutiques publiées 
 Tests ajoutés/étendus : `ProductService.test.ts`, `useMarketCatalogue.test.ts` (nouveau), `MarketCataloguePageContent.test.tsx` (nouveau), `StorefrontProductCard.test.tsx`, `FeaturedShowcase.test.tsx` (nouveau), `catalogue/page.test.tsx` (réécrit), `page.test.tsx`.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (387 tests, +18, aucune régression, seuil global 87%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+### 2026-09-26 — Découverte des boutiques depuis le catalogue (BF-125)
+
+Demande de l'utilisateur : sur `/catalogue` (catalogue agrégé multi-boutique, BF-108 §22), ajouter une flèche "voir plus" au niveau du bloc boutique, vers une page listant toutes les boutiques ; depuis cette page, choisir une boutique doit renvoyer vers sa propre page (déjà construite, `/boutique/[shopId]`, BF-64).
+
+**Fait :**
+- `ShopSummaryCard` : carte boutique partagée (logo ou icône de repli, nom, secteur/adresse) — renvoie vers `/boutique/{shopId}`.
+- Bloc "Boutiques" dans `MarketCataloguePageContent` : aperçu de 6 boutiques déduites des produits déjà chargés (pas de nouvelle lecture Firestore), lien "Voir toutes les boutiques →" vers `/boutiques`.
+- `/boutiques` (`AllShopsPageContent`) : nouvelle page listant toutes les boutiques publiées, même carte que le mini-bloc.
+
+Tests : `ShopSummaryCard.test.tsx` (nouveau), `AllShopsPageContent.test.tsx` (nouveau), `MarketCataloguePageContent.test.tsx` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (32 routes, +1) et `npm run test:coverage` (398 tests, +11, aucune régression). Rien de commité.
+
+### 2026-09-26 — Simulation de BF-108/BF-125 dans le catalogue de démo (BF-126)
+
+Demande de l'utilisateur : "j'aimerais simuler ce comportement dans ma démo" — le bloc "Boutiques" + flèche + navigation vers la page dédiée d'une boutique (BF-125, tout juste construit pour le vrai catalogue) devait aussi exister dans `/demo-catalogue`. **Clarifié avant de coder** (question posée) : réplique complète plutôt que version allégée — le catalogue de démo change de structure (jusque-là des sections par boutique avec ancres sur une seule page) pour devenir une grille de produits mélangés, comme le vrai `/catalogue`.
+
+**Fait :**
+- `CatalogueExplorer` : la grille/filtre/bloc "Boutiques" de `MarketCataloguePageContent` extraite en composant partagé — reçoit déjà les données résolues (`items`), ne touche jamais Firestore lui-même, donc réutilisable pour la démo sans violer la règle "démo = jamais de Firestore".
+- `ShopSummaryCard`/`StorefrontProductCard` : prop `href`/`shopHref` optionnelle pour rediriger vers l'équivalent démo plutôt que la vraie route Firestore.
+- `/demo-catalogue` réécrite (grille mélangée), `/demo-catalogue/boutiques` (nouvelle, liste des boutiques de démo) et `/demo-catalogue/boutique/[shopId]` (nouvelle, page dédiée d'une boutique de démo, avec la même remontée de marque vers l'en-tête que BF-124).
+
+Tests : `demo-catalogue/page.test.tsx` réécrit, `demo-catalogue/boutiques/page.test.tsx` (nouveau), `demo-catalogue/boutique/[shopId]/page.test.tsx` (nouveau), `ShopSummaryCard.test.tsx`/`StorefrontProductCard.test.tsx` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (34 routes, +2) et `npm run test:coverage` (409 tests, +11, aucune régression). Rien de commité.

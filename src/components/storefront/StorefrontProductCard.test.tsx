@@ -84,4 +84,29 @@ describe("StorefrontProductCard", () => {
     render(<StorefrontProductCard product={fakeProduct()} />);
     expect(screen.queryByRole("link", { name: /boutique/i })).not.toBeInTheDocument();
   });
+
+  it("uses a custom shopHref when provided (demo catalogue, BF-125)", () => {
+    render(
+      <StorefrontProductCard
+        product={fakeProduct()}
+        shop={{
+          id: "shop-1",
+          name: "Boutique Test",
+          logo: "",
+          address: "",
+          phone: "",
+          whatsapp: "",
+          currency: "XAF",
+          ownerId: "u1",
+          createdAt: { toDate: () => new Date("2020-01-01") } as never,
+        }}
+        shopHref="/demo-catalogue/boutique/shop-1"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Boutique Test" })).toHaveAttribute(
+      "href",
+      "/demo-catalogue/boutique/shop-1"
+    );
+  });
 });
