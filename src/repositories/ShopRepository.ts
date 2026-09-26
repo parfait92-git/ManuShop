@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -33,6 +34,20 @@ export class ShopRepository implements IShopRepository {
     );
     const [first] = snapshot.docs;
     return first ? ({ id: first.id, ...first.data() } as Shop) : null;
+  }
+
+  async listByOwner(ownerId: string): Promise<Shop[]> {
+    const snapshot = await getDocs(
+      query(collection(db, SHOPS_COLLECTION), where("ownerId", "==", ownerId))
+    );
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Shop);
+  }
+
+  async listPublished(): Promise<Shop[]> {
+    const snapshot = await getDocs(collection(db, SHOPS_COLLECTION));
+    return snapshot.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Shop)
+      .filter((shop) => shop.isPublished === true);
   }
 
   async create(data: CreateShopDto): Promise<Shop> {

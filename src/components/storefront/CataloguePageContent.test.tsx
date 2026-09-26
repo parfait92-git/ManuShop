@@ -8,6 +8,7 @@ jest.mock("../../services/ProductService", () => ({
     listProducts: jest.fn(),
     search: jest.fn((products: unknown[]) => products),
     getBadge: jest.fn(() => null),
+    isVisibleToCustomers: jest.fn(() => true),
   },
 }));
 
@@ -80,5 +81,15 @@ describe("CataloguePageContent", () => {
 
     await screen.findByText(/Aucun produit ne correspond/);
     expect(replaceMock).not.toHaveBeenCalled();
+  });
+
+  it("redirects to the demo catalogue when every product is unpublished or trashed (BF-90)", async () => {
+    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
+    productServiceMock.isVisibleToCustomers.mockReturnValue(false);
+    render(<CataloguePageContent shopId="shop-1" />);
+
+    await waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith("/demo-catalogue")
+    );
   });
 });

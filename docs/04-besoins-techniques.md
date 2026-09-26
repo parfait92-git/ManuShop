@@ -516,12 +516,17 @@ Remplace ou complète `/onboarding` : liste les boutiques où `isPublished == tr
 // Collection `platformAdmins`, id de document = email en minuscules.
 interface PlatformAdmin {
   email: string
+  // Purement informatif (2026-09-25, sur demande explicite) — cohérence de
+  // lecture avec `User.role` ('admin'/'seller') quand on consulte la
+  // console Firebase. N'est JAMAIS lu par l'autorisation, qui reste basée
+  // sur l'appartenance à la collection, pas sur la valeur de ce champ.
+  role: 'super-admin'
   addedAt: Timestamp
 }
 ```
 
 **Fait le 2026-09-21** (`src/models/platform/PlatformAdmin.ts`, `firestore.rules`) :
-- `platformAdmins/{email}` : lecture réservée à qui possède cet email (`request.auth.token.email == email`), **écriture interdite pour tout le monde** (`allow write: if false`) — seule une modification manuelle depuis la console Firebase (qui n'est pas soumise aux règles) peut y ajouter ou retirer un email.
+- `platformAdmins/{email}` : lecture réservée à qui possède cet email (`request.auth.token.email == email`), **écriture interdite pour tout le monde** (`allow write: if false`) — seule une modification manuelle depuis la console Firebase (qui n'est pas soumise aux règles) peut y ajouter ou retirer un email. **À partir du 2026-09-25**, ce document manuel doit aussi inclure `role: 'super-admin'` (champ informatif seulement, voir ci-dessus).
 - `users` : la vérification "est-ce un Super Admin ?" se fait par `exists(/databases/$(database)/documents/platformAdmins/$(request.auth.token.email))`, plus par un champ `role`. Un Super Admin peut lire tous les profils et changer le rôle de n'importe qui vers `admin`/`seller`/`client` (jamais autre chose, la valeur `'super-admin'` n'existe même plus dans `UserRole`).
 - L'auto-inscription (`create` sur `users` par soi-même) n'accepte plus que `role == 'client'` — avant le 2026-09-21, elle acceptait `'admin'` directement. **Conséquence assumée** : tant que la page Super Admin (ci-dessous) n'existe pas, personne ne peut devenir admin autrement qu'en éditant directement Firestore depuis la console — acceptable en développement actif, plus du tout une fois en production.
 
@@ -550,3 +555,194 @@ interface PlatformAdmin {
 - Toutes les pages storefront (`/catalogue`, `CartPanel`, liens WhatsApp) — à re-scoper par boutique.
 - `firestore.rules` — lecture de `shops`/`products`/`categories` conditionnée à `isPublished == true` pour un visiteur anonyme (aujourd'hui encore en lecture publique inconditionnelle, pour ne pas casser `/catalogue` mono-tenant tant que ce qui précède n'est pas fait).
 - Un formulaire "créer ma boutique" appelant `AuthService.createShop()` (déjà prêt côté service), déclenché une fois `role === 'admin'` obtenu par l'un des deux chemins du §11.5.
+
+---
+
+## 12. Boutiques multiples par commerçant, statuts de commande étendus & nouveaux modules (2026-09-25)
+
+*Voir Modules 13→22 dans `02-besoins-fonctionnels.md` (BF-71→119) pour le détail fonctionnel. Cette section couvre uniquement ce qui change ou s'ajoute au modèle de données et à l'architecture décrits en §5 et §11.*
+
+### 12.1 Abonnement : déplacé de `User` vers `Shop` (implémenté 2026-09-25)
+
+**Changement le plus structurant de cette révision.** §11.1 posait `adminSource`/`subscriptionPlan`/`subscriptionExpiresAt` sur `User`, sous l'hypothèse qu'un admin gère une seule boutique. Ce n'est plus vrai : un commerçant peut posséder plusieurs boutiques, chacune avec son propre abonnement (BF-85). Un abonnement finance une boutique précise, pas le compte entier — `subscriptionPlan`/`subscriptionExpiresAt` déménagent donc sur `Shop`.
+
+Révision par rapport à la première ébauche de cette section : `adminSource` **reste** sur `User`, en plus d'apparaître sur `Shop`. Les deux ne portent pas le même sens : `User.adminSource` documente comment le compte a obtenu *pour la première fois* le droit de gérer des boutiques (`"manual"` = attribution Super Admin, BF-68 ; `"subscription"` = première boutique créée via l'assistant self-service, BF-79→85) — purement informatif, sans expiration. `Shop.adminSource` documente comment *cette boutique précise* a été créée, et pilote son propre cycle d'abonnement (`subscriptionPlan`/`subscriptionExpiresAt`). `role: 'admin'` sur `User` ne redescend jamais tout seul une fois obtenu (BF-93) — seul l'accès admin à une boutique donnée peut être restreint si son abonnement à elle expire.
+
+```typescript
+// User : rôle grossier + comment le compte a obtenu le droit de gérer des
+// boutiques la toute première fois (informatif, sans expiration).
+interface User {
+  id: string
+  email?: string
+  phone?: string
+  role: 'admin' | 'seller' | 'client'   // 'admin' = possède ou gère au moins une boutique
+  shopId?: string                        // boutique "courante" pour la navigation (seller: sa seule boutique ; admin propriétaire de plusieurs boutiques : la dernière consultée, purement un confort d'UI — la vraie liste de ses boutiques vient toujours d'une requête shops where ownerId == uid)
+  displayName: string
+  photoURL?: string
+  adminSource?: 'manual' | 'subscription'   // CONSERVÉ ici (voir ci-dessus)
+  createdAt: Timestamp
+  // subscriptionPlan / subscriptionExpiresAt RETIRÉS d'ici — jamais écrits
+  // par aucun code livré avant cette migration (BF-69 n'avait jamais été
+  // construit), suppression donc sans risque de régression.
+}
+
+// Shop : porte désormais son propre abonnement.
+interface Shop {
+  id: string
+  ownerId: string
+  name: string
+  sector?: string                        // secteur d'activité (BF-80), absent du modèle avant cette migration
+  logo: string
+  address: string
+  phone: string
+  whatsapp: string
+  currency: string
+  isPublished: boolean
+  publicToken: string
+  facebookUrl?: string
+  instagramUrl?: string
+  tiktokUrl?: string
+  whatsappBusinessUrl?: string
+  // Nouveau (BF-85, BF-93, BF-94) — comment CETTE boutique a été créée,
+  // distinct de User.adminSource (voir plus haut).
+  adminSource?: 'manual' | 'subscription'
+  subscriptionPlan?: SubscriptionPlan   // renseigné seulement si adminSource === 'subscription'
+  subscriptionExpiresAt?: Timestamp     // idem
+  createdAt: Timestamp
+}
+```
+
+**Conséquences concrètes, telles qu'implémentées :**
+- `PlatformAdminService.grantAdmin`/`revokeAdmin` (Server Actions `platformAdminActions.ts`) **inchangés** : ils écrivent toujours `adminSource: 'manual'` sur `users/{userId}` — ce champ n'a pas bougé de `User`.
+- Nouvelle Server Action `src/server/actions/shopActions.ts` (`createShopAction`) : crée le doc `shops` avec `adminSource: 'subscription'` + `subscriptionPlan`/`subscriptionExpiresAt` calculés, puis met à jour `users/{uid}` — `shopId` toujours, et `role: 'admin'`/`adminSource: 'subscription'` **seulement si le compte n'était pas déjà admin** (un admin qui crée une 2ᵉ boutique garde son `adminSource` d'origine sur son compte).
+- `src/data/mockData.ts` : `subscriptionPlan`/`subscriptionExpiresAt` déplacés des `mockUsers` admin vers leurs `mockShops` respectifs ; `adminSource` conservé sur `mockUsers` (inchangé) et ajouté aux `mockShops` correspondants.
+- BF-70/BF-93 : la redirection "abonnement expiré → vue cliente" se décide **par boutique** (`shop.subscriptionExpiresAt` dépassé), pas par le compte entier — un commerçant avec deux boutiques dont une seule a expiré garde l'accès admin à l'autre. *(Job d'expiration lui-même pas encore construit — reste à faire, voir `05-plan-de-travail.md`.)*
+- Le job d'expiration (§11.5, Vercel Cron), une fois construit, devra parcourir `shops` (où `adminSource == 'subscription'`), pas `users`.
+- **Prix des abonnements** (`src/lib/subscriptionPlans.ts`) : Quotidien 500, Hebdomadaire 2 500, Mensuel 8 000, Trimestriel 20 000, Annuel 60 000 FCFA — repris tels quels de la maquette générée par l'outil de design. **Ce sont des placeholders, pas une décision business validée** ; à confirmer avec l'utilisateur avant tout lancement réel.
+
+### 12.2 Publication d'un produit (`Product.isPublished`)
+
+BF-90 : un produit créé n'est visible côté client qu'une fois publié ; le retirer de la vente ne fait que dépublier, sans supprimer. Champ absent du modèle `Product` actuel (§5) :
+
+```typescript
+interface Product {
+  // ...champs existants...
+  isPublished?: boolean   // absent/false = brouillon, jamais visible côté client
+}
+```
+
+Toute lecture publique de `products` (catalogue, page Marché §12.7) doit filtrer `isPublished == true`, comme `shops.isPublished` le fait déjà pour la boutique elle-même.
+
+### 12.3 Statuts de commande révisés (`OrderStatus`)
+
+BF-95 remplace le jeu de statuts posé au Module 4 (`pending | confirmed | delivering | delivered | cancelled`, `src/models/order/OrderStatus.ts`) par un vocabulaire aligné sur le métier réel du commerçant, avec deux issues distinctes possibles après livraison :
+
+```typescript
+type OrderStatus =
+  | 'under_review'       // En cours d'analyse
+  | 'ready_for_delivery'  // Prêt pour la livraison
+  | 'delivering'          // Livraison en cours
+  | 'delivered'           // Livré
+  | 'returned'            // Retourné (remboursé)
+  | 'defective'           // Défectueux (remboursé, motif défaut)
+
+interface Order {
+  // ...champs existants (shopId, clientName, items, total...)...
+  status: OrderStatus
+  returnReason?: string    // requis avant de passer à 'returned' ou 'defective' (BF-96/97)
+  restockedAt?: Timestamp  // posé quand le stock du produit est réincrémenté (BF-96)
+}
+```
+
+`cancelled` (annulation avant expédition, BF-23) reste un cas à part — à garder comme septième valeur ou comme statut distinct selon comment BF-23 sera implémenté ; pas encore tranché.
+
+### 12.4 Corbeille générique (soft delete)
+
+BF-99/100 : plutôt qu'une collection miroir par entité (`trashedProducts`, `trashedCategories`...), convention proposée — un champ optionnel commun :
+
+```typescript
+// Ajouté à Product, Category (et toute future entité qui adopte la corbeille)
+deletedAt?: Timestamp
+```
+
+- Une "suppression" devient `update({ deletedAt: serverTimestamp() })` plutôt qu'un vrai `delete()`.
+- Toute requête de listing applicative (pas les règles Firestore, qui ne filtrent pas facilement sur l'absence d'un champ) exclut les documents avec `deletedAt` renseigné.
+- Restaurer = `update({ deletedAt: null })` (ou `deleteField()`).
+- Suppression définitive (après le compte à rebours de BF-100, géré côté client comme le `NavigationBlockerProvider`/toasts `sonner` déjà utilisés ailleurs) = le vrai `delete()` Firestore.
+- Implémentation suggérée : un `TrashService` générique paramétré par repository (`TrashService<T>`), plutôt qu'un service dédié par entité — évite de dupliquer la logique de restauration/purge à chaque nouvelle entité qui l'adopte.
+
+### 12.5 Nouveaux modèles
+
+```typescript
+// src/models/review/Review.ts — BF-72/76/101
+interface Review {
+  id: string
+  productId: string
+  orderId: string          // garantit un avis par commande livrée, pas un avis libre
+  shopId: string
+  authorId: string
+  rating?: number
+  comment: string
+  reason?: 'defective' | 'other'   // motif transmis au vendeur (BF-76)
+  createdAt: Timestamp
+}
+
+// src/models/platform/CategoryTag.ts — BF-109, liste fermée gérée par le Super Admin
+interface CategoryTag {
+  id: string
+  name: string
+  color: string             // ex. valeur hex, pour l'affichage
+  createdAt: Timestamp
+}
+// Category (existant) gagne : tagId?: string — référence CategoryTag.id
+
+// src/models/message/Message.ts — BF-112→116
+interface Message {
+  id: string
+  fromShopId: string        // la boutique du commerçant qui écrit
+  fromUserId: string
+  subject: string
+  body: string
+  template: string           // identifiant du modèle de mise en forme choisi
+  signature: string           // initiales auto-générées (commerçant) ou "ManuShop" (Super Admin)
+  parentId?: string           // présent sur la réponse du Super Admin, pointe vers le message d'origine
+  createdAt: Timestamp
+}
+
+// src/models/analytics/ShopVisitEvent.ts — BF-107, premium
+interface ShopVisitEvent {
+  id: string
+  shopId: string
+  productId?: string        // absent = visite de la boutique elle-même
+  occurredAt: Timestamp
+  hour: number                // dénormalisé pour agréger sans recalculer depuis occurredAt
+  locationLabel?: string       // meilleur effort (pays/ville), pas de géolocalisation précise prévue
+}
+```
+
+### 12.6 Paiement (interface seulement pour l'instant)
+
+BF-78 : écran de sélection Visa / Orange Money / MTN Mobile Money. **Aucune intégration réelle** — décision explicite de l'utilisateur de choisir un prestataire (gratuit ou peu coûteux) en fin de développement. À construire maintenant : uniquement le composant de sélection et l'état "méthode choisie" dans le flux de commande/abonnement, avec un point d'extension clair (ex. `PaymentProvider` interface, une seule implémentation factice `"none"` en attendant) plutôt que de coder en dur un flux Visa/Orange/MTN qui n'existe pas encore.
+
+### 12.7 Page Marché & tags système
+
+BF-108→111. Généralise `/demo-catalogue` (construit le 2026-09-24 avec `src/data/mockData.ts`) à de vraies données :
+- Haut de page : les 4 meilleures boutiques — nécessite un classement réel (aujourd'hui approximé pour la vitrine landing page via `getFeaturedArticles()`, voir journal du 2026-09-24 ; même absence de métrique de vente réelle ici, même approche de proxy documenté à prévoir en attendant).
+- Bas de page : tous les produits publiés (`isPublished == true`, §12.2) de toutes les boutiques publiées (`shops.isPublished == true`), triables/filtrables par `CategoryTag` (§12.5) plutôt que par le nom de catégorie propre à chaque boutique.
+
+### 12.8 Journal d'activité commerçant (BF-98)
+
+```typescript
+// src/models/activity/ActivityLogEntry.ts
+interface ActivityLogEntry {
+  id: string
+  shopId: string
+  actorId: string
+  action: string             // ex. "product.created", "order.status_changed"
+  targetType: string
+  targetId: string
+  metadata?: Record<string, unknown>
+  createdAt: Timestamp
+}
+```
+Alimenté en écriture à chaque opération commerçant pertinente (produit, catégorie, commande, retour...) ; le rapport imprimable (BF-98) est une mise en forme de cette collection filtrée par boutique et par période, dans le même esprit que les factures groupées par période (BF-104).

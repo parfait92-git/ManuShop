@@ -1,15 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 import type { UserRole } from "./UserRole";
 
-/** Durées d'abonnement proposées pour devenir admin d'une boutique
- * (Module 12, BF-68). */
-export type SubscriptionPlan =
-  | "daily"
-  | "weekly"
-  | "monthly"
-  | "quarterly"
-  | "yearly";
-
 export interface User {
   id: string;
   // Optional: a user who signed up via téléphone or anonymement has no
@@ -23,15 +14,13 @@ export interface User {
   displayName: string;
   phone?: string;
   photoURL?: string;
-  // Comment ce compte est devenu admin (Module 12, BF-68) — détermine si le
-  // rôle expire tout seul ou reste tant que le Super Admin ne le retire pas
-  // manuellement. Absent pour un compte qui n'a jamais été admin.
+  // Comment ce compte a obtenu pour la première fois le droit de gérer des
+  // boutiques — "manual" (attribution par le Super Admin, BF-68) ou
+  // "subscription" (première boutique créée via l'assistant self-service,
+  // BF-79→85). Purement informatif ici, sans notion d'expiration : depuis
+  // le 2026-09-25, l'abonnement qui expire réellement est celui de CHAQUE
+  // boutique (`Shop.adminSource`/`subscriptionPlan`/`subscriptionExpiresAt`),
+  // pas du compte — un `role: 'admin'` ne redescend jamais tout seul (BF-93).
   adminSource?: "manual" | "subscription";
-  // Renseignés uniquement quand `adminSource === "subscription"`. Un job
-  // planifié côté serveur (pas encore construit, voir 04-besoins-techniques
-  // §11.5) doit repasser `role` à `client` une fois `subscriptionExpiresAt`
-  // dépassé.
-  subscriptionPlan?: SubscriptionPlan;
-  subscriptionExpiresAt?: Timestamp;
   createdAt: Timestamp;
 }

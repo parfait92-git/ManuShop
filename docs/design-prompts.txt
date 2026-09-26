@@ -1,0 +1,457 @@
+PROMPTS IA — GENERATEUR DE DESIGN UI (ManuShop)
+Généré le 2026-09-25, à partir des Modules 13→22 (BF-71→119) de 02-besoins-fonctionnels.md.
+Colle le résultat de chaque prompt au fur et à mesure — voir la checklist [ ] en tête de chaque bloc.
+
+================================================================
+STYLE PRIMER — à coller une fois si l'outil garde un "system prompt"
+================================================================
+
+--- STYLE A — Vitrine publique ---
+(landing uniquement — voir la correction du 2026-09-25 ci-dessous)
+
+CORRECTION DU 2026-09-25, à lire avant d'utiliser ce style : en construisant
+la fiche produit et l'écran de paiement pour de vrai, capture à l'appui
+(/catalogue réel), le storefront (catalogue, fiche produit, tunnel de
+commande...) s'est révélé en thème CLAIR neutre (mêmes tokens que le style B
+ci-dessous), pas sombre glassmorphism. Seule la landing page marketing (`/`,
+avec son fond bleu-nuit et ses cartes en verre) utilise réellement ce style A.
+Les items 2/3/4 ci-dessous (suivi de commande, avis, retour) sont donc reçus
+en thème sombre mais seront reconstruits en thème clair (style B) le jour où
+le Module 4 (Commandes) existera. Description conservée telle quelle
+ci-dessous pour référence historique.
+
+Thème sombre glassmorphism. Fond bleu-nuit très foncé (#0f172a) avec des formes
+lumineuses floues violettes/cyan en arrière-plan. Cartes en verre dépoli (fond
+blanc à 5-10% d'opacité, bordure blanche à 10% d'opacité, coins très arrondis
+20-24px, léger backdrop-blur). Badges pilule translucides avec icône. Boutons
+principaux blancs pleins sur fond sombre, texte foncé ; boutons secondaires
+"ghost" à bordure fine translucide. Dégradés d'accent colorés (violet/indigo,
+cyan/bleu, orange/ambre/rose) sur les vignettes produit. Typographie Inter,
+titres blancs en gras, texte secondaire blanc à 70% d'opacité. Mobile-first,
+contexte camerounais, interface en français.
+
+--- STYLE B — Espace de gestion ---
+(dashboard commerçant, corbeille, paramètres, factures, messagerie, Super Admin)
+
+Thème clair neutre minimaliste, type shadcn/ui. Fond blanc, texte gris très
+foncé/noir, bordures gris clair (#e2e2e2), coins arrondis moyens (8-10px),
+aucun dégradé ni effet glass — un espace de travail fonctionnel, pas une
+vitrine. Boutons pleins noirs, boutons "outline" à bordure fine, icônes Lucide
+fines. Tableaux/listes séparés par une bordure fine, badges de statut colorés
+discrets (vert/ambre/rouge pastel). Typographie Inter. Pensé d'abord
+desktop/tablette (usage gérant de boutique). Interface en français.
+
+Astuce : si l'outil accepte une image de référence en plus du texte, une
+capture de /dashboard/products (style B) ou de la landing page (style A)
+donnera un résultat plus fidèle qu'un prompt seul.
+
+================================================================
+MODULE 13/14 — CLIENT (style A)
+================================================================
+
+[x] 1. Fiche produit (BF-71/72/73) — REÇU et IMPLÉMENTÉ 2026-09-25 (/catalogue/[productId], thème clair réel — voir correction ci-dessus)
+----------------------------------------
+Page fiche produit d'une boutique en ligne, thème [A]. Galerie photo en haut
+(carrousel + pastilles), nom du produit, catégorie en badge, prix (barré si
+promotion), indicateur de stock ("En stock" vert / "Stock faible" ambre /
+"Rupture" rouge — bouton Ajouter au panier désactivé si rupture), description
+détaillée, bouton principal "Ajouter au panier" + bouton favoris (cœur).
+Section "Avis clients" en dessous : note moyenne en étoiles, liste d'avis
+(nom, note, commentaire, date). Bouton retour vers la boutique en haut.
+
+RÉSULTAT REÇU — capture image, détails à répliquer à l'implémentation :
+- Lien "← Retour à la boutique" en haut, texte simple + icône flèche (pas de bouton).
+- Titre produit en très grand (H1, gras, blanc), au-dessus de la galerie.
+- Galerie : grande image dans une carte glass, bande de vignettes sous l'image
+  (une seule vignette visible sur la capture, bordure cyan sur l'image active).
+- Colonne de droite : badge unique combinant catégorie + statut ("Mode · Nouveau"),
+  prix en très grand/gras ("18 500 FCFA"), description courte en dessous,
+  puis indicateur de stock en texte coloré vert avec un point séparateur
+  ("En stock · 12 disponibles") — pas un badge/pilule, juste du texte.
+- Rangée de boutons : "Ajouter au panier" (pilule blanche pleine, pleine largeur)
+  + bouton rond "ghost" (cœur favoris) à droite, même hauteur.
+- Carte "Avis clients" séparée en dessous : note moyenne en étoile + "(24 avis)",
+  puis UNE citation d'avis en aperçu (pas la liste complète affichée ici).
+
+[~] 2. Suivi de commande (BF-75) — REÇU 2026-09-25, PAS IMPLÉMENTÉ (reporté)
+----------------------------------------
+Bloqué sur le Module 4 (Commandes), toujours inexistant en code au 2026-09-25
+(aucune commande n'est jamais écrite dans Firestore — "Commander" n'ouvre
+qu'un lien WhatsApp). À reconstruire en thème clair (style B) une fois de
+vraies commandes existantes.
+
+Page de suivi de commande client, thème [A]. Numéro de commande et date en
+haut. Frise verticale des statuts : En cours d'analyse → Prêt pour la
+livraison → Livraison en cours → Livré, icône + date/heure par étape
+franchie, étapes futures grisées. Si livrée : bouton "Laisser un avis".
+Récapitulatif des articles (photo miniature, nom, quantité, prix) et total.
+
+[~] 3. Avis après livraison (BF-76) — REÇU 2026-09-25, PAS IMPLÉMENTÉ (reporté)
+----------------------------------------
+Même blocage que l'item 2 — nécessite une vraie commande livrée.
+
+Formulaire d'avis après livraison, thème [A], en modale. Sélecteur d'étoiles,
+champ commentaire, choix du type d'avis (satisfait / commande défectueuse) —
+si "défectueuse", un champ commentaire supplémentaire apparaît avec la
+mention qu'il sera transmis au vendeur. Bouton Envoyer.
+
+[~] 4. Demande de retour (BF-77) — REÇU 2026-09-25, PAS IMPLÉMENTÉ (reporté)
+----------------------------------------
+Même blocage que les items 2/3.
+
+Formulaire de demande de retour, thème [A], depuis une commande livrée.
+Récapitulatif de l'article, motif (liste déroulante : défectueux / ne
+convient pas / erreur / autre), champ commentaire, bouton "Demander le
+retour". Message de confirmation avec numéro de suivi une fois envoyé.
+
+[x] 5. Sélection du mode de paiement (BF-78) — REÇU et IMPLÉMENTÉ 2026-09-25 (/checkout/payment, thème clair réel)
+----------------------------------------
+Écran de sélection du moyen de paiement en fin de commande, thème [A]. Trois
+grandes cartes cliquables (empilées sur mobile) : Visa, Orange Money, MTN
+Mobile Money — une seule sélectionnable (bordure mise en évidence). Champ
+conditionnel sous la carte choisie (numéro de carte / numéro mobile money).
+Résumé du montant en bas, bouton "Payer" désactivé tant qu'aucun choix n'est fait.
+
+RÉSULTAT REÇU — implémenté avec des écarts volontaires par rapport au reçu :
+- Trois cartes Visa/Orange Money/MTN Mobile Money, une sélectionnée par défaut
+  (Visa) plutôt que "Payer" désactivé tant qu'aucun choix n'est fait — un choix
+  par défaut est plus simple et il n'y a de toute façon aucune intégration réelle
+  derrière (voir 04-besoins-techniques.md §12.6).
+- Champ conditionnel : "Numéro de carte" (Visa) ou "Numéro de téléphone"
+  (Orange Money/MTN), texte du bouton "Payer" incluant le montant.
+- "Payer" n'est jamais un succès simulé : affiche un toast honnête ("Paiement
+  non disponible pour le moment") — `sonner` monté globalement pour l'occasion
+  (dépendance installée depuis le début mais jamais utilisée avant).
+- Thème clair réel (pas le thème sombre du prompt initial — voir correction
+  du style A en tête de fichier), accessible uniquement connecté
+  (`ProtectedRoute`, BF-74).
+
+================================================================
+MODULE 15 — CRÉATION DE BOUTIQUE (style A, en modale)
+================================================================
+
+[x] 6. Assistant — étape Infos (BF-79/80) — IMPLÉMENTÉ 2026-09-25
+----------------------------------------
+Fenêtre modale en plusieurs étapes pour créer une boutique, thème [A] sur
+overlay assombri. Indicateur d'étapes en haut (4 : Infos, Logo, Récapitulatif,
+Abonnement). Étape 1 : champs Nom de la boutique, Secteur d'activité, Ville,
+Téléphone, WhatsApp. Boutons "Annuler" et "Suivant".
+
+RÉSULTAT REÇU — capture, sous forme de modale claire (pas de thème sombre —
+cohérent avec la correction du style A ci-dessus) :
+- Eyebrow "Espace gérant" (bleu) + titre "Créer ma boutique", bouton fermer
+  (×) en haut à droite.
+- Barre de progression segmentée (4 segments égaux, remplis en bleu jusqu'à
+  l'étape courante), labels "1. Infos / 2. Logo / 3. Récapitulatif /
+  4. Abonnement" en dessous.
+- Étape 1 : "Parlez-nous de votre activité" + sous-titre. Nom de la boutique
+  (pleine largeur) ; Secteur d'activité + Ville (2 colonnes) ; Téléphone +
+  WhatsApp (2 colonnes), avec un texte d'aide en placeholder plutôt qu'un
+  exemple ("Numéro joignable pour vos clients" / "Numéro utilisé pour
+  recevoir les commandes").
+- Pied de modale toujours identique dans les 4 étapes : "← Retour" (grisé/
+  désactivé à l'étape 1) à gauche, bouton d'action sombre à droite.
+
+ÉCARTS RÉELS : "Secteur d'activité" et "Ville" sont optionnels (pas de note
+distincte sur la capture) ; "Ville" est stocké dans le champ `Shop.address`
+déjà existant, pas dans un nouveau champ dédié.
+
+[x] 7. Assistant — étape Logo (BF-81) — IMPLÉMENTÉ 2026-09-25
+----------------------------------------
+Étape 2 de l'assistant (même modale), thème [A]. Choix "Galerie" (zone de
+dépôt de fichier) ou "Lien" (champ URL, via case à cocher). Une fois une
+image choisie : cadre de recadrage carré ajustable. Logo par défaut affiché
+si rien n'est fourni, mention "Optionnel — vous pourrez l'ajouter plus tard".
+
+RÉSULTAT REÇU :
+- "Ajoutez votre logo" + "Optionnel — vous pourrez l'ajouter plus tard. Un
+  logo aide vos clients à reconnaître votre boutique."
+- Bascule à deux onglets "Galerie" / "Lien" (segmented control) plutôt
+  qu'une case à cocher — Galerie actif par défaut.
+- Zone de dépôt en pointillés, icône upload, "Déposez votre logo ici" +
+  "PNG ou JPG, carré de préférence".
+- Encart d'aide (fond bleu très pâle) : "Choisissez une image nette et
+  reconnaissable, même affichée en petit format."
+- Pas de recadrage visible à cette étape sur la capture (probablement une
+  étape supplémentaire après sélection d'un fichier, non déclenchée ici).
+
+ÉCARTS RÉELS : le recadrage EST implémenté (réutilise `ImageCropDialog`,
+comme les images produit) — juste non visible sur la capture reçue, qui
+montrait l'état avant sélection d'un fichier. Pas d'encart d'aide bleu pâle
+(non repris, cohérent avec le reste de l'assistant qui n'en a pas ailleurs).
+
+[x] 8. Assistant — étape Récapitulatif (BF-82) — IMPLÉMENTÉ 2026-09-25
+----------------------------------------
+Étape 3 de l'assistant, thème [A]. Résumé en lecture seule (logo en aperçu
+rond, nom, secteur, ville, contacts), lien "Modifier" par section renvoyant
+à l'étape correspondante. Boutons "Retour" et "Continuer vers l'abonnement".
+
+RÉSULTAT REÇU :
+- "Vérifiez vos informations" + "Relisez les informations avant de choisir
+  votre abonnement."
+- Carte unique contenant 4 lignes séparées par un filet horizontal :
+  BOUTIQUE / SECTEUR / VILLE / CONTACTS (libellé en majuscules, petit, gris),
+  valeur en dessous ("Non renseigné(e)" si vide), lien "Modifier" aligné à
+  droite sur chaque ligne — pas d'aperçu du logo affiché ici contrairement
+  au prompt initial.
+- Bouton d'action : "Continuer vers l'abonnement →".
+
+ÉCARTS RÉELS : pas d'aperçu du logo sur cette étape, conforme à la capture
+reçue. Bug trouvé en vérifiant en direct : ce bouton, `type="button"`,
+partageait la même position dans le DOM que le bouton `type="submit"` de
+l'étape suivante sans `key` React distincte — un clic dessus déclenchait
+une soumission réelle immédiate (React mutait l'attribut `type` en place
+avant que le navigateur traite l'action par défaut du clic). Corrigé avec
+des `key` distinctes ; voir `06-journal-progression.md` (entrée du
+2026-09-25, assistant "Créer ma boutique").
+
+[x] 9. Assistant — étape Abonnement (BF-83) — IMPLÉMENTÉ 2026-09-25
+----------------------------------------
+Étape 4 et finale, thème [A]. Cinq cartes d'abonnement (Quotidien,
+Hebdomadaire, Mensuel, Trimestriel, Annuel), chacune prix + avantages, badge
+"Meilleure offre" sur l'annuel, carte sélectionnée mise en évidence. Bouton
+final "Confirmer et créer ma boutique".
+
+RÉSULTAT REÇU :
+- "Choisissez votre abonnement" + "Vous pourrez faire évoluer votre formule
+  selon votre activité."
+- Grille 3+2 : Quotidien 500 FCFA / Hebdomadaire 2 500 FCFA / Mensuel
+  8 000 FCFA (rangée du haut), Trimestriel 20 000 FCFA / Annuel 60 000 FCFA
+  (rangée du bas). Chaque carte : nom, prix en gras/grand, description courte
+  ("Idéal pour tester votre boutique", "Économisez 37%"...).
+- Annuel présélectionné visuellement (bordure + fond bleu très pâle) avec un
+  badge "Meilleure offre" qui chevauche le coin supérieur de la carte.
+- Bouton final "Confirmer et créer ma boutique ✓", en bleu/sarcelle — seul
+  bouton d'action de tout l'assistant qui n'est pas noir, pour le distinguer
+  comme l'action finale/positive.
+
+ÉCARTS RÉELS : bouton final repris en style neutre (cohérent avec les
+boutons `Button` déjà utilisés partout ailleurs dans l'assistant), pas en
+bleu/sarcelle distinct — pas de composant "bouton positif" séparé dans le
+design system actuel. Prix des 5 offres repris tels quels de la capture —
+signalés comme placeholders non validés dans `06-journal-progression.md`
+et `02-besoins-fonctionnels.md` (BF-83). Après confirmation : pas d'écran
+de confirmation séparé (voir écart noté ci-dessous) — redirection directe
+vers `/dashboard`, qui affiche déjà la nouvelle boutique.
+
+ÉCRAN DE CONFIRMATION (pas un prompt demandé séparément, reçu avec l'item 9) :
+- Après confirmation : petite carte centrée (pas le chrome de la modale à 4
+  étapes), icône coche verte dans un cercle, "Votre boutique est créée",
+  "Vous pouvez maintenant ajouter vos produits et commencer à vendre.",
+  bouton "Créer une autre boutique".
+- **Note de l'utilisateur, à traiter à l'implémentation** : à la fin de la
+  création, l'utilisateur doit être redirigé vers la page de sa boutique
+  (conforme à BF-85 : "redirigé vers la page admin de sa nouvelle boutique")
+  — pas seulement recevoir un écran de confirmation avec un bouton "créer une
+  autre boutique". Les deux ne s'excluent pas forcément (confirmation brève
+  puis redirection), à trancher à l'implémentation.
+- Route utilisée par le générateur pour cet écran : `/admin/stores` — juste
+  informatif, le choix final de route reste à faire à l'implémentation
+  (cohérence avec le reste du routing dashboard existant, ex. `/dashboard/...`).
+
+================================================================
+MODULE 16/17/18/19 — ESPACE COMMERÇANT (style B)
+================================================================
+
+[x] 10. Page "Gestion de boutique" (BF-87) — REÇU 2026-09-25 (pas encore GO)
+----------------------------------------
+Page "Gestion de boutique" listant toutes les boutiques d'un commerçant,
+thème [B]. Grille de cartes (logo, nom, ville, badge statut : Publiée vert /
+Brouillon gris / Abonnement expiré rouge, date d'expiration, bouton "Gérer").
+Bouton "+ Créer une nouvelle boutique".
+
+RÉSULTAT REÇU — coquille commune aux items 10/12/13/14 (voir note globale à
+la fin de ce bloc) :
+- Grille : une carte par boutique (logo/icône, nom, ville · secteur, badge de
+  statut, date d'expiration, bouton "Gérer" pleine largeur), puis une carte
+  supplémentaire en pointillés "+ Créer une nouvelle boutique" (pas un bouton
+  séparé en haut de page comme dans le prompt initial — la carte EST le
+  bouton).
+
+[ ] 11. Bannière de publication + Paramètres visibilité (BF-88)
+----------------------------------------
+Bandeau d'alerte en haut d'un dashboard de boutique non publiée, thème [B] :
+fond ambre clair, icône d'avertissement, "Votre boutique n'est pas encore
+visible par vos clients", bouton "Publier ma boutique". Plus : section
+"Visibilité" dans Paramètres généraux avec interrupteur Publiée/Non publiée.
+
+APERÇU PARTIEL REÇU (avec les items 10/12/13/14, pas encore un prompt dédié) :
+- Le bandeau n'apparaît pas QUE sur le tableau de bord — il est présent sur
+  TOUTES les pages de la coquille commerçant (Gestion de boutique, Produits,
+  Commande, Corbeille...) tant que la boutique n'est pas publiée : un bandeau
+  persistant au niveau de la coquille, pas par page. Bouton orange plein
+  (pas la couleur d'accent bleue utilisée ailleurs), aligné à droite du texte.
+
+[x] 12. Liste produits avec publication (BF-90) — REÇU 2026-09-25 (pas encore GO)
+----------------------------------------
+Table de gestion des produits, thème [B]. Colonnes : photo, nom, catégorie,
+prix, stock, interrupteur Publié/Non publié par ligne, actions (Modifier,
+icône corbeille). Ligne grisée quand le produit n'est pas publié.
+
+RÉSULTAT REÇU :
+- Titre de page "Produits et publication" (pas juste "Produits").
+- Colonnes : Produit (icône image placeholder + nom), Catégorie, Prix, Stock,
+  Publié (badge vert plutôt qu'un interrupteur comme demandé — à clarifier/
+  ajuster à l'implémentation si un interrupteur est préféré), Action (icône
+  corbeille seule, pas de "Modifier" séparé visible).
+- Pas de ligne grisée visible sur la capture (aucun produit dépublié dans cet
+  exemple) — à vérifier à l'implémentation.
+- Champ "Rechercher" en haut à droite du tableau.
+
+[x] 13. Corbeille (BF-99/100) — REÇU 2026-09-25 (pas encore GO)
+----------------------------------------
+Page Corbeille, thème [B]. Liste des éléments supprimés (type, nom, date),
+boutons "Restaurer" et "Supprimer définitivement" par ligne. Au clic sur
+suppression définitive : modale avec compte à rebours visuel (cercle qui se
+vide en 5s) et gros bouton "Annuler" qui stoppe tout avant la fin.
+
+RÉSULTAT REÇU :
+- Ligne : "Produit · Sandales en cuir · 21 sept. 2026" (type · nom · date,
+  séparés par des points), boutons "↺ Restaurer" (outline) et "Supprimer
+  définitivement" (plein rouge) alignés à droite.
+- Modale de compte à rebours non capturée sur cette image (pas cliqué) — à
+  construire selon le prompt initial (cercle qui se vide, bouton Annuler).
+
+[x] 14. Gestion des statuts de commande (BF-95/96/97) — REÇU 2026-09-25 (pas encore GO)
+----------------------------------------
+Page détail d'une commande côté commerçant, thème [B]. Infos client, liste
+des articles. Étapes de statut cliquables en séquence (En cours d'analyse /
+Prêt pour la livraison / Livraison en cours / Livré). Une fois "Livré" :
+boutons "Marquer comme retourné" / "Marquer comme défectueux", chacun ouvrant
+un commentaire obligatoire avant confirmation, avec mention du restockage auto.
+
+RÉSULTAT REÇU (capture prise à l'étape 2/4, boutons retour/défectueux pas
+visibles sur cette image — normal, ils n'apparaissent qu'une fois "Livré") :
+- Titre "Commande #MS-2048" (préfixe MS, pas #MA comme dans l'aperçu client
+  du produit reçu plus tôt — à harmoniser à l'implémentation, un seul préfixe
+  de numérotation de commande dans toute l'app).
+- Sous-titre "Client : Nadège Tchana · 28 000 FCFA" (nom + montant total sur
+  une ligne, pas la liste détaillée des articles visible sur cette capture).
+- 4 étapes en boutons rectangulaires côte à côte (pas une frise verticale
+  comme côté client) : étapes déjà franchies en bleu clair actif, étapes
+  futures grisées/désactivées.
+
+NOTE GLOBALE (items 10/12/13/14) : toutes les captures partagent la même
+coquille — eyebrow "Espace commerçant", sous-titre identique sur toutes les
+pages ("Gérez votre activité, vos publications et vos commandes depuis un
+seul espace."), et le bandeau de publication de l'item 11 toujours visible.
+Cohérent avec une vraie coquille de layout partagée (comme `DashboardShell`
+existant) plutôt que des pages indépendantes.
+
+[x] 15. Journal d'activité (BF-98) — REÇU 2026-09-25 (pas encore GO)
+----------------------------------------
+Page journal d'activité, thème [B]. Liste chronologique inversée
+d'événements (icône par type), texte descriptif, auteur, date/heure. Filtres
+par type et par période. Bouton "Imprimer le rapport" en haut à droite.
+
+RÉSULTAT REÇU — même coquille "Espace commerçant" que les items 10/12/13/14
+(bandeau de publication persistant compris) :
+- Titre "Journal d'activité" + sous-titre générique partagé par toutes les
+  pages de la coquille ("Gérez votre activité, vos publications et vos
+  commandes depuis un seul espace.").
+- Carte "Activité récente" avec bouton "🖨 Imprimer" à droite du titre (pas
+  en haut de la page entière comme dans le prompt initial).
+- 3 lignes d'exemple, icône horloge + texte + auteur + délai relatif :
+  "Produit publié · Marie Ngono · il y a 12 min", "Commande #MS-2048 passée
+  · il y a 1 h", "Paramètres modifiés · Marie Ngono · hier" — séparées par
+  un filet horizontal, pas de bordure de carte par ligne.
+- Pas de filtres type/période visibles sur cette capture (probablement
+  repliés/absents de cet état) — à construire selon le prompt initial si
+  jugé utile à l'implémentation.
+
+ÉCARTS RÉELS / STATUT D'IMPLÉMENTATION : **bloqué en l'état sur le Module 4
+(Commandes)**, comme BF-75/76/77 avant lui — un événement "Commande #MS-2048
+passée" suppose une vraie commande, alors qu'aucune commande n'est jamais
+écrite dans Firestore aujourd'hui. Les événements "Produit publié"/
+"Paramètres modifiés" sont réels et indépendants des commandes (déclenchables
+dès la publication produit et l'enregistrement des paramètres) — voir
+06-journal-progression.md pour la décision de périmètre prise avec
+l'utilisateur.
+
+[x] 16. Tableau de bord ventes + factures par période (BF-102/103/104) — REÇU 2026-09-25 (pas encore GO)
+----------------------------------------
+Section tableau de bord commerçant, thème [B]. Sélecteur de période (Jour/
+Semaine/Année) avec deux dates bornées (création boutique → aujourd'hui).
+Graphique simple des ventes + total. Section "Factures" séparée : liste
+groupée par période, lien "Voir" et icône imprimante par ligne.
+
+RÉSULTAT REÇU :
+- Titre "Ventes et factures", même coquille.
+- Carte "Ventes de la semaine" : montant total en gros ("284 500 FCFA") +
+  graphique en barres simple (7 barres, une par jour) — pas de sélecteur de
+  période Jour/Semaine/Année visible sur cette capture (probablement une
+  vue par défaut) ; pas de bornes de dates visibles non plus.
+- Carte "Factures" séparée à droite : liste "Septembre 2026 · FAC-2048" /
+  "Août 2026 · FAC-1992", lien "Voir" par ligne, icône document en haut à
+  droite du titre de carte (pas d'icône imprimante par ligne comme dans le
+  prompt initial).
+
+ÉCARTS RÉELS / STATUT D'IMPLÉMENTATION : **bloqué sur le Module 4**, même
+raison que l'item 15 — "ventes de la semaine" et "factures" n'ont de sens
+qu'avec de vraies commandes payées ; aucune donnée réelle à afficher
+aujourd'hui, construire cette page maintenant donnerait une vitrine qui a
+l'air de marcher mais n'affichera jamais rien de vrai.
+
+[x] 17. Paramètres — moyens de contact & réseaux sociaux (BF-105/106) — DÉJÀ CONSTRUIT (confirmé 2026-09-25)
+----------------------------------------
+Section Paramètres, thème [B], badge "Premium". Cases à cocher par réseau
+(Email, WhatsApp, Facebook, Instagram) — cocher révèle un champ lien, avec
+icône verte si le lien est jugé sécurisé ou message d'erreur rouge sinon.
+
+RÉSULTAT REÇU — correspond presque mot pour mot à `/dashboard/shop`
+(`ShopSettingsForm.tsx`) déjà livré avant cette tranche (titre, sous-titre,
+sections Régionalisation/Publication multicanale/Notifications de
+commande/Contacts de commande identiques) : rien de nouveau à construire
+ici. Écarts mineurs jamais implémentés (pas bloquants) : pas de badge
+"Premium" affiché, pas de cases à cocher multi-réseaux avec validation de
+lien par icône verte/rouge (un seul "Réseau social principal" en liste
+déroulante à la place) — resterait à faire si le comportement multi-réseaux
+exact du prompt initial est souhaité plus tard.
+
+[ ] 18. Statistiques de consultation (BF-107)
+----------------------------------------
+Page statistiques d'une boutique, thème [B], badge "Premium". Trois cartes
+chiffrées (Visites, Article le plus consulté, le moins consulté). Graphique
+en barres des visites par heure, liste des principales zones géographiques.
+
+================================================================
+MODULE 20 — MARCHÉ & TAGS (style A)
+================================================================
+
+[ ] 19. Page Marché (BF-108/109/110/111)
+----------------------------------------
+Page publique "Marché", thème [A]. En haut : "4 meilleures boutiques", 4
+grandes cartes boutique (logo, nom, secteur). En dessous : rangée de filtres
+par tag coloré (pastilles, ex. Alimentation/Mode/Électronique), puis grille
+de tous les produits publiés de toutes les boutiques (photo, nom, prix,
+badge boutique d'origine).
+
+================================================================
+MODULE 21/22 — MESSAGERIE & SUPER ADMIN (style B)
+================================================================
+
+[ ] 20. Formulaire "Nous contacter" commerçant (BF-112)
+----------------------------------------
+Formulaire "Nous contacter" commerçant, thème [B], badge "Premium". Champs
+Objet, Corps (zone large), aperçu de signature auto-générée (initiales dans
+un cercle + nom), sélecteur de modèle de mise en forme (2-3 vignettes
+cliquables). Bouton "Envoyer".
+
+[ ] 21. Boîte de réception messages (BF-113/114/115/116)
+----------------------------------------
+Interface de messagerie type boîte de réception, thème [B]. Colonne gauche :
+liste de conversations (nom, objet, aperçu, date, pastille non-lu). Colonne
+droite : fil de conversation, bulles alternées, champ de réponse. Vue Super
+Admin : signature des réponses avec logo ManuShop + "Équipe ManuShop" auto.
+
+[ ] 22. Liste des commerçants — Super Admin (BF-117)
+----------------------------------------
+Page Super Admin listant les commerçants, thème [B]. Table : nom, email/
+téléphone, nombre de boutiques, date d'inscription, bouton "Voir le détail".
+
+[ ] 23. Détail d'un commerçant — Super Admin (BF-118/119)
+----------------------------------------
+Page détail d'un commerçant pour le Super Admin, thème [B]. Infos en haut,
+puis une carte par boutique détenue (statut d'abonnement) et, pour chacune,
+une liste de privilèges premium (Statistiques, Paramètres avancés, Factures
+avancées...) avec interrupteur Activé/Désactivé basculable manuellement.

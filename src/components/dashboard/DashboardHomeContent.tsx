@@ -62,7 +62,7 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
   useEffect(() => {
     let active = true;
     Promise.all([
-      productService.listProducts(shopId),
+      productService.listActive(shopId),
       categoryService.listCategories(shopId),
     ]).then(([productList, categoryList]) => {
       if (!active) return;

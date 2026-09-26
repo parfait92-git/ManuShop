@@ -8,10 +8,12 @@ import {
   Save,
   Settings2,
   Bell,
+  Eye,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +26,7 @@ import {
   type ShopSettingsInput,
 } from "@/lib/validation/auth";
 import type { PrimarySocialNetwork, Shop } from "@/models/shop/Shop";
+import { activityLogService } from "@/services/ActivityLogService";
 import { shopService } from "@/services/ShopService";
 
 const NETWORK_LABELS: Record<PrimarySocialNetwork, string> = {
@@ -55,6 +58,7 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
     urgentPhoneAlerts: shop.urgentPhoneAlerts ?? true,
     contactEmail: shop.contactEmail ?? "",
     urgentPhone: shop.urgentPhone ?? "",
+    isPublished: shop.isPublished ?? false,
   };
 }
 
@@ -94,6 +98,7 @@ function InfoPanel() {
 }
 
 export function ShopSettingsForm({ shopId }: { shopId: string }) {
+  const { profile } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -121,6 +126,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const phone = useWatch({ control, name: "phone" });
   const whatsapp = useWatch({ control, name: "whatsapp" });
   const urgentPhone = useWatch({ control, name: "urgentPhone" });
+  const isPublished = useWatch({ control, name: "isPublished" });
 
   useEffect(() => {
     let active = true;
@@ -138,6 +144,13 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   async function onSubmit(data: ShopSettingsInput) {
     setSaved(false);
     await shopService.updateProfile(shopId, data);
+    if (profile) {
+      await activityLogService.logShopSettingsUpdated({
+        shopId,
+        actorId: profile.id,
+        actorName: profile.displayName,
+      });
+    }
     setSaved(true);
   }
 
@@ -157,6 +170,40 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Eye className="size-4.5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold">Visibilité</h2>
+                <p className="text-sm text-muted-foreground">
+                  Contrôlez si vos clients peuvent voir votre boutique (BF-88).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">
+                  {isPublished ? "Boutique publiée" : "Boutique non publiée"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isPublished
+                    ? "Vos clients peuvent consulter votre catalogue et commander."
+                    : "Invisible pour vos clients tant qu'elle n'est pas publiée."}
+                </p>
+              </div>
+              <Switch
+                checked={isPublished}
+                onCheckedChange={(checked) =>
+                  setValue("isPublished", checked)
+                }
+                aria-label="Publier la boutique"
+              />
+            </div>
+          </section>
+
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div>
               <h2 className="text-lg font-semibold">Profil de la boutique</h2>

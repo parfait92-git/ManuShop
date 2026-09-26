@@ -5,6 +5,7 @@ import { HelpCircle, Info, Plus, Tag, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,9 @@ import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
 import { CategorySchema, type CategoryInput } from "@/lib/validation/product";
 import type { Category } from "@/models/category/Category";
+import { activityLogService } from "@/services/ActivityLogService";
 import { categoryService } from "@/services/CategoryService";
+import { categoryTrashService } from "@/services/TrashService";
 
 function CategoryForm({
   shopId,
@@ -217,6 +220,7 @@ export function CategoryManager({
   shopId: string;
   initialCategories: Category[];
 }) {
+  const { profile } = useAuth();
   const [categories, setCategories] = useState(initialCategories);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -253,14 +257,21 @@ export function CategoryManager({
 
   async function handleDelete(category: Category) {
     const confirmed = window.confirm(
-      `Supprimer la catégorie « ${category.name} » ? Cette action est irréversible.`
+      `Déplacer la catégorie « ${category.name} » vers la corbeille ?`
     );
     if (!confirmed) return;
 
     setDeletingId(category.id);
     setListError(null);
     try {
-      await categoryService.deleteCategory(category.id);
+      await categoryTrashService.softDelete(category.id);
+      if (profile) {
+        await activityLogService.logCategoryTrashed(
+          { shopId, actorId: profile.id, actorName: profile.displayName },
+          category.id,
+          category.name
+        );
+      }
       setCategories((current) => current.filter((c) => c.id !== category.id));
     } catch {
       setListError("Impossible de supprimer cette catégorie. Réessayez.");

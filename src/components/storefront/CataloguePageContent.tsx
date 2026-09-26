@@ -68,9 +68,15 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
     };
   }, [shopId]);
 
-  const visibleProducts = useMemo(() => {
+  const publishedProducts = useMemo(() => {
     if (!products) return [];
-    const bySearch = productService.search(products, term);
+    return products.filter((product) =>
+      productService.isVisibleToCustomers(product)
+    );
+  }, [products]);
+
+  const visibleProducts = useMemo(() => {
+    const bySearch = productService.search(publishedProducts, term);
     const byCategory = category
       ? bySearch.filter((product) => product.category === category)
       : bySearch;
@@ -78,12 +84,13 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       ? byCategory.filter((product) => product.isPromo)
       : byCategory;
     return sortProducts(byPromo, sortOrder);
-  }, [products, term, category, sortOrder, promoOnly]);
+  }, [publishedProducts, term, category, sortOrder, promoOnly]);
 
   // La boutique existe et est publiée (vérifié par CataloguePage), mais n'a
-  // encore aucun produit — le total réel (`products`), pas `visibleProducts`
-  // qui peut être vide à cause d'une recherche/filtre sans rapport avec ça.
-  const isEmptyShop = products !== null && products.length === 0;
+  // encore aucun produit VISIBLE (aucun produit du tout, ou aucun publié) —
+  // `publishedProducts`, pas `visibleProducts` qui peut être vide à cause
+  // d'une recherche/filtre sans rapport avec ça.
+  const isEmptyShop = products !== null && publishedProducts.length === 0;
 
   useEffect(() => {
     if (isEmptyShop) {

@@ -50,7 +50,7 @@ export function CategoriesPageContent({ shopId }: { shopId: string }) {
 
   useEffect(() => {
     let active = true;
-    categoryService.listCategories(shopId).then((data) => {
+    categoryService.listActive(shopId).then((data) => {
       if (active) setCategories(data);
     });
     return () => {

@@ -10,6 +10,9 @@ import {
   Settings,
   UserCog,
   Store,
+  Building2,
+  Trash2,
+  History,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,10 +34,13 @@ const MAIN_ITEMS: NavItem[] = [
   { href: "/dashboard/categories", label: "Catégories", icon: Tag },
   { href: "/dashboard/orders", label: "Commandes", icon: ShoppingBag },
   { href: "/dashboard/clients", label: "Clients", icon: Users },
+  { href: "/dashboard/trash", label: "Corbeille", icon: Trash2 },
+  { href: "/dashboard/activity", label: "Journal d'activité", icon: History },
 ];
 
 const CONFIG_ITEMS: NavItem[] = [
   { href: "/dashboard/stats", label: "Statistiques", icon: BarChart3 },
+  { href: "/dashboard/shops", label: "Mes boutiques", icon: Building2, adminOnly: true },
   { href: "/dashboard/shop", label: "Paramètres", icon: Settings, adminOnly: true },
   { href: "/dashboard/team", label: "Équipe", icon: UserCog, adminOnly: true },
 ];

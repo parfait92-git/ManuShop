@@ -23,6 +23,10 @@ import { shopRepository } from "@/repositories/ShopRepository";
 import type { IShopRepository } from "@/repositories/interfaces/IShopRepository";
 import type { IUserRepository } from "@/repositories/interfaces/IUserRepository";
 import { userRepository } from "@/repositories/UserRepository";
+import {
+  createShopAction,
+  type CreateShopActionInput,
+} from "@/server/actions/shopActions";
 
 export interface RegisterShopOwnerInput {
   displayName: string;
@@ -161,6 +165,40 @@ export class AuthService {
   }
 
   /**
+   * BF-87 : bascule la boutique "courante" d'un commerçant qui en possède
+   * plusieurs — toutes les pages du dashboard résolvent leur boutique via
+   * `profile.shopId`, pas un id d'URL. Autorisé par les règles Firestore
+   * (`users.update`) tant que la boutique visée appartient bien à l'appelant
+   * — même clause qui autorise déjà `createShop()` ci-dessus à faire ce lien
+   * la première fois.
+   */
+  async switchShop(shopId: string): Promise<void> {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      throw new Error("Vous devez être connecté pour changer de boutique.");
+    }
+    await this.users.update(firebaseUser.uid, { shopId });
+  }
+
+  /**
+   * BF-79→85 : n'importe quel compte connecté (y compris `client`) peut
+   * créer sa boutique — contrairement à `createShop()` ci-dessus, qui exige
+   * déjà `role === 'admin'`. Passe par une Server Action privilégiée
+   * (`createShopAction`, `firebase-admin`) car aucune règle Firestore ne
+   * permet à un client de s'auto-promouvoir `admin` : c'est justement cette
+   * action qui accorde le privilège, pas une action qui le suppose déjà.
+   */
+  async createShopWithSubscription(
+    input: CreateShopActionInput
+  ): Promise<{ shopId: string }> {
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) {
+      throw new Error("Vous devez être connecté pour créer une boutique.");
+    }
+    return createShopAction(idToken, input);
+  }
+
+  /**
    * Crée un compte Vendeur pour la boutique de l'admin courant. Utilise une
    * instance Firebase secondaire pour que la création du compte (qui
    * connecte automatiquement le SDK client à ce nouvel utilisateur) ne
@@ -216,12 +254,23 @@ export class AuthService {
   }
 
   async loginWithGoogle(): Promise<FirebaseUser> {
-    const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+    const provider = new GoogleAuthProvider();
+    // Sans ça, `signInWithPopup` réutilise silencieusement la session Google
+    // encore active dans le navigateur (cookie), sans jamais proposer le
+    // sélecteur de compte — impossible de changer de compte après une
+    // déconnexion de l'app tant que le navigateur reste connecté à Google.
+    provider.setCustomParameters({ prompt: "select_account" });
+    const credential = await signInWithPopup(auth, provider);
     return credential.user;
   }
 
   async loginWithFacebook(): Promise<FirebaseUser> {
-    const credential = await signInWithPopup(auth, new FacebookAuthProvider());
+    const provider = new FacebookAuthProvider();
+    // Même piège que Google : force le ré-affichage du dialogue Facebook
+    // (choix/ré-authentification) plutôt que la reconnexion silencieuse au
+    // dernier compte utilisé dans ce navigateur.
+    provider.setCustomParameters({ auth_type: "reauthenticate" });
+    const credential = await signInWithPopup(auth, provider);
     return credential.user;
   }
 

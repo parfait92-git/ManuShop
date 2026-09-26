@@ -15,9 +15,6 @@ function fromSearchedUserDto(dto: SearchedUserDto): User {
   return {
     ...dto,
     createdAt: Timestamp.fromDate(new Date(dto.createdAt)),
-    subscriptionExpiresAt: dto.subscriptionExpiresAt
-      ? Timestamp.fromDate(new Date(dto.subscriptionExpiresAt))
-      : undefined,
   };
 }
 

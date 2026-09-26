@@ -41,6 +41,8 @@ describe("ProductService", () => {
       create: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      softDelete: jest.fn(),
+      restore: jest.fn(),
     };
     service = new ProductService(products);
   });
@@ -74,6 +76,53 @@ describe("ProductService", () => {
 
     await service.deleteProduct("p1");
     expect(products.remove).toHaveBeenCalledWith("p1");
+  });
+
+  describe("listActive", () => {
+    it("excludes products moved to the trash", async () => {
+      const active = fakeProduct({ id: "p1" });
+      const trashed = fakeProduct({ id: "p2", deletedAt: Timestamp.now() });
+      products.listByShop.mockResolvedValue([active, trashed]);
+
+      const result = await service.listActive("shop-1");
+
+      expect(result).toEqual([active]);
+    });
+  });
+
+  describe("isVisibleToCustomers", () => {
+    it("is visible when isPublished is absent (no regression for pre-existing products)", () => {
+      expect(service.isVisibleToCustomers(fakeProduct())).toBe(true);
+    });
+
+    it("is visible when explicitly published", () => {
+      expect(
+        service.isVisibleToCustomers(fakeProduct({ isPublished: true }))
+      ).toBe(true);
+    });
+
+    it("is hidden once explicitly unpublished", () => {
+      expect(
+        service.isVisibleToCustomers(fakeProduct({ isPublished: false }))
+      ).toBe(false);
+    });
+
+    it("is hidden once trashed, even if published", () => {
+      expect(
+        service.isVisibleToCustomers(
+          fakeProduct({ isPublished: true, deletedAt: Timestamp.now() })
+        )
+      ).toBe(false);
+    });
+  });
+
+  describe("setPublished", () => {
+    it("updates isPublished on the repository", async () => {
+      await service.setPublished("p1", false);
+      expect(products.update).toHaveBeenCalledWith("p1", {
+        isPublished: false,
+      });
+    });
   });
 
   describe("search", () => {

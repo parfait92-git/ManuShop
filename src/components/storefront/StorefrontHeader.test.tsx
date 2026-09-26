@@ -22,6 +22,11 @@ jest.mock("../../services/AuthService", () => ({
   authService: { logout: () => logoutMock() },
 }));
 
+jest.mock("./CreateShopWizard", () => ({
+  CreateShopWizard: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="create-shop-wizard" /> : null,
+}));
+
 import { StorefrontHeader } from "./StorefrontHeader";
 
 describe("StorefrontHeader account menu", () => {
@@ -75,5 +80,35 @@ describe("StorefrontHeader account menu", () => {
       "href",
       "/dashboard"
     );
+  });
+
+  it("offers 'Créer ma boutique' to a client, and opens the wizard on click (BF-79)", async () => {
+    mockAuth = {
+      firebaseUser: { uid: "u1", email: "ada@example.com" },
+      profile: { displayName: "Ada Diallo", role: "client" },
+    };
+    const user = userEvent.setup();
+    render(<StorefrontHeader />);
+
+    await user.click(screen.getByRole("button", { name: "Mon compte" }));
+    expect(screen.queryByTestId("create-shop-wizard")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Créer ma boutique" }));
+    expect(screen.getByTestId("create-shop-wizard")).toBeInTheDocument();
+  });
+
+  it("does not offer 'Créer ma boutique' to an admin (already has a shop)", async () => {
+    mockAuth = {
+      firebaseUser: { uid: "u2", email: "admin@example.com" },
+      profile: { displayName: "Boss", role: "admin" },
+    };
+    const user = userEvent.setup();
+    render(<StorefrontHeader />);
+
+    await user.click(screen.getByRole("button", { name: "Mon compte" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Créer ma boutique" })
+    ).not.toBeInTheDocument();
   });
 });

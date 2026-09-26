@@ -1,5 +1,5 @@
 jest.mock("../../services/ProductService", () => ({
-  productService: { listProducts: jest.fn() },
+  productService: { listActive: jest.fn() },
 }));
 
 jest.mock("../../services/CategoryService", () => ({
@@ -28,7 +28,7 @@ describe("ProductsPageContent", () => {
   });
 
   it("shows a read-only demo preview when the shop has no real products yet", async () => {
-    productServiceMock.listProducts.mockResolvedValue([]);
+    productServiceMock.listActive.mockResolvedValue([]);
     render(<ProductsPageContent shopId="shop-1" />);
 
     expect(
@@ -39,7 +39,7 @@ describe("ProductsPageContent", () => {
   });
 
   it("does not show the demo preview once the shop has real products", async () => {
-    productServiceMock.listProducts.mockResolvedValue([
+    productServiceMock.listActive.mockResolvedValue([
       { id: "p1" } as never,
     ]);
     render(<ProductsPageContent shopId="shop-1" />);

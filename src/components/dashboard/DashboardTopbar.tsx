@@ -3,11 +3,11 @@
 import { Bell, ChevronDown, Menu } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useCurrentShop } from "@/hooks/useCurrentShop";
 import { authService } from "@/services/AuthService";
-import { shopService } from "@/services/ShopService";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administratrice",
@@ -17,27 +17,10 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { profile } = useAuth();
+  const { shop } = useCurrentShop();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [shopName, setShopName] = useState<string | null>(null);
-
-  // La boutique DE CET admin/vendeur (via son propre `shopId`), pas
-  // `useShop()`/`getPrimaryShop()` — ce dernier renvoie "la première
-  // boutique de la base", sans rapport avec l'utilisateur connecté, ce qui
-  // affichait le nom de la boutique d'un tout autre compte.
-  useEffect(() => {
-    if (!profile?.shopId) {
-      queueMicrotask(() => setShopName(null));
-      return;
-    }
-    let active = true;
-    shopService.getShop(profile.shopId).then((shop) => {
-      if (active) setShopName(shop?.name ?? null);
-    });
-    return () => {
-      active = false;
-    };
-  }, [profile?.shopId]);
+  const shopName = shop?.name ?? null;
 
   async function handleLogout() {
     await authService.logout();

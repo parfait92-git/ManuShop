@@ -1,9 +1,13 @@
 import { auth } from "@/lib/firebase";
 
-/** Accepte un `Blob` brut (pas seulement `File`) : les photos produit
- * passent par un recadrage canvas (`cropImageToSquare`) avant l'envoi, qui
- * produit un `Blob` sans nom de fichier. */
-export async function uploadProductImage(file: Blob): Promise<string> {
+/** Accepte un `Blob` brut (pas seulement `File`) : les photos passent par un
+ * recadrage canvas (`cropImageToSquare`) avant l'envoi, qui produit un
+ * `Blob` sans nom de fichier. */
+async function uploadImage(
+  file: Blob,
+  filename: string,
+  folder?: string
+): Promise<string> {
   if (!auth.currentUser) {
     throw new Error("Vous devez être connecté pour envoyer une image.");
   }
@@ -13,7 +17,8 @@ export async function uploadProductImage(file: Blob): Promise<string> {
   // Le 3e argument (nom de fichier) est nécessaire : sans lui, un `Blob`
   // n'est pas converti en `File` côté FormData, et l'API `/api/uploads`
   // rejette tout ce qui n'est pas `instanceof File`.
-  formData.append("file", file, "product-image.jpg");
+  formData.append("file", file, filename);
+  if (folder) formData.append("folder", folder);
 
   const response = await fetch("/api/uploads", {
     method: "POST",
@@ -28,4 +33,12 @@ export async function uploadProductImage(file: Blob): Promise<string> {
   }
 
   return data.url as string;
+}
+
+export function uploadProductImage(file: Blob): Promise<string> {
+  return uploadImage(file, "product-image.jpg");
+}
+
+export function uploadShopLogo(file: Blob): Promise<string> {
+  return uploadImage(file, "shop-logo.jpg", "manushop/shops");
 }

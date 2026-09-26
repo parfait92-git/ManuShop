@@ -10,14 +10,10 @@ const USERS_COLLECTION = "users";
  * DTO traversant la frontière Server Action : `Timestamp` (client ou admin)
  * est une instance de classe, pas une donnée plane, et ne survit pas à la
  * sérialisation RSC telle quelle. `PlatformAdminService` reconstruit un
- * vrai `Timestamp` côté client à partir des chaînes ISO ci-dessous.
+ * vrai `Timestamp` côté client à partir de la chaîne ISO ci-dessous.
  */
-export type SearchedUserDto = Omit<
-  User,
-  "createdAt" | "subscriptionExpiresAt"
-> & {
+export type SearchedUserDto = Omit<User, "createdAt"> & {
   createdAt: string;
-  subscriptionExpiresAt?: string;
 };
 
 export async function grantAdminAction(
@@ -59,9 +55,6 @@ export async function searchUsersAction(
         id: docSnapshot.id,
         ...data,
         createdAt: data.createdAt.toDate().toISOString(),
-        subscriptionExpiresAt: data.subscriptionExpiresAt
-          ?.toDate()
-          .toISOString(),
       } as SearchedUserDto;
     })
     .filter(
