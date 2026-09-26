@@ -19,6 +19,25 @@ export class ProductService {
     return this.products.listByShop(shopId);
   }
 
+  /** Produits non mis à la corbeille (BF-99) — ce que le commerçant doit
+   * voir dans sa gestion de produits au quotidien. Les produits dépubliés
+   * restent inclus (le commerçant doit pouvoir les republier). */
+  async listActive(shopId: string): Promise<Product[]> {
+    const products = await this.products.listByShop(shopId);
+    return products.filter((product) => !product.deletedAt);
+  }
+
+  /** Visible pour un client (BF-90) : ni à la corbeille, ni dépublié. Absent
+   * de `isPublished` est traité comme publié — voir le commentaire sur
+   * `Product.isPublished`. */
+  isVisibleToCustomers(product: Product): boolean {
+    return !product.deletedAt && product.isPublished !== false;
+  }
+
+  setPublished(id: string, isPublished: boolean): Promise<void> {
+    return this.products.update(id, { isPublished });
+  }
+
   createProduct(data: CreateProductDto): Promise<Product> {
     return this.products.create(data);
   }

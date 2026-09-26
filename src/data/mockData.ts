@@ -15,11 +15,10 @@ import type { User } from "@/models/user/User";
  * exactement les champs lus par les pages réelles (vérifié en lisant
  * `ProductList`, `CategoryManager`, `TeamList`, `SuperAdminPanel` et
  * `ShopSettingsForm` avant d'écrire ce fichier — pas de champ inventé qui ne
- * serait consommé nulle part). `MockShop` étend `Shop` avec `sector`, le
- * seul champ demandé qui n'existe pas encore sur le vrai modèle (aucune
- * boutique réelle n'a de secteur d'activité aujourd'hui) — pas ajouté à
- * `src/models/shop/Shop.ts` pour ne pas toucher au modèle réel pour un
- * besoin qui n'est que de la démo.
+ * serait consommé nulle part). `MockShop` étend `Shop` en rendant `sector`
+ * obligatoire (`Shop.sector` est optionnel depuis le 2026-09-25 — ajouté au
+ * vrai modèle par l'assistant "Créer ma boutique" — mais chaque boutique de
+ * démo en a toujours un, donc autant le garantir ici).
  */
 export interface MockShop extends Shop {
   sector: string;
@@ -48,6 +47,7 @@ export const mockShops: MockShop[] = [
     whatsapp: "+237690000001",
     currency: "XAF",
     ownerId: "owner-laiterie-wouri",
+    adminSource: "manual",
     createdAt: timestampDaysAgo(240),
   },
   {
@@ -60,6 +60,9 @@ export const mockShops: MockShop[] = [
     whatsapp: "+237690000002",
     currency: "XAF",
     ownerId: "owner-embacam",
+    adminSource: "subscription",
+    subscriptionPlan: "monthly",
+    subscriptionExpiresAt: timestampDaysAgo(-18),
     createdAt: timestampDaysAgo(200),
   },
   {
@@ -72,6 +75,7 @@ export const mockShops: MockShop[] = [
     whatsapp: "+237690000003",
     currency: "XAF",
     ownerId: "owner-aromes-saveurs",
+    adminSource: "manual",
     createdAt: timestampDaysAgo(150),
   },
   {
@@ -84,6 +88,9 @@ export const mockShops: MockShop[] = [
     whatsapp: "+237690000004",
     currency: "XAF",
     ownerId: "owner-mode-237",
+    adminSource: "subscription",
+    subscriptionPlan: "quarterly",
+    subscriptionExpiresAt: timestampDaysAgo(-60),
     createdAt: timestampDaysAgo(90),
   },
   {
@@ -96,6 +103,7 @@ export const mockShops: MockShop[] = [
     whatsapp: "+237690000005",
     currency: "XAF",
     ownerId: "owner-techpoint",
+    adminSource: "manual",
     createdAt: timestampDaysAgo(60),
   },
   {
@@ -108,6 +116,9 @@ export const mockShops: MockShop[] = [
     whatsapp: "+237690000006",
     currency: "XAF",
     ownerId: "owner-beaute-naturelle",
+    adminSource: "subscription",
+    subscriptionPlan: "yearly",
+    subscriptionExpiresAt: timestampDaysAgo(-300),
     createdAt: timestampDaysAgo(30),
   },
 ];
@@ -500,11 +511,12 @@ export const mockArticles: Product[] = [
  *
  * `id` des 6 admins == `Shop.ownerId` correspondant ci-dessus, pour que les
  * boutiques et leurs propriétaires restent cohérents entre eux. Les deux
- * façons d'obtenir le rôle admin (Module 12, BF-68) sont représentées :
- * `adminSource: "manual"` (attribué à la main par le Super Admin, jamais
- * d'expiration) et `"subscription"` (abonnement payant, avec
- * `subscriptionPlan`/`subscriptionExpiresAt` dans le futur — pas encore
- * expiré, sinon `SuperAdminPanel` n'a aucune UI qui distinguerait ce cas).
+ * façons d'obtenir le rôle admin (Module 12, BF-68) sont représentées via
+ * `User.adminSource` : `"manual"` (attribué à la main par le Super Admin)
+ * ou `"subscription"` (première boutique créée via l'assistant self-service,
+ * Module 15). Depuis le 2026-09-25, l'abonnement qui expire réellement
+ * (`subscriptionPlan`/`subscriptionExpiresAt`) vit sur chaque `Shop`, pas
+ * sur `User` — voir `mockShops` ci-dessus.
  */
 export const mockUsers: User[] = [
   // Propriétaires des boutiques (role: "admin")
@@ -526,8 +538,6 @@ export const mockUsers: User[] = [
     role: "admin",
     shopId: "shop-embacam",
     adminSource: "subscription",
-    subscriptionPlan: "monthly",
-    subscriptionExpiresAt: timestampDaysAgo(-18),
     createdAt: timestampDaysAgo(200),
   },
   {
@@ -548,8 +558,6 @@ export const mockUsers: User[] = [
     role: "admin",
     shopId: "shop-mode-237",
     adminSource: "subscription",
-    subscriptionPlan: "quarterly",
-    subscriptionExpiresAt: timestampDaysAgo(-60),
     createdAt: timestampDaysAgo(90),
   },
   {
@@ -570,8 +578,6 @@ export const mockUsers: User[] = [
     role: "admin",
     shopId: "shop-beaute-naturelle",
     adminSource: "subscription",
-    subscriptionPlan: "yearly",
-    subscriptionExpiresAt: timestampDaysAgo(-300),
     createdAt: timestampDaysAgo(30),
   },
 

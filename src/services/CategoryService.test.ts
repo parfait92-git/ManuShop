@@ -20,6 +20,8 @@ describe("CategoryService", () => {
       create: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      softDelete: jest.fn(),
+      restore: jest.fn(),
     };
     service = new CategoryService(categories);
   });
@@ -71,5 +73,26 @@ describe("CategoryService", () => {
   it("deletes a category by id", async () => {
     await service.deleteCategory("c1");
     expect(categories.remove).toHaveBeenCalledWith("c1");
+  });
+
+  it("excludes trashed categories from listActive", async () => {
+    const active: Category = {
+      id: "c1",
+      shopId: "shop-1",
+      name: "Mode",
+      createdAt: {} as Timestamp,
+    };
+    const trashed: Category = {
+      id: "c2",
+      shopId: "shop-1",
+      name: "Ancienne",
+      createdAt: {} as Timestamp,
+      deletedAt: {} as Timestamp,
+    };
+    categories.listByShop.mockResolvedValue([active, trashed]);
+
+    const result = await service.listActive("shop-1");
+
+    expect(result).toEqual([active]);
   });
 });

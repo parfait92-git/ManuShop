@@ -62,7 +62,7 @@ export function ProductsPageContent({ shopId }: { shopId: string }) {
   useEffect(() => {
     let active = true;
     Promise.all([
-      productService.listProducts(shopId),
+      productService.listActive(shopId),
       categoryService.listCategories(shopId),
     ]).then(([productList, categoryList]) => {
       if (!active) return;
@@ -80,6 +80,15 @@ export function ProductsPageContent({ shopId }: { shopId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+          Produits et publication
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Gérez votre catalogue et décidez quels articles sont visibles par
+          vos clients.
+        </p>
+      </div>
       <ProductList initialProducts={products} categories={categories} />
       {products.length === 0 && <DemoProductPreview />}
     </div>

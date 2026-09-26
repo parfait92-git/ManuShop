@@ -84,6 +84,64 @@ Changement de modèle décidé en session : ManuShop passe de mono-tenant à mul
 
 ---
 
+## Phase 1ter — Multi-boutique par commerçant, cycle de vie commande & corbeille (ajoutée 2026-09-25)
+
+Spécification fonctionnelle complète fournie par l'utilisateur (voir Modules 13→22 dans [02-besoins-fonctionnels.md](./02-besoins-fonctionnels.md), BF-71→119, et §12 de [04-besoins-techniques.md](./04-besoins-techniques.md) pour le détail technique). Ordre ci-dessous choisi pour poser d'abord ce dont les autres modules dépendent (migration de modèle, corbeille) avant de construire par-dessus.
+
+**Décisions déjà actées avec l'utilisateur (2026-09-25)** :
+- [x] Le rôle `seller` (vendeur invité, déjà construit) est conservé — cette phase s'ajoute au-dessus, ne le remplace pas.
+- [x] Les tags de catégorie (BF-109) sont une liste fermée gérée exclusivement par le Super Admin, pas ouverte aux commerçants.
+
+**0. Migration de modèle (bloquant, à faire en premier)**
+- [x] **Fait le 2026-09-25.** Déplacer `subscriptionPlan`/`subscriptionExpiresAt` de `User` vers `Shop` (04-besoins-techniques.md §12.1) — touche `PlatformAdminService`, `src/data/mockData.ts`, et leurs tests déjà livrés au 2026-09-23/24. Révision en cours de route : `User.adminSource` **reste** (toujours utile pour BF-68, attribution manuelle au niveau du compte) — seuls les deux champs réellement inutilisés (`subscriptionPlan`/`subscriptionExpiresAt`, jamais écrits par aucun code, BF-69 jamais construit) migrent. `Shop` gagne aussi `sector?`.
+- [ ] ~~Ajuster `firestore.rules`~~ — non nécessaire : découverte en cours d'implémentation que `shops.create` exige déjà `role == 'admin'` et que `users.update` interdit à un compte de changer son propre `role`. La création de boutique passe donc par une Server Action privilégiée (`createShopAction`, `firebase-admin`, contourne les règles), même schéma que BF-68 — les règles restent la défense en profondeur pour tout autre chemin d'écriture, inchangées.
+- [ ] Réviser BF-70/BF-93 : la redirection "abonnement expiré" devient un check par boutique, pas par compte — **pas encore construit** (dépend du job d'expiration, §11.5, lui-même non commencé)
+
+**1. Création de boutique & multi-boutique (BF-79→85)**
+- [x] **Fait le 2026-09-25.** Assistant de création en popup, par étapes (infos → logo optionnel avec recadrage → récapitulatif → abonnement) — `CreateShopWizard`, remplace le formulaire "créer ma boutique" encore non construit noté en fin de §11.6. Vérifié en direct contre le serveur dev + vrai Firebase (Playwright) ; a révélé et corrigé un bug réel en cours de vérification — voir `06-journal-progression.md`.
+- [x] **Fait (session non journalisée, reprise et complétée le 2026-09-25).** Page "Gestion de boutique" (BF-87, `/dashboard/shops`, `ShopManagementPageContent`) : liste toutes les boutiques du commerçant (`ShopService.listMyShops`), badge de statut (publiée/brouillon/abonnement expiré), bascule vers une boutique via `AuthService.switchShop` (change `profile.shopId`), relance `CreateShopWizard` pour une 2ᵉ boutique.
+- [x] **Fait.** Publier/dépublier (BF-88) : bascule dans `ShopSettingsForm` (Paramètres) + `PublicationBanner` (bandeau persistant tant que `isPublished` est faux, incite à publier).
+
+**2. Corbeille générique (BF-99/100)** — avant le Module 3 (Stock) et les fonctionnalités de suppression qui suivent, pour ne pas les recoder ensuite
+- [x] **Fait (session non journalisée, reprise et complétée le 2026-09-25).** Champ `deletedAt` sur `Product`/`Category` + `TrashService` générique (`productTrashService`/`categoryTrashService`).
+- [x] **Fait.** Page Corbeille (`/dashboard/trash`, `TrashPageContent`) : restaurer, ou supprimer définitivement avec compte à rebours annulable (5s, `CountdownDialog`).
+
+**3. Publication produit & catégories (BF-89→90, BF-109→111)**
+- [x] **Fait (session non journalisée, reprise et complétée le 2026-09-25).** `Product.isPublished` (distinct de la suppression, `ProductService.setPublished`/`isVisibleToCustomers`) ; `/catalogue` filtre dessus. **Marché (`/demo-catalogue` → vraies données) pas encore branché** — dépend du §7 ci-dessous, non commencé.
+- [ ] Collection `CategoryTag` (Super Admin uniquement) + `Category.tagId` — **pas encore construit**
+
+**4. Module 3 — Stock (BF-13→17)** *(déjà en tête de la Phase 1, toujours non commencé — inchangé par cette révision)*
+
+**5. Module 4 — Commandes, avec le vocabulaire de statuts révisé (BF-18→23, BF-95→97)**
+- [ ] `OrderStatus` révisé dès la construction initiale du module (04-besoins-techniques.md §12.3) — pas de statuts `pending/confirmed/...` à migrer après coup
+- [ ] Traitement des retours : commentaire de motif obligatoire, choix `Retourné`/`Défectueux`, réincrémentation automatique du stock
+
+**6. Fiche produit, avis & suivi client (BF-71→78)**
+- [x] Page détail produit (BF-71, complète BF-37) + avis en lecture seule (BF-72) + rupture désactivée (BF-73) — 2026-09-25 (`/catalogue/[productId]`, nouveau modèle `Review`)
+- [ ] Suivi de commande côté client + feedback post-livraison (BF-75/76) + demande de retour (BF-77) — **reporté** : bloqué sur le Module 4 (Commandes), toujours inexistant en code (voir §0-5 ci-dessus, pas encore atteint)
+- [x] Interface de sélection du mode de paiement (BF-78) — 2026-09-25 (`/checkout/payment`), sans intégration réelle comme prévu §12.6
+
+**7. Page Marché (BF-108)** — dépend de #3 (produits publiés + tags)
+- [ ] Généralise `/demo-catalogue` (données de démo, déjà construit le 2026-09-24) à de vraies données : 4 meilleures boutiques en tête, tous les produits publiés en dessous, triés par tag système
+
+**8. Tableau de bord, factures & journal (BF-98, BF-102→104)** — dépend du Module 4
+- [ ] Filtre de ventes par intervalle (premium), factures groupées par période, journal d'activité imprimable
+
+**9. Paramètres marchand avancés (BF-105→107, premium)**
+- [ ] Moyens de contact configurables, réseaux sociaux avec validation de lien, statistiques de consultation
+
+**10. Messagerie commerçant ↔ Super Admin (BF-112→116) & supervision Super Admin (BF-117→119)**
+- [ ] Formulaire "Nous contacter" avec modèles + signature auto ; réponse Super Admin avec signature ManuShop
+- [ ] Page Super Admin étendue : liste des commerçants, détail par commerçant (boutiques + privilèges premium actifs), activation/désactivation d'un privilège par boutique
+
+**Reporté à la toute fin du développement** : intégration réelle d'un prestataire de paiement (BF-78) — décision explicite de l'utilisateur, aucune API choisie à ce stade.
+
+**Reste à définir** : l'utilisateur a explicitement indiqué que d'autres fonctionnalités restent à préciser au-delà de ce qui précède.
+
+**DoD Phase 1ter** : un commerçant peut créer plusieurs boutiques indépendantes (chacune avec son propre abonnement), gérer un cycle de commande complet jusqu'au retour/remboursement, rien n'est jamais perdu instantanément (corbeille), et un visiteur découvre l'ensemble des boutiques/produits publiés depuis la page Marché.
+
+---
+
 ## Phase 2 — Social (≈2 semaines)
 
 - [ ] **Module 8 — Publication multicanal** (BF-41→47) : partage WhatsApp/Facebook/Instagram/TikTok, génération visuel auto, planification, historique

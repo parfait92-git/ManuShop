@@ -33,6 +33,8 @@ describe("ShopService", () => {
     shops = {
       getById: jest.fn(),
       getFirst: jest.fn(),
+      listByOwner: jest.fn(),
+      listPublished: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     };
@@ -61,5 +63,19 @@ describe("ShopService", () => {
   it("updateProfile delegates to the repository", async () => {
     await service.updateProfile("shop-1", { name: "Nouveau nom" });
     expect(shops.update).toHaveBeenCalledWith("shop-1", { name: "Nouveau nom" });
+  });
+
+  it("listMyShops delegates to the repository", async () => {
+    shops.listByOwner.mockResolvedValue([fakeShop()]);
+    const result = await service.listMyShops("uid-1");
+    expect(shops.listByOwner).toHaveBeenCalledWith("uid-1");
+    expect(result).toHaveLength(1);
+  });
+
+  it("listPublishedShops delegates to the repository", async () => {
+    shops.listPublished.mockResolvedValue([fakeShop({ isPublished: true })]);
+    const result = await service.listPublishedShops();
+    expect(shops.listPublished).toHaveBeenCalled();
+    expect(result).toHaveLength(1);
   });
 });

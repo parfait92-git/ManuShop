@@ -1,6 +1,7 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -58,6 +59,18 @@ export class ProductRepository implements IProductRepository {
 
   async remove(id: string): Promise<void> {
     await deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await updateDoc(doc(db, PRODUCTS_COLLECTION, id), {
+      deletedAt: serverTimestamp(),
+    });
+  }
+
+  async restore(id: string): Promise<void> {
+    await updateDoc(doc(db, PRODUCTS_COLLECTION, id), {
+      deletedAt: deleteField(),
+    });
   }
 }
 

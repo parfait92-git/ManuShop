@@ -189,6 +189,7 @@ describe("ShopSettingsSchema", () => {
     urgentPhoneAlerts: true,
     contactEmail: "contact@awa.example",
     urgentPhone: "+221700000000",
+    isPublished: true,
   };
 
   it("accepts a valid shop settings payload", () => {

@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { CartPanel } from "@/components/storefront/CartPanel";
+import { CreateShopWizard } from "@/components/storefront/CreateShopWizard";
 import { authService } from "@/services/AuthService";
 import { useCartItemCount } from "@/store/cartStore";
 
@@ -23,6 +24,7 @@ function AccountMenu() {
   const { firebaseUser, profile } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Non connecté : simple lien vers /login (GuestRoute s'occupe de renvoyer
   // un visiteur déjà connecté ailleurs — inutile de dupliquer cette logique
@@ -86,6 +88,20 @@ function AccountMenu() {
                 Tableau de bord
               </Link>
             )}
+            {/* BF-79 : accessible à tout client connecté — pas seulement
+            admin/vendeur, contrairement à "Tableau de bord" ci-dessus. */}
+            {profile?.role === "client" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setWizardOpen(true);
+                }}
+                className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+              >
+                Créer ma boutique
+              </button>
+            )}
             <button
               type="button"
               onClick={handleLogout}
@@ -96,6 +112,8 @@ function AccountMenu() {
           </div>
         </>
       )}
+
+      <CreateShopWizard open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
   );
 }

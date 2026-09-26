@@ -31,6 +31,27 @@ service cloud.firestore {
         && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
     }
 
+    // Journal d'activité commerçant (BF-98) — privé à la boutique
+    // concernée, jamais public, contrairement à products/categories/shops.
+    match /activityLog/{entryId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId
+        && request.resource.data.actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Avis produit — lecture publique (fiche produit, BF-72), écriture
+    // verrouillée : la soumission (BF-76) doit vérifier une vraie commande
+    // livrée avant d'écrire, pas encore construite (Module 4 inexistant).
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Commandes — lecture/écriture authentifiée
     match /orders/{orderId} {
       allow read, write: if request.auth != null;

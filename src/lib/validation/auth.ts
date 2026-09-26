@@ -80,6 +80,34 @@ export const CreateShopSchema = z.object({
 
 export type CreateShopInput = z.infer<typeof CreateShopSchema>;
 
+// BF-79→85 : assistant "Créer ma boutique". Seul le nom est requis — le
+// récapitulatif (étape 3) affiche "Non renseigné(e)" pour tout le reste,
+// conforme à la maquette reçue (voir docs/design-prompts.txt, items 6-9).
+export const CreateShopWizardSchema = z.object({
+  name: z.string().trim().min(2, {
+    error: "Le nom de la boutique doit contenir au moins 2 caractères.",
+  }),
+  sector: z.string().trim().optional(),
+  address: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
+  whatsapp: z.string().trim().optional(),
+  // "Galerie" pose `logo` via l'upload+recadrage (géré hors formulaire, voir
+  // CreateShopWizard) ; "Lien" valide une URL directement dans le champ.
+  logoMode: z.enum(["gallery", "link"]),
+  logo: z
+    .union([z.url({ error: "L'URL du logo n'est pas valide." }), z.literal("")])
+    .optional(),
+  subscriptionPlan: z.enum([
+    "daily",
+    "weekly",
+    "monthly",
+    "quarterly",
+    "yearly",
+  ]),
+});
+
+export type CreateShopWizardInput = z.infer<typeof CreateShopWizardSchema>;
+
 export const ShopSettingsSchema = z.object({
   // Profil de la boutique (BF-04) — inchangé, juste réuni sur la même page.
   name: z.string().trim().min(2, {
@@ -114,6 +142,8 @@ export const ShopSettingsSchema = z.object({
     .email({ error: "Veuillez saisir un email valide." })
     .or(z.literal("")),
   urgentPhone: z.string().trim(),
+  // Visibilité (BF-88)
+  isPublished: z.boolean(),
 });
 
 export type ShopSettingsInput = z.infer<typeof ShopSettingsSchema>;

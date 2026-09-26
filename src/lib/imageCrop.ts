@@ -7,6 +7,10 @@ import type { Area } from "react-easy-crop";
  * lourd pour une simple photo de catalogue. */
 export const PRODUCT_IMAGE_SIZE = 1000;
 
+/** Un logo de boutique s'affiche toujours en petit (avatar/vignette) —
+ * jamais en grand comme une photo produit — 512px suffit largement. */
+export const LOGO_IMAGE_SIZE = 512;
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();

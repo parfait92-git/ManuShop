@@ -18,6 +18,16 @@ export class ShopService {
     return this.shops.getFirst();
   }
 
+  /** Toutes les boutiques d'un même commerçant (BF-85/87). */
+  listMyShops(ownerId: string): Promise<Shop[]> {
+    return this.shops.listByOwner(ownerId);
+  }
+
+  /** Boutiques publiées, tous propriétaires confondus (page Marché, BF-108). */
+  listPublishedShops(): Promise<Shop[]> {
+    return this.shops.listPublished();
+  }
+
   updateProfile(shopId: string, data: UpdateShopDto): Promise<void> {
     return this.shops.update(shopId, data);
   }

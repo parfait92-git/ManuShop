@@ -20,6 +20,12 @@ export class CategoryService {
     return this.categories.listByShop(shopId);
   }
 
+  /** Catégories non mises à la corbeille (BF-99). */
+  async listActive(shopId: string): Promise<Category[]> {
+    const categories = await this.categories.listByShop(shopId);
+    return categories.filter((category) => !category.deletedAt);
+  }
+
   createCategory(
     shopId: string,
     { name, description, isActive }: CreateCategoryInput

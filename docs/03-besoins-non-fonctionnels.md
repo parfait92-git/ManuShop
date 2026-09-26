@@ -38,6 +38,7 @@
 | BNF-14 | Protection des données | Aucune donnée sensible en clair dans Firestore |
 | BNF-15 | HTTPS obligatoire | Toutes les communications chiffrées en TLS |
 | BNF-16 | Validation des entrées | Validation côté client ET côté serveur (Next.js API Routes) |
+| BNF-16bis | Validation des liens externes | Ajouté le 2026-09-25 (BF-106) — tout lien réseau social saisi par un commerçant (Instagram/Facebook/TikTok) est vérifié (HTTPS, domaine attendu) avant enregistrement, pour limiter les liens frauduleux affichés publiquement sur une boutique |
 | BNF-17 | Protection API | Clés API des réseaux sociaux stockées en variables d'environnement |
 | BNF-18 | Règles Firestore | Accès en lecture/écriture strictement contrôlé par rôle |
 
@@ -77,7 +78,7 @@
 | BNF-32 | Croissance données | Firestore supporte jusqu'à 1 million de produits sans refactoring |
 | BNF-33 | Croissance utilisateurs | Architecture supporte 10 000 utilisateurs simultanés |
 | BNF-34 | Ajout de modules | Nouveaux modules ajoutables sans refactoring majeur |
-| BNF-35 | Multi-boutique | Architecture prévue pour gérer plusieurs boutiques plus tard |
+| BNF-35 | Multi-boutique | Architecture prévue pour gérer plusieurs boutiques — devenu un besoin concret le 2026-09-25 : un même commerçant peut posséder plusieurs boutiques, chacune avec son propre abonnement (voir Module 12/§12 de 04-besoins-techniques.md), plus seulement une préparation pour "plus tard" |
 
 ---
 

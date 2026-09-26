@@ -6,6 +6,19 @@ import { verifyIdToken } from "@/lib/verifyIdToken";
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+// Liste blanche plutôt qu'un dossier Cloudinary arbitraire fourni par le
+// client — évite qu'un appelant écrive n'importe où dans le compte
+// Cloudinary. Défaut "manushop/products" : rétrocompatible avec
+// `uploadProductImage`, qui n'envoie jamais ce champ.
+const ALLOWED_FOLDERS = ["manushop/products", "manushop/shops"] as const;
+type AllowedFolder = (typeof ALLOWED_FOLDERS)[number];
+
+function resolveFolder(value: FormDataEntryValue | null): AllowedFolder {
+  return ALLOWED_FOLDERS.includes(value as AllowedFolder)
+    ? (value as AllowedFolder)
+    : "manushop/products";
+}
+
 export async function POST(request: Request) {
   const user = await verifyIdToken(request.headers.get("authorization"));
   if (!user) {
@@ -39,12 +52,13 @@ export async function POST(request: Request) {
     );
   }
 
+  const folder = resolveFolder(formData.get("folder"));
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const result = await new Promise<{ secure_url: string }>(
     (resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder: "manushop/products" }, (error, uploaded) => {
+        .upload_stream({ folder }, (error, uploaded) => {
           if (error || !uploaded) {
             reject(error ?? new Error("Échec de l'upload Cloudinary."));
             return;

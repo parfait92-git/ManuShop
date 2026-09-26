@@ -8,5 +8,7 @@ export interface Category {
   // champs n'en disposent pas encore dans Firestore.
   description?: string;
   isActive?: boolean;
+  // Corbeille générique (BF-99/100, 04-besoins-techniques.md §12.4).
+  deletedAt?: Timestamp;
   createdAt: Timestamp;
 }

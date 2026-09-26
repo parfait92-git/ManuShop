@@ -5,10 +5,16 @@ jest.mock("firebase/auth", () => ({
   browserSessionPersistence: "session",
   createUserWithEmailAndPassword: jest.fn(),
   FacebookAuthProvider: jest.fn(function FacebookAuthProvider(this: object) {
-    Object.assign(this, { __tag: "facebook-provider" });
+    Object.assign(this, {
+      __tag: "facebook-provider",
+      setCustomParameters: jest.fn(),
+    });
   }),
   GoogleAuthProvider: jest.fn(function GoogleAuthProvider(this: object) {
-    Object.assign(this, { __tag: "google-provider" });
+    Object.assign(this, {
+      __tag: "google-provider",
+      setCustomParameters: jest.fn(),
+    });
   }),
   onAuthStateChanged: jest.fn(),
   sendPasswordResetEmail: jest.fn(),
@@ -28,6 +34,11 @@ const secondaryAuthInstance = { __tag: "secondary" };
 jest.mock("../lib/firebase", () => ({
   auth: { __tag: "primary", currentUser: null },
   getSecondaryAuth: jest.fn(() => secondaryAuthInstance),
+}));
+
+const createShopActionMock = jest.fn();
+jest.mock("../server/actions/shopActions", () => ({
+  createShopAction: (...args: unknown[]) => createShopActionMock(...args),
 }));
 
 import {
@@ -108,6 +119,8 @@ describe("AuthService", () => {
     shops = {
       getById: jest.fn(),
       getFirst: jest.fn(),
+      listByOwner: jest.fn(),
+      listPublished: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     };
@@ -169,6 +182,51 @@ describe("AuthService", () => {
         /connecté/
       );
       expect(shops.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("switchShop", () => {
+    it("updates the current user's shopId", async () => {
+      (auth as { currentUser: unknown }).currentUser = { uid: "uid-1" };
+
+      await service.switchShop("shop-2");
+
+      expect(users.update).toHaveBeenCalledWith("uid-1", { shopId: "shop-2" });
+    });
+
+    it("rejects when no Firebase user is signed in", async () => {
+      await expect(service.switchShop("shop-2")).rejects.toThrow(/connecté/);
+      expect(users.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("createShopWithSubscription", () => {
+    it("fetches the caller's ID token and delegates to the server action", async () => {
+      (auth as { currentUser: unknown }).currentUser = {
+        getIdToken: jest.fn().mockResolvedValue("token-1"),
+      };
+      createShopActionMock.mockResolvedValue({ shopId: "shop-2" });
+
+      const result = await service.createShopWithSubscription({
+        name: "Nouvelle Boutique",
+        subscriptionPlan: "monthly",
+      });
+
+      expect(createShopActionMock).toHaveBeenCalledWith("token-1", {
+        name: "Nouvelle Boutique",
+        subscriptionPlan: "monthly",
+      });
+      expect(result).toEqual({ shopId: "shop-2" });
+    });
+
+    it("rejects when no Firebase user is signed in", async () => {
+      await expect(
+        service.createShopWithSubscription({
+          name: "Nouvelle Boutique",
+          subscriptionPlan: "monthly",
+        })
+      ).rejects.toThrow(/connecté/);
+      expect(createShopActionMock).not.toHaveBeenCalled();
     });
   });
 
@@ -335,23 +393,31 @@ describe("AuthService", () => {
   });
 
   describe("social and anonymous sign-in", () => {
-    it("loginWithGoogle signs in via popup with a Google provider", async () => {
+    it("loginWithGoogle signs in via popup with a Google provider, forcing the account picker", async () => {
       signInWithPopupMock.mockResolvedValue({ user: { uid: "uid-4" } });
       const user = await service.loginWithGoogle();
       expect(signInWithPopupMock).toHaveBeenCalledWith(
         auth,
         expect.objectContaining({ __tag: "google-provider" })
       );
+      const provider = signInWithPopupMock.mock.calls[0][1];
+      expect(provider.setCustomParameters).toHaveBeenCalledWith({
+        prompt: "select_account",
+      });
       expect(user.uid).toBe("uid-4");
     });
 
-    it("loginWithFacebook signs in via popup with a Facebook provider", async () => {
+    it("loginWithFacebook signs in via popup with a Facebook provider, forcing re-authentication", async () => {
       signInWithPopupMock.mockResolvedValue({ user: { uid: "uid-5" } });
       const user = await service.loginWithFacebook();
       expect(signInWithPopupMock).toHaveBeenCalledWith(
         auth,
         expect.objectContaining({ __tag: "facebook-provider" })
       );
+      const provider = signInWithPopupMock.mock.calls[0][1];
+      expect(provider.setCustomParameters).toHaveBeenCalledWith({
+        auth_type: "reauthenticate",
+      });
       expect(user.uid).toBe("uid-5");
     });
 

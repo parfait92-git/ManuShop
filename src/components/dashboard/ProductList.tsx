@@ -4,12 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
+import { activityLogService } from "@/services/ActivityLogService";
 import { productService, type StockStatus } from "@/services/ProductService";
+import { productTrashService } from "@/services/TrashService";
 
 const STOCK_STATUS_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -30,10 +35,12 @@ export function ProductList({
   initialProducts: Product[];
   categories: Category[];
 }) {
+  const { profile } = useAuth();
   const [products, setProducts] = useState(initialProducts);
   const [term, setTerm] = useState("");
   const [category, setCategory] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const searched = productService.search(products, term);
@@ -42,16 +49,51 @@ export function ProductList({
 
   async function handleDelete(product: Product) {
     const confirmed = window.confirm(
-      `Supprimer « ${product.name} » ? Cette action est irréversible.`
+      `Déplacer « ${product.name} » vers la corbeille ?`
     );
     if (!confirmed) return;
 
     setDeletingId(product.id);
     try {
-      await productService.deleteProduct(product.id);
+      await productTrashService.softDelete(product.id);
+      if (profile) {
+        await activityLogService.logProductTrashed(
+          { shopId: product.shopId, actorId: profile.id, actorName: profile.displayName },
+          product.id,
+          product.name
+        );
+      }
       setProducts((current) => current.filter((p) => p.id !== product.id));
+      toast.success(`« ${product.name} » déplacé vers la corbeille.`);
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleTogglePublished(product: Product) {
+    const nextPublished = !(product.isPublished !== false);
+    setTogglingId(product.id);
+    try {
+      await productService.setPublished(product.id, nextPublished);
+      if (profile) {
+        const context = {
+          shopId: product.shopId,
+          actorId: profile.id,
+          actorName: profile.displayName,
+        };
+        if (nextPublished) {
+          await activityLogService.logProductPublished(context, product.id, product.name);
+        } else {
+          await activityLogService.logProductUnpublished(context, product.id, product.name);
+        }
+      }
+      setProducts((current) =>
+        current.map((p) =>
+          p.id === product.id ? { ...p, isPublished: nextPublished } : p
+        )
+      );
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -115,6 +157,7 @@ export function ProductList({
                 <th className="px-4 py-2">Prix</th>
                 <th className="px-4 py-2">Stock</th>
                 <th className="px-4 py-2">Statut</th>
+                <th className="px-4 py-2">Publié</th>
                 <th className="px-4 py-2 text-right sm:pr-6">Actions</th>
               </tr>
             </thead>
@@ -156,6 +199,14 @@ export function ProductList({
                       >
                         {STOCK_STATUS_LABEL[status]}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Switch
+                        checked={product.isPublished !== false}
+                        onCheckedChange={() => handleTogglePublished(product)}
+                        disabled={togglingId === product.id}
+                        aria-label={`Publier ${product.name}`}
+                      />
                     </td>
                     <td className="px-4 py-3 sm:pr-6">
                       <div className="flex items-center justify-end gap-1">

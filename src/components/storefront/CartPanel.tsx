@@ -1,6 +1,7 @@
 "use client";
 
 import { Minus, Plus, X } from "lucide-react";
+import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
 import { useShop } from "@/hooks/useShop";
@@ -104,6 +105,19 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
               Commander via WhatsApp
             </button>
           )}
+
+          {/* BF-78 : écran de sélection du paiement, interface seule — le
+          bouton WhatsApp ci-dessus reste le seul chemin qui aboutit
+          vraiment aujourd'hui, celui-ci ne le remplace pas. */}
+          <Link
+            href="/checkout/payment"
+            className={buttonVariants({
+              variant: "outline",
+              className: "mt-2 w-full",
+            })}
+          >
+            Choisir un mode de paiement
+          </Link>
         </>
       )}
     </div>

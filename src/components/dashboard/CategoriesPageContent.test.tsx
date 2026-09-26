@@ -1,5 +1,5 @@
 jest.mock("../../services/CategoryService", () => ({
-  categoryService: { listCategories: jest.fn() },
+  categoryService: { listActive: jest.fn() },
 }));
 
 jest.mock("./CategoryManager", () => ({
@@ -23,7 +23,7 @@ describe("CategoriesPageContent", () => {
   });
 
   it("shows a read-only demo preview when the shop has no real categories yet", async () => {
-    categoryServiceMock.listCategories.mockResolvedValue([]);
+    categoryServiceMock.listActive.mockResolvedValue([]);
     render(<CategoriesPageContent shopId="shop-1" />);
 
     expect(
@@ -37,7 +37,7 @@ describe("CategoriesPageContent", () => {
   });
 
   it("does not show the demo preview once the shop has real categories", async () => {
-    categoryServiceMock.listCategories.mockResolvedValue([{ id: "c1" } as never]);
+    categoryServiceMock.listActive.mockResolvedValue([{ id: "c1" } as never]);
     render(<CategoriesPageContent shopId="shop-1" />);
 
     await screen.findByTestId("category-manager");

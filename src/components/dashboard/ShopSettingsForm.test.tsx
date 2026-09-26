@@ -34,7 +34,14 @@ if (!Element.prototype.releasePointerCapture) {
 
 jest.mock("../../lib/firebase", () => ({ db: {} }));
 
+jest.mock("../providers/AuthProvider", () => ({
+  useAuth: () => ({
+    profile: { id: "uid-1", displayName: "Awa Diallo", role: "admin" },
+  }),
+}));
+
 import { shopService } from "@/services/ShopService";
+import { activityLogService } from "@/services/ActivityLogService";
 import { ShopSettingsForm } from "@/components/dashboard/ShopSettingsForm";
 import type { Shop } from "@/models/shop/Shop";
 
@@ -42,6 +49,12 @@ jest.mock("../../services/ShopService", () => ({
   shopService: {
     getShop: jest.fn(),
     updateProfile: jest.fn(),
+  },
+}));
+
+jest.mock("../../services/ActivityLogService", () => ({
+  activityLogService: {
+    logShopSettingsUpdated: jest.fn(),
   },
 }));
 
@@ -117,5 +130,35 @@ describe("ShopSettingsForm", () => {
     expect(
       await screen.findByText("Paramètres enregistrés.")
     ).toBeInTheDocument();
+    expect(activityLogService.logShopSettingsUpdated).toHaveBeenCalledWith({
+      shopId: "shop-1",
+      actorId: "uid-1",
+      actorName: "Awa Diallo",
+    });
+  });
+
+  it("shows the shop as unpublished by default and lets the merchant publish it (BF-88)", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop({ isPublished: false }));
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Boutique non publiée")).toBeInTheDocument()
+    );
+
+    await user.click(screen.getByLabelText("Publier la boutique"));
+    expect(screen.getByText("Boutique publiée")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+    );
+
+    await waitFor(() =>
+      expect(shopService.updateProfile).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({ isPublished: true })
+      )
+    );
   });
 });

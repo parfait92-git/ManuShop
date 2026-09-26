@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -24,6 +25,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       >
         <AuthProvider>{children}</AuthProvider>
         <InstallPrompt />
+        {/* `sonner` était une dépendance installée mais jamais montée (BNF-37
+        demande des toasts pour chaque action) — un seul <Toaster/> global
+        plutôt qu'un par page. */}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

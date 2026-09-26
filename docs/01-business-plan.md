@@ -121,3 +121,11 @@ Une **PWA multifonction** accessible depuis n'importe quel smartphone (sans inst
 
 **Détail technique et liste des besoins fonctionnels** : voir le Module 12 dans [02-besoins-fonctionnels.md](./02-besoins-fonctionnels.md) et la section correspondante dans [04-besoins-techniques.md](./04-besoins-techniques.md).
 
+### 10.1 Précision du 2026-09-25 : un commerçant, plusieurs boutiques, chacune abonnée séparément
+
+Un commerçant n'est plus limité à une seule boutique : il peut en créer autant qu'il veut, chacune passant par son propre parcours de création et son propre abonnement (le paiement finance une boutique précise, pas le compte entier). Une boutique dont l'abonnement expire redevient consultable en lecture seule pour son propriétaire — sans emporter avec elle les autres boutiques du même commerçant, qui restent actives si leur propre abonnement l'est.
+
+Le modèle économique se précise aussi : **toute visibilité publique est une fonctionnalité payante** (publier une boutique, publier un produit), de même que plusieurs outils de gestion avancés (statistiques de fréquentation, filtre de ventes par période, moyens de contact personnalisés) réservés aux abonnements actifs. Le moyen de paiement (Visa, Orange Money, MTN Mobile Money envisagés) et le prestataire retenu restent à choisir en fin de développement — seule l'interface de sélection sera construite d'ici là.
+
+Détail complet (nouveaux modules Client/Commerçant/Super Admin, migration technique du modèle d'abonnement) : voir Modules 13→22 dans [02-besoins-fonctionnels.md](./02-besoins-fonctionnels.md) et §12 de [04-besoins-techniques.md](./04-besoins-techniques.md).
+
