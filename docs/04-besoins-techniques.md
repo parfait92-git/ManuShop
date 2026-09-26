@@ -880,3 +880,30 @@ Demande : permettre à un commerçant de partager le lien de sa boutique publié
 Tests : `ShareShopLinkButton.test.tsx` (6 cas), `boutique/[shopId]/page.test.tsx` (4 cas — chargement, introuvable, non publiée, rendu réel).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (31 routes, +1 — `/boutique/[shopId]`) et `npm run test:coverage` (334 tests, +10, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+## 19. Catalogue de démo conditionnel (BF-122), 2026-09-26
+
+Demande utilisateur : `/demo-catalogue` ne doit plus s'afficher une fois qu'au moins une vraie boutique publiée de la plateforme a un produit visible réel, et une collection `configuration` doit permettre de l'activer/désactiver. **Décisions actées avant de coder** : détection plateforme-wide (n'importe quelle boutique publiée, pas seulement celle que `/catalogue` résout aujourd'hui) ; l'interrupteur manuel (`configuration/general.demoCatalogueEnabled`) n'a d'effet que s'il est explicitement à `false` (coupe la démo dans tous les cas) — absent/`true` laisse la détection automatique décider, cohérent avec le schéma déjà établi pour `platformAdmins` (collection verrouillée en écriture, réglée à la main depuis la console Firebase).
+
+**Fait :**
+- `PlatformConfiguration`/`ConfigurationRepository`/`ConfigurationService` (`src/models/configuration/`, `src/repositories/`, `src/services/`) — lecture seule, même schéma que `platformAdmins`. `firestore.rules` : `configuration/{docId}` lecture publique (consultée par des visiteurs non connectés), écriture interdite pour tout le monde.
+- `useDemoCatalogueAvailable()` (`src/hooks/`) : combine l'interrupteur manuel et la détection automatique (liste les boutiques publiées via `ShopService.listPublishedShops()`, déjà existant, puis vérifie si l'une a au moins un produit `isVisibleToCustomers`). Renvoie `undefined` tant que la réponse n'est pas connue — jamais de redirection ni d'affichage sur la base d'une valeur par défaut.
+- Trois points de consommation : `/catalogue` (repli vers la démo conditionné, sinon état honnête "Aucune boutique disponible" plutôt qu'une page cassée), `CataloguePageContent` (même logique pour le cas "boutique publiée mais vide" — si une AUTRE boutique de la plateforme a de vrais produits, affiche "Cette boutique n'a pas encore de produit" plutôt que de rediriger vers une démo qui n'a plus de sens), `/demo-catalogue` elle-même (auto-repli vers `/catalogue` si elle n'est plus disponible — couvre aussi l'accès direct par URL, pas seulement le repli depuis `/catalogue`).
+
+Tests : `ConfigurationService.test.ts`, `useDemoCatalogueAvailable.test.ts`, `demo-catalogue/page.test.tsx` (nouveau, aucun test n'existait avant), `catalogue/page.test.tsx`/`CataloguePageContent.test.tsx` étendus.
+
+## 20. Session unique par compte (BF-123), 2026-09-26
+
+Demande utilisateur : empêcher qu'un même compte soit connecté sur plusieurs navigateurs/appareils à la fois. **Clarifié avant de coder** : "plateformes" = navigateurs/appareils (pas onglets du même navigateur, qui doivent rester tous valides ensemble).
+
+**Fait :**
+- `User.activeSessionId?: string` — id aléatoire (`crypto.randomUUID()`). `src/lib/sessionId.ts` : stocké en `localStorage` (partagé entre onglets du même navigateur exprès, contrairement à `sessionStorage`) — jamais d'exception si le stockage est indisponible (navigation privée stricte), dégradation silencieuse plutôt que de bloquer la connexion.
+- `AuthProvider` : à chaque connexion (`onAuthStateChanged`), si ce navigateur n'a **encore aucun** id local stocké, en génère un frais et l'écrit sur `users/{uid}.activeSessionId` (`AuthService.updateProfile`, déjà autorisé par `firestore.rules` — `activeSessionId` n'est ni `role` ni `shopId`, aucun changement de règles nécessaire). Si un id local existe déjà (rechargement de page, autre onglet du même navigateur), rien n'est réécrit — la reconnexion silencieuse habituelle de Firebase Auth au chargement ne doit pas se comporter comme une "nouvelle connexion" et invalider les autres sessions.
+- Écoute en direct (`onSnapshot` sur son propre `users/{uid}`, second usage du projet après `useNewOrdersCount`) : dès que `activeSessionId` change pour une valeur différente de celle stockée localement (connexion depuis un autre navigateur), déconnexion forcée (`AuthService.logout()`) + message d'erreur (`sonner`).
+- `AuthService.logout()` efface systématiquement l'id local en premier (avant même `signOut`) — couvre à la fois la déconnexion volontaire et la déconnexion forcée par conflit de session, pour qu'une reconnexion ultérieure sur ce même navigateur reparte sur un id frais sans avoir besoin de toucher Firestore à la déconnexion.
+
+**Limite assumée** : aucune migration pour les comptes déjà connectés avant ce changement — leur session actuelle devient "la" session active dès le prochain chargement de page (pas de déconnexion surprise), exactement comme pour les précédents changements de modèle du projet (BF-93, retrait auth téléphone/anonyme...).
+
+Tests : `sessionId.test.ts` (100% de couverture), `AuthProvider.test.tsx` (nouveau — aucun test n'existait avant pour ce composant central), `AuthService.test.ts` étendu (`logout` efface l'id local).
+
+Vérifié (les deux sections ci-dessus) : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (361 tests, +27, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.

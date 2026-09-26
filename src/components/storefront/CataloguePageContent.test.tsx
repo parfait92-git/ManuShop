@@ -22,6 +22,11 @@ jest.mock("./StorefrontProductCard", () => ({
   ),
 }));
 
+const useDemoCatalogueAvailableMock = jest.fn();
+jest.mock("../../hooks/useDemoCatalogueAvailable", () => ({
+  useDemoCatalogueAvailable: () => useDemoCatalogueAvailableMock(),
+}));
+
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { CataloguePageContent } from "@/components/storefront/CataloguePageContent";
@@ -55,6 +60,7 @@ describe("CataloguePageContent", () => {
     jest.clearAllMocks();
     categoryServiceMock.listCategories.mockResolvedValue([]);
     productServiceMock.search.mockImplementation((products) => products);
+    useDemoCatalogueAvailableMock.mockReturnValue(true);
   });
 
   it("redirects to the demo catalogue when the shop has zero products", async () => {
@@ -91,5 +97,25 @@ describe("CataloguePageContent", () => {
     await waitFor(() =>
       expect(replaceMock).toHaveBeenCalledWith("/demo-catalogue")
     );
+  });
+
+  it("shows an honest empty state instead of redirecting when the demo catalogue isn't available", async () => {
+    useDemoCatalogueAvailableMock.mockReturnValue(false);
+    productServiceMock.listProducts.mockResolvedValue([]);
+    render(<CataloguePageContent shopId="shop-1" />);
+
+    expect(
+      await screen.findByText("Cette boutique n'a pas encore de produit à afficher.")
+    ).toBeInTheDocument();
+    expect(replaceMock).not.toHaveBeenCalled();
+  });
+
+  it("shows a loading state while demo catalogue availability is still resolving for an empty shop", () => {
+    useDemoCatalogueAvailableMock.mockReturnValue(undefined);
+    productServiceMock.listProducts.mockResolvedValue([]);
+    render(<CataloguePageContent shopId="shop-1" />);
+
+    expect(screen.getByText("Chargement...")).toBeInTheDocument();
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 });

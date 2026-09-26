@@ -9,6 +9,7 @@ import { StorefrontProductCard } from "@/components/storefront/StorefrontProduct
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
@@ -33,6 +34,7 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
 
 export function CataloguePageContent({ shopId }: { shopId: string }) {
   const router = useRouter();
+  const demoAvailable = useDemoCatalogueAvailable();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [term, setTerm] = useState("");
@@ -91,17 +93,32 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
   // `publishedProducts`, pas `visibleProducts` qui peut être vide à cause
   // d'une recherche/filtre sans rapport avec ça.
   const isEmptyShop = products !== null && publishedProducts.length === 0;
+  // Repli vers la démo seulement tant qu'elle a encore lieu d'être (voir
+  // `useDemoCatalogueAvailable`) — si une AUTRE boutique de la plateforme a
+  // déjà de vrais produits, la démo est désactivée même si CETTE boutique-ci
+  // est vide : mieux vaut un état honnête "aucun produit" que rediriger
+  // vers une démo qui n'a plus de sens une fois de vraies boutiques en ligne.
+  const redirectToDemo = isEmptyShop && demoAvailable === true;
+  const stillDeciding = isEmptyShop && demoAvailable === undefined;
 
   useEffect(() => {
-    if (isEmptyShop) {
+    if (redirectToDemo) {
       router.replace("/demo-catalogue");
     }
-  }, [isEmptyShop, router]);
+  }, [redirectToDemo, router]);
+
+  if (stillDeciding || redirectToDemo) {
+    return (
+      <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+        Chargement...
+      </p>
+    );
+  }
 
   if (isEmptyShop) {
     return (
       <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-        Chargement...
+        Cette boutique n&apos;a pas encore de produit à afficher.
       </p>
     );
   }

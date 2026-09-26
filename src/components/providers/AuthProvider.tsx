@@ -1,9 +1,15 @@
 "use client";
 
 import type { User as FirebaseUser } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import {
+  createLocalSessionId,
+  getLocalSessionId,
+} from "@/lib/sessionId";
 import { authService } from "@/services/AuthService";
 import { platformAdminService } from "@/services/PlatformAdminService";
 import type { User } from "@/models/user/User";
@@ -31,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<User | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [localSessionId, setLocalSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChanged(async (user) => {
@@ -40,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setIsSuperAdmin(false);
         setLoading(false);
+        setLocalSessionId(null);
         return;
       }
 
@@ -50,10 +58,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(userProfile);
       setIsSuperAdmin(superAdmin);
       setLoading(false);
+
+      if (userProfile) {
+        // Session unique (un seul navigateur/appareil à la fois) : un id
+        // déjà stocké localement (rechargement de page, ou autre onglet de
+        // ce même navigateur) reste tel quel — seule une vraie première
+        // connexion sur un navigateur qui n'a encore aucun id local en mine
+        // un nouveau, qui écrase celui de Firestore et invalide toute autre
+        // session active ailleurs (voir l'écouteur ci-dessous).
+        const existing = getLocalSessionId();
+        const sessionId = existing ?? createLocalSessionId();
+        setLocalSessionId(sessionId);
+        if (!existing) {
+          await authService
+            .updateProfile(user.uid, { activeSessionId: sessionId })
+            .catch(() => {});
+        }
+      }
     });
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!firebaseUser || !localSessionId) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, "users", firebaseUser.uid),
+      (snapshot) => {
+        const remoteSessionId = snapshot.data()?.activeSessionId;
+        if (remoteSessionId && remoteSessionId !== localSessionId) {
+          authService.logout();
+          toast.error(
+            "Vous avez été déconnecté(e) : votre compte a été utilisé sur un autre appareil."
+          );
+        }
+      }
+    );
+
+    return unsubscribe;
+  }, [firebaseUser, localSessionId]);
 
   const refreshProfile = useCallback(async () => {
     // `auth.currentUser`, pas le `firebaseUser` du state React : ce dernier

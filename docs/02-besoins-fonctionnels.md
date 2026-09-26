@@ -13,6 +13,7 @@
 | BF-05 | Récupération mot de passe | Réinitialisation par email (terminé) |
 | BF-120 | Paramètres du compte (profil personnel) | Tout utilisateur connecté (client, vendeur, admin) peut modifier son nom, sa photo et son téléphone, consulter son identifiant de connexion/rôle/ancienneté, et changer son mot de passe (comptes email) — distinct des paramètres de boutique (BF-04). **Fait le 2026-09-25** : `/mon-compte`, accessible depuis le menu "Mon compte" (vitrine) et le menu du tableau de bord. |
 | BF-121 | Notification de nouvelle version par email | À chaque nouvelle version de la plateforme, tous les comptes ayant un email renseigné sont notifiés. **Non commencé** — bloqué sur le choix d'un fournisseur d'email (aucun dans le projet actuellement, voir 04-besoins-techniques.md §13) ; la préférence "notifications par email" (`User.notifyByEmail`, opt-out) existe déjà côté compte via BF-120, prête à être consultée une fois le fournisseur choisi. Source de version envisagée : le champ `version` de `package.json`. |
+| BF-123 | Session unique par compte | Un compte ne peut être connecté que sur un seul navigateur/appareil à la fois — se connecter ailleurs déconnecte automatiquement la session précédente. **Fait le 2026-09-26** : `User.activeSessionId`, régénéré à chaque première connexion sur un navigateur sans id local stocké ; `AuthProvider` écoute son propre profil en direct et se déconnecte dès que l'id ne correspond plus (voir 04-besoins-techniques.md §19). |
 
 ---
 
@@ -94,6 +95,7 @@
 | BF-38 | Recherche & filtres | Filtrer par catégorie, prix, disponibilité (partiel — recherche par nom et filtre par catégorie fonctionnels ; le prix n'a qu'un tri (croissant/décroissant), pas un filtre par plage ; pas de filtre par disponibilité/stock) |
 | BF-39 | Contact rapide | Bouton "Commander via WhatsApp" sur chaque produit (adapté — décision prise en session, voir journal : panier local persistant + un seul bouton "Commander via WhatsApp" au moment du paiement, plutôt qu'un bouton par produit, pour permettre un vrai panier multi-articles) |
 | BF-40 | Mode hors ligne | Consultation du catalogue même sans connexion (PWA) (partiel — app installable, images mises en cache par le service worker ; la persistance hors-ligne de Firestore n'est pas activée, donc les données produits elles-mêmes ne sont pas garanties disponibles sans connexion) |
+| BF-122 | Catalogue de démo conditionnel | `/demo-catalogue` (données fictives, construit le 2026-09-24) ne doit plus s'afficher — ni comme repli automatique depuis `/catalogue`, ni en accès direct — une fois qu'au moins une vraie boutique publiée de la plateforme a un produit visible réel. Un Super Admin peut aussi la désactiver explicitement, indépendamment de l'état réel. **Fait le 2026-09-26** : nouvelle collection `configuration` (`configuration/general.demoCatalogueEnabled`, gérée à la main comme `platformAdmins`) + détection automatique plateforme-wide (voir 04-besoins-techniques.md §19). |
 
 ---
 

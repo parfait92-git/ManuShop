@@ -6,6 +6,11 @@ jest.mock("next/navigation", () => ({
 const useShopMock = jest.fn();
 jest.mock("../../../hooks/useShop", () => ({ useShop: () => useShopMock() }));
 
+const useDemoCatalogueAvailableMock = jest.fn();
+jest.mock("../../../hooks/useDemoCatalogueAvailable", () => ({
+  useDemoCatalogueAvailable: () => useDemoCatalogueAvailableMock(),
+}));
+
 jest.mock("../../../components/storefront/CataloguePageContent", () => ({
   CataloguePageContent: ({ shopId }: { shopId: string }) => (
     <div data-testid="catalogue-content">{shopId}</div>
@@ -19,6 +24,7 @@ import CataloguePage from "./page";
 describe("CataloguePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useDemoCatalogueAvailableMock.mockReturnValue(true);
   });
 
   it("shows a loading state while the shop resolves", () => {
@@ -57,5 +63,25 @@ describe("CataloguePage", () => {
     expect(screen.getByTestId("catalogue-content")).toHaveTextContent(
       "shop-1"
     );
+  });
+
+  it("shows an honest empty state instead of redirecting when the demo catalogue isn't available", () => {
+    useShopMock.mockReturnValue({ shop: null, loading: false });
+    useDemoCatalogueAvailableMock.mockReturnValue(false);
+    render(<CataloguePage />);
+
+    expect(replaceMock).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Aucune boutique disponible pour le moment.")
+    ).toBeInTheDocument();
+  });
+
+  it("shows a loading state while demo catalogue availability is still resolving", () => {
+    useShopMock.mockReturnValue({ shop: null, loading: false });
+    useDemoCatalogueAvailableMock.mockReturnValue(undefined);
+    render(<CataloguePage />);
+
+    expect(replaceMock).not.toHaveBeenCalled();
+    expect(screen.getByText("Chargement...")).toBeInTheDocument();
   });
 });

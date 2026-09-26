@@ -2,10 +2,13 @@
 
 import { Sparkles } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { StorefrontProductCard } from "@/components/storefront/StorefrontProductCard";
 import { Badge } from "@/components/ui/Badge";
 import { getArticlesByShop, mockShops } from "@/data/mockData";
+import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 
 /**
  * Page de démonstration du catalogue multi-boutiques (Module 12) — rendue
@@ -19,8 +22,31 @@ import { getArticlesByShop, mockShops } from "@/data/mockData";
  * (`.toDate()`) s'ils traversent la frontière Server → Client Component
  * (sérialisation RSC), ce que `ProductService.getBadge()` utilise — la
  * page doit donc rester entièrement côté client, pas seulement le contenu.
+ *
+ * Auto-repli vers `/catalogue` (demande utilisateur du 2026-09-26) : cette
+ * page se désactive elle-même une fois qu'une vraie boutique publiée existe
+ * quelque part sur la plateforme, ou si le Super Admin l'a coupée à la main
+ * — même accès direct par URL, pas seulement le lien depuis `/catalogue`
+ * (voir `useDemoCatalogueAvailable`).
  */
 export default function DemoCataloguePage() {
+  const router = useRouter();
+  const available = useDemoCatalogueAvailable();
+
+  useEffect(() => {
+    if (available === false) {
+      router.replace("/catalogue");
+    }
+  }, [available, router]);
+
+  if (available === undefined || available === false) {
+    return (
+      <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+        Chargement...
+      </p>
+    );
+  }
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-10">
       <section className="flex flex-col gap-4">
