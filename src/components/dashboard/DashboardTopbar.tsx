@@ -2,11 +2,13 @@
 
 import { Bell, ChevronDown, Menu } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCurrentShop } from "@/hooks/useCurrentShop";
+import { useNewOrdersCount } from "@/hooks/useNewOrdersCount";
 import { authService } from "@/services/AuthService";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -18,6 +20,7 @@ const ROLE_LABELS: Record<string, string> = {
 export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { profile } = useAuth();
   const { shop } = useCurrentShop();
+  const newOrdersCount = useNewOrdersCount(profile?.shopId);
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const shopName = shop?.name ?? null;
@@ -47,15 +50,22 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <button
-          type="button"
-          disabled
-          aria-label="Notifications (bientôt disponible)"
-          title="Notifications — bientôt disponible"
-          className="flex size-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 disabled:cursor-not-allowed"
+        <Link
+          href="/dashboard/orders?status=under_review"
+          aria-label={
+            newOrdersCount > 0
+              ? `${newOrdersCount} nouvelle${newOrdersCount > 1 ? "s" : ""} commande${newOrdersCount > 1 ? "s" : ""} à traiter`
+              : "Aucune nouvelle commande"
+          }
+          className="relative flex size-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
         >
           <Bell className="size-4" />
-        </button>
+          {newOrdersCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+              {newOrdersCount > 9 ? "9+" : newOrdersCount}
+            </span>
+          )}
+        </Link>
 
         {profile && (
           <div className="relative">
@@ -97,7 +107,14 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                   className="fixed inset-0 z-10 cursor-default"
                   onClick={() => setMenuOpen(false)}
                 />
-                <div className="absolute right-0 z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                  <Link
+                    href="/mon-compte"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                  >
+                    Paramètres du compte
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}

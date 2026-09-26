@@ -10,7 +10,11 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 // client — évite qu'un appelant écrive n'importe où dans le compte
 // Cloudinary. Défaut "manushop/products" : rétrocompatible avec
 // `uploadProductImage`, qui n'envoie jamais ce champ.
-const ALLOWED_FOLDERS = ["manushop/products", "manushop/shops"] as const;
+const ALLOWED_FOLDERS = [
+  "manushop/products",
+  "manushop/shops",
+  "manushop/users",
+] as const;
 type AllowedFolder = (typeof ALLOWED_FOLDERS)[number];
 
 function resolveFolder(value: FormDataEntryValue | null): AllowedFolder {

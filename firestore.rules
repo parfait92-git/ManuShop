@@ -52,9 +52,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Commandes — lecture/écriture authentifiée
+    // Commandes (Module 4, BF-18→23/95→97) — double audience : le
+    // commerçant (admin/seller de LA boutique de la commande) lit toutes
+    // les commandes de sa boutique ; le client lit uniquement les siennes
+    // (une commande manuelle, BF-21, n'a pas de `clientId` : invisible pour
+    // tout client, seul le commerçant la voit). Écriture entièrement
+    // verrouillée : création et changement de statut doivent rester
+    // atomiques avec l'ajustement de stock associé (BF-96) et revalider
+    // l'autorisation en code, donc passent uniquement par `firebase-admin`
+    // via src/server/actions/orderActions.ts (même schéma que
+    // `platformAdmins`/BF-68).
     match /orders/{orderId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && (resource.data.clientId == request.auth.uid
+          || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+            && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId));
+      allow write: if false;
     }
 
     // Super Admin — PAS un rôle sur `users`, mais l'appartenance à cette

@@ -1,18 +1,21 @@
 "use client";
 
-import { History, Package, Settings, Tag } from "lucide-react";
+import { History, Package, Settings, ShoppingBag, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type {
   ActivityLogAction,
   ActivityLogEntry,
 } from "@/models/activity/ActivityLogEntry";
+import type { OrderStatus } from "@/models/order/OrderStatus";
 import { activityLogService } from "@/services/ActivityLogService";
 
 const ACTION_ICON: Record<ActivityLogEntry["targetType"], typeof Package> = {
   product: Package,
   category: Tag,
   shop: Settings,
+  order: ShoppingBag,
 };
 
 function describe(entry: ActivityLogEntry): string {
@@ -24,6 +27,18 @@ function describe(entry: ActivityLogEntry): string {
     typeof entry.metadata?.categoryName === "string"
       ? entry.metadata.categoryName
       : "Catégorie";
+  const clientName =
+    typeof entry.metadata?.clientName === "string"
+      ? entry.metadata.clientName
+      : "un client";
+  const orderStatus =
+    typeof entry.metadata?.status === "string"
+      ? ORDER_STATUS_LABEL[entry.metadata.status as OrderStatus]
+      : "";
+  const orderReason =
+    typeof entry.metadata?.reason === "string" ? entry.metadata.reason : "";
+  const orderOutcome =
+    entry.metadata?.outcome === "defective" ? "défectueuse" : "retournée";
   const labels: Record<ActivityLogAction, string> = {
     "product.published": `« ${productName} » publié`,
     "product.unpublished": `« ${productName} » dépublié`,
@@ -32,6 +47,10 @@ function describe(entry: ActivityLogEntry): string {
     "category.trashed": `« ${categoryName} » déplacée vers la corbeille`,
     "category.restored": `« ${categoryName} » restaurée`,
     "shop.settings_updated": "Paramètres de la boutique mis à jour",
+    "order.created": `Commande créée pour ${clientName}`,
+    "order.status_changed": `Commande passée à « ${orderStatus} »`,
+    "order.cancelled": `Commande annulée — ${orderReason}`,
+    "order.returned": `Commande marquée ${orderOutcome} — ${orderReason}`,
   };
   return labels[entry.action];
 }

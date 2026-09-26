@@ -11,6 +11,10 @@ export const PRODUCT_IMAGE_SIZE = 1000;
  * jamais en grand comme une photo produit — 512px suffit largement. */
 export const LOGO_IMAGE_SIZE = 512;
 
+/** Photo de profil personnelle — même raisonnement que `LOGO_IMAGE_SIZE`
+ * (toujours affichée en petit, jamais en grand). */
+export const AVATAR_IMAGE_SIZE = 512;
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();

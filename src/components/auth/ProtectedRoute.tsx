@@ -22,9 +22,8 @@ interface ProtectedRouteProps {
  * `GuestRoute`, son inverse, pour les pages réservées aux visiteurs.
  *
  * Un utilisateur Firebase authentifié sans profil Firestore (première
- * connexion via Google/Facebook/téléphone/anonyme) est envoyé vers
- * `/onboarding` pour créer sa boutique, plutôt que d'être silencieusement
- * laissé passer.
+ * connexion via Google/Facebook) est envoyé vers `/onboarding` pour créer
+ * sa boutique, plutôt que d'être silencieusement laissé passer.
  */
 export function ProtectedRoute({
   children,

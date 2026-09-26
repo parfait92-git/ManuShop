@@ -19,9 +19,7 @@ jest.mock("firebase/auth", () => ({
   onAuthStateChanged: jest.fn(),
   sendPasswordResetEmail: jest.fn(),
   setPersistence: jest.fn(),
-  signInAnonymously: jest.fn(),
   signInWithEmailAndPassword: jest.fn(),
-  signInWithPhoneNumber: jest.fn(),
   signInWithPopup: jest.fn(),
   signOut: jest.fn(),
 }));
@@ -45,9 +43,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   setPersistence,
-  signInAnonymously,
   signInWithEmailAndPassword,
-  signInWithPhoneNumber,
   signInWithPopup,
   signOut,
 } from "firebase/auth";
@@ -69,9 +65,7 @@ const createUserWithEmailAndPasswordMock =
   createUserWithEmailAndPassword as jest.Mock;
 const sendPasswordResetEmailMock = sendPasswordResetEmail as jest.Mock;
 const setPersistenceMock = setPersistence as jest.Mock;
-const signInAnonymouslyMock = signInAnonymously as jest.Mock;
 const signInWithEmailAndPasswordMock = signInWithEmailAndPassword as jest.Mock;
-const signInWithPhoneNumberMock = signInWithPhoneNumber as jest.Mock;
 const signInWithPopupMock = signInWithPopup as jest.Mock;
 const signOutMock = signOut as jest.Mock;
 
@@ -341,6 +335,15 @@ describe("AuthService", () => {
     });
   });
 
+  describe("updateProfile", () => {
+    it("delegates to the user repository", async () => {
+      await service.updateProfile("uid-1", { displayName: "Ada Diallo" });
+      expect(users.update).toHaveBeenCalledWith("uid-1", {
+        displayName: "Ada Diallo",
+      });
+    });
+  });
+
   describe("completeMerchantSignup", () => {
     it("creates a client profile for the currently signed-in Firebase user", async () => {
       (auth as { currentUser: unknown }).currentUser = {
@@ -392,7 +395,7 @@ describe("AuthService", () => {
     });
   });
 
-  describe("social and anonymous sign-in", () => {
+  describe("social sign-in", () => {
     it("loginWithGoogle signs in via popup with a Google provider, forcing the account picker", async () => {
       signInWithPopupMock.mockResolvedValue({ user: { uid: "uid-4" } });
       const user = await service.loginWithGoogle();
@@ -419,46 +422,6 @@ describe("AuthService", () => {
         auth_type: "reauthenticate",
       });
       expect(user.uid).toBe("uid-5");
-    });
-
-    it("loginAnonymously signs in anonymously", async () => {
-      signInAnonymouslyMock.mockResolvedValue({ user: { uid: "uid-6" } });
-      const user = await service.loginAnonymously();
-      expect(signInAnonymouslyMock).toHaveBeenCalledWith(auth);
-      expect(user.uid).toBe("uid-6");
-    });
-  });
-
-  describe("phone sign-in", () => {
-    it("startPhoneSignIn delegates to signInWithPhoneNumber", async () => {
-      const verifier = { __tag: "verifier" };
-      const confirmationResult = { __tag: "confirmation" };
-      signInWithPhoneNumberMock.mockResolvedValue(confirmationResult);
-
-      const result = await service.startPhoneSignIn(
-        "+237600000000",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        verifier as any
-      );
-
-      expect(signInWithPhoneNumberMock).toHaveBeenCalledWith(
-        auth,
-        "+237600000000",
-        verifier
-      );
-      expect(result).toBe(confirmationResult);
-    });
-
-    it("confirmPhoneCode confirms the code and returns the user", async () => {
-      const confirm = jest.fn().mockResolvedValue({ user: { uid: "uid-7" } });
-      const user = await service.confirmPhoneCode(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { confirm } as any,
-        "123456"
-      );
-
-      expect(confirm).toHaveBeenCalledWith("123456");
-      expect(user.uid).toBe("uid-7");
     });
   });
 });

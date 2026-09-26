@@ -12,8 +12,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
  * - Compte déjà onboardé (profil Firestore existant) → renvoyé vers
  *   `/erreur?code=already-authenticated` (ces pages ne le concernent plus).
  * - Compte authentifié mais onboarding pas terminé (première connexion via
- *   Google/Facebook/téléphone/anonyme, boutique pas encore créée) → renvoyé
- *   vers `/onboarding` directement, pas vers `/erreur` : ce n'est pas une
+ *   Google/Facebook, boutique pas encore créée) → renvoyé vers
+ *   `/onboarding` directement, pas vers `/erreur` : ce n'est pas une
  *   erreur, juste la suite logique du parcours.
  */
 export function GuestRoute({ children }: { children: React.ReactNode }) {

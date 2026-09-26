@@ -4,8 +4,6 @@ import {
   ForgotPasswordSchema,
   InviteSellerSchema,
   LoginSchema,
-  PhoneCodeSchema,
-  PhoneLoginSchema,
   RegisterSchema,
   ShopSettingsSchema,
 } from "./auth";
@@ -76,30 +74,6 @@ describe("LoginSchema", () => {
         rememberMe: true,
       }).success
     ).toBe(true);
-  });
-});
-
-describe("PhoneLoginSchema", () => {
-  it("accepts a valid E.164 phone number", () => {
-    expect(
-      PhoneLoginSchema.safeParse({ phone: "+237600000000" }).success
-    ).toBe(true);
-  });
-
-  it("rejects a number without the country code prefix", () => {
-    expect(
-      PhoneLoginSchema.safeParse({ phone: "0600000000" }).success
-    ).toBe(false);
-  });
-});
-
-describe("PhoneCodeSchema", () => {
-  it("accepts a 6-digit code", () => {
-    expect(PhoneCodeSchema.safeParse({ code: "123456" }).success).toBe(true);
-  });
-
-  it("rejects a code with the wrong length", () => {
-    expect(PhoneCodeSchema.safeParse({ code: "123" }).success).toBe(false);
   });
 });
 

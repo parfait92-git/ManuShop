@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { ShareShopLinkButton } from "@/components/dashboard/ShareShopLinkButton";
 import { CreateShopWizard } from "@/components/storefront/CreateShopWizard";
 import { Button } from "@/components/ui/button";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
@@ -138,13 +139,22 @@ export function ShopManagementPageContent() {
                     })}
                 </p>
               )}
-              <Button
-                onClick={() => handleManage(shop)}
-                disabled={switchingId === shop.id}
-                className="mt-auto w-full bg-slate-950 hover:bg-slate-800"
-              >
-                {switchingId === shop.id ? "..." : "Gérer"}
-              </Button>
+              <div className="mt-auto flex flex-col gap-2">
+                {status === "published" && (
+                  <ShareShopLinkButton
+                    shopId={shop.id}
+                    shopName={shop.name}
+                    className="w-full"
+                  />
+                )}
+                <Button
+                  onClick={() => handleManage(shop)}
+                  disabled={switchingId === shop.id}
+                  className="w-full bg-slate-950 hover:bg-slate-800"
+                >
+                  {switchingId === shop.id ? "..." : "Gérer"}
+                </Button>
+              </div>
             </div>
           );
         })}

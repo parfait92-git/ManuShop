@@ -44,7 +44,7 @@ describe("PlatformAdminService", () => {
       expect(platformAdmins.exists).toHaveBeenCalledWith("a@b.com");
     });
 
-    it("returns false without checking when there is no email (phone/anonymous accounts)", async () => {
+    it("returns false without checking when there is no email", async () => {
       expect(await service.isSuperAdmin(null)).toBe(false);
       expect(await service.isSuperAdmin(undefined)).toBe(false);
       expect(platformAdmins.exists).not.toHaveBeenCalled();

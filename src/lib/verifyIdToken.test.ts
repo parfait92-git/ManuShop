@@ -3,6 +3,11 @@ jest.mock("jose", () => ({
   jwtVerify: jest.fn(),
 }));
 
+const verifyIdTokenAdminMock = jest.fn();
+jest.mock("./firebaseAdmin", () => ({
+  getAdminAuth: () => ({ verifyIdToken: verifyIdTokenAdminMock }),
+}));
+
 import { jwtVerify } from "jose";
 
 import { verifyIdToken } from "./verifyIdToken";
@@ -12,6 +17,8 @@ const jwtVerifyMock = jwtVerify as jest.Mock;
 describe("verifyIdToken", () => {
   beforeEach(() => {
     jwtVerifyMock.mockReset();
+    verifyIdTokenAdminMock.mockReset();
+    delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
   });
 
   it("returns null when the header is missing", async () => {
@@ -58,5 +65,26 @@ describe("verifyIdToken", () => {
   it("returns null when verification throws (invalid or expired token)", async () => {
     jwtVerifyMock.mockRejectedValue(new Error("signature invalid"));
     expect(await verifyIdToken("Bearer bad-token")).toBeNull();
+  });
+
+  describe("with the local Auth emulator active", () => {
+    beforeEach(() => {
+      process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
+    });
+
+    it("delegates to firebase-admin instead of the production JWKS", async () => {
+      verifyIdTokenAdminMock.mockResolvedValue({ uid: "uid-1", email: "a@b.com" });
+
+      const result = await verifyIdToken("Bearer emulator-token");
+
+      expect(verifyIdTokenAdminMock).toHaveBeenCalledWith("emulator-token");
+      expect(jwtVerifyMock).not.toHaveBeenCalled();
+      expect(result).toEqual({ uid: "uid-1", email: "a@b.com" });
+    });
+
+    it("returns null when the emulator token is invalid", async () => {
+      verifyIdTokenAdminMock.mockRejectedValue(new Error("invalid token"));
+      expect(await verifyIdToken("Bearer bad-token")).toBeNull();
+    });
   });
 });
