@@ -55,4 +55,33 @@ describe("StorefrontProductCard", () => {
     const addButton = screen.getByRole("button", { name: "Ajouter au panier" });
     expect(addButton.closest("a")).toBeNull();
   });
+
+  it("shows a shop attribution link when a shop is provided (multi-shop catalogue)", () => {
+    render(
+      <StorefrontProductCard
+        product={fakeProduct()}
+        shop={{
+          id: "shop-1",
+          name: "Boutique Test",
+          logo: "",
+          address: "",
+          phone: "",
+          whatsapp: "",
+          currency: "XAF",
+          ownerId: "u1",
+          createdAt: { toDate: () => new Date("2020-01-01") } as never,
+        }}
+      />
+    );
+
+    const shopLink = screen.getByRole("link", { name: "Boutique Test" });
+    expect(shopLink).toHaveAttribute("href", "/boutique/shop-1");
+    // Deux <a> imbriqués seraient invalides en HTML.
+    expect(shopLink.closest('a[href="/catalogue/p1"]')).toBeNull();
+  });
+
+  it("has no shop attribution when no shop is provided (single-shop pages)", () => {
+    render(<StorefrontProductCard product={fakeProduct()} />);
+    expect(screen.queryByRole("link", { name: /boutique/i })).not.toBeInTheDocument();
+  });
 });

@@ -107,7 +107,7 @@ Spécification fonctionnelle complète fournie par l'utilisateur (voir Modules 1
 - [x] **Fait.** Page Corbeille (`/dashboard/trash`, `TrashPageContent`) : restaurer, ou supprimer définitivement avec compte à rebours annulable (5s, `CountdownDialog`).
 
 **3. Publication produit & catégories (BF-89→90, BF-109→111)**
-- [x] **Fait (session non journalisée, reprise et complétée le 2026-09-25).** `Product.isPublished` (distinct de la suppression, `ProductService.setPublished`/`isVisibleToCustomers`) ; `/catalogue` filtre dessus. **Marché (`/demo-catalogue` → vraies données) pas encore branché** — dépend du §7 ci-dessous, non commencé.
+- [x] **Fait (session non journalisée, reprise et complétée le 2026-09-25).** `Product.isPublished` (distinct de la suppression, `ProductService.setPublished`/`isVisibleToCustomers`) ; `/catalogue` filtre dessus. **Marché (`/demo-catalogue` → vraies données) fait le 2026-09-26, version réduite** — voir §7 ci-dessous.
 - [ ] Collection `CategoryTag` (Super Admin uniquement) + `Category.tagId` — **pas encore construit**
 
 **4. Module 3 — Stock (BF-13→17)** *(toujours non commencé comme module à part entière — voir Phase 1 ci-dessus : une mécanique minimale de décrément/incrément vit maintenant dans le Module 4)*
@@ -124,7 +124,8 @@ Spécification fonctionnelle complète fournie par l'utilisateur (voir Modules 1
 - [x] Interface de sélection du mode de paiement (BF-78) — 2026-09-25 (`/checkout/payment`), sans intégration réelle comme prévu §12.6 ; devenu le point d'entrée réel de BF-19 ("Confirmer ma commande" écrit une vraie commande).
 
 **7. Page Marché (BF-108)** — dépend de #3 (produits publiés + tags)
-- [ ] Généralise `/demo-catalogue` (données de démo, déjà construit le 2026-09-24) à de vraies données : 4 meilleures boutiques en tête, tous les produits publiés en dessous, triés par tag système
+- [x] **Fait le 2026-09-26, version réduite** (04-besoins-techniques.md §22) : `/catalogue` agrège désormais tous les produits visibles de toutes les boutiques publiées (plus une "boutique primaire" mono-tenant), landing page (meilleurs articles) idem. Filtrable par nom de catégorie (union entre boutiques, `Product.category` est déjà une simple chaîne, pas besoin d'attendre `CategoryTag`).
+- [ ] **Pas fait** : les 4 meilleures boutiques en tête de page (nécessiterait un vrai classement de boutiques, pas seulement de produits) ; tri par `CategoryTag` système (dépend du #3 ci-dessus, toujours non construit) — filtrage actuel par nom de catégorie brut en attendant.
 
 **8. Tableau de bord, factures & journal (BF-98, BF-102→104)** — dépendance sur le Module 4 levée le 2026-09-25
 - [x] Journal d'activité (BF-98) étendu aux événements de commande (`order.created`/`order.status_changed`/`order.cancelled`/`order.returned`) — fait le 2026-09-25, en même temps que le Module 4.

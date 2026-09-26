@@ -7,10 +7,21 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/models/product/Product";
+import type { Shop } from "@/models/shop/Shop";
 import { productService } from "@/services/ProductService";
 import { useCartStore } from "@/store/cartStore";
 
-export function StorefrontProductCard({ product }: { product: Product }) {
+export function StorefrontProductCard({
+  product,
+  shop,
+}: {
+  product: Product;
+  /** Fourni uniquement par un contexte multi-boutique (ex. `/catalogue`
+   * agrégé, BF-108) — absent quand la page est déjà scopée à une seule
+   * boutique (`/boutique/[shopId]`, `/demo-catalogue`), pour ne pas répéter
+   * une info déjà visible dans l'en-tête de la page. */
+  shop?: Shop;
+}) {
   const addItem = useCartStore((state) => state.addItem);
   const [liked, setLiked] = useState(false);
   const badge = productService.getBadge(product);
@@ -62,7 +73,18 @@ export function StorefrontProductCard({ product }: { product: Product }) {
         <Heart className="size-4" fill={liked ? "currentColor" : "none"} />
       </button>
 
-      <div className="p-4 pt-2">
+      <div className="flex flex-col gap-2 p-4 pt-2">
+        {shop && (
+          // Lien frère du <Link> produit ci-dessus, pas imbriqué dedans —
+          // même raison que le bouton favoris : deux <a> ne peuvent pas
+          // s'imbriquer en HTML valide.
+          <Link
+            href={`/boutique/${shop.id}`}
+            className="truncate text-xs text-muted-foreground hover:text-foreground"
+          >
+            {shop.name}
+          </Link>
+        )}
         <Button
           className="w-full"
           onClick={() =>

@@ -67,6 +67,22 @@ export class ProductService {
   }
 
   /**
+   * Proxy de classement "meilleur article" (page Marché/landing, BF-108) —
+   * aucune métrique de vente réelle suivie encore (`Order` non branché ici),
+   * donc classé avec les seuls signaux réels disponibles sur `Product` :
+   * promo active en cours, puis le plus récent, puis le prix le plus élevé
+   * en dernier recours. Même heuristique que `getFeaturedArticles` dans
+   * `src/data/mockData.ts` (données de démo) — à remplacer par un vrai
+   * classement (ventes, vues...) une fois ces données réellement suivies.
+   */
+  compareByRelevance(a: Product, b: Product): number {
+    if (a.isPromo !== b.isPromo) return a.isPromo ? -1 : 1;
+    const dateDiff = b.createdAt.toMillis() - a.createdAt.toMillis();
+    if (dateDiff !== 0) return dateDiff;
+    return b.price - a.price;
+  }
+
+  /**
    * Badge à afficher sur la vitrine publique — dérivé de données réelles
    * (pas de "Populaire"/"Coup de cœur" fabriqués : le modèle Product n'a
    * aucun champ pour ça). La promo prime sur la nouveauté.

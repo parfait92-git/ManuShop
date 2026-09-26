@@ -3,6 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { LucideIcon } from "lucide-react";
 
+jest.mock("../lib/firebase", () => ({ db: {}, auth: {} }));
+
 const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
@@ -14,6 +16,16 @@ jest.mock("../components/providers/AuthProvider", () => ({
 
 jest.mock("../services/AuthService", () => ({
   authService: { logout: jest.fn() },
+}));
+
+const useDemoCatalogueAvailableMock = jest.fn();
+jest.mock("../hooks/useDemoCatalogueAvailable", () => ({
+  useDemoCatalogueAvailable: () => useDemoCatalogueAvailableMock(),
+}));
+
+const useMarketCatalogueMock = jest.fn();
+jest.mock("../hooks/useMarketCatalogue", () => ({
+  useMarketCatalogue: () => useMarketCatalogueMock(),
 }));
 
 import Home from "./page";
@@ -34,6 +46,11 @@ const TestIcon = React.forwardRef(function TestIconComponent(
 TestIcon.displayName = "TestIcon";
 
 describe("Home page", () => {
+  beforeEach(() => {
+    useDemoCatalogueAvailableMock.mockReturnValue(true);
+    useMarketCatalogueMock.mockReturnValue(undefined);
+  });
+
   it("renders the landing layout from the mockup", () => {
     render(<Home />);
 

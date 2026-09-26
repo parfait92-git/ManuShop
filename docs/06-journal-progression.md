@@ -921,3 +921,22 @@ Signalé par l'utilisateur : ni la photo de profil ni le nom de l'utilisateur co
 Tests : `ShopBrandingProvider.test.tsx` (nouveau), `StorefrontHeader.test.tsx` (nouveau — premier test de ce composant), `boutique/[shopId]/page.test.tsx` étendu (rendu désormais sous `ShopBrandingProvider`, requis par `useShopBranding()`).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (369 tests, +8, aucune régression, seuil global 86%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+### 2026-09-26 — Catalogue et landing page multi-boutique réels (BF-108, version réduite)
+
+Demande de l'utilisateur : afficher les vraies données des boutiques publiées et de leurs produits dans `/catalogue` et sur la landing page, à la place des mocks, maintenant que plusieurs vraies boutiques avec plusieurs vrais produits existent. **Question exploratoire d'abord** (sur quelle base s'appuyer) : proposé et validé avec l'utilisateur une agrégation multi-boutique côté client (une lecture par boutique, même approche que `useDemoCatalogueAvailable`), sans index/moteur de recherche dédié — compromis assumé : correct au nombre de boutiques actuel, à revoir si la plateforme grossit beaucoup.
+
+**Rattaché à BF-108 (Page Marché, §12.7 de 04-besoins-techniques.md), mais volontairement réduit** : ni les 4 meilleures boutiques en tête de page, ni le tri par `CategoryTag` (système de tags Super Admin, jamais construit) — `Product.category` étant déjà une simple chaîne (pas une référence), le filtrage par catégorie fonctionne déjà en union entre boutiques sans attendre ce système.
+
+**Fait :**
+- `ProductService.compareByRelevance()` : le même proxy de classement "meilleur article" que la démo (`mockData.ts`), déplacé dans le service pour s'appliquer à de vraies données.
+- `useMarketCatalogue()` (`src/hooks/`) : agrège les produits visibles de toutes les boutiques publiées.
+- `MarketCataloguePageContent` : nouveau composant pour `/catalogue` (distinct de `CataloguePageContent`, resté scopé à une seule boutique) ; `/catalogue/page.tsx` simplifié, n'utilise plus la notion de "boutique primaire" mono-tenant.
+- `StorefrontProductCard` : attribution de boutique optionnelle (lien vers `/boutique/{shopId}`) quand le produit est affiché dans un contexte multi-boutique.
+- `FeaturedShowcase` : remplace le calcul statique de la landing page — mocks tant qu'aucune vraie boutique n'a de produit visible réel (même signal que `/catalogue`/`/demo-catalogue`), vraies données ensuite, sans le chiffre marketing fabriqué ("+120%") qui n'a pas de sens en dehors de la démo.
+
+**Limite assumée, hors scope** : le panier/paiement (`CartPanel`, `PaymentMethodPageContent`) restent mono-tenant (une seule boutique supposée par commande) — la demande portait explicitement sur l'affichage, pas le panier. Un panier multi-boutique réel reste à faire.
+
+Tests ajoutés/étendus : `ProductService.test.ts`, `useMarketCatalogue.test.ts` (nouveau), `MarketCataloguePageContent.test.tsx` (nouveau), `StorefrontProductCard.test.tsx`, `FeaturedShowcase.test.tsx` (nouveau), `catalogue/page.test.tsx` (réécrit), `page.test.tsx`.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 31 routes) et `npm run test:coverage` (387 tests, +18, aucune régression, seuil global 87%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
