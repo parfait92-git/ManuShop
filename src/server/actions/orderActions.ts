@@ -41,10 +41,15 @@ export interface CreateOrderActionInput {
 }
 
 /**
- * Écrit la commande et décrémente le stock des articles commandés dans le
- * même batch (atomique) — jamais l'un sans l'autre. Le stock n'est pas borné
- * à 0 ici (pas de vérification de survente) : mécanique minimale en
- * attendant le Module 3 (Stock), documentée comme limite connue.
+ * Écrit la commande et décrémente le stock des articles commandés dans une
+ * transaction Firestore (pas un simple batch, qui ne lit jamais rien) :
+ * chaque produit est relu ici pour vérifier `stock >= quantity` avant
+ * d'écrire quoi que ce soit — la seule façon d'empêcher la survente sans
+ * risquer une course avec une autre commande concurrente sur le même
+ * produit (voir 04-besoins-techniques.md §32 ; auparavant documenté comme
+ * limite connue, jamais vérifié). Le contrôle client (`cartStore`, borne la
+ * quantité au stock connu au moment de l'ajout) reste une aide au confort,
+ * jamais la seule vérification — le stock a pu changer depuis.
  */
 export async function createOrderAction(
   idToken: string,
@@ -71,31 +76,51 @@ export async function createOrderAction(
   }
 
   const orderRef = db.collection(ORDERS_COLLECTION).doc();
-  const batch = db.batch();
+  const productRefs = input.items.map((item) =>
+    db.collection(PRODUCTS_COLLECTION).doc(item.productId)
+  );
 
-  batch.set(orderRef, {
-    shopId: input.shopId,
-    ...(clientId ? { clientId } : {}),
-    clientName: input.clientName,
-    clientPhone: input.clientPhone,
-    clientAddress: input.clientAddress,
-    items: input.items,
-    subtotal: input.subtotal,
-    discount: input.discount ?? 0,
-    total: input.total,
-    status: "under_review" satisfies OrderStatus,
-    notes: input.notes ?? "",
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  });
+  await db.runTransaction(async (transaction) => {
+    // Toutes les lectures d'une transaction Firestore doivent précéder ses
+    // écritures — d'où la vérification ici plutôt qu'avant `runTransaction`
+    // (qui ne serait pas protégée contre une commande concurrente modifiant
+    // le stock entre la lecture et l'écriture).
+    const productSnapshots = await Promise.all(
+      productRefs.map((ref) => transaction.get(ref))
+    );
 
-  for (const item of input.items) {
-    batch.update(db.collection(PRODUCTS_COLLECTION).doc(item.productId), {
-      stock: FieldValue.increment(-item.quantity),
+    input.items.forEach((item, index) => {
+      const currentStock = productSnapshots[index].data()?.stock;
+      const available = typeof currentStock === "number" ? currentStock : 0;
+      if (available < item.quantity) {
+        throw new ValidationError(
+          `Stock insuffisant pour « ${item.name} » (${available} disponible${available > 1 ? "s" : ""}).`
+        );
+      }
     });
-  }
 
-  await batch.commit();
+    transaction.set(orderRef, {
+      shopId: input.shopId,
+      ...(clientId ? { clientId } : {}),
+      clientName: input.clientName,
+      clientPhone: input.clientPhone,
+      clientAddress: input.clientAddress,
+      items: input.items,
+      subtotal: input.subtotal,
+      discount: input.discount ?? 0,
+      total: input.total,
+      status: "under_review" satisfies OrderStatus,
+      notes: input.notes ?? "",
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    productRefs.forEach((ref, index) => {
+      transaction.update(ref, {
+        stock: FieldValue.increment(-input.items[index].quantity),
+      });
+    });
+  });
 
   const shopSnapshot = await db.collection(SHOPS_COLLECTION).doc(input.shopId).get();
   const shop = shopSnapshot.data() as

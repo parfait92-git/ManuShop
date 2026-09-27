@@ -129,6 +129,13 @@ function AccountMenu() {
               Mes commandes
             </Link>
             <Link
+              href="/mes-favoris"
+              className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
+              onClick={() => setOpen(false)}
+            >
+              Mes favoris
+            </Link>
+            <Link
               href="/mon-compte"
               className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
               onClick={() => setOpen(false)}
@@ -172,6 +179,10 @@ export function StorefrontHeader() {
                 width={28}
                 height={28}
                 className="size-7 shrink-0 rounded-full object-cover"
+                // Voir ShopSummaryCard : le logo peut venir d'une URL
+                // externe collée à la main, pas seulement d'un upload
+                // Cloudinary.
+                unoptimized
               />
             ) : (
               <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">

@@ -36,5 +36,10 @@ export interface User {
   // (voir `AuthProvider`/`src/lib/sessionId.ts`). Un autre navigateur qui
   // détecte un id différent du sien se déconnecte automatiquement.
   activeSessionId?: string;
+  /** Favoris (BF-129) — ids de `Product`, pas de sous-collection dédiée : un
+   * tableau simple suffit à ce volume, `arrayUnion`/`arrayRemove`
+   * (`UserRepository.addFavorite`/`removeFavorite`) le manipulent
+   * atomiquement sans lecture préalable. */
+  favoriteProductIds?: string[];
   createdAt: Timestamp;
 }

@@ -10,6 +10,18 @@ jest.mock("../../../hooks/useDemoCatalogueAvailable", () => ({
   useDemoCatalogueAvailable: () => useDemoCatalogueAvailableMock(),
 }));
 
+// `StorefrontProductCard` (rendu à l'intérieur) appelle `useAuth()` pour
+// son bouton favoris (BF-129) — voir MarketCataloguePageContent.test.tsx
+// pour la même raison de mocker directement plutôt que de laisser
+// `AuthProvider` charger `firebase/auth` pour de vrai sous jsdom.
+jest.mock("../../../components/providers/AuthProvider", () => ({
+  useAuth: () => ({
+    firebaseUser: null,
+    profile: null,
+    toggleFavorite: jest.fn(),
+  }),
+}));
+
 import { render, screen, within } from "@testing-library/react";
 
 import { mockShops } from "@/data/mockData";

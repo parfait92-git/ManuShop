@@ -152,12 +152,17 @@ describe("ShopSettingsSchema", () => {
   const validShop = {
     name: "Awa Boutique",
     logo: "https://example.com/logo.png",
+    description: "Une jolie boutique de mode à Dakar.",
     address: "Dakar, Sénégal",
     phone: "+221700000000",
     whatsapp: "+221700000000",
     language: "fr" as const,
     currency: "XAF" as const,
     primarySocialNetwork: "whatsapp" as const,
+    facebookUrl: "",
+    instagramUrl: "",
+    tiktokUrl: "",
+    whatsappBusinessUrl: "",
     notifyOrdersByEmail: true,
     notifyOrdersBySocial: true,
     urgentPhoneAlerts: true,
@@ -206,6 +211,30 @@ describe("ShopSettingsSchema", () => {
       ShopSettingsSchema.safeParse({
         ...validShop,
         contactEmail: "not-an-email",
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects a description over 500 characters", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        description: "a".repeat(501),
+      }).success
+    ).toBe(false);
+  });
+
+  it("accepts a valid Instagram link and rejects an invalid one", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        instagramUrl: "https://instagram.com/awaboutique",
+      }).success
+    ).toBe(true);
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        instagramUrl: "not-a-url",
       }).success
     ).toBe(false);
   });

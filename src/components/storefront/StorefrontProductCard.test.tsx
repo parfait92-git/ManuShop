@@ -1,7 +1,14 @@
 jest.mock("../../lib/firebase", () => ({ db: {}, auth: {} }));
 
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+const useAuthMock = jest.fn();
+jest.mock("../providers/AuthProvider", () => ({
+  useAuth: (...args: unknown[]) => useAuthMock(...args),
+}));
+
+const toastErrorMock = jest.fn();
+jest.mock("sonner", () => ({ toast: { error: (...args: unknown[]) => toastErrorMock(...args) } }));
+
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import { StorefrontProductCard } from "@/components/storefront/StorefrontProductCard";
 import type { Product } from "@/models/product/Product";
@@ -24,7 +31,18 @@ function fakeProduct(overrides: Partial<Product> = {}): Product {
   };
 }
 
+const toggleFavoriteMock = jest.fn();
+
 describe("StorefrontProductCard", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useAuthMock.mockReturnValue({
+      firebaseUser: { uid: "u1" },
+      profile: { favoriteProductIds: [] },
+      toggleFavorite: toggleFavoriteMock,
+    });
+  });
+
   it("links to the product detail page", () => {
     render(<StorefrontProductCard product={fakeProduct()} />);
 
@@ -45,8 +63,7 @@ describe("StorefrontProductCard", () => {
     );
   });
 
-  it("toggles the favorite button without navigating (not nested in the link)", async () => {
-    const user = userEvent.setup();
+  it("toggles a signed-in visitor's favorite (BF-129), without navigating", () => {
     render(<StorefrontProductCard product={fakeProduct()} />);
 
     const favoriteButton = screen.getByRole("button", {
@@ -55,10 +72,35 @@ describe("StorefrontProductCard", () => {
     // Un <button> ne peut pas être un descendant d'un <a> en HTML valide.
     expect(favoriteButton.closest("a")).toBeNull();
 
-    await user.click(favoriteButton);
+    fireEvent.click(favoriteButton);
+    expect(toggleFavoriteMock).toHaveBeenCalledWith("p1");
+  });
+
+  it("reflects the profile's real favorites, not local-only state", () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: { uid: "u1" },
+      profile: { favoriteProductIds: ["p1"] },
+      toggleFavorite: toggleFavoriteMock,
+    });
+    render(<StorefrontProductCard product={fakeProduct()} />);
+
     expect(
       screen.getByRole("button", { name: "Retirer des favoris" })
-    ).toBeInTheDocument();
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("prompts a guest to sign in instead of toggling anything", () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: null,
+      profile: null,
+      toggleFavorite: toggleFavoriteMock,
+    });
+    render(<StorefrontProductCard product={fakeProduct()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Ajouter aux favoris" }));
+
+    expect(toggleFavoriteMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).toHaveBeenCalled();
   });
 
   it("keeps the add-to-cart button outside the link too", () => {

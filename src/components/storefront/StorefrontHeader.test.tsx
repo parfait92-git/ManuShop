@@ -85,6 +85,21 @@ describe("StorefrontHeader", () => {
     expect(accountLink).toHaveAttribute("href", "/login");
   });
 
+  it("links to Mes favoris (BF-129) once the menu is open", () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: { displayName: "Jean Dupont", email: "jean@example.com", photoURL: null },
+      profile: { displayName: "Jean Dupont", email: "jean@example.com", role: "client", photoURL: null },
+    });
+    render(<StorefrontHeader />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Mon compte" }));
+
+    expect(screen.getByRole("link", { name: "Mes favoris" })).toHaveAttribute(
+      "href",
+      "/mes-favoris"
+    );
+  });
+
   it("shows the connected user's display name and photo once open", () => {
     useAuthMock.mockReturnValue({
       firebaseUser: { displayName: "Jean Dupont", email: "jean@example.com", photoURL: null },

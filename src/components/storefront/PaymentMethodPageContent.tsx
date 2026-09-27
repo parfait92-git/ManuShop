@@ -79,8 +79,18 @@ export function PaymentMethodPageContent() {
       clear();
       toast.success("Commande enregistrée ! Le commerçant va la préparer.");
       router.push("/mes-commandes");
-    } catch {
-      setError("Échec de l'enregistrement de la commande. Réessayez.");
+    } catch (error) {
+      // Contrairement à la convention générique du reste du projet (voir
+      // CreateShopWizard, OrdersPageContent...), le message est affiché tel
+      // quel ici : `createOrderAction` ne lève un message précis que pour
+      // une règle métier actionnable par le client (stock insuffisant,
+      // recalculé côté serveur au moment de la commande) — pas une erreur
+      // technique arbitraire à cacher.
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Échec de l'enregistrement de la commande. Réessayez."
+      );
     } finally {
       setSubmitting(false);
     }

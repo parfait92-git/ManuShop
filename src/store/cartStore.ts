@@ -10,6 +10,13 @@ export interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  /** Stock connu au moment de l'ajout au panier — sert uniquement à borner
+   * la quantité côté client (jamais la seule vérification : `createOrderAction`
+   * revalide le stock réel en transaction avant d'écrire la commande, voir
+   * 04-besoins-techniques.md §32). Un article déjà dans le panier avant ce
+   * champ (persisté en localStorage) le lit comme `undefined` — traité comme
+   * "pas de limite connue", pour ne pas bloquer une quantité déjà choisie. */
+  stock?: number;
 }
 
 interface CartState {
@@ -18,6 +25,10 @@ interface CartState {
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clear: () => void;
+}
+
+function clampToStock(quantity: number, stock: number | undefined): number {
+  return stock === undefined ? quantity : Math.min(quantity, stock);
 }
 
 export const useCartStore = create<CartState>()(
@@ -33,12 +44,21 @@ export const useCartStore = create<CartState>()(
             return {
               items: state.items.map((i) =>
                 i.productId === item.productId
-                  ? { ...i, quantity: i.quantity + quantity }
+                  ? {
+                      ...i,
+                      stock: item.stock,
+                      quantity: clampToStock(i.quantity + quantity, item.stock),
+                    }
                   : i
               ),
             };
           }
-          return { items: [...state.items, { ...item, quantity }] };
+          return {
+            items: [
+              ...state.items,
+              { ...item, quantity: clampToStock(quantity, item.stock) },
+            ],
+          };
         }),
       removeItem: (productId) =>
         set((state) => ({
@@ -50,7 +70,9 @@ export const useCartStore = create<CartState>()(
             quantity <= 0
               ? state.items.filter((i) => i.productId !== productId)
               : state.items.map((i) =>
-                  i.productId === productId ? { ...i, quantity } : i
+                  i.productId === productId
+                    ? { ...i, quantity: clampToStock(quantity, i.stock) }
+                    : i
                 ),
         })),
       clear: () => set({ items: [] }),

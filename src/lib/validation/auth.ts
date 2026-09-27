@@ -95,6 +95,9 @@ export const ShopSettingsSchema = z.object({
     error: "Le nom de la boutique doit contenir au moins 2 caractères.",
   }),
   logo: z.url({ error: "L'URL du logo n'est pas valide." }).or(z.literal("")),
+  description: z.string().trim().max(500, {
+    error: "La description ne doit pas dépasser 500 caractères.",
+  }),
   address: z.string().trim().min(3, {
     error: "L'adresse doit contenir au moins 3 caractères.",
   }),
@@ -114,6 +117,15 @@ export const ShopSettingsSchema = z.object({
     "instagram",
     "tiktok",
   ]),
+  // Lien vers la page du réseau principal ci-dessus (BF-128, affiché sur la
+  // fiche produit) — un champ par réseau, un seul rempli/affiché à la fois
+  // selon `primarySocialNetwork` (voir `lib/shopSocialNetworks.ts`).
+  facebookUrl: z.url({ error: "Le lien Facebook n'est pas valide." }).or(z.literal("")),
+  instagramUrl: z.url({ error: "Le lien Instagram n'est pas valide." }).or(z.literal("")),
+  tiktokUrl: z.url({ error: "Le lien TikTok n'est pas valide." }).or(z.literal("")),
+  whatsappBusinessUrl: z
+    .url({ error: "Le lien WhatsApp n'est pas valide." })
+    .or(z.literal("")),
   // Notifications de commande
   notifyOrdersByEmail: z.boolean(),
   notifyOrdersBySocial: z.boolean(),

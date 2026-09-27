@@ -125,6 +125,29 @@ describe("PaymentMethodPageContent", () => {
     expect(pushMock).toHaveBeenCalledWith("/mes-commandes");
   });
 
+  it("surfaces the real error message when the server rejects for insufficient stock", async () => {
+    createOrderMock.mockRejectedValue(
+      new Error("Stock insuffisant pour « Sac à main artisanal » (0 disponible).")
+    );
+    const user = userEvent.setup();
+    render(<PaymentMethodPageContent />);
+
+    await user.type(
+      screen.getByLabelText("Adresse de livraison"),
+      "Akwa, Douala"
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Confirmer ma commande/ })
+    );
+
+    expect(
+      await screen.findByText(
+        "Stock insuffisant pour « Sac à main artisanal » (0 disponible)."
+      )
+    ).toBeInTheDocument();
+    expect(clearMock).not.toHaveBeenCalled();
+  });
+
   it("shows an empty-cart message instead of the checkout form when there is nothing to order", () => {
     mockItems.splice(0, mockItems.length);
     render(<PaymentMethodPageContent />);

@@ -1,16 +1,25 @@
 "use client";
 
-import { ChevronLeft, Heart, Star } from "lucide-react";
+import { ChevronLeft, ExternalLink, Heart, Star, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
+import { formatShopAge } from "@/lib/shopAge";
+import {
+  SOCIAL_NETWORK_LABELS,
+  getPrimarySocialNetworkUrl,
+} from "@/lib/shopSocialNetworks";
 import type { Product } from "@/models/product/Product";
 import type { Review } from "@/models/review/Review";
+import type { Shop } from "@/models/shop/Shop";
 import { productService, type StockStatus } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
+import { shopService } from "@/services/ShopService";
 import { useCartStore } from "@/store/cartStore";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
@@ -34,9 +43,10 @@ const STOCK_CLASS: Record<StockStatus, string> = {
  * concerne un id de produit précis qui n'existe simplement pas. */
 export function ProductDetailPageContent({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
+  const [shop, setShop] = useState<Shop | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [liked, setLiked] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  const { firebaseUser, profile, toggleFavorite } = useAuth();
 
   useEffect(() => {
     let active = true;
@@ -63,6 +73,25 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
     };
   }, [productId]);
 
+  // Bloc vendeur (BF-128) : chargé séparément, une fois le produit connu
+  // (besoin de `product.shopId`) — un échec ici ne doit jamais empêcher le
+  // produit lui-même de s'afficher, même logique que les avis ci-dessus.
+  useEffect(() => {
+    if (!product) return;
+    let active = true;
+    shopService
+      .getShop(product.shopId)
+      .then((data) => {
+        if (active) setShop(data);
+      })
+      .catch(() => {
+        if (active) setShop(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [product]);
+
   if (product === undefined) {
     return (
       <p className="px-6 py-10 text-center text-sm text-muted-foreground">
@@ -87,6 +116,8 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
   const price =
     product.isPromo && product.promoPrice ? product.promoPrice : product.price;
   const averageRating = reviewService.getAverageRating(reviews);
+  const socialUrl = shop ? getPrimarySocialNetworkUrl(shop) : null;
+  const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
@@ -151,6 +182,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                   name: product.name,
                   price,
                   image: product.images[0] ?? "",
+                  stock: product.stock,
                 })
               }
             >
@@ -158,14 +190,79 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             </Button>
             <button
               type="button"
-              onClick={() => setLiked((value) => !value)}
+              onClick={() => {
+                if (!firebaseUser) {
+                  toast.error("Connectez-vous pour ajouter un article à vos favoris.");
+                  return;
+                }
+                toggleFavorite(product.id);
+              }}
               aria-label={liked ? "Retirer des favoris" : "Ajouter aux favoris"}
               aria-pressed={liked}
               className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border"
             >
-              <Heart className="size-4" fill={liked ? "currentColor" : "none"} />
+              <Heart
+                className={`size-4 ${liked ? "text-destructive" : ""}`}
+                fill={liked ? "currentColor" : "none"}
+              />
             </button>
           </div>
+
+          {shop && (
+            <div className="rounded-2xl border border-border p-4">
+              <h2 className="font-semibold">Vendu par</h2>
+              <Link
+                href={`/boutique/${shop.id}`}
+                className="mt-3 flex items-start gap-3"
+              >
+                <div className="relative size-12 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+                  {shop.logo ? (
+                    <Image
+                      src={shop.logo}
+                      alt=""
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                      // Voir ShopSummaryCard : le logo peut venir d'une URL
+                      // externe collée à la main, pas seulement d'un upload
+                      // Cloudinary.
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="flex size-full items-center justify-center text-muted-foreground">
+                      <Store className="size-5" />
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-medium hover:underline">
+                    {shop.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatShopAge(shop.createdAt)}
+                  </span>
+                </div>
+              </Link>
+
+              {shop.description && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {shop.description}
+                </p>
+              )}
+
+              {socialUrl && shop.primarySocialNetwork && (
+                <a
+                  href={socialUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  Voir sur {SOCIAL_NETWORK_LABELS[shop.primarySocialNetwork]}
+                  <ExternalLink className="size-3.5" />
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="rounded-2xl border border-border bg-muted/40 p-4">
             <h2 className="font-semibold">Avis clients</h2>

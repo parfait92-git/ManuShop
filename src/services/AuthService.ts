@@ -300,6 +300,15 @@ export class AuthService {
   updateProfile(uid: string, data: UpdateUserDto): Promise<void> {
     return this.users.update(uid, data);
   }
+
+  /** BF-129 : ajoute/retire un produit des favoris du compte. */
+  addFavorite(uid: string, productId: string): Promise<void> {
+    return this.users.addFavorite(uid, productId);
+  }
+
+  removeFavorite(uid: string, productId: string): Promise<void> {
+    return this.users.removeFavorite(uid, productId);
+  }
 }
 
 export const authService = new AuthService();

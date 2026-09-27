@@ -1,4 +1,6 @@
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -51,6 +53,18 @@ export class UserRepository implements IUserRepository {
   async listAll(): Promise<User[]> {
     const snapshot = await getDocs(collection(db, USERS_COLLECTION));
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as User);
+  }
+
+  async addFavorite(id: string, productId: string): Promise<void> {
+    await updateDoc(doc(db, USERS_COLLECTION, id), {
+      favoriteProductIds: arrayUnion(productId),
+    });
+  }
+
+  async removeFavorite(id: string, productId: string): Promise<void> {
+    await updateDoc(doc(db, USERS_COLLECTION, id), {
+      favoriteProductIds: arrayRemove(productId),
+    });
   }
 }
 

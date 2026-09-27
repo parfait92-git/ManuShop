@@ -28,6 +28,13 @@ interface AuthContextValue {
    * pendant une session déjà active — sans ça, `ProtectedRoute` continue de
    * voir `profile === null` et renvoie indéfiniment vers `/onboarding`. */
   refreshProfile: () => Promise<void>;
+  /** BF-129 : ajoute/retire un produit des favoris du compte connecté — mis
+   * à jour localement tout de suite (`profile.favoriteProductIds`), pas
+   * seulement après confirmation Firestore, pour que le cœur réagisse au
+   * clic sans attendre un aller-retour réseau ; annulé + toast d'erreur en
+   * cas d'échec. Rien ne se passe si personne n'est connecté (appelant
+   * responsable d'inviter à se connecter avant). */
+  toggleFavorite: (productId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -109,9 +116,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(userProfile);
   }, []);
 
+  const toggleFavorite = useCallback(
+    async (productId: string) => {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return;
+      const wasFavorite = profile?.favoriteProductIds?.includes(productId) ?? false;
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              favoriteProductIds: wasFavorite
+                ? (current.favoriteProductIds ?? []).filter((id) => id !== productId)
+                : [...(current.favoriteProductIds ?? []), productId],
+            }
+          : current
+      );
+
+      try {
+        if (wasFavorite) {
+          await authService.removeFavorite(uid, productId);
+        } else {
+          await authService.addFavorite(uid, productId);
+        }
+      } catch {
+        setProfile((current) =>
+          current
+            ? {
+                ...current,
+                favoriteProductIds: wasFavorite
+                  ? [...(current.favoriteProductIds ?? []), productId]
+                  : (current.favoriteProductIds ?? []).filter((id) => id !== productId),
+              }
+            : current
+        );
+        toast.error("Échec de la mise à jour des favoris. Réessayez.");
+      }
+    },
+    [profile]
+  );
+
   return (
     <AuthContext.Provider
-      value={{ firebaseUser, profile, isSuperAdmin, loading, refreshProfile }}
+      value={{
+        firebaseUser,
+        profile,
+        isSuperAdmin,
+        loading,
+        refreshProfile,
+        toggleFavorite,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -33,49 +33,64 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
       ) : (
         <>
           <ul className="flex flex-col gap-3">
-            {items.map((item) => (
-              <li key={item.productId} className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.price.toLocaleString("fr-FR")} FCFA
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    aria-label="Diminuer la quantité"
-                    onClick={() =>
-                      updateQuantity(item.productId, item.quantity - 1)
-                    }
-                    className="flex size-6 items-center justify-center rounded-full border border-border"
-                  >
-                    <Minus className="size-3" />
-                  </button>
-                  <span className="w-5 text-center text-sm">
-                    {item.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Augmenter la quantité"
-                    onClick={() =>
-                      updateQuantity(item.productId, item.quantity + 1)
-                    }
-                    className="flex size-6 items-center justify-center rounded-full border border-border"
-                  >
-                    <Plus className="size-3" />
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  aria-label={`Retirer ${item.name}`}
-                  onClick={() => removeItem(item.productId)}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </li>
-            ))}
+            {items.map((item) => {
+              // `stock` absent (article ajouté avant ce champ, voir
+              // cartStore) : pas de limite connue à afficher/appliquer.
+              const atMax =
+                item.stock !== undefined && item.quantity >= item.stock;
+              return (
+                <li key={item.productId} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.price.toLocaleString("fr-FR")} FCFA
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label="Diminuer la quantité"
+                        onClick={() =>
+                          updateQuantity(item.productId, item.quantity - 1)
+                        }
+                        className="flex size-6 items-center justify-center rounded-full border border-border"
+                      >
+                        <Minus className="size-3" />
+                      </button>
+                      <span className="w-5 text-center text-sm">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Augmenter la quantité"
+                        disabled={atMax}
+                        onClick={() =>
+                          updateQuantity(item.productId, item.quantity + 1)
+                        }
+                        className="flex size-6 items-center justify-center rounded-full border border-border disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Plus className="size-3" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Retirer ${item.name}`}
+                      onClick={() => removeItem(item.productId)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                  {atMax && (
+                    <p className="text-xs text-amber-600">
+                      Stock maximum atteint ({item.stock} disponible
+                      {item.stock! > 1 ? "s" : ""}).
+                    </p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm font-medium">
