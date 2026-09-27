@@ -1,6 +1,5 @@
 import "server-only";
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 const ADMIN_APP_NAME = "manushop-admin";
@@ -52,10 +51,25 @@ export function getAdminDb(): Firestore {
   return getFirestore(getAdminApp());
 }
 
-/** Auth via le SDK Admin — utilisé uniquement par `verifyIdToken` pour
+/**
+ * Auth via le SDK Admin — utilisé uniquement par `verifyIdToken` pour
  * vérifier un ID token émis par l'émulateur Auth local (`FIREBASE_AUTH_
  * EMULATOR_HOST`), que la vérification JWKS habituelle (contre les clés de
- * production Google) rejette toujours. Jamais utilisé hors de ce cas. */
-export function getAdminAuth(): Auth {
+ * production Google) rejette toujours. Jamais utilisé hors de ce cas.
+ *
+ * `firebase-admin/auth` importé dynamiquement ici, pas statiquement en haut
+ * du fichier comme `app`/`firestore` : sa chaîne de dépendances
+ * (`jwks-rsa` -> le build "webapi" ESM-only de `jose`) plante au
+ * CHARGEMENT dans l'environnement serverless Vercel
+ * (`ERR_REQUIRE_ESM: require() of ES Module .../jose/dist/webapi/index.js
+ * ... not supported`) — bug réel rencontré en production, voir
+ * 04-besoins-techniques.md §29. Un import statique ferait planter TOUT
+ * appelant de `getAdminDb()` aussi, même ceux qui n'utilisent jamais
+ * `getAdminAuth()` : un module ES évalue tous ses imports de premier
+ * niveau au chargement, pas seulement ceux réellement utilisés par
+ * l'appelant.
+ */
+export async function getAdminAuth(): Promise<import("firebase-admin/auth").Auth> {
+  const { getAuth } = await import("firebase-admin/auth");
   return getAuth(getAdminApp());
 }

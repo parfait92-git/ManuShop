@@ -1019,3 +1019,23 @@ Cette variable `CLOUDINARY_URL` a probablement été ajoutée automatiquement pa
 Tests : `cloudinary.test.ts` (nouveau — reproduit le crash avec une `CLOUDINARY_URL` mal formée avant correction, vérifie l'absence de crash + la suppression de la variable + la mémorisation de l'instance après correction), `route.test.ts` mis à jour pour le nouvel export `getCloudinary`.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (l'import dynamique se bundle correctement, toujours 32 routes) et `npm run test:coverage` (425 tests, +4, aucune régression). Pas de test Cloudinary réel (aucun outil réseau/navigateur dans cette session) — **à confirmer par l'utilisateur une fois déployé**. Commité et mergé dans `main` via PR (voir journal).
+
+## 29. Vraie cause du 500 persistant : `firebase-admin/auth` plantait au chargement (ERR_REQUIRE_ESM), 2026-09-27
+
+Le correctif du §28 (`CLOUDINARY_URL`) n'a pas suffi — l'utilisateur a fourni les **logs de fonction Vercel** (la seule façon fiable de trancher, la console navigateur ne montrant qu'un 500 sans détail), révélant la vraie cause, complètement différente :
+
+```
+Error: Failed to load external module firebase-admin-.../auth: Error [ERR_REQUIRE_ESM]:
+require() of ES Module .../node_modules/jose/dist/webapi/index.js from
+.../node_modules/jwks-rsa/src/utils.js not supported.
+```
+
+`firebase-admin/auth` dépend de `jwks-rsa`, qui fait `require("jose")` — mais dans l'environnement serverless Vercel (bundlé par Turbopack, `firebase-admin` traité comme dépendance externe non re-bundlée), la résolution retombe sur le build "webapi" ESM-only de `jose`, qu'un `require()` CommonJS ne peut pas charger. **Crash au chargement du module**, avant même d'entrer dans un handler — donc jamais intercepté par un `try/catch` applicatif, quel qu'il soit.
+
+**Portée réelle, plus large qu'`/api/uploads`** : `src/lib/firebaseAdmin.ts` importait `firebase-admin/auth` de façon **statique**, au même niveau que `firebase-admin/app`/`firebase-admin/firestore`. Un module ES évalue TOUS ses imports de premier niveau au chargement, pas seulement ceux réellement utilisés par l'appelant — donc `getAdminDb()` (utilisé par `createShopAction`, `orderActions.ts`, `platformAdminActions.ts`, `requireSuperAdmin.ts`) plantait aussi, à travers `verifyIdToken.ts` qui importe `getAdminAuth` depuis le même fichier. **Ce bug explique vraisemblablement aussi l'échec à l'enregistrement final de la boutique signalé par l'utilisateur** (§27), pas seulement l'upload.
+
+**Corrigé (`src/lib/firebaseAdmin.ts`)** : import dynamique de `firebase-admin/auth`, uniquement à l'intérieur de `getAdminAuth()` (devenue `async`) — confirmé via `grep` dans `node_modules/firebase-admin` que `jwks-rsa`/`utils/jwt.js` n'est référencé QUE par `auth/token-verifier.js` (pas par `app`/`firestore`), donc `getAdminDb()` reste synchrone et inchangé, aucun appelant de `getAdminDb()` (`shopActions.ts`, `orderActions.ts`, `platformAdminActions.ts`, `requireSuperAdmin.ts`) n'a besoin d'être modifié. `verifyIdToken.ts` adapté pour `await getAdminAuth()` avant d'appeler `.verifyIdToken()` — son test existant passait déjà sans modification (le mock retournait une valeur synchrone, `await` dessus ne change rien).
+
+Tests : `firebaseAdmin.test.ts` (nouveau — simule le crash réel en faisant planter `firebase-admin/auth` au chargement via `jest.mock`, vérifie que `getAdminDb()` n'est jamais affecté et que `getAdminAuth()` ne plante qu'à l'appel, pas à l'import).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (427 tests, +2, aucune régression). **À confirmer par l'utilisateur une fois déployé** : upload d'image ET enregistrement final de boutique (les deux dépendaient du même chemin de code cassé).
