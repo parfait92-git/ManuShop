@@ -42,6 +42,21 @@ describe("ShopSummaryCard", () => {
     expect(screen.getByRole("img")).toBeInTheDocument();
   });
 
+  it("zooms the logo on hover/focus of the card", () => {
+    render(
+      <ShopSummaryCard
+        shop={fakeShop({ logo: "https://res.cloudinary.com/logo.png" })}
+      />
+    );
+
+    expect(screen.getByRole("link", { name: /Boutique Test/ })).toHaveClass("group");
+    expect(screen.getByRole("img")).toHaveClass(
+      "transition-transform",
+      "group-hover:scale-110",
+      "group-focus-visible:scale-110"
+    );
+  });
+
   it("shows sector and address when available", () => {
     render(<ShopSummaryCard shop={fakeShop({ sector: "Mode", address: "Douala" })} />);
     expect(screen.getByText("Mode · Douala")).toBeInTheDocument();

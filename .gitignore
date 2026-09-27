@@ -37,6 +37,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# clé de compte de service Firebase (jamais commitée, encodée en base64
+# dans .env.local — voir FIREBASE_SERVICE_ACCOUNT_KEY_BASE64)
+*firebase-adminsdk*.json
+
 # vercel
 .vercel
 

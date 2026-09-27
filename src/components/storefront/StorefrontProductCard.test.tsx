@@ -33,6 +33,18 @@ describe("StorefrontProductCard", () => {
     ).toHaveAttribute("href", "/catalogue/p1");
   });
 
+  it("zooms the product image on hover/focus of the card", () => {
+    render(<StorefrontProductCard product={fakeProduct()} />);
+
+    const link = screen.getByRole("link", { name: /Sac à main artisanal/ });
+    expect(link).toHaveClass("group");
+    expect(screen.getByRole("img")).toHaveClass(
+      "transition-transform",
+      "group-hover:scale-110",
+      "group-focus-visible:scale-110"
+    );
+  });
+
   it("toggles the favorite button without navigating (not nested in the link)", async () => {
     const user = userEvent.setup();
     render(<StorefrontProductCard product={fakeProduct()} />);

@@ -57,21 +57,34 @@ export async function POST(request: Request) {
   }
 
   const folder = resolveFolder(formData.get("folder"));
-  const buffer = Buffer.from(await file.arrayBuffer());
 
-  const result = await new Promise<{ secure_url: string }>(
-    (resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream({ folder }, (error, uploaded) => {
-          if (error || !uploaded) {
-            reject(error ?? new Error("Échec de l'upload Cloudinary."));
-            return;
-          }
-          resolve(uploaded as { secure_url: string });
-        })
-        .end(buffer);
-    }
-  );
+  // Sans ce try/catch, une erreur Cloudinary (identifiants absents/invalides
+  // en prod, réseau...) remontait comme une exception non attrapée : Next.js
+  // répond alors avec une page d'erreur HTML, pas du JSON — `uploadImage()`
+  // (src/lib/upload.ts) plante alors sur `response.json()` avant même de
+  // pouvoir lire un message d'erreur utile, masquant la vraie cause côté UI.
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await new Promise<{ secure_url: string }>(
+      (resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ folder }, (error, uploaded) => {
+            if (error || !uploaded) {
+              reject(error ?? new Error("Échec de l'upload Cloudinary."));
+              return;
+            }
+            resolve(uploaded as { secure_url: string });
+          })
+          .end(buffer);
+      }
+    );
 
-  return NextResponse.json({ url: result.secure_url });
+    return NextResponse.json({ url: result.secure_url });
+  } catch (error) {
+    console.error("Échec de l'upload Cloudinary :", error);
+    return NextResponse.json(
+      { error: "Échec de l'envoi de l'image. Réessayez dans un instant." },
+      { status: 502 }
+    );
+  }
 }
