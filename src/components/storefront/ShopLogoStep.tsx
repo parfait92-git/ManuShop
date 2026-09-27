@@ -113,14 +113,22 @@ export function ShopLogoStep({
             onChange={handleFileChange}
             disabled={uploading}
             className="hidden"
-            id="shop-logo-file"
           />
-          <label
-            htmlFor="shop-logo-file"
-            className="cursor-pointer text-sm font-semibold text-primary"
+          {/* Bouton + `inputRef.current?.click()` plutôt qu'un <label htmlFor>
+          (le transfert de clic natif label→input est moins fiable une fois
+          l'élément imbriqué dans le focus-trap d'un Dialog/Portal — voir
+          06-journal-progression.md, "le sélecteur de galerie ne s'ouvrait pas
+          dans l'assistant de création de boutique") : ce composant est
+          toujours monté à l'intérieur de la boîte de dialogue
+          `CreateShopWizard`. */}
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="cursor-pointer text-sm font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? "Envoi en cours..." : "Déposez votre logo ici"}
-          </label>
+          </button>
           <p className="text-xs text-muted-foreground">
             PNG ou JPG, carré de préférence
           </p>

@@ -966,3 +966,35 @@ Demande de l'utilisateur : "j'aimerais simuler ce comportement dans ma démo" �
 Tests : `demo-catalogue/page.test.tsx` réécrit, `demo-catalogue/boutiques/page.test.tsx` (nouveau), `demo-catalogue/boutique/[shopId]/page.test.tsx` (nouveau), `ShopSummaryCard.test.tsx`/`StorefrontProductCard.test.tsx` étendus.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (34 routes, +2) et `npm run test:coverage` (409 tests, +11, aucune régression). Rien de commité.
+
+### 2026-09-26 — Animation au survol/focus des images produit et boutique (BF-127)
+
+Demande de l'utilisateur : "ajoute une animation les image des produits et boutiques au survole et au focus dessus". Fait : zoom léger (Tailwind `group-hover`/`group-focus-visible`, `scale-110`, transition 300ms) sur les images de `StorefrontProductCard` et `ShopSummaryCard` (chacune déjà une carte-lien entière) ; même effet en SCSS (`:hover`/`:focus-within`) sur `ui/ProductCard.tsx` (landing page), qui n'a pas de lien enveloppant toute la carte. Volontairement pas touché : l'image de `ProductDetailPageContent`, page de destination sans sémantique de navigation à animer.
+
+Tests : `StorefrontProductCard.test.tsx`/`ShopSummaryCard.test.tsx` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (411 tests, +2, aucune régression). Rien de commité.
+
+### 2026-09-26 — `/api/uploads` renvoyait un 500 opaque en production
+
+Signalé par l'utilisateur (dump console sur `manu-shop.vercel.app`) : `POST /api/uploads` en 500 lors d'un envoi d'image. Le reste du dump était du bruit sans rapport (extension navigateur, avertissements COOP normaux du popup Google, préchargement CSS).
+
+**Cause probable, à vérifier par l'utilisateur** : identifiants Cloudinary (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`/`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET`) potentiellement absents/incorrects dans les variables d'environnement Vercel de production.
+
+**Bug réel corrigé indépendamment** : la route n'avait aucune gestion d'erreur autour de l'appel Cloudinary — une exception non attrapée fait répondre Next.js avec une page HTML, pas du JSON, ce qui faisait planter `uploadImage()` côté client sur `response.json()` avant même de pouvoir afficher un message utile. Ajouté un `try/catch` + réponse JSON 502 avec message clair.
+
+Tests : `src/app/api/uploads/route.test.ts` (nouveau, premier test de cette route).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (417 tests, +6, aucune régression). Rien de commité.
+
+### 2026-09-26 — Sélecteur de galerie inopérant dans l'assistant "Créer ma boutique"
+
+Signalé par l'utilisateur : impossible d'ouvrir la galerie pour choisir un logo pendant la création de boutique (bouton "Déposez votre logo ici" sans effet), plus une erreur générique persistante à l'enregistrement final. Clarifié par une question : le sélecteur ne s'ouvre pas du tout (pas un échec après sélection).
+
+**Enregistrement final** : pas de bug de code — le comportement (message générique, erreur réelle avalée) est le même partout ailleurs dans le projet, une convention délibérée. Cause la plus probable : `FIREBASE_SERVICE_ACCOUNT_KEY_BASE64` absente côté Vercel Production (même famille que le problème Cloudinary de la session précédente) — à vérifier par l'utilisateur.
+
+**Bug réel corrigé** : `ShopLogoStep` déclenchait son input fichier via `<label htmlFor>`, moins fiable une fois imbriqué dans le focus-trap du `Dialog` Base UI de `CreateShopWizard` (l'upload de photo de profil, hors modale, utilise le même motif sans problème signalé). Remplacé par un clic JS explicite (`inputRef.current?.click()`) sur un vrai bouton, comme le fait déjà `ProductImageUploader`.
+
+Tests : `ShopLogoStep.test.tsx` (nouveau).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (421 tests, +4, aucune régression). À confirmer par l'utilisateur en conditions réelles (aucun outil de navigateur disponible ici). Rien de commité.

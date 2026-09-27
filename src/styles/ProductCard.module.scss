@@ -12,6 +12,12 @@
 .card__image {
   z-index: 0;
   object-fit: cover;
+  transition: transform 300ms ease;
+}
+
+.card:hover .card__image,
+.card:focus-within .card__image {
+  transform: scale(1.08);
 }
 
 .card__overlay {

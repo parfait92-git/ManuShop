@@ -37,15 +37,18 @@ export function StorefrontProductCard({
     // <Link> ci-dessous pour ne pas imbriquer un <button> dans un <a> (invalide
     // en HTML), mais reste positionné visuellement au même endroit qu'avant.
     <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-background">
-      <Link href={`/catalogue/${product.id}`} className="flex flex-1 flex-col">
-        <div className="relative aspect-square bg-muted">
+      <Link
+        href={`/catalogue/${product.id}`}
+        className="group flex flex-1 flex-col"
+      >
+        <div className="relative aspect-square overflow-hidden bg-muted">
           {product.images[0] && (
             <Image
               src={product.images[0]}
               alt={product.name}
               fill
               sizes="(min-width: 768px) 33vw, 100vw"
-              className="object-cover"
+              className="object-cover transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110"
             />
           )}
           {badge && (

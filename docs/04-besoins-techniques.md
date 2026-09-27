@@ -969,3 +969,39 @@ Demande utilisateur : simuler dans `/demo-catalogue` le même comportement que l
 Tests : `demo-catalogue/page.test.tsx` réécrit (grille mélangée, bloc "Boutiques" vers `/demo-catalogue/boutiques`, attribution vers `/demo-catalogue/boutique/{shopId}`), `demo-catalogue/boutiques/page.test.tsx` (nouveau), `demo-catalogue/boutique/[shopId]/page.test.tsx` (nouveau), `ShopSummaryCard.test.tsx`/`StorefrontProductCard.test.tsx` étendus (prop `href`/`shopHref`).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (34 routes, +2) et `npm run test:coverage` (409 tests, +11, aucune régression, seuil global 87%). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session). Rien de commité.
+
+## 25. Animation au survol/focus des images produit et boutique (BF-127), 2026-09-26
+
+Demande utilisateur : animer les images de produits et de boutiques au survol et au focus. **Fait :**
+- `StorefrontProductCard`/`ShopSummaryCard` : la carte entière est déjà un `<Link>` — `group` posé sur ce lien, `transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110` sur l'`<Image>` (le conteneur a déjà `overflow-hidden`). `group-focus-visible` plutôt que `group-focus` : ne déclenche pas au clic tactile/souris, seulement au focus clavier réel — cohérent avec l'esprit de "focus" demandé (navigation clavier), pas un doublon du survol.
+- `ui/ProductCard.tsx` (landing page) : pas de `<Link>` enveloppant toute la carte (seul le bouton "+" en est un) — animation posée en SCSS (`ProductCard.module.scss`) via `.card:hover`/`.card:focus-within .card__image`, `:focus-within` couvrant le focus clavier du bouton "+" à l'intérieur.
+
+Pas touché : l'image principale de `ProductDetailPageContent` (page de destination elle-même, pas une carte cliquable vers autre chose — aucune sémantique de survol/focus pertinente).
+
+Tests : `StorefrontProductCard.test.tsx`/`ShopSummaryCard.test.tsx` étendus (classes `group`/`transition-transform`/`group-hover:scale-110`/`group-focus-visible:scale-110` présentes).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (411 tests, +2, aucune régression). Pas de vérification Playwright (aucun outil de navigateur disponible dans cette session — l'animation elle-même n'est vérifiable visuellement qu'en navigateur réel). Rien de commité.
+
+## 26. `/api/uploads` renvoyait un 500 opaque en production, 2026-09-26
+
+Signalé par l'utilisateur (console navigateur, `manu-shop.vercel.app`) : `POST /api/uploads` → 500. **Diagnostic** : le reste du dump console est du bruit sans rapport (une extension de navigateur tierce `content.js`/`initAllBots`, avertissements `Cross-Origin-Opener-Policy` normaux du popup Google pendant `signInWithPopup`, avertissements de préchargement CSS) — seule cette ligne est un vrai problème applicatif.
+
+**Cause probable, à vérifier côté utilisateur (hors de portée du code)** : `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`/`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` (`.env.example`) probablement absents ou incorrects dans les variables d'environnement Vercel de production — Cloudinary rejette alors l'upload avec une erreur d'authentification.
+
+**Bug réel trouvé et corrigé, indépendant de la cause ci-dessus** : `POST` (`src/app/api/uploads/route.ts`) n'avait aucun `try/catch` autour de l'appel Cloudinary — une erreur (identifiants absents, réseau...) remontait comme une exception non attrapée, à laquelle Next.js répond par une page d'erreur HTML, pas du JSON. Côté client, `uploadImage()` (`src/lib/upload.ts`) fait toujours `await response.json()` même sur une réponse non-ok : ça plantait sur le parsing JSON avant même de pouvoir lire un message d'erreur utile, masquant complètement la vraie cause. Corrigé : `try/catch` autour de l'upload, réponse JSON `502` avec un message clair en cas d'échec — désormais diagnosticable, et l'UI peut afficher un vrai message au commerçant au lieu d'un échec silencieux.
+
+Tests : `src/app/api/uploads/route.test.ts` (nouveau — aucun test n'existait avant pour cette route ; `@jest-environment node`, seule façon d'avoir `Request`/`FormData`/`File` du standard web, absents de jsdom).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (417 tests, +6, aucune régression). **Pour l'utilisateur** : vérifier les 3 variables Cloudinary dans les Environment Variables du projet Vercel (Production) — si elles manquent ou sont incorrectes, c'est la cause la plus probable du 500 initial, indépendamment du correctif ci-dessus qui rend l'erreur lisible plutôt que de la résoudre. Rien de commité.
+
+## 27. Sélecteur de galerie inopérant dans l'assistant "Créer ma boutique", 2026-09-26
+
+Signalé par l'utilisateur : dans l'étape Logo de l'assistant (`CreateShopWizard`), le bouton "Déposez votre logo ici" (mode Galerie) n'ouvrait aucun sélecteur — confirmé par une question de clarification (rien ne s'ouvre du tout, pas une erreur après sélection). Séparément, l'utilisateur a aussi signalé une erreur générique persistante à l'enregistrement final de la boutique.
+
+**Enregistrement final** : pas de bug de code trouvé — `CreateShopWizard.onSubmit` avale déjà volontairement l'erreur réelle derrière un message générique, **exactement le même pattern que partout ailleurs dans le projet** (`OrdersPageContent`, `RegisterForm`, `InviteSellerForm`...) : convention délibérée, pas un oubli. La cause la plus probable reste une variable d'environnement manquante côté Vercel — cette fois `FIREBASE_SERVICE_ACCOUNT_KEY_BASE64` (requise par `getAdminDb()`, voir `lib/firebaseAdmin.ts`, utilisée par `createShopAction`), même famille de problème que §26 (Cloudinary) mais pour `firebase-admin`. À vérifier par l'utilisateur dans les Environment Variables Vercel (Production) et/ou les logs de fonction Vercel (qui reçoivent toujours le message d'erreur complet côté serveur, contrairement au navigateur).
+
+**Sélecteur de galerie, bug réel trouvé et corrigé** : `ShopLogoStep` déclenchait l'input fichier caché via un `<label htmlFor="shop-logo-file">` — un `AccountSettingsForm` (page normale, pas de modale) utilise le même motif sans problème signalé, ce qui pointe vers le `Dialog`/`Portal` de Base UI (`CreateShopWizard`) : le transfert de clic natif label→input est moins fiable une fois l'élément imbriqué dans le focus-trap d'une boîte de dialogue portée. Remplacé par un `<button onClick={() => inputRef.current?.click()}>` (clic JS explicite et synchrone dans le gestionnaire, pas de dépendance au transfert natif) — même motif que `ProductImageUploader` (dashboard, hors modale), qui n'a jamais été signalé comme cassé.
+
+Tests : `ShopLogoStep.test.tsx` (nouveau — aucun test n'existait avant pour ce composant), vérifie explicitement que le clic sur le bouton appelle `HTMLInputElement.prototype.click()`.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (421 tests, +4, aucune régression). Pas de vérification Playwright/appareil réel (aucun outil de navigateur ni accès Vercel disponibles dans cette session) — **à confirmer par l'utilisateur en conditions réelles** avant de considérer le correctif galerie comme validé. Rien de commité.

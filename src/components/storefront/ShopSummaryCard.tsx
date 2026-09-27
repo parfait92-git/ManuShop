@@ -25,7 +25,7 @@ export function ShopSummaryCard({
   return (
     <Link
       href={href ?? `/boutique/${shop.id}`}
-      className="flex flex-col gap-2 rounded-xl border border-border p-3 transition-colors hover:bg-muted/40"
+      className="group flex flex-col gap-2 rounded-xl border border-border p-3 transition-colors hover:bg-muted/40"
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
         {shop.logo ? (
@@ -34,7 +34,7 @@ export function ShopSummaryCard({
             alt={shop.name}
             fill
             sizes="(min-width: 1024px) 16vw, 33vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110"
           />
         ) : (
           <div className="flex size-full items-center justify-center">
