@@ -18,7 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
-  const { profile } = useAuth();
+  const { profile, isSuperAdmin } = useAuth();
   const { shop } = useCurrentShop();
   const newOrdersCount = useNewOrdersCount(profile?.shopId);
   const router = useRouter();
@@ -108,6 +108,21 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                   onClick={() => setMenuOpen(false)}
                 />
                 <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                  {/* Compte à la fois Super Admin (`platformAdmins`) et
+                  gérant d'une boutique (`role: "admin"`) : `isSuperAdmin`
+                  ne se déduit jamais de `profile.role` (voir
+                  SuperAdminRoute), donc rien ici ne montrait ce privilège
+                  avant — seul moyen d'atteindre /super-admin était de
+                  connaître l'URL. */}
+                  {isSuperAdmin && (
+                    <Link
+                      href="/super-admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="block px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                    >
+                      Super Admin
+                    </Link>
+                  )}
                   <Link
                     href="/mon-compte"
                     onClick={() => setMenuOpen(false)}

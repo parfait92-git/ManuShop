@@ -1,13 +1,17 @@
 import { Timestamp } from "firebase/firestore";
 
 import { auth } from "@/lib/firebase";
+import type { PremiumFeatureKey } from "@/lib/premiumFeatures";
 import type { User } from "@/models/user/User";
 import { platformAdminRepository } from "@/repositories/PlatformAdminRepository";
 import type { IPlatformAdminRepository } from "@/repositories/interfaces/IPlatformAdminRepository";
 import {
   grantAdminAction,
+  listMerchantsAction,
   revokeAdminAction,
   searchUsersAction,
+  setShopPremiumFeatureAction,
+  type MerchantDto,
   type SearchedUserDto,
 } from "@/server/actions/platformAdminActions";
 
@@ -61,6 +65,26 @@ export class PlatformAdminService {
    * attribution, et ne sont jamais lus pour un compte non-admin. */
   async revokeAdmin(userId: string): Promise<void> {
     await revokeAdminAction(await this.getCallerIdToken(), userId);
+  }
+
+  /** BF-117/118 : commerçants déduits des boutiques (groupées par
+   * propriétaire), pas d'une liste d'utilisateurs filtrée par rôle. */
+  async listMerchants(): Promise<MerchantDto[]> {
+    return listMerchantsAction(await this.getCallerIdToken());
+  }
+
+  /** BF-119 : privilège premium par boutique, indépendant de l'abonnement. */
+  async setShopPremiumFeature(
+    shopId: string,
+    feature: PremiumFeatureKey,
+    enabled: boolean
+  ): Promise<void> {
+    await setShopPremiumFeatureAction(
+      await this.getCallerIdToken(),
+      shopId,
+      feature,
+      enabled
+    );
   }
 
   private async getCallerIdToken(): Promise<string> {

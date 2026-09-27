@@ -5,11 +5,16 @@ jest.mock("../lib/firebase", () => ({
 const grantAdminAction = jest.fn();
 const revokeAdminAction = jest.fn();
 const searchUsersAction = jest.fn();
+const listMerchantsAction = jest.fn();
+const setShopPremiumFeatureAction = jest.fn();
 
 jest.mock("../server/actions/platformAdminActions", () => ({
   grantAdminAction: (...args: unknown[]) => grantAdminAction(...args),
   revokeAdminAction: (...args: unknown[]) => revokeAdminAction(...args),
   searchUsersAction: (...args: unknown[]) => searchUsersAction(...args),
+  listMerchantsAction: (...args: unknown[]) => listMerchantsAction(...args),
+  setShopPremiumFeatureAction: (...args: unknown[]) =>
+    setShopPremiumFeatureAction(...args),
 }));
 
 import { PlatformAdminService } from "@/services/PlatformAdminService";
@@ -86,6 +91,37 @@ describe("PlatformAdminService", () => {
     it("delegates to the server action with the caller's ID token", async () => {
       await service.revokeAdmin("u1");
       expect(revokeAdminAction).toHaveBeenCalledWith("token-1", "u1");
+    });
+  });
+
+  describe("listMerchants", () => {
+    it("delegates to the server action with the caller's ID token", async () => {
+      const merchants = [
+        {
+          ownerId: "u1",
+          displayName: "Ada Diallo",
+          email: "ada@example.com",
+          shops: [],
+        },
+      ];
+      listMerchantsAction.mockResolvedValue(merchants);
+
+      const result = await service.listMerchants();
+
+      expect(listMerchantsAction).toHaveBeenCalledWith("token-1");
+      expect(result).toBe(merchants);
+    });
+  });
+
+  describe("setShopPremiumFeature", () => {
+    it("delegates to the server action with the caller's ID token", async () => {
+      await service.setShopPremiumFeature("shop1", "visitStats", true);
+      expect(setShopPremiumFeatureAction).toHaveBeenCalledWith(
+        "token-1",
+        "shop1",
+        "visitStats",
+        true
+      );
     });
   });
 });

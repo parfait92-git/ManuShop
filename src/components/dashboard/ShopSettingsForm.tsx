@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Globe,
+  Lock,
   Mail,
   MessageCircle,
   Save,
@@ -23,6 +24,10 @@ import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
 import { ShareShopLinkButton } from "@/components/dashboard/ShareShopLinkButton";
 import {
+  CLIENT_CONTACT_METHODS,
+  CLIENT_CONTACT_METHOD_LABELS,
+} from "@/lib/clientContactMethods";
+import {
   SOCIAL_NETWORK_LABELS,
   SOCIAL_NETWORK_URL_FIELD,
 } from "@/lib/shopSocialNetworks";
@@ -30,7 +35,11 @@ import {
   ShopSettingsSchema,
   type ShopSettingsInput,
 } from "@/lib/validation/auth";
-import type { PrimarySocialNetwork, Shop } from "@/models/shop/Shop";
+import type {
+  ClientContactMethod,
+  PrimarySocialNetwork,
+  Shop,
+} from "@/models/shop/Shop";
 import { activityLogService } from "@/services/ActivityLogService";
 import { shopService } from "@/services/ShopService";
 
@@ -61,6 +70,8 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
     urgentPhoneAlerts: shop.urgentPhoneAlerts ?? true,
     contactEmail: shop.contactEmail ?? "",
     urgentPhone: shop.urgentPhone ?? "",
+    clientContactMethods: shop.clientContactMethods ?? [],
+    publicContactEmail: shop.publicContactEmail ?? "",
     isPublished: shop.isPublished ?? false,
   };
 }
@@ -130,6 +141,16 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const whatsapp = useWatch({ control, name: "whatsapp" });
   const urgentPhone = useWatch({ control, name: "urgentPhone" });
   const isPublished = useWatch({ control, name: "isPublished" });
+  const facebookUrl = useWatch({ control, name: "facebookUrl" });
+  const instagramUrl = useWatch({ control, name: "instagramUrl" });
+  const clientContactMethods = useWatch({
+    control,
+    name: "clientContactMethods",
+  });
+  const publicContactEmail = useWatch({
+    control,
+    name: "publicContactEmail",
+  });
 
   useEffect(() => {
     let active = true;
@@ -413,6 +434,108 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                   {errors[SOCIAL_NETWORK_URL_FIELD[primarySocialNetwork as PrimarySocialNetwork]] && (
                     <p className="text-sm text-destructive">
                       {errors[SOCIAL_NETWORK_URL_FIELD[primarySocialNetwork as PrimarySocialNetwork]]?.message}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Mail className="size-4.5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold">Moyens de contact client</h2>
+                <p className="text-sm text-muted-foreground">
+                  Choisissez comment vos clients peuvent vous contacter,
+                  affiché sur la fiche de vos produits (BF-105).
+                </p>
+              </div>
+            </div>
+
+            {!shop.premiumFeatures?.includes("advancedContact") ? (
+              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-4 py-8 text-center">
+                <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <Lock className="size-4.5" />
+                </span>
+                <p className="text-sm text-muted-foreground">
+                  Réservé aux boutiques disposant du privilège premium
+                  correspondant.
+                </p>
+              </div>
+            ) : (
+              <>
+                {CLIENT_CONTACT_METHODS.map((method) => {
+                  const hasValue =
+                    method === "email"
+                      ? !!publicContactEmail
+                      : method === "whatsapp"
+                        ? !!whatsapp
+                        : method === "facebook"
+                          ? !!facebookUrl
+                          : !!instagramUrl;
+                  const enabled =
+                    clientContactMethods?.includes(method) ?? false;
+
+                  return (
+                    <div
+                      key={method}
+                      className="flex items-center justify-between gap-4 rounded-lg border border-border p-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">
+                          {CLIENT_CONTACT_METHOD_LABELS[method]}
+                        </p>
+                        {!hasValue && (
+                          <p className="text-sm text-muted-foreground">
+                            {method === "email"
+                              ? "Renseignez l'e-mail ci-dessous pour activer ce canal."
+                              : method === "whatsapp"
+                                ? "Renseignez le numéro WhatsApp ci-dessus pour activer ce canal."
+                                : "Renseignez le lien ci-dessus (Publication multicanale) pour activer ce canal."}
+                          </p>
+                        )}
+                      </div>
+                      <Switch
+                        checked={enabled}
+                        disabled={!hasValue}
+                        onCheckedChange={(checked) => {
+                          const current = clientContactMethods ?? [];
+                          setValue(
+                            "clientContactMethods",
+                            checked
+                              ? [...current, method]
+                              : current.filter(
+                                  (m: ClientContactMethod) => m !== method
+                                ),
+                            { shouldValidate: true }
+                          );
+                        }}
+                        aria-label={`${enabled ? "Désactiver" : "Activer"} le contact par ${CLIENT_CONTACT_METHOD_LABELS[method]}`}
+                      />
+                    </div>
+                  );
+                })}
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="publicContactEmail">
+                    E-mail affiché aux clients
+                  </Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="publicContactEmail"
+                      type="email"
+                      className="pl-9"
+                      aria-invalid={!!errors.publicContactEmail}
+                      {...register("publicContactEmail")}
+                    />
+                  </div>
+                  {errors.publicContactEmail && (
+                    <p className="text-sm text-destructive">
+                      {errors.publicContactEmail.message}
                     </p>
                   )}
                 </div>

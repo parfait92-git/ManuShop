@@ -2,6 +2,7 @@
 
 import {
   LayoutGrid,
+  Mail,
   Package,
   ShoppingBag,
   Tag,
@@ -36,6 +37,7 @@ const MAIN_ITEMS: NavItem[] = [
   { href: "/dashboard/clients", label: "Clients", icon: Users },
   { href: "/dashboard/trash", label: "Corbeille", icon: Trash2 },
   { href: "/dashboard/activity", label: "Journal d'activité", icon: History },
+  { href: "/dashboard/support", label: "Contacter le Super Admin", icon: Mail },
 ];
 
 const CONFIG_ITEMS: NavItem[] = [

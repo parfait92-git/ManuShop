@@ -1,4 +1,4 @@
-import { buildWhatsAppOrderLink } from "./whatsapp";
+import { buildWhatsAppContactLink, buildWhatsAppOrderLink } from "./whatsapp";
 
 describe("buildWhatsAppOrderLink", () => {
   const shop = { name: "Ada Boutique", whatsapp: "+237 6 00 00 00 00" };
@@ -21,5 +21,22 @@ describe("buildWhatsAppOrderLink", () => {
     expect(message).toContain("Sac x1");
     // fr-FR groups thousands with a narrow no-break space, not a plain " ".
     expect(message).toContain(`Total : ${(31000).toLocaleString("fr-FR")} FCFA`);
+  });
+});
+
+describe("buildWhatsAppContactLink", () => {
+  const shop = { name: "Ada Boutique", whatsapp: "+237 6 00 00 00 00" };
+
+  it("strips non-digit characters from the phone number", () => {
+    const link = buildWhatsAppContactLink(shop);
+    expect(link.startsWith("https://wa.me/237600000000?text=")).toBe(true);
+  });
+
+  it("includes the shop name in a generic, non-order message", () => {
+    const link = buildWhatsAppContactLink(shop);
+    const message = decodeURIComponent(link.split("?text=")[1]);
+
+    expect(message).toContain("Ada Boutique");
+    expect(message).not.toContain("commander");
   });
 });

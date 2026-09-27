@@ -7,9 +7,20 @@ service cloud.firestore {
     // Configuration plateforme (ex. activer/désactiver /demo-catalogue) —
     // lecture publique (consultée par des visiteurs non connectés sur
     // /catalogue et /demo-catalogue), écriture interdite pour tout le
-    // monde : réglage manuel du Super Admin depuis la console Firebase
-    // uniquement, même schéma que `platformAdmins`.
+    // monde depuis le client : passe exclusivement par une Server Action
+    // Super Admin (`configurationActions.ts`), même schéma que
+    // `platformAdmins`.
     match /configuration/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Tags de catégorie système (BF-109→111) — lecture publique (un
+    // commerçant en a besoin pour en choisir un en créant une catégorie),
+    // écriture interdite pour tout le monde depuis le client : création/
+    // suppression exclusivement via une Server Action Super Admin
+    // (`categoryTagActions.ts`), même schéma que `configuration`.
+    match /categoryTags/{tagId} {
       allow read: if true;
       allow write: if false;
     }
@@ -77,6 +88,24 @@ service cloud.firestore {
         && (resource.data.clientId == request.auth.uid
           || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
             && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId));
+      allow write: if false;
+    }
+
+    // Messages commerçant → Super Admin (BF-112→115) — même schéma que
+    // `orders` : le commerçant (admin/seller de la boutique concernée) lit
+    // ses propres messages (et leur réponse, une fois écrite, sur le même
+    // document) ; écriture entièrement verrouillée, l'envoi (avec
+    // vérification du privilège premium `contactForm`) et la réponse
+    // doivent revalider en code, donc passent uniquement par
+    // `firebase-admin` via src/server/actions/supportMessageActions.ts. Le
+    // Super Admin lit tous les messages via une Server Action dédiée
+    // (`listSupportMessagesAction`), pas via cette règle — non exprimable
+    // ici sans dépendre de `platformAdmins` dans une règle, ce que le
+    // projet évite délibérément (voir le bloc `platformAdmins` ci-dessous).
+    match /supportMessages/{messageId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
       allow write: if false;
     }
 

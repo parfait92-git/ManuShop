@@ -135,6 +135,14 @@ export const ShopSettingsSchema = z.object({
     .email({ error: "Veuillez saisir un email valide." })
     .or(z.literal("")),
   urgentPhone: z.string().trim(),
+  // Moyens de contact client (BF-105, premium) — distinct des "Contacts de
+  // commande" ci-dessus.
+  clientContactMethods: z.array(
+    z.enum(["email", "whatsapp", "facebook", "instagram"])
+  ),
+  publicContactEmail: z
+    .email({ error: "Veuillez saisir un email valide." })
+    .or(z.literal("")),
   // Visibilité (BF-88)
   isPublished: z.boolean(),
 });

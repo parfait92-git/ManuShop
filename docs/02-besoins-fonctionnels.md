@@ -102,7 +102,7 @@
 | BF-38 | Recherche & filtres | Filtrer par catégorie, prix, disponibilité (partiel — recherche par nom et filtre par catégorie fonctionnels ; le prix n'a qu'un tri (croissant/décroissant), pas un filtre par plage ; pas de filtre par disponibilité/stock) |
 | BF-39 | Contact rapide | Bouton "Commander via WhatsApp" sur chaque produit (adapté — décision prise en session, voir journal : panier local persistant + un seul bouton "Commander via WhatsApp" au moment du paiement, plutôt qu'un bouton par produit, pour permettre un vrai panier multi-articles) |
 | BF-40 | Mode hors ligne | Consultation du catalogue même sans connexion (PWA) (partiel — app installable, images mises en cache par le service worker ; la persistance hors-ligne de Firestore n'est pas activée, donc les données produits elles-mêmes ne sont pas garanties disponibles sans connexion) |
-| BF-122 | Catalogue de démo conditionnel | `/demo-catalogue` (données fictives, construit le 2026-09-24) ne doit plus s'afficher — ni comme repli automatique depuis `/catalogue`, ni en accès direct — une fois qu'au moins une vraie boutique publiée de la plateforme a un produit visible réel. Un Super Admin peut aussi la désactiver explicitement, indépendamment de l'état réel. **Fait le 2026-09-26** : nouvelle collection `configuration` (`configuration/general.demoCatalogueEnabled`, gérée à la main comme `platformAdmins`) + détection automatique plateforme-wide (voir 04-besoins-techniques.md §19). |
+| BF-122 | Catalogue de démo conditionnel | `/demo-catalogue` (données fictives, construit le 2026-09-24) ne doit plus s'afficher — ni comme repli automatique depuis `/catalogue`, ni en accès direct — une fois qu'au moins une vraie boutique publiée de la plateforme a un produit visible réel. Un Super Admin peut aussi la désactiver explicitement, indépendamment de l'état réel. **Fait le 2026-09-26** : nouvelle collection `configuration` (`configuration/general.demoCatalogueEnabled`, gérée à la main comme `platformAdmins`) + détection automatique plateforme-wide (voir 04-besoins-techniques.md §19). **Interrupteur Super Admin ajouté le 2026-09-27** : `/super-admin/reglages` permet désormais d'activer/désactiver l'affichage de la démo depuis l'interface (`configurationActions.ts`), sans passer par la console Firebase (voir 04-besoins-techniques.md §37). |
 
 ---
 
@@ -259,7 +259,7 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-105 | Moyens de contact configurables | Le commerçant choisit comment il est contacté pour sa boutique (adresse email, message WhatsApp, message Facebook, message Instagram). |
+| BF-105 | Moyens de contact configurables | Le commerçant choisit comment il est contacté pour sa boutique (adresse email, message WhatsApp, message Facebook, message Instagram). **Fait le 2026-09-27** : section "Moyens de contact client" dans `/dashboard/shop`, réservée aux boutiques ayant le privilège premium `advancedContact` — un interrupteur par canal (désactivé tant que la coordonnée sous-jacente n'est pas renseignée), affiché sur la fiche produit (remplace le lien "Voir sur {réseau}" de BF-128 quand actif). Voir 04-besoins-techniques.md §39. |
 | BF-106 | Réseaux sociaux affichés en pied de page | Une case à cocher par réseau (Instagram, Facebook, TikTok) — cocher révèle un champ pour saisir le lien correspondant. Le système vérifie que le lien est sécurisé (HTTPS, domaine attendu) avant d'autoriser l'enregistrement, pour limiter les liens frauduleux. |
 | BF-107 | Statistiques de consultation de la boutique | Nombre de consultations, article le plus consulté, article le moins consulté, heure et localisation des visites. |
 
@@ -268,7 +268,7 @@
 | ID | Besoin | Description |
 |---|---|---|
 | BF-108 | Page Marché | Page publique listant les 4 meilleures boutiques en tête de page, puis tous les produits publiés de toutes les boutiques en dessous. Généralise `/demo-catalogue` (déjà construit en données de démo, voir journal du 2026-09-24) à de vraies données multi-boutiques. **Fait le 2026-09-26, version réduite** : `/catalogue` et la landing page affichent désormais de vraies données agrégées de toutes les boutiques publiées (basculent sur `/demo-catalogue` tant qu'aucune n'a de produit visible réel) — sans les 4 meilleures boutiques en tête ni le tri par tag système (`CategoryTag`, BF-109→111, toujours non construit), filtré par nom de catégorie brut en attendant (voir 04-besoins-techniques.md §22). |
-| BF-109 | Tags de catégorie système | Liste de tags colorés (ex. "Alimentation", "Mode", "Électronique"), créée et gérée **exclusivement par le Super Admin**. En créant une catégorie, un commerçant choisit un tag existant dans cette liste plutôt que d'en inventer un — garantit une taxonomie cohérente sur toute la plateforme malgré des noms de catégorie différents d'une boutique à l'autre. |
+| BF-109 | Tags de catégorie système | Liste de tags colorés (ex. "Alimentation", "Mode", "Électronique"), créée et gérée **exclusivement par le Super Admin**. En créant une catégorie, un commerçant choisit un tag existant dans cette liste plutôt que d'en inventer un — garantit une taxonomie cohérente sur toute la plateforme malgré des noms de catégorie différents d'une boutique à l'autre. **Fait le 2026-09-27, gestion Super Admin uniquement** : `/super-admin/tags` permet de créer (nom + couleur) et supprimer un tag (`CategoryTag`, `categoryTagActions.ts`). Le champ `Category.tagId` existe côté modèle mais le sélecteur de tag côté commerçant (dans `CategoryManager.tsx`) n'est volontairement pas branché cette tranche — voir 04-besoins-techniques.md §36. |
 | BF-110 | Tri de la page Marché par tag système | Le tri/filtre de la page Marché se fait sur ces tags système (BF-109), pas sur les noms de catégorie propres à chaque boutique. |
 | BF-111 | Filtre catalogue boutique par catégories actives | Dans la page produits d'une boutique (côté client), le filtre ne propose que les catégories actives réellement associées à au moins un produit de cette boutique. |
 
@@ -276,19 +276,19 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-112 | Formulaire "Nous contacter" (commerçant, premium) | Objet, corps, signature (initiales générées automatiquement à partir du nom et prénom du commerçant), et choix d'un modèle de mise en forme pour le message. |
-| BF-113 | Réception des messages (Super Admin) | Le Super Admin consulte les messages envoyés par les commerçants. |
-| BF-114 | Réponse du Super Admin | Réponse rédigée avec le même modèle de mise en forme que le message reçu ; la signature porte automatiquement "ManuShop" avec le logo de la plateforme, sans saisie manuelle. |
-| BF-115 | Réception de la réponse (commerçant) | Le commerçant consulte la réponse du Super Admin à son message. |
+| BF-112 | Formulaire "Nous contacter" (commerçant, premium) | Objet, corps, signature (initiales générées automatiquement à partir du nom et prénom du commerçant), et choix d'un modèle de mise en forme pour le message. **Fait le 2026-09-27, version réduite** : `/dashboard/support` — objet + corps libre, réservé aux boutiques ayant le privilège premium `contactForm` (revérifié côté serveur, pas juste masqué). Ni signature à initiales générées, ni choix de modèle de mise en forme — un ticket simple (voir 04-besoins-techniques.md §38). |
+| BF-113 | Réception des messages (Super Admin) | Le Super Admin consulte les messages envoyés par les commerçants. **Fait le 2026-09-27** : `/super-admin/messages` liste tous les messages, toutes boutiques confondues. |
+| BF-114 | Réponse du Super Admin | Réponse rédigée avec le même modèle de mise en forme que le message reçu ; la signature porte automatiquement "ManuShop" avec le logo de la plateforme, sans saisie manuelle. **Fait le 2026-09-27, version réduite** : une réponse par message (pas de fil de discussion), texte libre. Ni modèle de mise en forme, ni signature automatique "ManuShop" — non construits cette tranche. |
+| BF-115 | Réception de la réponse (commerçant) | Le commerçant consulte la réponse du Super Admin à son message. **Fait le 2026-09-27** : la réponse apparaît directement sous le message correspondant dans `/dashboard/support`, pas de notification (BF-116, toujours non commencé). |
 | BF-116 | Notifications push d'activité | Commerçant : nouvelle commande, nouveau message, nouveau feedback. Super Admin : nouveau message reçu. Étend le Module 11 (BF-58→61, toujours non commencé — nécessite Firebase Cloud Messaging). |
 
 ### Module 22 — Supervision Super Admin
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-117 | Liste des commerçants | Le Super Admin consulte la liste des usagers ayant obtenu le statut commerçant (au moins une boutique). |
-| BF-118 | Détail d'un commerçant | Pour un commerçant donné : nombre de boutiques détenues, et liste des privilèges premium actifs pour chacune. |
-| BF-119 | Activer/désactiver un privilège premium par boutique | Le Super Admin peut activer ou désactiver un privilège premium précis pour une boutique donnée d'un commerçant, indépendamment de l'état de son abonnement. |
+| BF-117 | Liste des commerçants | Le Super Admin consulte la liste des usagers ayant obtenu le statut commerçant (au moins une boutique). **Fait le 2026-09-27** : `/super-admin/commercants` liste chaque commerçant (déduit des boutiques groupées par propriétaire, `listMerchantsAction`), avec son nombre de boutiques. |
+| BF-118 | Détail d'un commerçant | Pour un commerçant donné : nombre de boutiques détenues, et liste des privilèges premium actifs pour chacune. **Fait le 2026-09-27** : chaque ligne se déplie (pas de page séparée) pour révéler, par boutique, son statut de publication et ses privilèges premium actifs. |
+| BF-119 | Activer/désactiver un privilège premium par boutique | Le Super Admin peut activer ou désactiver un privilège premium précis pour une boutique donnée d'un commerçant, indépendamment de l'état de son abonnement. **Fait le 2026-09-27** : interrupteur par privilège dans `/super-admin/commercants` (`Shop.premiumFeatures`, `setShopPremiumFeatureAction`), mise à jour optimiste avec retour arrière en cas d'échec. Les 5 privilèges couverts (`lib/premiumFeatures.ts`) correspondent à des besoins déjà documentés (BF-102, BF-105, BF-106, BF-107, BF-112) ; `contactForm`/BF-112 et `advancedContact`/BF-105 sont construits côté commerçant à ce jour (2026-09-27) — activer les 3 autres privilèges (BF-102, BF-106, BF-107) ne débloque encore rien de visible. |
 
 ---
 

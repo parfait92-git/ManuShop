@@ -168,6 +168,8 @@ describe("ShopSettingsSchema", () => {
     urgentPhoneAlerts: true,
     contactEmail: "contact@awa.example",
     urgentPhone: "+221700000000",
+    clientContactMethods: [],
+    publicContactEmail: "",
     isPublished: true,
   };
 
@@ -235,6 +237,33 @@ describe("ShopSettingsSchema", () => {
       ShopSettingsSchema.safeParse({
         ...validShop,
         instagramUrl: "not-a-url",
+      }).success
+    ).toBe(false);
+  });
+
+  it("accepts a list of client contact methods (BF-105)", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        clientContactMethods: ["whatsapp", "email"],
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects an unknown client contact method", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        clientContactMethods: ["telegram"],
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects an invalid public contact email", () => {
+    expect(
+      ShopSettingsSchema.safeParse({
+        ...validShop,
+        publicContactEmail: "not-an-email",
       }).success
     ).toBe(false);
   });
