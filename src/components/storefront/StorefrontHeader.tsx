@@ -23,7 +23,7 @@ const NAV_LINKS = [
 ] as const;
 
 function AccountMenu() {
-  const { firebaseUser, profile } = useAuth();
+  const { firebaseUser, profile, isSuperAdmin } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -105,6 +105,20 @@ function AccountMenu() {
                 onClick={() => setOpen(false)}
               >
                 Tableau de bord
+              </Link>
+            )}
+            {/* `isSuperAdmin` ne se déduit jamais de `profile.role` (voir
+            SuperAdminRoute) — un compte peut être à la fois Super Admin ET
+            gérant d'une boutique, auquel cas rien d'autre ici ne montre ce
+            privilège : seul moyen d'atteindre /super-admin sinon était de
+            connaître l'URL. */}
+            {isSuperAdmin && (
+              <Link
+                href="/super-admin"
+                className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
+                onClick={() => setOpen(false)}
+              >
+                Super Admin
               </Link>
             )}
             {/* BF-79 : accessible à tout client connecté — pas seulement

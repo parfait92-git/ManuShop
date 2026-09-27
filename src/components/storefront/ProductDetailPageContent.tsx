@@ -9,6 +9,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
+import {
+  CLIENT_CONTACT_METHOD_LABELS,
+  buildClientContactLink,
+} from "@/lib/clientContactMethods";
 import { formatShopAge } from "@/lib/shopAge";
 import {
   SOCIAL_NETWORK_LABELS,
@@ -16,7 +20,7 @@ import {
 } from "@/lib/shopSocialNetworks";
 import type { Product } from "@/models/product/Product";
 import type { Review } from "@/models/review/Review";
-import type { Shop } from "@/models/shop/Shop";
+import type { ClientContactMethod, Shop } from "@/models/shop/Shop";
 import { productService, type StockStatus } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
@@ -118,6 +122,22 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
   const averageRating = reviewService.getAverageRating(reviews);
   const socialUrl = shop ? getPrimarySocialNetworkUrl(shop) : null;
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
+
+  // BF-105 : la liste enrichie de canaux (si activée, premium) remplace le
+  // simple lien "Voir sur {réseau}" de BF-128 plutôt que de s'y ajouter —
+  // éviter deux façons redondantes d'afficher le même réseau social.
+  const contactLinks =
+    shop && shop.premiumFeatures?.includes("advancedContact")
+      ? (shop.clientContactMethods ?? [])
+          .map((method) => ({
+            method,
+            href: buildClientContactLink(shop, method),
+          }))
+          .filter(
+            (entry): entry is { method: ClientContactMethod; href: string } =>
+              !!entry.href
+          )
+      : [];
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
@@ -250,16 +270,34 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                 </p>
               )}
 
-              {socialUrl && shop.primarySocialNetwork && (
-                <a
-                  href={socialUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                >
-                  Voir sur {SOCIAL_NETWORK_LABELS[shop.primarySocialNetwork]}
-                  <ExternalLink className="size-3.5" />
-                </a>
+              {contactLinks.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {contactLinks.map(({ method, href }) => (
+                    <a
+                      key={method}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    >
+                      {CLIENT_CONTACT_METHOD_LABELS[method]}
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                socialUrl &&
+                shop.primarySocialNetwork && (
+                  <a
+                    href={socialUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    Voir sur {SOCIAL_NETWORK_LABELS[shop.primarySocialNetwork]}
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                )
               )}
             </div>
           )}

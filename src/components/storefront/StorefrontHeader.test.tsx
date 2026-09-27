@@ -100,6 +100,35 @@ describe("StorefrontHeader", () => {
     );
   });
 
+  it("shows a Super Admin link for a super admin who also owns a shop (isSuperAdmin doesn't derive from role)", () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: { displayName: "Jean Dupont", email: "jean@example.com", photoURL: null },
+      profile: { displayName: "Jean Dupont", email: "jean@example.com", role: "admin", photoURL: null },
+      isSuperAdmin: true,
+    });
+    render(<StorefrontHeader />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Mon compte" }));
+
+    expect(screen.getByRole("link", { name: "Super Admin" })).toHaveAttribute(
+      "href",
+      "/super-admin"
+    );
+  });
+
+  it("hides the Super Admin link for a regular account", () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: { displayName: "Jean Dupont", email: "jean@example.com", photoURL: null },
+      profile: { displayName: "Jean Dupont", email: "jean@example.com", role: "client", photoURL: null },
+      isSuperAdmin: false,
+    });
+    render(<StorefrontHeader />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Mon compte" }));
+
+    expect(screen.queryByRole("link", { name: "Super Admin" })).not.toBeInTheDocument();
+  });
+
   it("shows the connected user's display name and photo once open", () => {
     useAuthMock.mockReturnValue({
       firebaseUser: { displayName: "Jean Dupont", email: "jean@example.com", photoURL: null },

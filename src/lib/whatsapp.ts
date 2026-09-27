@@ -33,3 +33,18 @@ export function buildWhatsAppOrderLink(
     message
   )}`;
 }
+
+/**
+ * BF-105 : lien WhatsApp générique ("j'ai une question"), pas lié à une
+ * commande — utilisé quand un client contacte la boutique en dehors du
+ * paiement (voir `lib/clientContactMethods.ts`), contrairement à
+ * `buildWhatsAppOrderLink` ci-dessus.
+ */
+export function buildWhatsAppContactLink(
+  shop: Pick<Shop, "whatsapp" | "name">
+): string {
+  const message = `Bonjour ${shop.name}, j'ai une question à propos de votre boutique.`;
+  return `https://wa.me/${sanitizePhone(shop.whatsapp)}?text=${encodeURIComponent(
+    message
+  )}`;
+}

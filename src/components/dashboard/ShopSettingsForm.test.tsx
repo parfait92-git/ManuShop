@@ -223,4 +223,84 @@ describe("ShopSettingsForm", () => {
       )
     );
   });
+
+  describe("Moyens de contact client (BF-105)", () => {
+    it("shows a locked message when the shop doesn't have the advancedContact privilege", async () => {
+      mockedShopService.getShop.mockResolvedValue(fakeShop());
+      render(<ShopSettingsForm shopId="shop-1" />);
+
+      expect(
+        await screen.findByText(
+          "Réservé aux boutiques disposant du privilège premium correspondant."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("disables a channel's switch until its underlying value is set", async () => {
+      mockedShopService.getShop.mockResolvedValue(
+        fakeShop({ premiumFeatures: ["advancedContact"], whatsapp: "" })
+      );
+      render(<ShopSettingsForm shopId="shop-1" />);
+
+      const whatsappSwitch = await screen.findByLabelText(
+        "Activer le contact par WhatsApp"
+      );
+      expect(whatsappSwitch).toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("enables a channel once its value is set, and saves the choice", async () => {
+      mockedShopService.getShop.mockResolvedValue(
+        fakeShop({
+          premiumFeatures: ["advancedContact"],
+          whatsapp: "+221700000000",
+        })
+      );
+      mockedShopService.updateProfile.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(<ShopSettingsForm shopId="shop-1" />);
+
+      const whatsappSwitch = await screen.findByLabelText(
+        "Activer le contact par WhatsApp"
+      );
+      expect(whatsappSwitch).not.toHaveAttribute("aria-disabled", "true");
+
+      await user.click(whatsappSwitch);
+      await user.click(
+        screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+      );
+
+      await waitFor(() =>
+        expect(shopService.updateProfile).toHaveBeenCalledWith(
+          "shop-1",
+          expect.objectContaining({ clientContactMethods: ["whatsapp"] })
+        )
+      );
+    });
+
+    it("saves the public contact e-mail", async () => {
+      mockedShopService.getShop.mockResolvedValue(
+        fakeShop({ premiumFeatures: ["advancedContact"] })
+      );
+      mockedShopService.updateProfile.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(<ShopSettingsForm shopId="shop-1" />);
+
+      await user.type(
+        await screen.findByLabelText("E-mail affiché aux clients"),
+        "contact@awaboutique.com"
+      );
+      await user.click(
+        screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+      );
+
+      await waitFor(() =>
+        expect(shopService.updateProfile).toHaveBeenCalledWith(
+          "shop-1",
+          expect.objectContaining({
+            publicContactEmail: "contact@awaboutique.com",
+          })
+        )
+      );
+    });
+  });
 });

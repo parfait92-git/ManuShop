@@ -6,6 +6,13 @@ export type PrimarySocialNetwork =
   | "instagram"
   | "tiktok";
 
+/** BF-105 : canaux que le commerçant choisit d'exposer aux CLIENTS pour le
+ * contacter — distinct de `notifyOrdersByEmail`/`contactEmail`/
+ * `urgentPhone` ci-dessous, qui concernent la façon dont LE COMMERÇANT est
+ * prévenu d'une commande, pas la façon dont un client le contacte. Premium
+ * (`advancedContact`, voir `lib/premiumFeatures.ts`). */
+export type ClientContactMethod = "email" | "whatsapp" | "facebook" | "instagram";
+
 /** Durées d'abonnement proposées pour créer/maintenir une boutique (Module
  * 15, BF-83). Vivait sur `User` jusqu'au 2026-09-25 — déplacé ici car un
  * abonnement finance une boutique précise, pas le compte entier (un
@@ -66,5 +73,16 @@ export interface Shop {
   instagramUrl?: string;
   tiktokUrl?: string;
   whatsappBusinessUrl?: string;
+  /** BF-105 : réutilise `whatsapp`/`facebookUrl`/`instagramUrl` ci-dessus
+   * pour les canaux correspondants — seul l'email a besoin d'un champ dédié
+   * (`contactEmail` ci-dessus a un usage distinct, interne, voir sa
+   * documentation). */
+  clientContactMethods?: ClientContactMethod[];
+  publicContactEmail?: string;
+  /** BF-119 : privilèges premium activés pour CETTE boutique précise,
+   * indépendamment de l'état de son abonnement — clés de
+   * `lib/premiumFeatures.ts`, activées/désactivées exclusivement par le
+   * Super Admin (Server Action, voir `platformAdminActions.ts`). */
+  premiumFeatures?: string[];
   createdAt: Timestamp;
 }

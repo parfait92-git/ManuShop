@@ -1056,3 +1056,71 @@ Deux signalements de l'utilisateur : "le like ne fait absolument rien sur les ar
 Tests : `cartStore.test.ts`, `CartPanel.test.tsx` (nouveau), `orderActions.test.ts`, `PaymentMethodPageContent.test.tsx`, `AuthService.test.ts`, `AuthProvider.test.tsx`, `StorefrontProductCard.test.tsx`, `ProductDetailPageContent.test.tsx`, `StorefrontHeader.test.tsx` étendus ; `FavoritesPageContent.test.tsx` (nouveau).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (33 routes, +1) et `npm run test:coverage` (472 tests, +28, aucune régression). Rien de commité.
+
+### 2026-09-27 — Aucun lien visible vers /super-admin
+
+L'utilisateur, connecté avec un compte cumulant Super Admin (`platformAdmins`) et gérant de boutique (`role: "admin"`), ne voyait aucune différence avec un compte admin normal. Cause trouvée : `isSuperAdmin` (`AuthProvider`) n'était utilisé nulle part dans l'UI — `/super-admin` existe et fonctionne, mais rien n'y renvoyait.
+
+Corrigé : lien "Super Admin" conditionné à `isSuperAdmin`, ajouté au menu "Mon compte" de `StorefrontHeader` et au menu profil de `DashboardTopbar`.
+
+Rappel donné à l'utilisateur (question posée avant de corriger) : le périmètre réellement construit derrière ce lien reste seulement BF-68 (chercher un compte, donner/retirer l'admin) — liste des commerçants (BF-117→119) et tags de catégorie (BF-109→111) restent non commencés, déjà documentés comme tels.
+
+Tests : `StorefrontHeader.test.tsx` étendu, `DashboardTopbar.test.tsx` (nouveau).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (476 tests, +4, aucune régression). Rien de commité.
+
+### 2026-09-27 — Vraie coquille de tableau de bord pour le Super Admin
+
+Demande de l'utilisateur : "je veux un tableau de bord pour le super admin, et son titre doit être super-admin" — la page n'était qu'un panneau centré, sans rien pour la distinguer d'un tableau de bord marchand (y compris le titre d'onglet, partagé avec tout le site).
+
+Fait : `SuperAdminSidebar`/`SuperAdminTopbar` (nouveaux, même motif que `DashboardSidebar`/`DashboardTopbar` adaptés à l'échelle plateforme), `/super-admin/page.tsx` devient une vraie coquille (barre latérale + en-tête + menu mobile), `/super-admin/layout.tsx` (nouveau, Server Component) pour un titre d'onglet dédié ("Super Admin — ManuShop"). Sidebar volontairement réduite à un seul item (Comptes, BF-68) — pas de liens morts vers les fonctionnalités non commencées listées au tour précédent.
+
+Tests : `SuperAdminSidebar.test.tsx`/`SuperAdminTopbar.test.tsx` (nouveaux).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (481 tests, +5, aucune régression). Rien de commité.
+
+### 2026-09-27 — Commerçants et tags de catégorie système (BF-109, BF-117→119)
+
+L'utilisateur a demandé la liste des fonctionnalités typiques d'un Super Admin, puis "implémente les". Plusieurs items en sont écartés (finance sans moyen de paiement, messagerie sans infrastructure, modération/analytics trop spéculatifs sans plus de cadrage) — périmètre réduit à ce qui est réalisable avec l'existant : gestion des commerçants et privilèges premium par boutique (BF-117→119), et tags de catégorie système (BF-109), déjà tous les deux documentés mais non commencés.
+
+**Tags de catégorie (BF-109)** : `/super-admin/tags` — créer (nom + couleur) et supprimer un tag, `categoryTags` (nouvelle collection, lecture publique/écriture Super Admin uniquement, même schéma que `configuration`). Le sélecteur de tag côté commerçant (en créant une catégorie) reste volontairement non branché cette tranche.
+
+**Commerçants (BF-117→119)** : `/super-admin/commercants` — liste des commerçants déduits des boutiques (groupées par propriétaire), chaque ligne se déplie pour révéler, par boutique, un interrupteur par privilège premium (`Shop.premiumFeatures`, 5 clés correspondant à des besoins déjà documentés mais non construits côté commerçant — activer le privilège ici ne débloque encore rien de visible). Mise à jour optimiste avec retour arrière en cas d'échec, même motif que les favoris (BF-129).
+
+La coquille Super Admin (§35) a été refactorée pour accueillir ces deux nouvelles pages : `SuperAdminShell` (nouveau) extrait barre latérale/en-tête/menu mobile dans `super-admin/layout.tsx`, la sidebar passe d'un item à trois.
+
+Tests : `categoryTagActions.test.ts` (nouveau), `platformAdminActions.test.ts` étendu, `CategoryTagService.test.ts` (nouveau), `PlatformAdminService.test.ts` étendu, `MerchantsPageContent.test.tsx`/`CategoryTagsPageContent.test.tsx` (nouveaux).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (37 routes, +2), `npm run test:coverage` (514 tests, +33, aucune régression). Rien de commité.
+
+### 2026-09-27 — Interrupteur Super Admin pour `/demo-catalogue`
+
+Demande utilisateur : "ajoute dans la page super-admin le moyen d'activer ou désactiver l'affichage de la démo". Le champ existait déjà (`configuration/general.demoCatalogueEnabled`, BF-122) mais n'était modifiable qu'à la main depuis la console Firebase, faute d'UI.
+
+Fait : nouvelle Server Action `setDemoCatalogueEnabledAction` (revérifie `requireSuperAdmin`), `ConfigurationService.isDemoCatalogueEnabled()`/`setDemoCatalogueEnabled()`, page `/super-admin/reglages` (un interrupteur, mise à jour optimiste avec retour arrière sur échec) et 4ᵉ item de sidebar ("Réglages").
+
+Tests : `configurationActions.test.ts` (nouveau), `ConfigurationService.test.ts` étendu, `PlatformSettingsPageContent.test.tsx` (nouveau), `SuperAdminSidebar.test.tsx` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (38 routes, +1) et `npm run test:coverage` (525 tests, +11, aucune régression). Rien de commité.
+
+### 2026-09-27 — Messagerie commerçant ↔ Super Admin (BF-112→115)
+
+Question de l'utilisateur : "comment l'admin entre en contact avec le super admin ?" — réponse : aucun moyen intégré à l'app aujourd'hui. Version minimale proposée (ticket simple, pas de fil de discussion) puis confirmée ("oui").
+
+Fait : `/dashboard/support` (formulaire objet + corps, réservé aux boutiques ayant le privilège premium `contactForm` déjà défini mais jamais consommé jusqu'ici, §36) et `/super-admin/messages` (liste de tous les messages, réponse en ligne). Nouvelle collection `supportMessages`, même schéma d'accès que `orders` : lecture directe par le commerçant propriétaire, écriture entièrement verrouillée, tout passe par des Server Actions (`requireCaller`/`requireSuperAdmin`). Le privilège premium est revérifié côté serveur à l'envoi, pas seulement masqué côté UI. Volontairement réduit par rapport à la spécification complète : ni signature à initiales générées, ni modèle de mise en forme, ni notifications (BF-116, hors de portée sans FCM).
+
+Tests : `supportMessageActions.test.ts`, `SupportMessageService.test.ts`, `SupportPageContent.test.tsx`, `SupportMessagesPageContent.test.tsx` (tous nouveaux), `SuperAdminSidebar.test.tsx` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (40 routes, +2) et `npm run test:coverage` (553 tests, +28, aucune régression). Rien de commité.
+
+### 2026-09-27 — Moyens de contact client configurables (BF-105)
+
+Question de l'utilisateur : "comment le client contacte le commerçant ?" — réponse : uniquement au paiement (WhatsApp, BF-39) ou via le lien réseau social de la fiche produit (BF-128), rien de configurable. Confirmé ("oui") pour construire BF-105, déjà relié à un privilège premium jamais consommé (`advancedContact`).
+
+Fait : section "Moyens de contact client" dans `/dashboard/shop` (verrouillée si le privilège n'est pas actif), un interrupteur par canal (email/WhatsApp/Facebook/Instagram, désactivé tant que sa coordonnée n'est pas renseignée) — réutilise les champs `whatsapp`/`facebookUrl`/`instagramUrl` déjà existants, un seul nouveau champ (`publicContactEmail`, distinct de `contactEmail` qui a un usage interne différent). Affiché sur la fiche produit à la place du lien "Voir sur {réseau}" de BF-128.
+
+**Trouvaille au passage, signalée mais pas corrigée** : `firestore.rules` autorise un commerçant à écrire n'importe quel champ de sa propre boutique, y compris `premiumFeatures` — censé n'être modifiable que par un Super Admin. Pas un problème introduit aujourd'hui, mais un vrai trou de sécurité pré-existant, découvert en vérifiant si BF-105 avait besoin d'une Server Action de plus. Nécessite un vrai chantier de règles Firestore (comparer les champs modifiés à une liste autorisée) — hors périmètre de cette tâche.
+
+Tests : `whatsapp.test.ts`/`auth.test.ts`/`ShopSettingsForm.test.tsx`/`ProductDetailPageContent.test.tsx` étendus, `clientContactMethods.test.ts` (nouveau).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (572 tests, +19, aucune régression). Rien de commité.

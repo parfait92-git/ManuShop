@@ -203,6 +203,54 @@ describe("ProductDetailPageContent", () => {
     expect(socialLink).toHaveAttribute("target", "_blank");
   });
 
+  it("shows the configured contact channels instead of the single social link when advancedContact is enabled (BF-105)", async () => {
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    shopServiceMock.getShop.mockResolvedValue(
+      fakeShop({
+        primarySocialNetwork: "instagram",
+        instagramUrl: "https://instagram.com/boutiqueawa",
+        whatsapp: "+237600000000",
+        publicContactEmail: "contact@boutiqueawa.com",
+        premiumFeatures: ["advancedContact"],
+        clientContactMethods: ["whatsapp", "email"],
+      })
+    );
+    render(<ProductDetailPageContent productId="p1" />);
+
+    await screen.findByText("Vendu par");
+
+    const whatsappLink = screen.getByRole("link", { name: /WhatsApp/ });
+    expect(whatsappLink).toHaveAttribute("href", expect.stringContaining("wa.me"));
+
+    const emailLink = screen.getByRole("link", { name: /E-mail/ });
+    expect(emailLink).toHaveAttribute(
+      "href",
+      "mailto:contact@boutiqueawa.com"
+    );
+
+    // Le lien "Voir sur Instagram" de BF-128 est remplacé, pas cumulé.
+    expect(
+      screen.queryByRole("link", { name: /Voir sur Instagram/ })
+    ).not.toBeInTheDocument();
+  });
+
+  it("falls back to the single social link when advancedContact is enabled but no channel has a usable value", async () => {
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    shopServiceMock.getShop.mockResolvedValue(
+      fakeShop({
+        primarySocialNetwork: "instagram",
+        instagramUrl: "https://instagram.com/boutiqueawa",
+        premiumFeatures: ["advancedContact"],
+        clientContactMethods: ["whatsapp"],
+      })
+    );
+    render(<ProductDetailPageContent productId="p1" />);
+
+    expect(
+      await screen.findByRole("link", { name: /Voir sur Instagram/ })
+    ).toBeInTheDocument();
+  });
+
   it("falls back to a default icon and hides optional sections when unset", async () => {
     productServiceMock.getProduct.mockResolvedValue(fakeProduct());
     shopServiceMock.getShop.mockResolvedValue(fakeShop());
