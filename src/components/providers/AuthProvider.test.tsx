@@ -153,6 +153,49 @@ describe("AuthProvider", () => {
     );
   });
 
+  it("waits for the session-id write to settle before arming the single-session listener (avoids a self-logout race)", async () => {
+    getUserProfileMock.mockResolvedValue(fakeUser());
+    getLocalSessionIdMock.mockReturnValue(null);
+    createLocalSessionIdMock.mockReturnValue("fresh-session-id");
+
+    let resolveUpdate: () => void = () => {};
+    updateProfileMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveUpdate = resolve;
+      })
+    );
+
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+
+    act(() => {
+      onAuthStateChangedCallback?.({ uid: "uid-1", email: "a@b.com" });
+    });
+
+    // Les micro-tâches déjà planifiées (résolution de getUserProfile /
+    // isSuperAdmin) ont le temps de s'exécuter, mais pas l'écriture
+    // (volontairement non résolue ici) : si le listener démarrait avant que
+    // cette écriture ne soit terminée, il pourrait voir l'ancien
+    // `activeSessionId` (d'un autre navigateur) alors que `localSessionId`
+    // est déjà le nouveau, et se déconnecter lui-même à tort.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(onSnapshotMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveUpdate();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(onSnapshotMock).toHaveBeenCalled());
+  });
+
   it("does not overwrite an existing local session id (page reload, or another tab)", async () => {
     getUserProfileMock.mockResolvedValue(fakeUser());
     getLocalSessionIdMock.mockReturnValue("existing-session");

@@ -18,8 +18,8 @@ const SHOPS_COLLECTION = "shops";
  */
 export interface SupportMessageDto {
   id: string;
-  shopId: string;
-  shopName: string;
+  shopId?: string;
+  shopName?: string;
   senderId: string;
   senderName: string;
   subject: string;
@@ -80,6 +80,59 @@ export async function sendSupportMessageAction(
     createdAt: FieldValue.serverTimestamp(),
   });
   return { id: ref.id };
+}
+
+/**
+ * Bouton "Nous contacter" de la landing page (`ContactSuperAdminCta`) —
+ * n'importe quel compte connecté, pas seulement un commerçant premium :
+ * `requireCaller` seul (identité), aucune vérification de boutique/
+ * privilège, contrairement à `sendSupportMessageAction` ci-dessus. Même
+ * collection, `shopId`/`shopName` absents — distingués côté Super Admin par
+ * cette absence plutôt que par un champ `source` dédié.
+ */
+export async function sendContactMessageAction(
+  idToken: string,
+  subject: string,
+  body: string
+): Promise<{ id: string }> {
+  const caller = await requireCaller(idToken);
+  const db = getAdminDb();
+
+  const trimmedSubject = subject.trim();
+  const trimmedBody = body.trim();
+  if (!trimmedSubject || !trimmedBody) {
+    throw new ValidationError("L'objet et le message sont requis.");
+  }
+
+  const userSnapshot = await db.collection(USERS_COLLECTION).doc(caller.uid).get();
+  const userData = userSnapshot.data();
+
+  const ref = db.collection(SUPPORT_MESSAGES_COLLECTION).doc();
+  await ref.set({
+    senderId: caller.uid,
+    senderName: userData?.displayName ?? caller.email ?? "Visiteur",
+    subject: trimmedSubject,
+    body: trimmedBody,
+    status: "open",
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  return { id: ref.id };
+}
+
+/** Alimente le badge de `SuperAdminSidebar` — un `count()` agrégé plutôt que
+ * de récupérer tous les messages juste pour les compter. */
+export async function countOpenSupportMessagesAction(
+  idToken: string
+): Promise<number> {
+  await requireSuperAdmin(idToken);
+
+  const snapshot = await getAdminDb()
+    .collection(SUPPORT_MESSAGES_COLLECTION)
+    .where("status", "==", "open")
+    .count()
+    .get();
+
+  return snapshot.data().count;
 }
 
 /** BF-113 : tous les messages, toutes boutiques confondues — un Super

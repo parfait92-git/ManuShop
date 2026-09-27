@@ -28,6 +28,15 @@ jest.mock("../hooks/useMarketCatalogue", () => ({
   useMarketCatalogue: () => useMarketCatalogueMock(),
 }));
 
+// ContactSuperAdminCta (bouton "Nous contacter") importe SupportMessageService,
+// qui importe à son tour les Server Actions de supportMessageActions.ts — ces
+// dernières chargent `jose` (ESM pur), qui plante sous la transformation CJS
+// de Jest si le module réel est chargé. Voir ProductDetailPageContent.test.tsx
+// pour le même piège avec AuthProvider.
+jest.mock("../services/SupportMessageService", () => ({
+  supportMessageService: { sendContactMessage: jest.fn() },
+}));
+
 import Home from "./page";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { Badge } from "@/components/ui/Badge";
@@ -63,6 +72,11 @@ describe("Home page", () => {
       "href",
       "/catalogue"
     );
+    // "Nous contacter" ouvre un dialogue (ContactSuperAdminCta), pas un lien
+    // mailto: — voir ContactSuperAdminCta.test.tsx pour le comportement.
+    expect(
+      screen.getByRole("button", { name: /Nous contacter/ })
+    ).toBeInTheDocument();
     // Les 3 cartes viennent désormais de getFeaturedArticles() (données de
     // démo, voir src/data/mockData.ts) plutôt que d'un tableau figé —
     // "Powerbank 10000mAh" (TechPoint, en promo) est en tête du classement.

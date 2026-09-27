@@ -1,8 +1,3 @@
-const replaceMock = jest.fn();
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: replaceMock }),
-}));
-
 jest.mock("../../services/ProductService", () => ({
   productService: {
     listProducts: jest.fn(),
@@ -22,12 +17,7 @@ jest.mock("./StorefrontProductCard", () => ({
   ),
 }));
 
-const useDemoCatalogueAvailableMock = jest.fn();
-jest.mock("../../hooks/useDemoCatalogueAvailable", () => ({
-  useDemoCatalogueAvailable: () => useDemoCatalogueAvailableMock(),
-}));
-
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 import { CataloguePageContent } from "@/components/storefront/CataloguePageContent";
 import type { Product } from "@/models/product/Product";
@@ -60,62 +50,46 @@ describe("CataloguePageContent", () => {
     jest.clearAllMocks();
     categoryServiceMock.listCategories.mockResolvedValue([]);
     productServiceMock.search.mockImplementation((products) => products);
-    useDemoCatalogueAvailableMock.mockReturnValue(true);
+    productServiceMock.isVisibleToCustomers.mockReturnValue(true);
   });
 
-  it("redirects to the demo catalogue when the shop has zero products", async () => {
-    productServiceMock.listProducts.mockResolvedValue([]);
-    render(<CataloguePageContent shopId="shop-1" />);
-
-    await waitFor(() =>
-      expect(replaceMock).toHaveBeenCalledWith("/demo-catalogue")
-    );
-  });
-
-  it("renders products and does not redirect when the shop has some", async () => {
-    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
-    render(<CataloguePageContent shopId="shop-1" />);
-
-    expect(await screen.findByTestId("product-card")).toHaveTextContent("p1");
-    expect(replaceMock).not.toHaveBeenCalled();
-  });
-
-  it("does not redirect just because a search/filter matches nothing", async () => {
-    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
-    productServiceMock.search.mockReturnValue([]);
-    render(<CataloguePageContent shopId="shop-1" />);
-
-    await screen.findByText(/Aucun produit ne correspond/);
-    expect(replaceMock).not.toHaveBeenCalled();
-  });
-
-  it("redirects to the demo catalogue when every product is unpublished or trashed (BF-90)", async () => {
-    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
-    productServiceMock.isVisibleToCustomers.mockReturnValue(false);
-    render(<CataloguePageContent shopId="shop-1" />);
-
-    await waitFor(() =>
-      expect(replaceMock).toHaveBeenCalledWith("/demo-catalogue")
-    );
-  });
-
-  it("shows an honest empty state instead of redirecting when the demo catalogue isn't available", async () => {
-    useDemoCatalogueAvailableMock.mockReturnValue(false);
+  // BF-91-ish : cette page est atteinte en visitant une boutique précise,
+  // déjà confirmée publiée par ShopStorefrontPage — jamais de repli vers
+  // /demo-catalogue ici, contrairement à /catalogue (le marché agrégé).
+  it("shows an honest empty state instead of redirecting when the shop has zero products", async () => {
     productServiceMock.listProducts.mockResolvedValue([]);
     render(<CataloguePageContent shopId="shop-1" />);
 
     expect(
       await screen.findByText("Cette boutique n'a pas encore de produit à afficher.")
     ).toBeInTheDocument();
-    expect(replaceMock).not.toHaveBeenCalled();
   });
 
-  it("shows a loading state while demo catalogue availability is still resolving for an empty shop", () => {
-    useDemoCatalogueAvailableMock.mockReturnValue(undefined);
-    productServiceMock.listProducts.mockResolvedValue([]);
+  it("shows an honest empty state when every product is unpublished or trashed (BF-90)", async () => {
+    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
+    productServiceMock.isVisibleToCustomers.mockReturnValue(false);
     render(<CataloguePageContent shopId="shop-1" />);
 
-    expect(screen.getByText("Chargement...")).toBeInTheDocument();
-    expect(replaceMock).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText("Cette boutique n'a pas encore de produit à afficher.")
+    ).toBeInTheDocument();
+  });
+
+  it("renders products when the shop has some", async () => {
+    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
+    render(<CataloguePageContent shopId="shop-1" />);
+
+    expect(await screen.findByTestId("product-card")).toHaveTextContent("p1");
+  });
+
+  it("does not show the empty state just because a search/filter matches nothing", async () => {
+    productServiceMock.listProducts.mockResolvedValue([fakeProduct()]);
+    productServiceMock.search.mockReturnValue([]);
+    render(<CataloguePageContent shopId="shop-1" />);
+
+    await screen.findByText(/Aucun produit ne correspond/);
+    expect(
+      screen.queryByText("Cette boutique n'a pas encore de produit à afficher.")
+    ).not.toBeInTheDocument();
   });
 });

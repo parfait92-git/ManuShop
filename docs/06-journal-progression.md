@@ -1123,4 +1123,76 @@ Fait : section "Moyens de contact client" dans `/dashboard/shop` (verrouillée s
 
 Tests : `whatsapp.test.ts`/`auth.test.ts`/`ShopSettingsForm.test.tsx`/`ProductDetailPageContent.test.tsx` étendus, `clientContactMethods.test.ts` (nouveau).
 
-Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (572 tests, +19, aucune régression). Rien de commité.
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (572 tests, +19, aucune régression).
+
+**Tout ce qui précède depuis "Aucun lien visible vers /super-admin" a ensuite été commité (`58d7e2b`) et déployé en production via PR #22 (`e35e8f3`).**
+
+### 2026-09-27 — `/erreur?code=401` remplacé par `/catalogue`
+
+Capture d'écran de l'utilisateur : se déconnecter depuis une page protégée renvoyait vers `/erreur?code=401` ("Connexion requise") plutôt qu'une page utile — "au lieu de renvoyer dans cette page lorsqu'on se déconnecte ou lorsque la connexion expire, renvoie dans la page catalogue".
+
+Corrigé : `ProtectedRoute`/`SuperAdminRoute` redirigent maintenant vers `/catalogue` quand `firebaseUser` est absent (déconnexion, session expirée ou accès direct jamais connecté) — le lien "Se connecter" reste accessible depuis l'en-tête public. Le cas `403` (rôle non autorisé) reste inchangé, ce message-là restant utile.
+
+Tests : `ProtectedRoute.test.tsx`/`SuperAdminRoute.test.tsx` (nouveaux — aucun test n'existait avant pour ces deux gardes).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (582 tests, +10, aucune régression). Rien de commité.
+
+### 2026-09-27 — La connexion "échouait" quand un autre navigateur avait déjà une session active (BF-123)
+
+Capture d'écran de l'utilisateur (erreurs console sur `/catalogue`) : se connecter pendant qu'un autre navigateur avait déjà une session active sur le même compte ne fonctionnait pas. Question posée pour clarifier (bloquant ou juste du bruit console) : confirmé bloquant.
+
+Diagnostic : les erreurs `Cross-Origin-Opener-Policy` visibles étaient un faux-piste (avertissement bénin connu de `signInWithPopup`). La vraie cause : une course dans `AuthProvider` — `setLocalSessionId` (qui arme l'écouteur de session unique) s'exécutait avant que l'écriture Firestore revendiquant la session ne soit terminée. Sur un navigateur qui vient de se connecter alors qu'un autre a déjà une session, l'écouteur voit une première snapshot avec l'**ancien** id (l'autre navigateur) alors que le sien est déjà le **nouveau** — il se déconnecte donc lui-même, aussitôt après la connexion.
+
+Corrigé : l'écriture est maintenant attendue avant d'armer l'écouteur. Test ajouté à `AuthProvider.test.tsx`, vérifié comme échouant sur l'ancien code avant le correctif (via un `git stash` temporaire), pour confirmer qu'il détecte bien la régression.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (583 tests, +1, aucune régression). Rien de commité.
+
+### 2026-09-27 — Une boutique publiée sans produit se repliait sur la démo au lieu de s'afficher
+
+Demande utilisateur : "si une boutique a été publiée, j'aimerais qu'elle affiche même si elle ne contient pas encore de produit". `CataloguePageContent` (page d'une boutique précise, `/boutique/[shopId]`) redirigeait vers `/demo-catalogue` dès qu'une boutique vide ET qu'aucune autre boutique de la plateforme n'avait encore de vrai produit — une logique qui a du sens pour `/catalogue` (le marché agrégé) mais pas pour la page d'UNE boutique déjà confirmée publiée.
+
+Corrigé : cette page n'utilise plus `useDemoCatalogueAvailable` et ne redirige plus jamais — affiche systématiquement un état honnête "aucun produit" pour une boutique vide. `/catalogue` garde son propre repli, inchangé.
+
+Tests : `CataloguePageContent.test.tsx` réécrit (retire les cas de redirection devenus sans objet).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (581 tests, aucune régression). Rien de commité.
+
+### 2026-09-27 — Catégories non modifiables + produits/catégories publiés par défaut à la création
+
+Demande utilisateur en deux parties : pouvoir modifier tout ce qu'on ajoute (double-clic ou icône), pas être obligé de supprimer/recréer ; et que les produits/catégories créés ne soient pas actifs/publiés par défaut.
+
+Vérifié d'abord ce qui existait : les produits ont déjà un vrai flux d'édition (icône crayon → page dédiée). Les catégories, non — seulement afficher/masquer et supprimer. `CategoryService.updateCategory` existait déjà côté service mais n'était jamais appelé depuis l'UI.
+
+Fait : `EditCategoryDialog` (nouveau) dans `CategoryManager`, ouvrable par double-clic sur la ligne ou icône crayon, réutilise le schéma de validation déjà là. Défaut `isActive: false` pour une nouvelle catégorie, `isPublished: false` pour un nouveau produit (jusque-là absent à la création, donc traité comme publié).
+
+Tests : `CategoryManager.test.tsx` (tests de bascule réécrits pour le nouveau défaut, 3 nouveaux pour l'édition), `ProductForm.test.tsx` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (585 tests, +4, aucune régression). Rien de commité.
+
+### 2026-09-27 — Aucun retour possible vers /dashboard ou /catalogue depuis l'espace Super Admin
+
+Signalé par l'utilisateur : un compte cumulant Super Admin et gérant de boutique n'avait aucun moyen de revenir à son tableau de bord marchand ni à la vitrine publique une fois dans `/super-admin` — symétrique de §34 (qui avait ajouté le lien inverse, vers `/super-admin`, mais jamais celui-ci).
+
+Corrigé : menu profil de `SuperAdminTopbar` étendu avec "Mes boutiques" (`/dashboard`, affiché seulement si le compte gère aussi une boutique) et "Catalogue" (`/catalogue`, toujours affiché).
+
+Tests : `SuperAdminTopbar.test.tsx` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (588 tests, +3, aucune régression). Rien de commité.
+
+### 2026-09-27 — "Nous contacter" de la landing page remplacé par un vrai message au Super Admin
+
+Capture d'écran de l'utilisateur : le bouton "Nous contacter" ouvrait Gmail (`mailto:`). Demandé : un popup objet+message, connexion obligatoire pour envoyer, message reçu dans la boîte du Super Admin, notifié.
+
+Fait : `ContactSuperAdminCta` (dialogue, rédigeable sans être connecté, connexion exigée seulement à l'envoi), nouvelle Server Action `sendContactMessageAction` (même collection que le formulaire premium du tableau de bord, §38, mais sans le gating boutique/premium — n'importe quel compte connecté). Badge de notification (nombre de messages en attente) sur l'item "Messages" de `SuperAdminSidebar`, alimenté par sondage périodique (pas de lecture temps réel possible pour un Super Admin sur cette collection, voir §38).
+
+Tests : `ContactSuperAdminCta.test.tsx`, `HeroSection.test.tsx`, `useNewSupportMessagesCount.test.ts` (nouveaux), `supportMessageActions.test.ts`/`SupportMessageService.test.ts`/`SuperAdminSidebar.test.tsx`/`page.test.tsx` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (610 tests, +22, aucune régression). Rien de commité.
+
+### 2026-09-27 — Tags de catégorie invisibles en production (règles Firestore, encore)
+
+Deux captures d'écran de l'utilisateur : `/super-admin/tags` affichait "Échec du chargement des tags" en production, alors que la console Firebase montrait bien 11 documents dans `categoryTags`. Règle locale déjà correcte, code de lecture sans particularité — même piège récurrent que d'habitude (règles jamais republiées sur la vraie console Firebase).
+
+Ajouté au passage : `console.error` avant le repli sur l'état d'erreur dans les 4 pages Super Admin construites cette session (`CategoryTagsPageContent`, `MerchantsPageContent`, `SupportMessagesPageContent`, `PlatformSettingsPageContent`) — aucune ne loggait, rendant ce diagnostic plus difficile qu'il n'aurait dû l'être. Contenu de `firestore.rules` redonné à l'utilisateur pour republication manuelle.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (610 tests, aucune régression). Rien de commité.

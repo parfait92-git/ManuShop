@@ -87,7 +87,9 @@ function MessageRow({
         <div className="flex min-w-0 flex-col">
           <span className="text-sm font-medium">{message.subject}</span>
           <span className="truncate text-sm text-muted-foreground">
-            {message.shopName} — {message.senderName}
+            {message.shopName
+              ? `${message.shopName} — ${message.senderName}`
+              : `Site web — ${message.senderName}`}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-3">
@@ -142,7 +144,11 @@ export function SupportMessagesPageContent() {
       .then((data) => {
         if (active) setMessages(data);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(
+          "SupportMessagesPageContent : échec du chargement des messages",
+          err
+        );
         if (active) {
           setMessages([]);
           setError("Échec du chargement des messages. Réessayez.");

@@ -14,7 +14,10 @@ const userGetMock = jest.fn();
 const shopGetMock = jest.fn();
 const messageGetMock = jest.fn();
 const listGetMock = jest.fn();
+const countGetMock = jest.fn();
 const orderByMock = jest.fn(() => ({ get: listGetMock }));
+const countMock = jest.fn(() => ({ get: countGetMock }));
+const whereMock = jest.fn(() => ({ count: countMock }));
 
 const usersDocMock = jest.fn(() => ({ get: userGetMock }));
 const shopsDocMock = jest.fn(() => ({ get: shopGetMock }));
@@ -33,6 +36,7 @@ const collectionMock = jest.fn((name: string) => {
     return {
       doc: (id?: string) => (id ? supportDocMock(id) : supportNewDocMock()),
       orderBy: orderByMock,
+      where: whereMock,
     };
   }
   throw new Error(`Unexpected collection: ${name}`);
@@ -46,7 +50,9 @@ import { requireCaller } from "@/server/auth/requireCaller";
 import { requireSuperAdmin } from "@/server/auth/requireSuperAdmin";
 import {
   answerSupportMessageAction,
+  countOpenSupportMessagesAction,
   listSupportMessagesAction,
+  sendContactMessageAction,
   sendSupportMessageAction,
 } from "@/server/actions/supportMessageActions";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
@@ -163,6 +169,76 @@ describe("supportMessageActions", () => {
       requireSuperAdminMock.mockRejectedValue(new ForbiddenError());
       await expect(listSupportMessagesAction("token")).rejects.toThrow(ForbiddenError);
       expect(listGetMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("sendContactMessageAction", () => {
+    it("writes the message for any authenticated caller, without a shop", async () => {
+      userGetMock.mockResolvedValue({ data: () => ({ displayName: "Ada" }) });
+
+      const result = await sendContactMessageAction("token", "Objet", "Message");
+
+      expect(requireCallerMock).toHaveBeenCalledWith("token");
+      expect(shopGetMock).not.toHaveBeenCalled();
+      expect(setMock).toHaveBeenCalledWith({
+        senderId: "u1",
+        senderName: "Ada",
+        subject: "Objet",
+        body: "Message",
+        status: "open",
+        createdAt: "SERVER_TIMESTAMP",
+      });
+      expect(result).toEqual({ id: "msg1" });
+    });
+
+    it("falls back to the caller's email, then 'Visiteur', when no profile name is available", async () => {
+      userGetMock.mockResolvedValue({ data: () => undefined });
+
+      await sendContactMessageAction("token", "Objet", "Message");
+
+      expect(setMock).toHaveBeenCalledWith(
+        expect.objectContaining({ senderName: "merchant@example.com" })
+      );
+    });
+
+    it("rejects an empty subject or body", async () => {
+      userGetMock.mockResolvedValue({ data: () => ({ displayName: "Ada" }) });
+
+      await expect(
+        sendContactMessageAction("token", "  ", "Message")
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        sendContactMessageAction("token", "Objet", "  ")
+      ).rejects.toThrow(ValidationError);
+      expect(setMock).not.toHaveBeenCalled();
+    });
+
+    it("never writes when the caller isn't authenticated", async () => {
+      requireCallerMock.mockRejectedValue(new Error("unauthenticated"));
+      await expect(
+        sendContactMessageAction("token", "Objet", "Message")
+      ).rejects.toThrow();
+      expect(setMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("countOpenSupportMessagesAction", () => {
+    it("re-verifies Super Admin privilege and counts only open messages", async () => {
+      countGetMock.mockResolvedValue({ data: () => ({ count: 4 }) });
+
+      const result = await countOpenSupportMessagesAction("token");
+
+      expect(requireSuperAdminMock).toHaveBeenCalledWith("token");
+      expect(whereMock).toHaveBeenCalledWith("status", "==", "open");
+      expect(result).toBe(4);
+    });
+
+    it("never reads Firestore when the caller isn't Super Admin", async () => {
+      requireSuperAdminMock.mockRejectedValue(new ForbiddenError());
+      await expect(countOpenSupportMessagesAction("token")).rejects.toThrow(
+        ForbiddenError
+      );
+      expect(countGetMock).not.toHaveBeenCalled();
     });
   });
 

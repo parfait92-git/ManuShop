@@ -142,5 +142,11 @@ describe("ProductForm — brouillon local (création uniquement)", () => {
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/dashboard/products"));
     expect(loadProductDraft()).toBeNull();
+    // Non publié par défaut : le commerçant le publie lui-même une fois prêt
+    // (voir ProductList), pas immédiatement visible aux clients dès la
+    // création.
+    expect(mockedProductService.createProduct).toHaveBeenCalledWith(
+      expect.objectContaining({ isPublished: false })
+    );
   });
 });

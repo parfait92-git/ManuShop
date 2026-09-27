@@ -62,6 +62,7 @@ jest.mock("../../services/CategoryService", () => ({
   categoryService: {
     createCategory: jest.fn(),
     setCategoryActive: jest.fn(),
+    updateCategory: jest.fn(),
     deleteCategory: jest.fn(),
   },
 }));
@@ -86,9 +87,28 @@ describe("CategoryManager", () => {
     jest.clearAllMocks();
   });
 
-  it("submits isActive: false when the display toggle is switched off before creating", async () => {
+  it("submits isActive: false by default, without touching the toggle", async () => {
     mockedCategoryService.createCategory.mockResolvedValue(
       fakeCategory({ id: "new-id", isActive: false })
+    );
+    const user = userEvent.setup();
+    render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
+
+    await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
+    await user.type(screen.getByLabelText(/Description/), "Desc");
+    await user.click(screen.getByRole("button", { name: /Créer la catégorie/ }));
+
+    await waitFor(() =>
+      expect(categoryService.createCategory).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({ isActive: false })
+      )
+    );
+  });
+
+  it("submits isActive: true when the display toggle is switched on before creating", async () => {
+    mockedCategoryService.createCategory.mockResolvedValue(
+      fakeCategory({ id: "new-id", isActive: true })
     );
     const user = userEvent.setup();
     render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
@@ -101,7 +121,7 @@ describe("CategoryManager", () => {
     await waitFor(() =>
       expect(categoryService.createCategory).toHaveBeenCalledWith(
         "shop-1",
-        expect.objectContaining({ isActive: false })
+        expect.objectContaining({ isActive: true })
       )
     );
   });
@@ -160,5 +180,61 @@ describe("CategoryManager", () => {
     );
     expect(categoryService.deleteCategory).not.toHaveBeenCalled();
     expect(screen.queryByText(category.name)).not.toBeInTheDocument();
+  });
+
+  describe("modifier une catégorie (double-clic ou icône)", () => {
+    it("opens the edit dialog via the edit icon, pre-filled, and saves changes", async () => {
+      mockedCategoryService.updateCategory.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      const category = fakeCategory();
+      render(
+        <CategoryManager shopId="shop-1" initialCategories={[category]} />
+      );
+
+      await user.click(screen.getByLabelText(`Modifier ${category.name}`));
+
+      const nameField = await screen.findByLabelText("Nom de la catégorie");
+      expect(nameField).toHaveValue("Mode");
+      expect(screen.getByLabelText("Description")).toHaveValue("Vêtements");
+
+      await user.clear(nameField);
+      await user.type(nameField, "Mode & Accessoires");
+      await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+      await waitFor(() =>
+        expect(categoryService.updateCategory).toHaveBeenCalledWith(
+          category.id,
+          { name: "Mode & Accessoires", description: "Vêtements" }
+        )
+      );
+      expect(await screen.findByText("Mode & Accessoires")).toBeInTheDocument();
+    });
+
+    it("also opens the edit dialog on a double-click on the row", async () => {
+      const user = userEvent.setup();
+      const category = fakeCategory();
+      render(
+        <CategoryManager shopId="shop-1" initialCategories={[category]} />
+      );
+
+      await user.dblClick(screen.getByText(category.name));
+
+      expect(await screen.findByText("Modifier la catégorie")).toBeInTheDocument();
+    });
+
+    it("closes without saving when cancelled", async () => {
+      const user = userEvent.setup();
+      const category = fakeCategory();
+      render(
+        <CategoryManager shopId="shop-1" initialCategories={[category]} />
+      );
+
+      await user.click(screen.getByLabelText(`Modifier ${category.name}`));
+      await screen.findByText("Modifier la catégorie");
+      await user.click(screen.getByRole("button", { name: "Annuler" }));
+
+      expect(screen.queryByText("Modifier la catégorie")).not.toBeInTheDocument();
+      expect(categoryService.updateCategory).not.toHaveBeenCalled();
+    });
   });
 });

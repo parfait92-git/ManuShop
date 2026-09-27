@@ -115,7 +115,11 @@ export function MerchantsPageContent() {
       .then((data) => {
         if (active) setMerchants(data);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(
+          "MerchantsPageContent : échec du chargement des commerçants",
+          err
+        );
         if (active) {
           setMerchants([]);
           setError("Échec du chargement des commerçants. Réessayez.");

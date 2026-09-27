@@ -6,7 +6,9 @@ import { supportMessageRepository } from "@/repositories/SupportMessageRepositor
 import type { ISupportMessageRepository } from "@/repositories/interfaces/ISupportMessageRepository";
 import {
   answerSupportMessageAction,
+  countOpenSupportMessagesAction,
   listSupportMessagesAction,
+  sendContactMessageAction,
   sendSupportMessageAction,
   type SupportMessageDto,
 } from "@/server/actions/supportMessageActions";
@@ -46,10 +48,25 @@ export class SupportMessageService {
     return sendSupportMessageAction(await this.getCallerIdToken(), subject, body);
   }
 
+  /** Bouton "Nous contacter" de la landing page — n'importe quel compte
+   * connecté, pas seulement un commerçant premium (voir
+   * `sendContactMessageAction`). */
+  async sendContactMessage(
+    subject: string,
+    body: string
+  ): Promise<{ id: string }> {
+    return sendContactMessageAction(await this.getCallerIdToken(), subject, body);
+  }
+
   /** BF-113 : Super Admin uniquement. */
   async listAllMessages(): Promise<SupportMessage[]> {
     const dtos = await listSupportMessagesAction(await this.getCallerIdToken());
     return dtos.map(fromSupportMessageDto);
+  }
+
+  /** Alimente le badge de `SuperAdminSidebar` — Super Admin uniquement. */
+  async countOpenMessages(): Promise<number> {
+    return countOpenSupportMessagesAction(await this.getCallerIdToken());
   }
 
   /** BF-114 : Super Admin uniquement. */
