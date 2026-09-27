@@ -161,4 +161,66 @@ describe("ShopSettingsForm", () => {
       )
     );
   });
+
+  it("pre-fills the description and saves changes to it", async () => {
+    mockedShopService.getShop.mockResolvedValue(
+      fakeShop({ description: "Mode et accessoires artisanaux." })
+    );
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    const descriptionField = await screen.findByLabelText("Description");
+    expect(descriptionField).toHaveValue("Mode et accessoires artisanaux.");
+
+    await user.type(descriptionField, " Livraison rapide.");
+    await user.click(
+      screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+    );
+
+    await waitFor(() =>
+      expect(shopService.updateProfile).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({
+          description: "Mode et accessoires artisanaux. Livraison rapide.",
+        })
+      )
+    );
+  });
+
+  it("rebinds the social network link field to the chosen primary network (BF-128)", async () => {
+    mockedShopService.getShop.mockResolvedValue(
+      fakeShop({
+        primarySocialNetwork: "whatsapp",
+        instagramUrl: "https://instagram.com/awaboutique",
+      })
+    );
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    await screen.findByLabelText(/Lien de votre page WhatsApp/);
+
+    await user.selectOptions(
+      screen.getByLabelText("Réseau social principal"),
+      "instagram"
+    );
+
+    const linkField = await screen.findByLabelText(/Lien de votre page Instagram/);
+    expect(linkField).toHaveValue("https://instagram.com/awaboutique");
+
+    await user.click(
+      screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+    );
+
+    await waitFor(() =>
+      expect(shopService.updateProfile).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({
+          primarySocialNetwork: "instagram",
+          instagramUrl: "https://instagram.com/awaboutique",
+        })
+      )
+    );
+  });
 });

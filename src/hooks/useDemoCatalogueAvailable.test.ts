@@ -78,11 +78,16 @@ describe("useDemoCatalogueAvailable", () => {
   });
 
   it("falls back to true (never stuck loading) when a read fails, e.g. rules not deployed yet", async () => {
-    isDemoCatalogueForceDisabledMock.mockRejectedValue(
-      new Error("Missing or insufficient permissions.")
-    );
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("Missing or insufficient permissions.");
+    isDemoCatalogueForceDisabledMock.mockRejectedValue(error);
     const { result } = renderHook(() => useDemoCatalogueAvailable());
 
     await waitFor(() => expect(result.current).toBe(true));
+    // Sans ce log, un vrai bug (pas seulement des règles non déployées) se
+    // replie silencieusement sur la démo sans laisser la moindre trace —
+    // voir 04-besoins-techniques.md §31.
+    expect(consoleError).toHaveBeenCalledWith(expect.any(String), error);
+    consoleError.mockRestore();
   });
 });

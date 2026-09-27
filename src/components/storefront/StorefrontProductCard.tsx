@@ -3,8 +3,9 @@
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { toast } from "sonner";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
@@ -28,7 +29,8 @@ export function StorefrontProductCard({
   shopHref?: string;
 }) {
   const addItem = useCartStore((state) => state.addItem);
-  const [liked, setLiked] = useState(false);
+  const { firebaseUser, profile, toggleFavorite } = useAuth();
+  const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
   const badge = productService.getBadge(product);
   const price = product.isPromo && product.promoPrice ? product.promoPrice : product.price;
 
@@ -73,12 +75,21 @@ export function StorefrontProductCard({
 
       <button
         type="button"
-        onClick={() => setLiked((value) => !value)}
+        onClick={() => {
+          if (!firebaseUser) {
+            toast.error("Connectez-vous pour ajouter un article à vos favoris.");
+            return;
+          }
+          toggleFavorite(product.id);
+        }}
         aria-label={liked ? "Retirer des favoris" : "Ajouter aux favoris"}
         aria-pressed={liked}
         className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-background"
       >
-        <Heart className="size-4" fill={liked ? "currentColor" : "none"} />
+        <Heart
+          className={`size-4 ${liked ? "text-destructive" : ""}`}
+          fill={liked ? "currentColor" : "none"}
+        />
       </button>
 
       <div className="flex flex-col gap-2 p-4 pt-2">
@@ -101,6 +112,7 @@ export function StorefrontProductCard({
               name: product.name,
               price,
               image: product.images[0] ?? "",
+              stock: product.stock,
             })
           }
         >

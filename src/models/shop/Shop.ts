@@ -21,6 +21,10 @@ export interface Shop {
   id: string;
   name: string;
   logo: string;
+  /** Présentée sur la fiche produit (bloc vendeur, BF-128) et dans les
+   * paramètres de boutique — absente des boutiques créées avant l'ajout de
+   * ce champ. */
+  description?: string;
   address: string;
   phone: string;
   whatsapp: string;

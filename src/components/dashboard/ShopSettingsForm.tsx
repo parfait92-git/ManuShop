@@ -23,19 +23,16 @@ import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
 import { ShareShopLinkButton } from "@/components/dashboard/ShareShopLinkButton";
 import {
+  SOCIAL_NETWORK_LABELS,
+  SOCIAL_NETWORK_URL_FIELD,
+} from "@/lib/shopSocialNetworks";
+import {
   ShopSettingsSchema,
   type ShopSettingsInput,
 } from "@/lib/validation/auth";
 import type { PrimarySocialNetwork, Shop } from "@/models/shop/Shop";
 import { activityLogService } from "@/services/ActivityLogService";
 import { shopService } from "@/services/ShopService";
-
-const NETWORK_LABELS: Record<PrimarySocialNetwork, string> = {
-  whatsapp: "WhatsApp",
-  facebook: "Facebook",
-  instagram: "Instagram",
-  tiktok: "TikTok",
-};
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -48,12 +45,17 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
   return {
     name: shop.name,
     logo: shop.logo,
+    description: shop.description ?? "",
     address: shop.address,
     phone: shop.phone,
     whatsapp: shop.whatsapp,
     language: (shop.language as "fr" | "en") ?? "fr",
     currency: (shop.currency as "XAF" | "EUR" | "USD") ?? "XAF",
     primarySocialNetwork: shop.primarySocialNetwork ?? "whatsapp",
+    facebookUrl: shop.facebookUrl ?? "",
+    instagramUrl: shop.instagramUrl ?? "",
+    tiktokUrl: shop.tiktokUrl ?? "",
+    whatsappBusinessUrl: shop.whatsappBusinessUrl ?? "",
     notifyOrdersByEmail: shop.notifyOrdersByEmail ?? true,
     notifyOrdersBySocial: shop.notifyOrdersBySocial ?? true,
     urgentPhoneAlerts: shop.urgentPhoneAlerts ?? true,
@@ -251,6 +253,25 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               )}
             </div>
 
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="description" className="gap-1.5">
+                Description
+                <FieldHint text="Présentée sur la fiche de vos produits, pour donner confiance à vos clients (qui vous êtes, ce que vous proposez)." />
+              </Label>
+              <textarea
+                id="description"
+                rows={3}
+                aria-invalid={!!errors.description}
+                className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-input dark:bg-input/30"
+                {...register("description")}
+              />
+              {errors.description && (
+                <p className="text-sm text-destructive">
+                  {errors.description.message}
+                </p>
+              )}
+            </div>
+
             {/* Colonne unique, pas grid-cols-2 : un PhoneInput (sélecteur de
             pays + numéro) a besoin de plus de largeur qu'un champ texte
             simple ; le forcer dans une demi-colonne écrasait le numéro. */}
@@ -354,7 +375,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                 id="primarySocialNetwork"
                 {...register("primarySocialNetwork")}
               >
-                {Object.entries(NETWORK_LABELS).map(([value, label]) => (
+                {Object.entries(SOCIAL_NETWORK_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -363,11 +384,39 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
 
             {primarySocialNetwork && (
-              <p className="rounded-lg bg-primary/5 px-4 py-3 text-sm">
-                <span className="font-semibold">Format recommandé : </span>
-                Carré 1:1 —{" "}
-                {NETWORK_FORMAT_HINT[primarySocialNetwork as PrimarySocialNetwork]}
-              </p>
+              <>
+                <p className="rounded-lg bg-primary/5 px-4 py-3 text-sm">
+                  <span className="font-semibold">Format recommandé : </span>
+                  Carré 1:1 —{" "}
+                  {NETWORK_FORMAT_HINT[primarySocialNetwork as PrimarySocialNetwork]}
+                </p>
+
+                {/* BF-128 : un seul champ, rebranché dynamiquement sur le
+                champ Firestore correspondant au réseau choisi ci-dessus
+                (voir `lib/shopSocialNetworks.ts`) — affiché sur la fiche
+                produit plutôt que de montrer les 4 liens en permanence. */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="primarySocialNetworkUrl" className="gap-1.5">
+                    Lien de votre page {SOCIAL_NETWORK_LABELS[primarySocialNetwork as PrimarySocialNetwork]}
+                    <FieldHint text="Affiché sur la fiche de vos produits, pour que vos clients puissent vous retrouver sur ce réseau." />
+                  </Label>
+                  <Input
+                    id="primarySocialNetworkUrl"
+                    placeholder="https://..."
+                    aria-invalid={
+                      !!errors[SOCIAL_NETWORK_URL_FIELD[primarySocialNetwork as PrimarySocialNetwork]]
+                    }
+                    {...register(
+                      SOCIAL_NETWORK_URL_FIELD[primarySocialNetwork as PrimarySocialNetwork]
+                    )}
+                  />
+                  {errors[SOCIAL_NETWORK_URL_FIELD[primarySocialNetwork as PrimarySocialNetwork]] && (
+                    <p className="text-sm text-destructive">
+                      {errors[SOCIAL_NETWORK_URL_FIELD[primarySocialNetwork as PrimarySocialNetwork]]?.message}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
           </section>
 

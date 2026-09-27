@@ -20,17 +20,34 @@ jest.mock("../../services/ReviewService", () => ({
   },
 }));
 
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+jest.mock("../../services/ShopService", () => ({
+  shopService: {
+    getShop: jest.fn(),
+  },
+}));
+
+const useAuthMock = jest.fn();
+jest.mock("../providers/AuthProvider", () => ({
+  useAuth: (...args: unknown[]) => useAuthMock(...args),
+}));
+
+const toastErrorMock = jest.fn();
+jest.mock("sonner", () => ({ toast: { error: (...args: unknown[]) => toastErrorMock(...args) } }));
+
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { ProductDetailPageContent } from "@/components/storefront/ProductDetailPageContent";
 import type { Product } from "@/models/product/Product";
 import type { Review } from "@/models/review/Review";
+import type { Shop } from "@/models/shop/Shop";
 import { productService } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
+import { shopService } from "@/services/ShopService";
 
 const productServiceMock = productService as jest.Mocked<typeof productService>;
 const reviewServiceMock = reviewService as jest.Mocked<typeof reviewService>;
+const shopServiceMock = shopService as jest.Mocked<typeof shopService>;
+const toggleFavoriteMock = jest.fn();
 
 function fakeProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -63,10 +80,31 @@ function fakeReview(overrides: Partial<Review> = {}): Review {
   };
 }
 
+function fakeShop(overrides: Partial<Shop> = {}): Shop {
+  return {
+    id: "shop-1",
+    name: "Boutique Awa",
+    logo: "",
+    address: "Douala",
+    phone: "",
+    whatsapp: "",
+    currency: "XAF",
+    ownerId: "u1",
+    createdAt: { toDate: () => new Date("2024-01-15T00:00:00Z") } as never,
+    ...overrides,
+  };
+}
+
 describe("ProductDetailPageContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     reviewServiceMock.listByProduct.mockResolvedValue([]);
+    shopServiceMock.getShop.mockResolvedValue(null);
+    useAuthMock.mockReturnValue({
+      firebaseUser: { uid: "u1" },
+      profile: { favoriteProductIds: [] },
+      toggleFavorite: toggleFavoriteMock,
+    });
   });
 
   it("shows a not-found state when the product doesn't exist", async () => {
@@ -128,16 +166,92 @@ describe("ProductDetailPageContent", () => {
     expect(screen.getByText("Aucun avis pour le moment.")).toBeInTheDocument();
   });
 
-  it("toggles the favorite button", async () => {
+  it("does not show a seller block when the shop can't be resolved", async () => {
     productServiceMock.getProduct.mockResolvedValue(fakeProduct());
-    const user = userEvent.setup();
     render(<ProductDetailPageContent productId="p1" />);
 
-    await user.click(
+    await screen.findByText("Sac à main artisanal");
+    expect(screen.queryByText("Vendu par")).not.toBeInTheDocument();
+  });
+
+  it("shows the seller's name, age, description and social link (BF-128)", async () => {
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    shopServiceMock.getShop.mockResolvedValue(
+      fakeShop({
+        description: "Mode et accessoires artisanaux à Douala.",
+        primarySocialNetwork: "instagram",
+        instagramUrl: "https://instagram.com/boutiqueawa",
+        createdAt: {
+          toDate: () => new Date(Date.now() - 400 * 24 * 60 * 60 * 1000),
+        } as never,
+      })
+    );
+    render(<ProductDetailPageContent productId="p1" />);
+
+    expect(await screen.findByText("Vendu par")).toBeInTheDocument();
+    const shopLink = screen.getByRole("link", { name: /Boutique Awa/ });
+    expect(shopLink).toHaveAttribute("href", "/boutique/shop-1");
+    expect(
+      screen.getByText("Mode et accessoires artisanaux à Douala.")
+    ).toBeInTheDocument();
+
+    const socialLink = screen.getByRole("link", { name: /Voir sur Instagram/ });
+    expect(socialLink).toHaveAttribute(
+      "href",
+      "https://instagram.com/boutiqueawa"
+    );
+    expect(socialLink).toHaveAttribute("target", "_blank");
+  });
+
+  it("falls back to a default icon and hides optional sections when unset", async () => {
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    shopServiceMock.getShop.mockResolvedValue(fakeShop());
+    render(<ProductDetailPageContent productId="p1" />);
+
+    const sellerHeading = await screen.findByText("Vendu par");
+    const sellerBlock = sellerHeading.closest("div")!;
+    expect(within(sellerBlock).queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Voir sur/ })).not.toBeInTheDocument();
+  });
+
+  it("toggles a signed-in visitor's favorite (BF-129)", async () => {
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    render(<ProductDetailPageContent productId="p1" />);
+
+    fireEvent.click(
       await screen.findByRole("button", { name: "Ajouter aux favoris" })
     );
+    expect(toggleFavoriteMock).toHaveBeenCalledWith("p1");
+  });
+
+  it("reflects the profile's real favorites", async () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: { uid: "u1" },
+      profile: { favoriteProductIds: ["p1"] },
+      toggleFavorite: toggleFavoriteMock,
+    });
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    render(<ProductDetailPageContent productId="p1" />);
+
     expect(
-      screen.getByRole("button", { name: "Retirer des favoris" })
+      await screen.findByRole("button", { name: "Retirer des favoris" })
     ).toBeInTheDocument();
+  });
+
+  it("prompts a guest to sign in instead of toggling anything", async () => {
+    useAuthMock.mockReturnValue({
+      firebaseUser: null,
+      profile: null,
+      toggleFavorite: toggleFavoriteMock,
+    });
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    render(<ProductDetailPageContent productId="p1" />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Ajouter aux favoris" })
+    );
+
+    expect(toggleFavoriteMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).toHaveBeenCalled();
   });
 });

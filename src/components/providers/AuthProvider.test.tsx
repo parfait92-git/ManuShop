@@ -18,6 +18,8 @@ const onAuthStateChangedMock = jest.fn((callback: (user: unknown) => void) => {
 const getUserProfileMock = jest.fn();
 const updateProfileMock = jest.fn();
 const logoutMock = jest.fn();
+const addFavoriteMock = jest.fn();
+const removeFavoriteMock = jest.fn();
 jest.mock("../../services/AuthService", () => ({
   authService: {
     onAuthStateChanged: (...args: [(user: unknown) => void]) =>
@@ -25,6 +27,8 @@ jest.mock("../../services/AuthService", () => ({
     getUserProfile: (...args: unknown[]) => getUserProfileMock(...args),
     updateProfile: (...args: unknown[]) => updateProfileMock(...args),
     logout: (...args: unknown[]) => logoutMock(...args),
+    addFavorite: (...args: unknown[]) => addFavoriteMock(...args),
+    removeFavorite: (...args: unknown[]) => removeFavoriteMock(...args),
   },
 }));
 
@@ -49,9 +53,10 @@ jest.mock("firebase/firestore", () => ({
 const toastErrorMock = jest.fn();
 jest.mock("sonner", () => ({ toast: { error: (...args: unknown[]) => toastErrorMock(...args) } }));
 
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { AuthProvider, useAuth } from "@/components/providers/AuthProvider";
+import { auth } from "@/lib/firebase";
 import type { User } from "@/models/user/User";
 
 function fakeUser(overrides: Partial<User> = {}): User {
@@ -65,12 +70,18 @@ function fakeUser(overrides: Partial<User> = {}): User {
 }
 
 function Probe() {
-  const { profile, loading, isSuperAdmin } = useAuth();
+  const { profile, loading, isSuperAdmin, toggleFavorite } = useAuth();
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
       <span data-testid="profile">{profile ? profile.displayName : "none"}</span>
       <span data-testid="super-admin">{String(isSuperAdmin)}</span>
+      <span data-testid="favorites">
+        {(profile?.favoriteProductIds ?? []).join(",")}
+      </span>
+      <button type="button" onClick={() => toggleFavorite("product-1")}>
+        toggle
+      </button>
     </div>
   );
 }
@@ -82,6 +93,7 @@ describe("AuthProvider", () => {
     snapshotCallback = undefined;
     isSuperAdminMock.mockResolvedValue(false);
     updateProfileMock.mockResolvedValue(undefined);
+    (auth as { currentUser: unknown }).currentUser = null;
   });
 
   async function triggerAuthState(user: unknown) {
@@ -196,5 +208,93 @@ describe("AuthProvider", () => {
     });
 
     expect(logoutMock).not.toHaveBeenCalled();
+  });
+
+  describe("toggleFavorite (BF-129)", () => {
+    it("adds a product optimistically and persists it", async () => {
+      getUserProfileMock.mockResolvedValue(fakeUser());
+      getLocalSessionIdMock.mockReturnValue("existing-session");
+      addFavoriteMock.mockResolvedValue(undefined);
+      render(
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      );
+      await triggerAuthState({ uid: "uid-1", email: "a@b.com" });
+      await waitFor(() =>
+        expect(screen.getByTestId("profile")).toHaveTextContent("Ada Diallo")
+      );
+      (auth as { currentUser: unknown }).currentUser = { uid: "uid-1" };
+
+      fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+
+      // Optimiste : visible avant même que la promesse se résolve.
+      expect(screen.getByTestId("favorites")).toHaveTextContent("product-1");
+      await waitFor(() =>
+        expect(addFavoriteMock).toHaveBeenCalledWith("uid-1", "product-1")
+      );
+    });
+
+    it("removes an already-favorited product", async () => {
+      getUserProfileMock.mockResolvedValue(
+        fakeUser({ favoriteProductIds: ["product-1"] })
+      );
+      getLocalSessionIdMock.mockReturnValue("existing-session");
+      removeFavoriteMock.mockResolvedValue(undefined);
+      render(
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      );
+      await triggerAuthState({ uid: "uid-1", email: "a@b.com" });
+      await waitFor(() =>
+        expect(screen.getByTestId("favorites")).toHaveTextContent("product-1")
+      );
+      (auth as { currentUser: unknown }).currentUser = { uid: "uid-1" };
+
+      fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+
+      expect(screen.getByTestId("favorites")).toHaveTextContent("");
+      await waitFor(() =>
+        expect(removeFavoriteMock).toHaveBeenCalledWith("uid-1", "product-1")
+      );
+    });
+
+    it("reverts the optimistic update and warns on failure", async () => {
+      getUserProfileMock.mockResolvedValue(fakeUser());
+      getLocalSessionIdMock.mockReturnValue("existing-session");
+      addFavoriteMock.mockRejectedValue(new Error("network"));
+      render(
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      );
+      await triggerAuthState({ uid: "uid-1", email: "a@b.com" });
+      await waitFor(() =>
+        expect(screen.getByTestId("profile")).toHaveTextContent("Ada Diallo")
+      );
+      (auth as { currentUser: unknown }).currentUser = { uid: "uid-1" };
+
+      fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+
+      await waitFor(() =>
+        expect(screen.getByTestId("favorites")).toHaveTextContent("")
+      );
+      expect(toastErrorMock).toHaveBeenCalled();
+    });
+
+    it("does nothing when nobody is signed in", async () => {
+      render(
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>
+      );
+      await triggerAuthState(null);
+
+      fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+
+      expect(addFavoriteMock).not.toHaveBeenCalled();
+      expect(removeFavoriteMock).not.toHaveBeenCalled();
+    });
   });
 });

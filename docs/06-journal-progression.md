@@ -1020,3 +1020,39 @@ Le correctif `CLOUDINARY_URL` n'a pas suffi. Logs de fonction Vercel demandés �
 Tests : `firebaseAdmin.test.ts` (nouveau, simule le crash réel).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (427 tests, +2, aucune régression). À confirmer par l'utilisateur une fois déployé.
+
+### 2026-09-27 — Informations vendeur sur la fiche produit (BF-128)
+
+Demande de l'utilisateur : bloc "vendeur" sur la fiche produit — logo, nom, description, durée d'existence de la boutique, lien vers sa page réseau social principale. En explorant le modèle : `primarySocialNetwork` et les 4 champs d'URL existaient déjà sur `Shop` mais n'étaient reliés à aucun champ de formulaire (jamais remplissables) ; `description` n'existait pas.
+
+**Fait :**
+- `Shop.description` (nouveau champ), éditable dans `ShopSettingsForm`.
+- Un seul champ dynamique "Lien de votre page {réseau}" dans `ShopSettingsForm`, rebranché sur le bon champ Firestore selon le réseau principal choisi — pas 4 champs toujours visibles (`lib/shopSocialNetworks.ts`, nouveau, partage aussi les libellés déjà dupliqués localement).
+- `lib/shopAge.ts` (nouveau) : "Depuis N mois/ans" à partir de `createdAt`.
+- `ProductDetailPageContent` charge la boutique du produit et affiche le bloc "Vendu par" (logo avec repli, nom lié à la page boutique, ancienneté, description et lien réseau si renseignés — chacun masqué individuellement sinon).
+
+Tests : `shopAge.test.ts`, `shopSocialNetworks.test.ts` (nouveaux), `ShopSettingsForm.test.tsx`/`ProductDetailPageContent.test.tsx`/`lib/validation/auth.test.ts` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (444 tests, +22, aucune régression). Rien de commité.
+
+### 2026-09-27 — Vraie cause du repli permanent sur `/demo-catalogue` (règles Firestore, encore) + logo externe non whitelisté
+
+`/catalogue` continuait à basculer vers `/demo-catalogue` malgré 2 boutiques publiées avec de vrais produits publiés. `useDemoCatalogueAvailable()` avalait toute erreur sans logger — ajouté un `console.error`, qui a immédiatement révélé `Missing or insufficient permissions` : les règles Firestore (bloc `configuration`, ajouté la veille pour BF-122) n'avaient encore une fois jamais été republiées sur la vraie console Firebase. Contenu de `firestore.rules` redonné à l'utilisateur, résolu après republication.
+
+Une fois corrigé, nouveau blocage : une boutique avec un logo en lien externe (pas un upload Cloudinary) faisait planter `next/image` (domaine non whitelisté). Corrigé en ajoutant `unoptimized` aux 3 endroits qui affichent un logo de boutique venant de Firestore (`ShopSummaryCard`, bloc vendeur BF-128, en-tête BF-124) — un champ "collez n'importe quel lien" est structurellement incompatible avec l'allowlist de domaines de Next.js.
+
+Tests : `useDemoCatalogueAvailable.test.ts` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (444 tests, aucune régression). Règles Firestore confirmées résolues par l'utilisateur ; correctif `unoptimized` à confirmer après déploiement.
+
+### 2026-09-27 — Survente possible (BF-130) et favoris persistants (BF-129)
+
+Deux signalements de l'utilisateur : "le like ne fait absolument rien sur les articles, et j'ai pu commander 60 articles alors qu'il n'y a que 50 en stock, sans avertissement". Clarifié le périmètre des favoris avec une question (vrais favoris persistants vs. juste le visuel) : l'utilisateur a choisi la version complète.
+
+**Survente (BF-130)** : `createOrderAction` documentait déjà cette limite comme connue, jamais corrigée. `cartStore` gagne un `stock` par article (borne la quantité côté client, confort seulement) ; `createOrderAction` passe d'un `batch()` (qui ne lisait jamais rien) à une **transaction Firestore** qui relit le stock réel avant d'écrire et rejette la commande si insuffisant — la seule vérification qui compte, protège aussi contre une commande concurrente sur le même produit. Message d'erreur réel affiché au client cette fois (exception à la convention "messages génériques" du projet, justifiée : règle métier actionnable).
+
+**Favoris (BF-129)** : le cœur était un `useState` purement local, jamais enregistré. `User.favoriteProductIds` (tableau, `arrayUnion`/`arrayRemove`) + `AuthProvider.toggleFavorite()` (optimiste, partagé par toute l'app via `useAuth()`, annulé + toast si Firestore échoue). Nouvelle page `/mes-favoris`. Aucun changement de règles Firestore nécessaire (la règle d'auto-modification de `users` couvrait déjà ce nouveau champ).
+
+Tests : `cartStore.test.ts`, `CartPanel.test.tsx` (nouveau), `orderActions.test.ts`, `PaymentMethodPageContent.test.tsx`, `AuthService.test.ts`, `AuthProvider.test.tsx`, `StorefrontProductCard.test.tsx`, `ProductDetailPageContent.test.tsx`, `StorefrontHeader.test.tsx` étendus ; `FavoritesPageContent.test.tsx` (nouveau).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (33 routes, +1) et `npm run test:coverage` (472 tests, +28, aucune régression). Rien de commité.

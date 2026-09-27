@@ -35,6 +35,11 @@ export function ShopSummaryCard({
             fill
             sizes="(min-width: 1024px) 16vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110"
+            // Le logo peut venir d'une URL externe collée à la main (mode
+            // "Lien" de `ShopLogoStep`/`ShopSettingsForm`), pas seulement
+            // d'un upload Cloudinary — impossible de whitelister tous les
+            // hébergeurs d'images possibles dans `next.config.ts`.
+            unoptimized
           />
         ) : (
           <div className="flex size-full items-center justify-center">

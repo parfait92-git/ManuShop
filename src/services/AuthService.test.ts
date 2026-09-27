@@ -114,6 +114,8 @@ describe("AuthService", () => {
       update: jest.fn(),
       listByShop: jest.fn(),
       listAll: jest.fn(),
+      addFavorite: jest.fn(),
+      removeFavorite: jest.fn(),
     };
     shops = {
       getById: jest.fn(),
@@ -351,6 +353,16 @@ describe("AuthService", () => {
       expect(users.update).toHaveBeenCalledWith("uid-1", {
         displayName: "Ada Diallo",
       });
+    });
+  });
+
+  describe("addFavorite / removeFavorite", () => {
+    it("delegates to the user repository", async () => {
+      await service.addFavorite("uid-1", "product-1");
+      expect(users.addFavorite).toHaveBeenCalledWith("uid-1", "product-1");
+
+      await service.removeFavorite("uid-1", "product-1");
+      expect(users.removeFavorite).toHaveBeenCalledWith("uid-1", "product-1");
     });
   });
 

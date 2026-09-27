@@ -40,11 +40,18 @@ export function useDemoCatalogueAvailable() {
         );
 
         if (active) setAvailable(!hasRealInventory);
-      } catch {
+      } catch (error) {
         // Une lecture a échoué (règles pas encore déployées, hors ligne...)
         // — ne jamais laisser la page appelante bloquée indéfiniment sur
         // "Chargement..." : repli sur le comportement historique (démo
-        // affichée) plutôt qu'un état indéterminé.
+        // affichée) plutôt qu'un état indéterminé. `console.error` : sans
+        // ça, cette page se replie silencieusement sur la démo sans laisser
+        // la moindre trace en cas de bug réel (voir
+        // 04-besoins-techniques.md §31).
+        console.error(
+          "useDemoCatalogueAvailable : échec de la détection d'inventaire réel, repli sur la démo",
+          error
+        );
         if (active) setAvailable(true);
       }
     }

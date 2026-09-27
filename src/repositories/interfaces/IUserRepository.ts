@@ -11,4 +11,9 @@ export interface IUserRepository {
   /** Réservé au Super Admin (BF-68) — la règle Firestore qui l'autorise ne
    * s'applique qu'à ce rôle. */
   listAll(): Promise<User[]>;
+  /** BF-129 : `arrayUnion`/`arrayRemove`, pas une lecture puis réécriture du
+   * tableau complet — évite d'écraser un ajout/retrait concurrent (deux
+   * onglets du même navigateur, par ex.). */
+  addFavorite(id: string, productId: string): Promise<void>;
+  removeFavorite(id: string, productId: string): Promise<void>;
 }

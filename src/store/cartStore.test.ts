@@ -58,6 +58,28 @@ describe("useCartStore", () => {
     useCartStore.getState().clear();
     expect(useCartStore.getState().items).toEqual([]);
   });
+
+  it("caps the quantity to the known stock when adding a new item", () => {
+    useCartStore.getState().addItem({ ...shoes, stock: 3 }, 5);
+    expect(useCartStore.getState().items[0].quantity).toBe(3);
+  });
+
+  it("caps the total quantity to stock when adding more of an item already in the cart", () => {
+    useCartStore.getState().addItem({ ...shoes, stock: 3 }, 2);
+    useCartStore.getState().addItem({ ...shoes, stock: 3 }, 5);
+    expect(useCartStore.getState().items[0].quantity).toBe(3);
+  });
+
+  it("caps updateQuantity to the item's known stock", () => {
+    useCartStore.getState().addItem({ ...shoes, stock: 3 });
+    useCartStore.getState().updateQuantity("p1", 10);
+    expect(useCartStore.getState().items[0].quantity).toBe(3);
+  });
+
+  it("does not cap the quantity when no stock is known (item added before this field existed)", () => {
+    useCartStore.getState().addItem(shoes, 999);
+    expect(useCartStore.getState().items[0].quantity).toBe(999);
+  });
 });
 
 describe("cartItemCount / cartTotal", () => {

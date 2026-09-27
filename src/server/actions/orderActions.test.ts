@@ -18,6 +18,29 @@ const batchMock = jest.fn(() => ({
   commit: batchCommitMock,
 }));
 
+// `createOrderAction` utilise une transaction (pas `batch()`, qui ne lit
+// jamais rien — voir le commentaire sur la fonction) : simule l'API
+// `runTransaction` de firebase-admin en appelant directement le callback
+// avec un objet transaction dont `get`/`set`/`update` sont ces mêmes mocks.
+const transactionGetMock = jest.fn();
+const transactionSetMock = jest.fn();
+const transactionUpdateMock = jest.fn();
+const runTransactionMock = jest.fn(
+  async (
+    updateFunction: (transaction: {
+      get: typeof transactionGetMock;
+      set: typeof transactionSetMock;
+      update: typeof transactionUpdateMock;
+    }) => Promise<void>
+  ) => {
+    await updateFunction({
+      get: transactionGetMock,
+      set: transactionSetMock,
+      update: transactionUpdateMock,
+    });
+  }
+);
+
 const userGetMock = jest.fn();
 const userDocMock = jest.fn(() => ({ get: userGetMock }));
 
@@ -41,7 +64,11 @@ const collectionMock = jest.fn((name: string) => {
 });
 
 jest.mock("../../lib/firebaseAdmin", () => ({
-  getAdminDb: () => ({ collection: collectionMock, batch: batchMock }),
+  getAdminDb: () => ({
+    collection: collectionMock,
+    batch: batchMock,
+    runTransaction: runTransactionMock,
+  }),
 }));
 
 const sendOrderNotificationMock = jest.fn();
@@ -67,6 +94,12 @@ describe("createOrderAction", () => {
     shopGetMock.mockResolvedValue({
       data: () => ({ whatsapp: "+237600000001", notifyOrdersBySocial: true }),
     });
+    // Stock largement suffisant par défaut — chaque test de survente le
+    // redéfinit explicitement (`mockResolvedValueOnce`).
+    transactionGetMock.mockResolvedValue({
+      exists: true,
+      data: () => ({ stock: 100 }),
+    });
   });
 
   it("creates the order under the caller's own clientId and decrements stock", async () => {
@@ -81,7 +114,7 @@ describe("createOrderAction", () => {
     });
 
     expect(collectionMock).toHaveBeenCalledWith("orders");
-    expect(batchSetMock).toHaveBeenCalledWith(
+    expect(transactionSetMock).toHaveBeenCalledWith(
       expect.objectContaining({ id: "order-new" }),
       expect.objectContaining({
         shopId: "shop-1",
@@ -89,11 +122,10 @@ describe("createOrderAction", () => {
         status: "under_review",
       })
     );
-    expect(batchUpdateMock).toHaveBeenCalledWith(
+    expect(transactionUpdateMock).toHaveBeenCalledWith(
       { __ref: "products/p1" },
       { stock: { __op: "increment", n: -2 } }
     );
-    expect(batchCommitMock).toHaveBeenCalled();
     expect(result).toEqual({ orderId: "order-new" });
     expect(sendOrderNotificationMock).toHaveBeenCalledWith({
       shopWhatsapp: "+237600000001",
@@ -101,6 +133,64 @@ describe("createOrderAction", () => {
       clientName: "Fatou Ba",
       total: 10000,
     });
+  });
+
+  it("rejects the order when a product doesn't have enough stock left", async () => {
+    transactionGetMock.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({ stock: 1 }),
+    });
+
+    await expect(
+      createOrderAction("token", {
+        shopId: "shop-1",
+        clientName: "Fatou Ba",
+        clientPhone: "+237600000000",
+        clientAddress: "Douala",
+        items: ITEMS, // quantity: 2
+        subtotal: 10000,
+        total: 10000,
+      })
+    ).rejects.toThrow(/Stock insuffisant pour « Wax » \(1 disponible\)/);
+
+    expect(transactionSetMock).not.toHaveBeenCalled();
+    expect(transactionUpdateMock).not.toHaveBeenCalled();
+    expect(sendOrderNotificationMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects the order when the product no longer exists", async () => {
+    transactionGetMock.mockResolvedValueOnce({ exists: false, data: () => undefined });
+
+    await expect(
+      createOrderAction("token", {
+        shopId: "shop-1",
+        clientName: "Fatou Ba",
+        clientPhone: "+237600000000",
+        clientAddress: "Douala",
+        items: ITEMS,
+        subtotal: 10000,
+        total: 10000,
+      })
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("allows an order that exactly matches the remaining stock", async () => {
+    transactionGetMock.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({ stock: 2 }),
+    });
+
+    await expect(
+      createOrderAction("token", {
+        shopId: "shop-1",
+        clientName: "Fatou Ba",
+        clientPhone: "+237600000000",
+        clientAddress: "Douala",
+        items: ITEMS, // quantity: 2
+        subtotal: 10000,
+        total: 10000,
+      })
+    ).resolves.toEqual({ orderId: "order-new" });
   });
 
   it("skips the WhatsApp notification when the shop opted out", async () => {
@@ -137,7 +227,7 @@ describe("createOrderAction", () => {
       manual: true,
     });
 
-    const [, data] = batchSetMock.mock.calls[0];
+    const [, data] = transactionSetMock.mock.calls[0];
     expect(data).not.toHaveProperty("clientId");
   });
 
