@@ -95,6 +95,12 @@ export const ShopSettingsSchema = z.object({
     error: "Le nom de la boutique doit contenir au moins 2 caractères.",
   }),
   logo: z.url({ error: "L'URL du logo n'est pas valide." }).or(z.literal("")),
+  // Bascule Galerie/Lien de `ShopLogoStep` (BF-81, réutilisé ici pour
+  // modifier le logo après la création — jusque-là un simple champ URL,
+  // sans upload possible). Purement local au formulaire, jamais persisté :
+  // `Shop` ne garde que l'URL finale, peu importe comment elle a été
+  // obtenue.
+  logoMode: z.enum(["gallery", "link"]),
   description: z.string().trim().max(500, {
     error: "La description ne doit pas dépasser 500 caractères.",
   }),

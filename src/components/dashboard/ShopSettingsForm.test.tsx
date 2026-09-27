@@ -32,13 +32,21 @@ if (!Element.prototype.releasePointerCapture) {
   Element.prototype.releasePointerCapture = () => {};
 }
 
-jest.mock("../../lib/firebase", () => ({ db: {} }));
+jest.mock("../../lib/firebase", () => ({ db: {}, auth: {} }));
 
 jest.mock("../providers/AuthProvider", () => ({
   useAuth: () => ({
     profile: { id: "uid-1", displayName: "Awa Diallo", role: "admin" },
   }),
 }));
+
+// ShopLogoStep (réutilisé ici pour modifier le logo, voir 04-besoins-
+// techniques.md) importe ImageCropDialog/uploadShopLogo — inutiles pour ces
+// tests, qui ne déclenchent jamais un vrai envoi de fichier.
+jest.mock("./ImageCropDialog", () => ({
+  ImageCropDialog: () => null,
+}));
+jest.mock("../../lib/upload", () => ({ uploadShopLogo: jest.fn() }));
 
 import { shopService } from "@/services/ShopService";
 import { activityLogService } from "@/services/ActivityLogService";
@@ -301,6 +309,49 @@ describe("ShopSettingsForm", () => {
           })
         )
       );
+    });
+  });
+
+  describe("logo de la boutique (galerie ou lien)", () => {
+    it("opens in gallery mode by default, previewing the current logo", async () => {
+      mockedShopService.getShop.mockResolvedValue(
+        fakeShop({ logo: "https://example.com/logo.png" })
+      );
+      render(<ShopSettingsForm shopId="shop-1" />);
+
+      await screen.findByRole("button", { name: "Galerie" });
+      expect(screen.getByRole("button", { name: "Galerie" })).toHaveAttribute(
+        "aria-pressed",
+        "true"
+      );
+    });
+
+    it("switches to link mode and sets the logo as a URL", async () => {
+      mockedShopService.getShop.mockResolvedValue(fakeShop({ logo: "" }));
+      mockedShopService.updateProfile.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(<ShopSettingsForm shopId="shop-1" />);
+
+      await user.click(await screen.findByRole("button", { name: "Lien" }));
+      await user.type(
+        screen.getByLabelText("Lien du logo"),
+        "https://example.com/nouveau-logo.png"
+      );
+      await user.click(
+        screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+      );
+
+      await waitFor(() =>
+        expect(shopService.updateProfile).toHaveBeenCalledWith(
+          "shop-1",
+          expect.objectContaining({
+            logo: "https://example.com/nouveau-logo.png",
+          })
+        )
+      );
+      // `logoMode` reste purement local à ce formulaire, jamais envoyé.
+      const [, payload] = mockedShopService.updateProfile.mock.calls[0];
+      expect(payload).not.toHaveProperty("logoMode");
     });
   });
 });

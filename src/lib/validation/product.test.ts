@@ -86,4 +86,11 @@ describe("CategorySchema", () => {
       CategorySchema.safeParse({ ...validCategory, description: "" }).success
     ).toBe(false);
   });
+
+  it("accepts a category with or without a system tag", () => {
+    expect(
+      CategorySchema.safeParse({ ...validCategory, tagId: "tag1" }).success
+    ).toBe(true);
+    expect(CategorySchema.safeParse(validCategory).success).toBe(true);
+  });
 });

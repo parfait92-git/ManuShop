@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // jsdom n'implémente pas PointerEvent, dont Base UI (Switch/Button) a besoin
@@ -53,10 +53,20 @@ jest.mock("../../services/TrashService", () => ({
   },
 }));
 
+jest.mock("../../services/CategoryTagService", () => ({
+  categoryTagService: {
+    listTags: jest.fn(),
+  },
+}));
+
+import { deleteField } from "firebase/firestore";
+
 import { categoryService } from "@/services/CategoryService";
+import { categoryTagService } from "@/services/CategoryTagService";
 import { categoryTrashService } from "@/services/TrashService";
 import { CategoryManager } from "@/components/dashboard/CategoryManager";
 import type { Category } from "@/models/category/Category";
+import type { CategoryTag } from "@/models/category/CategoryTag";
 
 jest.mock("../../services/CategoryService", () => ({
   categoryService: {
@@ -68,6 +78,7 @@ jest.mock("../../services/CategoryService", () => ({
 }));
 
 const mockedCategoryService = jest.mocked(categoryService);
+const mockedCategoryTagService = jest.mocked(categoryTagService);
 const mockedCategoryTrashService = jest.mocked(categoryTrashService);
 
 function fakeCategory(overrides: Partial<Category> = {}): Category {
@@ -82,9 +93,20 @@ function fakeCategory(overrides: Partial<Category> = {}): Category {
   };
 }
 
+function fakeTag(overrides: Partial<CategoryTag> = {}): CategoryTag {
+  return {
+    id: "tag1",
+    name: "Alimentation",
+    color: "#2563eb",
+    createdAt: {} as never,
+    ...overrides,
+  };
+}
+
 describe("CategoryManager", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedCategoryTagService.listTags.mockResolvedValue([]);
   });
 
   it("submits isActive: false by default, without touching the toggle", async () => {
@@ -235,6 +257,129 @@ describe("CategoryManager", () => {
 
       expect(screen.queryByText("Modifier la catégorie")).not.toBeInTheDocument();
       expect(categoryService.updateCategory).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("association à un tag de catégorie système (BF-109→111)", () => {
+    it("lists the available tags in the create form", async () => {
+      mockedCategoryTagService.listTags.mockResolvedValue([
+        fakeTag(),
+        fakeTag({ id: "tag2", name: "Mode" }),
+      ]);
+      render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
+
+      await screen.findByText("Alimentation");
+      const select = screen.getByLabelText(
+        "Tag de catégorie système"
+      ) as HTMLSelectElement;
+      expect(
+        Array.from(select.options).map((option) => option.textContent)
+      ).toEqual(["Aucun tag", "Alimentation", "Mode"]);
+    });
+
+    it("creates a category with the selected tag", async () => {
+      mockedCategoryTagService.listTags.mockResolvedValue([fakeTag()]);
+      mockedCategoryService.createCategory.mockResolvedValue(
+        fakeCategory({ id: "new-id", tagId: "tag1" })
+      );
+      const user = userEvent.setup();
+      render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
+
+      await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
+      await user.type(screen.getByLabelText(/Description/), "Desc");
+      await user.selectOptions(
+        await screen.findByLabelText("Tag de catégorie système"),
+        "tag1"
+      );
+      await user.click(screen.getByRole("button", { name: /Créer la catégorie/ }));
+
+      await waitFor(() =>
+        expect(categoryService.createCategory).toHaveBeenCalledWith(
+          "shop-1",
+          expect.objectContaining({ tagId: "tag1" })
+        )
+      );
+    });
+
+    it("submits an empty tagId when none is selected — CategoryService is responsible for omitting it before writing", async () => {
+      mockedCategoryService.createCategory.mockResolvedValue(
+        fakeCategory({ id: "new-id" })
+      );
+      const user = userEvent.setup();
+      render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
+
+      await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
+      await user.type(screen.getByLabelText(/Description/), "Desc");
+      await user.click(screen.getByRole("button", { name: /Créer la catégorie/ }));
+
+      await waitFor(() =>
+        expect(categoryService.createCategory).toHaveBeenCalledWith(
+          "shop-1",
+          expect.objectContaining({ tagId: "" })
+        )
+      );
+    });
+
+    it("shows the associated tag's name and color on the row", async () => {
+      mockedCategoryTagService.listTags.mockResolvedValue([fakeTag()]);
+      const category = fakeCategory({ tagId: "tag1" });
+      render(
+        <CategoryManager shopId="shop-1" initialCategories={[category]} />
+      );
+
+      expect(await screen.findByTitle("Tag système : Alimentation")).toHaveTextContent(
+        "Alimentation"
+      );
+    });
+
+    it("updates a category's tag via the edit dialog", async () => {
+      mockedCategoryTagService.listTags.mockResolvedValue([fakeTag()]);
+      mockedCategoryService.updateCategory.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      const category = fakeCategory();
+      render(
+        <CategoryManager shopId="shop-1" initialCategories={[category]} />
+      );
+
+      await user.click(screen.getByLabelText(`Modifier ${category.name}`));
+      const dialog = within(await screen.findByRole("dialog"));
+      await user.selectOptions(
+        dialog.getByLabelText("Tag de catégorie système"),
+        "tag1"
+      );
+      await user.click(dialog.getByRole("button", { name: "Enregistrer" }));
+
+      await waitFor(() =>
+        expect(categoryService.updateCategory).toHaveBeenCalledWith(
+          category.id,
+          { name: "Mode", description: "Vêtements", tagId: "tag1" }
+        )
+      );
+    });
+
+    it("removes a category's tag via the edit dialog", async () => {
+      mockedCategoryTagService.listTags.mockResolvedValue([fakeTag()]);
+      mockedCategoryService.updateCategory.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      const category = fakeCategory({ tagId: "tag1" });
+      render(
+        <CategoryManager shopId="shop-1" initialCategories={[category]} />
+      );
+
+      await user.click(screen.getByLabelText(`Modifier ${category.name}`));
+      const dialog = within(await screen.findByRole("dialog"));
+      await user.selectOptions(
+        dialog.getByLabelText("Tag de catégorie système"),
+        ""
+      );
+      await user.click(dialog.getByRole("button", { name: "Enregistrer" }));
+
+      await waitFor(() =>
+        expect(categoryService.updateCategory).toHaveBeenCalledWith(
+          category.id,
+          { name: "Mode", description: "Vêtements", tagId: deleteField() }
+        )
+      );
     });
   });
 });

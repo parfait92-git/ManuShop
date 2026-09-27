@@ -23,6 +23,7 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
 import { ShareShopLinkButton } from "@/components/dashboard/ShareShopLinkButton";
+import { ShopLogoStep } from "@/components/storefront/ShopLogoStep";
 import {
   CLIENT_CONTACT_METHODS,
   CLIENT_CONTACT_METHOD_LABELS,
@@ -54,6 +55,11 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
   return {
     name: shop.name,
     logo: shop.logo,
+    // Toujours "gallery" à l'ouverture : `Shop.logo` ne garde que l'URL
+    // finale, jamais comment elle a été obtenue — l'aperçu en mode Galerie
+    // fonctionne quelle que soit l'origine réelle du lien (voir
+    // `ShopLogoStep`, `unoptimized` sur son `<Image>` de prévisualisation).
+    logoMode: "gallery",
     description: shop.description ?? "",
     address: shop.address,
     phone: shop.phone,
@@ -127,6 +133,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     resolver: zodResolver(ShopSettingsSchema),
   });
 
+  const logoMode = useWatch({ control, name: "logoMode" });
+  const logo = useWatch({ control, name: "logo" });
   const primarySocialNetwork = useWatch({
     control,
     name: "primarySocialNetwork",
@@ -167,7 +175,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
   async function onSubmit(data: ShopSettingsInput) {
     setSaved(false);
-    await shopService.updateProfile(shopId, data);
+    // `logoMode` reste purement local à ce formulaire (bascule Galerie/Lien
+    // de `ShopLogoStep`) — `Shop` ne connaît que l'URL finale du logo.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { logoMode, ...shopData } = data;
+    await shopService.updateProfile(shopId, shopData);
     if (profile) {
       await activityLogService.logShopSettingsUpdated({
         shopId,
@@ -253,8 +265,15 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="logo">URL du logo</Label>
-              <Input id="logo" aria-invalid={!!errors.logo} {...register("logo")} />
+              <ShopLogoStep
+                mode={logoMode}
+                onModeChange={(mode) => setValue("logoMode", mode)}
+                logoUrl={logo}
+                onLogoChange={(url) =>
+                  setValue("logo", url, { shouldValidate: true })
+                }
+                hideHeading
+              />
               {errors.logo && (
                 <p className="text-sm text-destructive">{errors.logo.message}</p>
               )}

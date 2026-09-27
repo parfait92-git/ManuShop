@@ -1,9 +1,15 @@
 "use client";
 
-import { Plus, Tag, Trash2 } from "lucide-react";
+import { Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogDescription,
+  DialogPortal,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CategoryTag } from "@/models/category/CategoryTag";
@@ -89,6 +95,105 @@ function CreateTagForm({ onCreated }: { onCreated: (tag: CategoryTag) => void })
 }
 
 /**
+ * Seul moyen de renommer/changer la couleur d'un tag déjà créé — jusque-là,
+ * il fallait le supprimer et en recréer un (signalé par l'utilisateur).
+ */
+function EditTagDialog({
+  tag,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  tag: CategoryTag;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: (tag: CategoryTag) => void;
+}) {
+  const [name, setName] = useState(tag.name);
+  const [color, setColor] = useState(tag.color);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setName(tag.name);
+    setColor(tag.color);
+    setError(null);
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await categoryTagService.updateTag(tag.id, name, color);
+      onSaved({ ...tag, name: name.trim(), color });
+      onOpenChange(false);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Échec de la mise à jour du tag. Réessayez."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) reset();
+        onOpenChange(next);
+      }}
+    >
+      <DialogPortal className="max-w-md">
+        <DialogTitle>Modifier le tag</DialogTitle>
+        <DialogDescription>
+          Visible par tous les commerçants en créant une catégorie.
+        </DialogDescription>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="edit-tag-name">Nom du tag</Label>
+              <Input
+                id="edit-tag-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-tag-color">Couleur</Label>
+              <Input
+                id="edit-tag-color"
+                type="color"
+                value={color}
+                onChange={(event) => setColor(event.target.value)}
+                className="h-9 w-16 p-1"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={submitting || !name.trim()}>
+              {submitting ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
+      </DialogPortal>
+    </Dialog>
+  );
+}
+
+/**
  * BF-109→111 : taxonomie système — un commerçant choisit un de ces tags en
  * créant une catégorie plutôt que d'en inventer un (pas encore branché côté
  * commerçant, voir 04-besoins-techniques.md §36 : périmètre volontairement
@@ -98,6 +203,7 @@ export function CategoryTagsPageContent() {
   const [tags, setTags] = useState<CategoryTag[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingTag, setEditingTag] = useState<CategoryTag | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -128,6 +234,12 @@ export function CategoryTagsPageContent() {
   function handleCreated(tag: CategoryTag) {
     setTags((current) => [...(current ?? []), tag]);
     setError(null);
+  }
+
+  function handleSaved(tag: CategoryTag) {
+    setTags((current) =>
+      current?.map((t) => (t.id === tag.id ? tag : t)) ?? current
+    );
   }
 
   async function handleDelete(tag: CategoryTag) {
@@ -182,7 +294,11 @@ export function CategoryTagsPageContent() {
               key={tag.id}
               className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6"
             >
-              <span className="flex items-center gap-2 text-sm font-medium">
+              <span
+                className="flex cursor-pointer items-center gap-2 text-sm font-medium"
+                onDoubleClick={() => setEditingTag(tag)}
+                title="Double-cliquez pour modifier"
+              >
                 <span
                   aria-hidden
                   className="size-3 shrink-0 rounded-full"
@@ -190,19 +306,40 @@ export function CategoryTagsPageContent() {
                 />
                 {tag.name}
               </span>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={deletingId === tag.id}
-                onClick={() => handleDelete(tag)}
-                aria-label={`Supprimer ${tag.name}`}
-                className="text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="size-4" />
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setEditingTag(tag)}
+                  aria-label={`Modifier ${tag.name}`}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={deletingId === tag.id}
+                  onClick={() => handleDelete(tag)}
+                  aria-label={`Supprimer ${tag.name}`}
+                  className="text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
+      )}
+
+      {editingTag && (
+        <EditTagDialog
+          tag={editingTag}
+          open={!!editingTag}
+          onOpenChange={(open) => {
+            if (!open) setEditingTag(null);
+          }}
+          onSaved={handleSaved}
+        />
       )}
     </div>
   );

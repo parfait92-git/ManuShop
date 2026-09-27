@@ -131,6 +131,15 @@ function MessageRow({
   );
 }
 
+// Pas d'`onSnapshot` possible ici, contrairement à `SupportPageContent`
+// (côté commerçant) : `firestore.rules` n'accorde de lecture de
+// `supportMessages` qu'au commerçant propriétaire de la boutique concernée,
+// jamais au Super Admin (voir `listSupportMessagesAction`, même limite que
+// `useNewSupportMessagesCount`). Un sondage court (pas les 60s du badge de
+// la sidebar, une notification d'ambiance) redonne un ressenti proche du
+// temps réel sur cette page où l'utilisateur regarde activement la liste.
+const POLL_INTERVAL_MS = 15_000;
+
 /** BF-113/114 : consultation et réponse aux messages envoyés par les
  * commerçants (`SupportPageContent`, côté `/dashboard/support`). */
 export function SupportMessagesPageContent() {
@@ -139,23 +148,30 @@ export function SupportMessagesPageContent() {
 
   useEffect(() => {
     let active = true;
-    supportMessageService
-      .listAllMessages()
-      .then((data) => {
-        if (active) setMessages(data);
-      })
-      .catch((err) => {
-        console.error(
-          "SupportMessagesPageContent : échec du chargement des messages",
-          err
-        );
-        if (active) {
-          setMessages([]);
-          setError("Échec du chargement des messages. Réessayez.");
-        }
-      });
+
+    function refresh() {
+      supportMessageService
+        .listAllMessages()
+        .then((data) => {
+          if (active) setMessages(data);
+        })
+        .catch((err) => {
+          console.error(
+            "SupportMessagesPageContent : échec du chargement des messages",
+            err
+          );
+          if (active) {
+            setMessages((current) => current ?? []);
+            setError("Échec du chargement des messages. Réessayez.");
+          }
+        });
+    }
+
+    refresh();
+    const interval = setInterval(refresh, POLL_INTERVAL_MS);
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, []);
 

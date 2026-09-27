@@ -1307,3 +1307,59 @@ Signalé par l'utilisateur (deux captures d'écran : `/super-admin/tags` en prod
 Tests : aucun nouveau (changement de logging pur, comportement déjà couvert par les tests existants de ces 4 composants).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (610 tests, aucune régression). Pas de vérification Playwright.
+
+## 47. Tags de catégorie non modifiables (BF-109), 2026-09-27
+
+Demande utilisateur, une fois les tags à nouveau visibles après republication des règles (§46) : "comment je fais pour modifier mes valeurs tags ?" — même lacune que celle déjà corrigée pour les catégories du commerçant (§43), jamais reproduite ici : `CategoryTagsPageContent` n'avait que créer/supprimer, aucun moyen de renommer un tag ou changer sa couleur sans le supprimer et le recréer (perdant la référence pour toute catégorie qui l'utilisait déjà, `Category.tagId`). Contrairement à `CategoryService.updateCategory` (§43, existait déjà côté service, seule l'UI manquait), rien n'existait ici à aucune couche — Server Action, service et UI construits ensemble.
+
+**Fait :**
+- `updateCategoryTagAction` (nouvelle Server Action, `categoryTagActions.ts`) : mêmes validations que `createCategoryTagAction` (nom non vide, couleur hexadécimale stricte), `requireSuperAdmin` revérifié.
+- `CategoryTagService.updateTag(id, name, color)` (nouveau).
+- `EditTagDialog` (nouveau, dans `CategoryTagsPageContent.tsx`) : même motif que `EditCategoryDialog` (§43) — ouvrable par double-clic sur le nom du tag ou icône crayon, pré-rempli.
+
+Tests : `categoryTagActions.test.ts`/`CategoryTagService.test.ts` étendus, `CategoryTagsPageContent.test.tsx` étendu (ouverture par icône pré-remplie + sauvegarde, ouverture par double-clic, échec, annulation).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (620 tests, +10, aucune régression). Pas de vérification Playwright.
+
+## 48. Messagerie commerçant ↔ Super Admin sans mise à jour en temps réel, 2026-09-27
+
+Signalé par l'utilisateur : "les messages ne se mettent pas à jour en temps réel" — `/dashboard/support` et `/super-admin/messages` (§38, §45) lisaient chacun une seule fois au montage (`.then()`), jamais rafraîchis ensuite : une réponse du Super Admin, ou un nouveau message, n'apparaissait qu'après un rechargement manuel de la page.
+
+**Deux solutions différentes, pas la même contrainte des deux côtés** :
+- **Côté commerçant** (`/dashboard/support`) : un vrai `onSnapshot` est possible — `firestore.rules` accorde déjà au commerçant la lecture des messages de sa propre boutique (§38). Nouveau hook `useSupportMessagesForShop(shopId)`, même structure que `useNewOrdersCount` (BF-58) mais renvoie les documents complets triés plutôt qu'un compteur — pas d'`orderBy` côté requête (même contrainte que `SupportMessageRepository.listForShop`, évite un index composite), tri fait à chaque snapshot. `SupportPageContent` l'utilise à la place de `supportMessageService.listForShop()` ; le ré-appel manuel après l'envoi d'un message devient inutile, l'écouteur reçoit déjà ce nouveau document.
+- **Côté Super Admin** (`/super-admin/messages`) : un `onSnapshot` direct reste impossible (même limite que `listSupportMessagesAction`/`useNewSupportMessagesCount`, §45 — `firestore.rules` n'accorde de lecture qu'au commerçant propriétaire, jamais au Super Admin, délibérément non exprimé par une règle). `SupportMessagesPageContent` sonde maintenant `listAllMessages()` toutes les 15s (plus court que les 60s du badge de la sidebar, une notification d'ambiance — ici l'utilisateur regarde activement la liste). Un échec de sondage ponctuel garde désormais la dernière liste connue à l'écran (juste le message d'erreur en plus) plutôt que de la vider — un comportement correct pour un chargement unique devenait faux une fois répété périodiquement.
+
+Aucun changement pour le badge de `SuperAdminSidebar` (§45, 60s) — déjà un sondage, pas concerné par ce signalement.
+
+Tests : `useSupportMessagesForShop.test.ts` (nouveau — snapshot trié, repli sur `[]` en cas d'erreur, désabonnement), `SupportPageContent.test.tsx` réécrit (mock du nouveau hook plutôt que de `listForShop`), `SupportMessagesPageContent.test.tsx` étendu (sondage périodique — nouveau message reflété après l'intervalle, liste conservée après un échec ponctuel, arrêt au démontage).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (629 tests, +9, aucune régression). Pas de vérification Playwright.
+
+## 49. Sélecteur de tag système enfin branché côté commerçant (BF-109→111), 2026-09-27
+
+Signalé par l'utilisateur (capture d'écran, `/dashboard/categories`) : aucun champ pour associer un tag Super Admin à une catégorie créée par un commerçant. Justifié explicitement par l'utilisateur : c'est le chaînon manquant pour pouvoir un jour filtrer, sur le Marché agrégé (`/catalogue`), les produits de plusieurs boutiques par une taxonomie commune — filtrer par nom de catégorie brut ne marche pas à l'échelle (deux boutiques nommant différemment des catégories similaires, ou identiquement des catégories sans rapport). Exactement le champ volontairement laissé de côté au tour de la construction des tags (§36) : "le sélecteur de tag côté commerçant... n'est volontairement pas branché cette tranche."
+
+**Fait — uniquement le champ, pas encore le filtre du Marché lui-même (voir périmètre restant ci-dessous)** :
+- `CategorySchema` (`lib/validation/product.ts`) gagne `tagId: z.string().optional()` — chaîne vide = "aucun tag", pas une valeur invalide.
+- `CategoryService.createCategory` : `tagId` ajouté à `CreateCategoryInput`, jamais écrit comme `undefined` explicite (Firestore refuse ce cas sur `setDoc`, contrairement à l'absence pure et simple de la clé) — `...(tagId ? {tagId} : {})`.
+- `ICategoryRepository.UpdateCategoryDto` : `tagId` élargi à `string | FieldValue`, pour accepter `deleteField()` — nécessaire pour qu'un commerçant puisse **retirer** un tag déjà associé (`updateDoc` refuse aussi `undefined`, mais accepte le sentinel `deleteField()`, contrairement à `setDoc`/`create` qui n'a pas cette distinction utile ici).
+- `CategoryManager.tsx` : `CategoryForm` (création) et `EditCategoryDialog` (édition, §43) gagnent chacun un `<Select>` "Tag de catégorie système" (facultatif), alimenté par `categoryTagService.listTags()` (lecture publique, déjà existante) chargée une fois dans `CategoryManager` et transmise en props — pas de nouvel appel par sous-composant. `EditCategoryDialog` construit son payload en trois branches : un tag choisi → l'écrire ; aucun tag choisi mais la catégorie en avait un → `deleteField()` ; ni l'un ni l'autre → la clé reste absente du payload. `CategoryRow` affiche désormais le tag associé (pastille de couleur + nom) à côté du nom de la catégorie, pour qu'un commerçant voie d'un coup d'œil ce qui est déjà taggé.
+
+**Périmètre restant, explicitement hors de cette tranche** : le Marché agrégé (`/catalogue`, `CatalogueExplorer`/`useMarketCatalogue`) filtre toujours par nom de catégorie brut (`product.category`), pas par tag système — la raison même invoquée par l'utilisateur pour ce champ. Le brancher demande de résoudre, pour chaque produit affiché, la catégorie de sa boutique correspondant à `product.category` puis son `tagId` (une jointure supplémentaire par boutique dans `useMarketCatalogue`, aujourd'hui absente), et de refléter ça dans `/demo-catalogue` pour rester fidèle (`mockData.ts` n'a aujourd'hui aucune notion de tag) — un chantier à part entière, pas fait ici faute de demande explicite pour cette partie précise cette fois-ci.
+
+Tests : `lib/validation/product.test.ts` étendu (accepte un `tagId` ou son absence) ; `CategoryService.test.ts` étendu (`tagId` inclus quand choisi, omis — jamais `undefined` — quand vide) ; `CategoryManager.test.tsx` étendu (liste des tags disponibles, création avec/sans tag, affichage du tag sur la ligne, modification et retrait via la boîte de dialogue d'édition).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (638 tests, +9, aucune régression). Pas de vérification Playwright.
+
+## 50. Aucun moyen de modifier le logo d'une boutique déjà créée (galerie ou lien), 2026-09-27
+
+Signalé par l'utilisateur : `/dashboard/shop` (paramètres de boutique) n'offrait qu'un simple champ texte "URL du logo" — aucun moyen d'uploader une image depuis la galerie, contrairement à l'assistant "Créer ma boutique" (BF-81), qui a toujours eu les deux modes (`ShopLogoStep`, bascule Galerie/Lien avec recadrage, §27 pour son historique de bugs déjà corrigés). Une fois la boutique créée, ce composant n'était simplement jamais réutilisé pour l'édition.
+
+**Fait** : `ShopLogoStep` réutilisé tel quel dans `ShopSettingsForm` (aucune duplication de logique d'upload/recadrage) :
+- `ShopSettingsSchema` gagne `logoMode: z.enum(["gallery","link"])` — purement local au formulaire (bascule d'affichage), jamais envoyé à `shopService.updateProfile` (déstructuré et exclu avant l'appel, `Shop` ne connaît que l'URL finale du logo, peu importe comment elle a été obtenue).
+- `defaultValuesFrom` : `logoMode` démarre toujours à `"gallery"` à l'ouverture — l'aperçu en mode Galerie fonctionne quelle que soit l'origine réelle du logo existant (Cloudinary ou lien externe), donc ce choix affiche systématiquement un bel aperçu circulaire plutôt qu'un champ texte brut.
+- `ShopLogoStep` gagne une prop `hideHeading` (le titre "Ajoutez votre logo" et son texte d'aide "vous pourrez l'ajouter plus tard" n'avaient de sens que dans l'assistant de création) et corrige son `<Image>` de prévisualisation avec `unoptimized` — jusqu'ici absent car ce composant n'était accessible qu'en création, où `logoUrl` ne pouvait venir que d'un upload Cloudinary (donc toujours dans l'allowlist de domaines de `next.config.ts`) ; réutilisé maintenant pour éditer une boutique existante, `logoUrl` peut être un lien externe collé à la main (mode "Lien"), même piège que `ShopSummaryCard`/`ProductDetailPageContent`/`StorefrontHeader` déjà corrigé plus tôt cette session.
+
+Tests : `ShopLogoStep.test.tsx` étendu (`hideHeading`, aperçu non passé par l'allowlist de domaines) ; `ShopSettingsForm.test.tsx` étendu (mode Galerie par défaut, bascule vers Lien + sauvegarde, `logoMode` jamais envoyé au service) ; `lib/validation/auth.test.ts` étendu (`logoMode` accepté/rejeté, fixture `validShop` mise à jour).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (643 tests, +5, aucune régression). Pas de vérification Playwright.

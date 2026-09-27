@@ -73,4 +73,43 @@ describe("ShopLogoStep", () => {
     // l'arbre d'accessibilité, d'où une recherche directe par balise ici.
     expect(container.querySelector("img")).toBeInTheDocument();
   });
+
+  it("skips next/image's domain allowlist for the preview — reused from ShopSettingsForm, logoUrl can be an arbitrary external link (mode Lien), not just a Cloudinary upload", () => {
+    const { container } = render(
+      <ShopLogoStep
+        mode="gallery"
+        onModeChange={jest.fn()}
+        logoUrl="https://example.com/logo.png"
+        onLogoChange={jest.fn()}
+      />
+    );
+
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "https://example.com/logo.png"
+    );
+  });
+
+  it("shows the wizard heading by default, hidden when reused inside ShopSettingsForm's own section", () => {
+    const { rerender } = render(
+      <ShopLogoStep
+        mode="gallery"
+        onModeChange={jest.fn()}
+        logoUrl={undefined}
+        onLogoChange={jest.fn()}
+      />
+    );
+    expect(screen.getByText("Ajoutez votre logo")).toBeInTheDocument();
+
+    rerender(
+      <ShopLogoStep
+        mode="gallery"
+        onModeChange={jest.fn()}
+        logoUrl={undefined}
+        onLogoChange={jest.fn()}
+        hideHeading
+      />
+    );
+    expect(screen.queryByText("Ajoutez votre logo")).not.toBeInTheDocument();
+  });
 });
