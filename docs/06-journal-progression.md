@@ -1008,3 +1008,15 @@ Après configuration des variables Cloudinary sur Vercel (session précédente) 
 Tests : `cloudinary.test.ts` (nouveau, reproduit le crash avant correction puis le vérifie corrigé), `route.test.ts` mis à jour.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (425 tests, +4, aucune régression). À confirmer par l'utilisateur une fois déployé.
+
+### 2026-09-27 — Vraie cause du 500 persistant : `firebase-admin/auth` plantait au chargement (ERR_REQUIRE_ESM)
+
+Le correctif `CLOUDINARY_URL` n'a pas suffi. Logs de fonction Vercel demandés à l'utilisateur (seule source fiable) : révèlent un crash au CHARGEMENT du module, `firebase-admin/auth` → `jwks-rsa` → `require("jose")` sur un build ESM-only, incompatible avec le runtime serverless Vercel (`ERR_REQUIRE_ESM`).
+
+**Portée plus large qu'imaginé** : `firebaseAdmin.ts` importait `firebase-admin/auth` statiquement au même niveau que `app`/`firestore` — un module ES évalue tous ses imports au chargement, donc `getAdminDb()` (utilisé par la création de boutique, les commandes, l'admin plateforme) plantait aussi via `verifyIdToken.ts`. Explique vraisemblablement aussi l'échec à l'enregistrement de boutique signalé par l'utilisateur, pas seulement l'upload.
+
+**Corrigé** : import dynamique de `firebase-admin/auth`, seulement dans `getAdminAuth()` (devenue async) — `jwks-rsa` n'est référencé que par le sous-module `auth`, `getAdminDb()` reste synchrone et inchangé, aucun autre appelant à modifier.
+
+Tests : `firebaseAdmin.test.ts` (nouveau, simule le crash réel).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (427 tests, +2, aucune régression). À confirmer par l'utilisateur une fois déployé.

@@ -37,7 +37,8 @@ export async function verifyIdToken(
   // même variable) — jamais pris en production, où elle n'est pas définie.
   if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
     try {
-      const decoded = await getAdminAuth().verifyIdToken(token);
+      const adminAuth = await getAdminAuth();
+      const decoded = await adminAuth.verifyIdToken(token);
       return { uid: decoded.uid, email: decoded.email };
     } catch {
       return null;
