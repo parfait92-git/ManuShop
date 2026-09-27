@@ -106,7 +106,15 @@ export function CategoryTagsPageContent() {
       .then((data) => {
         if (active) setTags(data);
       })
-      .catch(() => {
+      .catch((err) => {
+        // Sans ce log, un vrai échec (règles Firestore pas encore
+        // republiées, réseau...) se replie silencieusement sur ce même
+        // message générique, indiscernable en apparence d'une collection
+        // réellement vide — voir 04-besoins-techniques.md §31.
+        console.error(
+          "CategoryTagsPageContent : échec du chargement des tags",
+          err
+        );
         if (active) {
           setTags([]);
           setError("Échec du chargement des tags. Réessayez.");

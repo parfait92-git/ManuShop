@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "cn";
+import { useNewSupportMessagesCount } from "@/hooks/useNewSupportMessagesCount";
 
 interface NavItem {
   href: string;
@@ -20,7 +21,15 @@ const MAIN_ITEMS: NavItem[] = [
   { href: "/super-admin/reglages", label: "Réglages", icon: Settings },
 ];
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({
+  item,
+  active,
+  badge,
+}: {
+  item: NavItem;
+  active: boolean;
+  badge?: number;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -34,12 +43,21 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
     >
       <Icon className="size-4.5 shrink-0" />
       {item.label}
+      {!!badge && (
+        <span
+          className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[0.65rem] font-semibold text-white"
+          aria-label={`${badge} message${badge > 1 ? "s" : ""} en attente`}
+        >
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
 
 export function SuperAdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const newMessagesCount = useNewSupportMessagesCount();
 
   return (
     <div
@@ -69,7 +87,12 @@ export function SuperAdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
             Plateforme
           </span>
           {MAIN_ITEMS.map((item) => (
-            <NavLink key={item.href} item={item} active={pathname === item.href} />
+            <NavLink
+              key={item.href}
+              item={item}
+              active={pathname === item.href}
+              badge={item.href === "/super-admin/messages" ? newMessagesCount : undefined}
+            />
           ))}
         </div>
       </nav>

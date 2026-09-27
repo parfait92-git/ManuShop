@@ -75,12 +75,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // session active ailleurs (voir l'écouteur ci-dessous).
         const existing = getLocalSessionId();
         const sessionId = existing ?? createLocalSessionId();
-        setLocalSessionId(sessionId);
+        // L'écriture doit être terminée AVANT `setLocalSessionId` : sinon
+        // l'écouteur ci-dessous démarre dès que l'état local change, et peut
+        // recevoir une première snapshot qui montre encore l'ancien
+        // `activeSessionId` (d'un autre navigateur déjà connecté) alors que
+        // `localSessionId` est déjà le nouveau — il croit alors qu'une autre
+        // session vient de prendre le dessus et se déconnecte lui-même
+        // aussitôt (bug signalé : la connexion "échoue" quand un autre
+        // navigateur était déjà connecté avec le même compte).
         if (!existing) {
           await authService
             .updateProfile(user.uid, { activeSessionId: sessionId })
             .catch(() => {});
         }
+        setLocalSessionId(sessionId);
       }
     });
 

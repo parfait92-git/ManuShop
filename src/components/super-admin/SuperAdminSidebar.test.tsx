@@ -2,11 +2,20 @@ jest.mock("next/navigation", () => ({
   usePathname: () => "/super-admin",
 }));
 
+const useNewSupportMessagesCountMock = jest.fn();
+jest.mock("../../hooks/useNewSupportMessagesCount", () => ({
+  useNewSupportMessagesCount: () => useNewSupportMessagesCountMock(),
+}));
+
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import { SuperAdminSidebar } from "./SuperAdminSidebar";
 
 describe("SuperAdminSidebar", () => {
+  beforeEach(() => {
+    useNewSupportMessagesCountMock.mockReturnValue(0);
+  });
+
   it("shows the Super Admin identity and the Comptes link, marked active", () => {
     render(<SuperAdminSidebar />);
 
@@ -39,5 +48,26 @@ describe("SuperAdminSidebar", () => {
     fireEvent.click(screen.getByRole("link", { name: "Comptes" }));
 
     expect(onNavigate).toHaveBeenCalled();
+  });
+
+  it("shows no badge on Messages when there are no pending messages", () => {
+    render(<SuperAdminSidebar />);
+    expect(screen.getByRole("link", { name: "Messages" })).toBeInTheDocument();
+  });
+
+  it("shows a badge with the pending message count on Messages", () => {
+    useNewSupportMessagesCountMock.mockReturnValue(3);
+    render(<SuperAdminSidebar />);
+
+    expect(
+      screen.getByRole("link", { name: "Messages 3 messages en attente" })
+    ).toBeInTheDocument();
+  });
+
+  it("caps the badge at 9+", () => {
+    useNewSupportMessagesCountMock.mockReturnValue(15);
+    render(<SuperAdminSidebar />);
+
+    expect(screen.getByText("9+")).toBeInTheDocument();
   });
 });

@@ -1,12 +1,18 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { HelpCircle, Info, Plus, Tag, Trash2 } from "lucide-react";
+import { HelpCircle, Info, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogDescription,
+  DialogPortal,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -34,7 +40,11 @@ function CategoryForm({
     formState: { errors, isSubmitting },
   } = useForm<CategoryInput>({
     resolver: zodResolver(CategorySchema),
-    defaultValues: { name: "", description: "", isActive: true },
+    // Non affichée par défaut : une catégorie fraîchement créée n'a
+    // généralement pas encore de produit associé — mieux vaut que le
+    // commerçant l'active lui-même une fois prête plutôt que de l'exposer
+    // aux clients vide dès la création.
+    defaultValues: { name: "", description: "", isActive: false },
   });
   const isActive = useWatch({ control, name: "isActive" });
 
@@ -43,7 +53,7 @@ function CategoryForm({
     try {
       const category = await categoryService.createCategory(shopId, data);
       onCreated(category);
-      reset({ name: "", description: "", isActive: true });
+      reset({ name: "", description: "", isActive: false });
     } catch {
       setFormError("Une erreur est survenue. Veuillez réessayer.");
     }
@@ -164,23 +174,142 @@ function InfoPanel() {
   );
 }
 
+/**
+ * Seul moyen de renommer/changer la description d'une catégorie déjà créée
+ * — jusque-là, il fallait la supprimer et en recréer une (signalé par
+ * l'utilisateur). Pas de nouveau formulaire : réutilise `CategorySchema` et
+ * `categoryService.updateCategory`, déjà là mais jamais branchés à une UI.
+ */
+function EditCategoryDialog({
+  category,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  category: Category;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: (category: Category) => void;
+}) {
+  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CategoryInput>({
+    resolver: zodResolver(CategorySchema),
+    values: {
+      name: category.name,
+      description: category.description ?? "",
+      isActive: category.isActive ?? true,
+    },
+  });
+
+  async function onSubmit(data: CategoryInput) {
+    setFormError(null);
+    try {
+      await categoryService.updateCategory(category.id, {
+        name: data.name,
+        description: data.description,
+      });
+      onSaved({ ...category, name: data.name, description: data.description });
+      onOpenChange(false);
+    } catch {
+      setFormError("Une erreur est survenue. Veuillez réessayer.");
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) reset();
+        onOpenChange(next);
+      }}
+    >
+      <DialogPortal className="max-w-md">
+        <DialogTitle>Modifier la catégorie</DialogTitle>
+        <DialogDescription>
+          Le statut affiché/masqué se change directement depuis la liste.
+        </DialogDescription>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-category-name">Nom de la catégorie</Label>
+            <Input
+              id="edit-category-name"
+              aria-invalid={!!errors.name}
+              {...register("name")}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-category-description">Description</Label>
+            <textarea
+              id="edit-category-description"
+              rows={3}
+              aria-invalid={!!errors.description}
+              className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-input dark:bg-input/30"
+              {...register("description")}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
+
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
+      </DialogPortal>
+    </Dialog>
+  );
+}
+
 function CategoryRow({
   category,
   onToggle,
   onDelete,
+  onEdit,
   toggling,
   deleting,
 }: {
   category: Category;
   onToggle: (category: Category) => void;
   onDelete: (category: Category) => void;
+  onEdit: (category: Category) => void;
   toggling: boolean;
   deleting: boolean;
 }) {
   const isActive = category.isActive ?? true;
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
-      <div className="flex min-w-0 flex-col">
+      <div
+        className="flex min-w-0 flex-1 cursor-pointer flex-col"
+        onDoubleClick={() => onEdit(category)}
+        title="Double-cliquez pour modifier"
+      >
         <span className="text-sm font-medium">{category.name}</span>
         {category.description && (
           <span className="truncate text-sm text-muted-foreground">
@@ -198,6 +327,14 @@ function CategoryRow({
           onCheckedChange={() => onToggle(category)}
           aria-label={`${isActive ? "Masquer" : "Afficher"} ${category.name}`}
         />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onEdit(category)}
+          aria-label={`Modifier ${category.name}`}
+        >
+          <Pencil className="size-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -225,10 +362,17 @@ export function CategoryManager({
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   function handleCreated(category: Category) {
     setCategories((current) => [...current, category]);
     setListError(null);
+  }
+
+  function handleSaved(category: Category) {
+    setCategories((current) =>
+      current.map((c) => (c.id === category.id ? category : c))
+    );
   }
 
   async function handleToggle(category: Category) {
@@ -326,6 +470,7 @@ export function CategoryManager({
                 category={category}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
+                onEdit={setEditingCategory}
                 toggling={togglingId === category.id}
                 deleting={deletingId === category.id}
               />
@@ -333,6 +478,17 @@ export function CategoryManager({
           </ul>
         )}
       </div>
+
+      {editingCategory && (
+        <EditCategoryDialog
+          category={editingCategory}
+          open={!!editingCategory}
+          onOpenChange={(open) => {
+            if (!open) setEditingCategory(null);
+          }}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 }

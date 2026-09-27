@@ -1,7 +1,6 @@
 "use client";
 
 import { Sparkles, Truck } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { CategoryFilterPills } from "@/components/storefront/CategoryFilterPills";
@@ -9,7 +8,6 @@ import { StorefrontProductCard } from "@/components/storefront/StorefrontProduct
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
@@ -33,8 +31,6 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
 }
 
 export function CataloguePageContent({ shopId }: { shopId: string }) {
-  const router = useRouter();
-  const demoAvailable = useDemoCatalogueAvailable();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [term, setTerm] = useState("");
@@ -88,32 +84,16 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
     return sortProducts(byPromo, sortOrder);
   }, [publishedProducts, term, category, sortOrder, promoOnly]);
 
-  // La boutique existe et est publiée (vérifié par CataloguePage), mais n'a
-  // encore aucun produit VISIBLE (aucun produit du tout, ou aucun publié) —
-  // `publishedProducts`, pas `visibleProducts` qui peut être vide à cause
-  // d'une recherche/filtre sans rapport avec ça.
+  // La boutique existe et est publiée (vérifié par ShopStorefrontPage), mais
+  // n'a encore aucun produit VISIBLE (aucun produit du tout, ou aucun
+  // publié) — `publishedProducts`, pas `visibleProducts` qui peut être vide
+  // à cause d'une recherche/filtre sans rapport avec ça. Toujours un état
+  // honnête "aucun produit" ici, jamais un repli vers `/demo-catalogue` :
+  // contrairement à `/catalogue` (le marché agrégé, qui bascule sur la démo
+  // tant que RIEN n'est réel sur toute la plateforme), cette page est
+  // atteinte en visitant UNE boutique précise, déjà confirmée publiée — la
+  // rediriger vers une démo sans rapport serait plus déroutant qu'utile.
   const isEmptyShop = products !== null && publishedProducts.length === 0;
-  // Repli vers la démo seulement tant qu'elle a encore lieu d'être (voir
-  // `useDemoCatalogueAvailable`) — si une AUTRE boutique de la plateforme a
-  // déjà de vrais produits, la démo est désactivée même si CETTE boutique-ci
-  // est vide : mieux vaut un état honnête "aucun produit" que rediriger
-  // vers une démo qui n'a plus de sens une fois de vraies boutiques en ligne.
-  const redirectToDemo = isEmptyShop && demoAvailable === true;
-  const stillDeciding = isEmptyShop && demoAvailable === undefined;
-
-  useEffect(() => {
-    if (redirectToDemo) {
-      router.replace("/demo-catalogue");
-    }
-  }, [redirectToDemo, router]);
-
-  if (stillDeciding || redirectToDemo) {
-    return (
-      <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-        Chargement...
-      </p>
-    );
-  }
 
   if (isEmptyShop) {
     return (

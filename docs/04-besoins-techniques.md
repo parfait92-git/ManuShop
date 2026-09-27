@@ -1203,3 +1203,107 @@ Demande utilisateur, en réponse à "comment le client contacte le commerçant ?
 Tests : `whatsapp.test.ts` étendu (`buildWhatsAppContactLink`), `clientContactMethods.test.ts` (nouveau), `auth.test.ts` étendu (nouveaux champs du schéma), `ShopSettingsForm.test.tsx` étendu (état verrouillé, interrupteur désactivé/activé selon la coordonnée, sauvegarde), `ProductDetailPageContent.test.tsx` étendu (canaux affichés à la place du lien social, repli quand aucun canal n'est utilisable).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes — aucune nouvelle page, uniquement des sections dans des pages existantes) et `npm run test:coverage` (572 tests, +19, aucune régression). Pas de vérification Playwright.
+
+## 40. `/erreur?code=401` remplacé par un repli vers `/catalogue`, 2026-09-27
+
+Signalé par l'utilisateur (capture d'écran) : se déconnecter (ou une session expirée, BF-123) depuis une page protégée renvoyait vers `/erreur?code=401` ("Connexion requise" + bouton "Se connecter") plutôt que vers une page utile — `ProtectedRoute`/`SuperAdminRoute` redirigeaient déjà `!firebaseUser` vers cette page d'erreur, pour tout cas de figure (accès direct jamais connecté, déconnexion en cours de visite, session expirée).
+
+**Corrigé** : les deux gardes redirigent maintenant vers `/catalogue` dans ce cas — un visiteur non connecté y retrouve `StorefrontHeader` avec un lien "Se connecter" dans le menu compte, donc le chemin de retour reste disponible, juste moins intrusif qu'une page d'erreur dédiée. Le cas `403` (rôle non autorisé) est inchangé : ce message reste utile, contrairement à "vous n'êtes pas connecté" qui ne l'était pas vraiment. `/erreur?code=401` lui-même n'est pas supprimé (reste accessible par URL directe, au cas où), seulement plus jamais atteint par ces deux gardes.
+
+Tests : `ProtectedRoute.test.tsx`/`SuperAdminRoute.test.tsx` (nouveaux — aucun test n'existait avant pour ces deux gardes de route).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (582 tests, +10, aucune régression). Pas de vérification Playwright.
+
+## 41. Connexion "échouait" (auto-déconnexion immédiate) sur un navigateur où le compte était déjà actif ailleurs (BF-123), 2026-09-27
+
+Signalé par l'utilisateur (capture d'écran, erreurs console `Cross-Origin-Opener-Policy`/`FirebaseError: Missing or insufficient permissions` sur `/catalogue`) : se connecter alors qu'un autre navigateur avait déjà une session active sur le même compte ne fonctionnait pas. Clarifié par une question : la connexion échoue réellement (pas juste du bruit console), confirmé.
+
+**Diagnostic** — vraie cause d'abord non évidente : les erreurs `Cross-Origin-Opener-Policy` visibles dans la capture sont un avertissement Chrome connu et généralement bénin autour de `signInWithPopup` (mécanisme de détection de fermeture de popup de Firebase Auth), pas la cause du blocage. La vraie cause était une **course** dans `AuthProvider` (§19, BF-123) :
+
+```
+const existing = getLocalSessionId();
+const sessionId = existing ?? createLocalSessionId();
+setLocalSessionId(sessionId);          // (1) déclenche l'écouteur ci-dessous
+if (!existing) {
+  await authService.updateProfile(user.uid, { activeSessionId: sessionId });  // (2)
+}
+```
+
+`setLocalSessionId` (1) était appelé **avant** que l'écriture Firestore revendiquant la session (2) ne soit terminée. Comme (1) ne dépend d'aucun `await` préalable, React peut committer ce changement d'état — et donc armer l'écouteur `onSnapshot(doc(db,"users",uid))` du second `useEffect`, qui dépend de `localSessionId` — avant que (2) (un vrai aller-retour réseau) n'ait eu le temps de resoudre. Sur un navigateur **fraîchement connecté alors qu'un autre navigateur avait déjà une session active**, ce timing fait toute la différence : la première snapshot reçue par l'écouteur montre encore l'**ancien** `activeSessionId` (celui de l'autre navigateur) alors que `localSessionId` est déjà le **nouveau** — l'écouteur croit alors qu'une autre session vient de prendre le dessus et appelle `authService.logout()` **sur lui-même**, aussitôt après la connexion. Le `signOut(auth)` qui en résulte invalide brutalement les écouteurs Firestore encore en vol (dont celui-là même), d'où le `Missing or insufficient permissions` observé juste après. Sans connexion préexistante ailleurs (premier login, `activeSessionId` absent), la même course ne se manifeste jamais : `remoteSessionId` est `undefined`, donc falsy, donc aucune déconnexion déclenchée — ce qui explique pourquoi le bug n'apparaissait que dans ce scénario précis.
+
+**Corrigé** : inversion de l'ordre — l'écriture Firestore (2) est maintenant attendue **avant** `setLocalSessionId` (1), garantissant que l'écouteur ne s'arme qu'une fois que ce navigateur a déjà pris possession de la session (garantie "lecture de ses propres écritures" de Firestore, y compris hors ligne/avant confirmation serveur).
+
+Tests : `AuthProvider.test.tsx` étendu — un nouveau test contrôle manuellement la résolution de l'écriture (`updateProfile`) et vérifie que `onSnapshot` n'est pas encore appelé tant qu'elle n'est pas résolue, confirmé comme échouant sur l'ancien code (vérifié en local, `git stash` temporaire) avant d'appliquer le correctif.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (583 tests, +1, aucune régression). Pas de vérification Playwright ni de reproduction manuelle multi-navigateur (corrigé sur la base du diagnostic de la course, pas d'un test en conditions réelles).
+
+## 42. Une boutique publiée mais sans produit se repliait sur `/demo-catalogue` au lieu de s'afficher, 2026-09-27
+
+Demande utilisateur : "si une boutique a été publiée, j'aimerais qu'elle affiche même si elle ne contient pas encore de produit". `CataloguePageContent` (le composant de `/boutique/[shopId]`, **une seule boutique précise**, distinct de `MarketCataloguePageContent` qui agrège tout le marché) redirigeait vers `/demo-catalogue` dès qu'une boutique était vide **et** qu'aucune autre boutique de la plateforme n'avait encore de produit réel (`useDemoCatalogueAvailable`) — logique héritée de `/catalogue` (le marché agrégé), où basculer sur la démo tant que rien n'est réel sur TOUTE la plateforme a du sens. Appliquée à la page d'**une** boutique précise, déjà confirmée publiée par `ShopStorefrontPage` avant même de monter ce composant, cette même logique n'avait aucun sens : visiter `/boutique/{id}` d'une vraie boutique publiée mais pas encore garnie renvoyait vers une démo sans rapport plutôt que d'afficher cette boutique avec un état honnête "aucun produit".
+
+**Corrigé** : `CataloguePageContent` n'utilise plus `useDemoCatalogueAvailable` ni ne redirige jamais — une boutique vide affiche systématiquement "Cette boutique n'a pas encore de produit à afficher.", que la démo soit par ailleurs affichée ailleurs sur la plateforme ou non. `/catalogue` (le marché agrégé, `catalogue/page.tsx`) garde sa propre logique de repli, inchangée — c'est la bonne place pour ce comportement, pas ici.
+
+**Vérifié que ça ne cassait rien d'autre** : `CataloguePageContent` n'est monté que depuis `ShopStorefrontPage` (`/boutique/[shopId]/page.tsx`), qui vérifie déjà `isPublished` avant de le rendre — aucun autre appelant dans le code. `AllShopsPageContent` (`/boutiques`) et `ShopSummaryCard` listaient déjà toutes les boutiques publiées sans filtrer sur le nombre de produits, donc pas concernés par ce bug.
+
+Tests : `CataloguePageContent.test.tsx` réécrit — retire les tests de redirection (n'ont plus de sens), garde/adapte les cas "boutique vide → état honnête", "tous les produits masqués (BF-90) → état honnête" (redirigeait avant), "recherche sans résultat → pas l'état vide boutique".
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (581 tests, -2 nets — tests de redirection retirés, remplacés par moins de cas désormais nécessaires — aucune régression). Pas de vérification Playwright.
+
+## 43. Catégories non modifiables (juste supprimables) + produits/catégories publiés par défaut à la création, 2026-09-27
+
+Demande utilisateur, en deux parties : (1) "on doit être capable de modifier tout ce qu'on ajoute, soit au double clic soit à travers l'icône de modification, ce qui n'est pas fait [...] on est obligé de supprimer et récréer" ; (2) "la valeur par défaut des produits et catégories ajoutés ne doit pas être active à publier".
+
+**Partie 1 — édition manquante.** Vérifié en premier ce qui existait déjà : les produits ont bien un vrai flux d'édition (`ProductList` → icône crayon → `/dashboard/products/{id}/edit`, réutilise `ProductForm` en mode édition, `productService.updateProduct` déjà branché) — rien à faire côté produits. Les **catégories**, en revanche, n'avaient que "afficher/masquer" (`Switch`) et "supprimer" (corbeille) — renommer une catégorie ou changer sa description obligeait à la supprimer et en recréer une, perdant son lien avec les produits déjà associés (association par nom, pas par id, voir `ProductForm`). `CategoryService.updateCategory`/`ICategoryRepository.update` existaient déjà côté service, mais n'étaient jamais appelés depuis l'UI.
+
+**Fait** : `EditCategoryDialog` (nouveau, dans `CategoryManager.tsx`) — réutilise `CategorySchema` (déjà là pour la création) et `categoryService.updateCategory`, jamais branchés à une UI jusqu'ici. Ouvrable des deux façons demandées : double-clic sur la ligne (zone nom/description uniquement, pas sur le switch/bouton supprimer, pour ne pas déclencher deux actions à la fois), ou icône crayon (même convention que `ProductList`). Le statut affiché/masqué reste modifiable directement depuis la liste (`Switch`), pas dupliqué dans la boîte de dialogue.
+
+**Partie 2 — valeur par défaut.** Deux endroits distincts :
+- `CategoryManager`'s `CategoryForm` : `defaultValues.isActive` passe de `true` à `false` (la case à cocher "Afficher la catégorie" du formulaire de création — déjà là, juste retournée).
+- `ProductForm.tsx` (création uniquement, pas l'édition) : `productService.createProduct({..., isPublished: false})` — jusqu'ici le champ n'était jamais écrit à la création, et `Product.isPublished` absent = publié (`ProductService.isVisibleToCustomers`, choix délibéré de compatibilité ascendante pour ne pas faire disparaître les produits créés avant l'ajout du champ, voir son commentaire dans le modèle) — un nouveau produit apparaissait donc publié sans que le commerçant l'ait décidé. Cette sémantique "absent = publié" pour les anciens produits n'est PAS changée ; seule la création écrit désormais explicitement `false`. `ProductList` permet déjà de publier d'un clic une fois prêt (photos, prix vérifiés).
+
+Tests : `CategoryManager.test.tsx` — les deux tests de bascule "Afficher la catégorie" à la création réécrits pour le nouveau défaut (un test "reste `false` sans toucher au switch", un "passe à `true` si activé"), 3 nouveaux tests pour `EditCategoryDialog` (ouverture par icône pré-remplie + sauvegarde, ouverture par double-clic, annulation sans écriture). `ProductForm.test.tsx` étendu (`isPublished: false` à la création).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (585 tests, +4, aucune régression). Pas de vérification Playwright.
+
+## 44. Aucun retour possible vers `/dashboard`/`/catalogue` depuis l'espace Super Admin, 2026-09-27
+
+Signalé par l'utilisateur : "lorsqu'on est super-admin et qu'on a une boutique avec le même compte, il n'a aucun moyen de voir ses boutiques, d'administrer ses boutiques ou de retourner à la page catalogue pour consulter". Symétrique de §34 : ce tour-là avait ajouté un lien vers `/super-admin` depuis `DashboardTopbar`/`StorefrontHeader` pour un compte cumulant les deux rôles, mais jamais l'inverse — une fois dans `/super-admin`, `SuperAdminTopbar` n'offrait que "Déconnexion", aucun chemin de retour vers l'espace marchand ni vers la vitrine publique.
+
+**Corrigé** : menu profil de `SuperAdminTopbar` étendu, même structure que `DashboardTopbar` (miroir exact, juste dans l'autre sens) :
+- "Mes boutiques" → `/dashboard`, conditionné à `profile.role === "admin" || "seller"` (compte cumulant Super Admin et gérant) — absent pour un Super Admin sans boutique (`role: "client"`), pas un lien mort.
+- "Catalogue" → `/catalogue`, toujours affiché : n'importe quel Super Admin peut vouloir consulter la vitrine publique, pas seulement ceux qui gèrent une boutique.
+
+Tests : `SuperAdminTopbar.test.tsx` étendu — lien Catalogue toujours présent, lien "Mes boutiques" affiché/masqué selon le rôle.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (588 tests, +3, aucune régression). Pas de vérification Playwright.
+
+## 45. "Nous contacter" de la landing page (mailto:) remplacé par un vrai message au Super Admin, 2026-09-27
+
+Signalé par l'utilisateur (capture d'écran) : le bouton "Nous contacter" de la landing page ouvrait Gmail (`mailto:bonjour@manushop.cm`) — "il devrait ouvrir un popup pour entrer l'objet et le message à envoyer au super admin et pour envoyer on doit l'obliger à se connecter avant. une fois qu'il se connecte son message est envoyé dans la boîte des contacts clients. cela doit être notifié".
+
+**Distinct de BF-112 (§38), pas une extension** : le formulaire du tableau de bord commerçant (`/dashboard/support`) est réservé aux boutiques ayant le privilège premium `contactForm` — n'a aucun sens pour un visiteur de la landing page, qui n'a généralement pas de boutique du tout. Plutôt que de dupliquer toute l'infrastructure (nouvelle collection, nouvelle page Super Admin), le message atterrit dans la **même** boîte de réception (`/super-admin/messages`) via une **nouvelle** Server Action sans le gating premium, `sendContactMessageAction` — seule condition : être connecté (`requireCaller`, identité seule). `SupportMessage.shopId`/`shopName` deviennent optionnels pour accueillir ce cas ; l'affichage Super Admin retombe sur "Site web — {nom}" quand `shopName` est absent.
+
+**Fait :**
+- `ContactSuperAdminCta` (nouveau, `src/components/storefront/`) : bouton client remplaçant l'entrée `ctas` `mailto:` de la landing page (`src/app/page.tsx`, resté un Server Component — voir plus bas). Ouvre un dialogue (objet + corps) rédigeable par n'importe qui, connecté ou non ; l'envoi exige la connexion, vérifiée à la soumission plutôt qu'à l'ouverture, pour ne pas décourager avant même d'avoir vu le formulaire — message d'erreur + lien "Se connecter" si non connecté, le texte déjà saisi n'est pas perdu (pas de redirection automatique).
+- `HeroSection` (`src/components/sections/`) : `HeroCta` gagne un champ `render?: React.ReactNode`, rendu tel quel à la place d'un `GlassButton` lien pour ce CTA précis. Nécessaire parce que `page.tsx` reste un Server Component (aucune fonction `onClick` ne peut y être définie) — `HeroSection` reste elle aussi un composant de présentation pur, c'est l'appelant qui lui passe un Client Component déjà instancié (`<ContactSuperAdminCta />`), pattern RSC standard ("children as slot").
+- `sendContactMessageAction` (nouvelle Server Action, `supportMessageActions.ts`) : `requireCaller` seul, aucune vérification de boutique/privilège contrairement à `sendSupportMessageAction`. Écrit dans `supportMessages` sans `shopId`/`shopName`.
+- `countOpenSupportMessagesAction` (nouvelle Server Action) : `count()` agrégé (`firebase-admin` ≥ v11) sur `status == "open"` — alimente le badge de notification, sans récupérer tous les messages juste pour les compter.
+- **"Cela doit être notifié"** : badge rouge sur l'item "Messages" de `SuperAdminSidebar`, nombre de messages en attente (plafonné à "9+"). Pas de `onSnapshot` temps réel possible ici (contrairement à `useNewOrdersCount`/BF-58) : `supportMessages` n'accorde de lecture côté client qu'au commerçant propriétaire de la boutique concernée (`firestore.rules`), jamais au Super Admin — délibérément non exprimé par une règle (voir §38, même raisonnement que `listSupportMessagesAction`). `useNewSupportMessagesCount` (nouveau hook) sonde donc `countOpenSupportMessagesAction` toutes les 60s plutôt qu'un flux temps réel.
+
+Tests : `ContactSuperAdminCta.test.tsx` (nouveau — ouverture, blocage si non connecté sans perdre la saisie, envoi, échec, annulation), `HeroSection.test.tsx` (nouveau — CTA `render` vs lien `href`), `supportMessageActions.test.ts` étendu (`sendContactMessageAction`, `countOpenSupportMessagesAction`), `SupportMessageService.test.ts` étendu, `useNewSupportMessagesCount.test.ts` (nouveau — sondage, échec silencieux, arrêt au démontage), `SuperAdminSidebar.test.tsx` étendu (badge), `page.test.tsx` étendu (mock de `SupportMessageService` ajouté — sans lui, `ContactSuperAdminCta` charge transitivement `jose`, ESM pur, et plante sous Jest, même piège que `firebase-admin/auth` §29).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (610 tests, +22, aucune régression). Pas de vérification Playwright.
+
+## 46. Tags de catégorie invisibles en production malgré des documents réels dans Firestore, 2026-09-27
+
+Signalé par l'utilisateur (deux captures d'écran : `/super-admin/tags` en production affichant "Échec du chargement des tags. Réessayez.", et la console Firebase montrant 11 documents bien présents dans `categoryTags`). Règle Firestore locale déjà correcte (`allow read: if true`, §36) et code de lecture sans particularité (`CategoryTagRepository.listAll()`, un simple `getDocs` sans filtre) — tout pointe une fois de plus vers le même piège récurrent de ce projet (§31, §19, journal du 2026-09-26/27 à plusieurs reprises) : les règles modifiées en local pendant les sessions précédentes (dont le bloc `categoryTags`, ajouté le 2026-09-27 pour BF-109→111) n'ont jamais été republiées sur la vraie console Firebase.
+
+**Diagnostic aggravé par un `catch` silencieux** : `CategoryTagsPageContent` (et, en vérifiant, les 3 autres pages Super Admin construites cette session — `MerchantsPageContent`, `SupportMessagesPageContent`, `PlatformSettingsPageContent`) attrapaient l'erreur de lecture sans jamais la logger, rendant impossible de distinguer un vrai refus Firestore d'une collection simplement vide — exactement le même bug de diagnostic déjà corrigé une fois pour `useDemoCatalogueAvailable` (§31), jamais reproduit pour ces pages plus récentes.
+
+**Corrigé** : `console.error` ajouté avant le repli sur l'état d'erreur dans les 4 pages ci-dessus — un futur échec réel (règles, réseau...) sera visible dans la console du navigateur au lieu de se confondre avec "aucun tag/commerçant/message pour le moment".
+
+**Action requise côté utilisateur (pas un changement de code)** : republier `firestore.rules` sur la console Firebase — voir la réponse donnée à l'utilisateur dans la conversation pour le contenu complet du fichier à coller.
+
+Tests : aucun nouveau (changement de logging pur, comportement déjà couvert par les tests existants de ces 4 composants).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (610 tests, aucune régression). Pas de vérification Playwright.

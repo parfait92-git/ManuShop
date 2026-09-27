@@ -1,7 +1,6 @@
 import {
   BarChart3,
   Boxes,
-  Phone,
   Receipt,
   Share2,
   Tag,
@@ -10,6 +9,7 @@ import {
 
 import { PageBackground } from "@/components/sections/PageBackground";
 import { SiteHeader } from "@/components/sections/SiteHeader";
+import { ContactSuperAdminCta } from "@/components/storefront/ContactSuperAdminCta";
 import {
   HeroAccent,
   HeroSection,
@@ -89,14 +89,7 @@ export default function Home() {
               variant: "solid",
             },
             {
-              label: (
-                <>
-                  <Phone className="size-4" />
-                  Nous contacter
-                </>
-              ),
-              href: "mailto:bonjour@manushop.cm",
-              variant: "ghost",
+              render: <ContactSuperAdminCta />,
             },
           ]}
         />

@@ -5,12 +5,18 @@ jest.mock("../lib/firebase", () => ({
 }));
 
 const sendSupportMessageAction = jest.fn();
+const sendContactMessageAction = jest.fn();
 const listSupportMessagesAction = jest.fn();
+const countOpenSupportMessagesAction = jest.fn();
 const answerSupportMessageAction = jest.fn();
 jest.mock("../server/actions/supportMessageActions", () => ({
   sendSupportMessageAction: (...args: unknown[]) => sendSupportMessageAction(...args),
+  sendContactMessageAction: (...args: unknown[]) =>
+    sendContactMessageAction(...args),
   listSupportMessagesAction: (...args: unknown[]) =>
     listSupportMessagesAction(...args),
+  countOpenSupportMessagesAction: (...args: unknown[]) =>
+    countOpenSupportMessagesAction(...args),
   answerSupportMessageAction: (...args: unknown[]) =>
     answerSupportMessageAction(...args),
 }));
@@ -89,6 +95,28 @@ describe("SupportMessageService", () => {
         "Message"
       );
       expect(result).toEqual({ id: "msg1" });
+    });
+  });
+
+  describe("sendContactMessage", () => {
+    it("delegates to the server action with the caller's ID token", async () => {
+      sendContactMessageAction.mockResolvedValue({ id: "msg1" });
+      const result = await service.sendContactMessage("Objet", "Message");
+      expect(sendContactMessageAction).toHaveBeenCalledWith(
+        "token-1",
+        "Objet",
+        "Message"
+      );
+      expect(result).toEqual({ id: "msg1" });
+    });
+  });
+
+  describe("countOpenMessages", () => {
+    it("delegates to the server action with the caller's ID token", async () => {
+      countOpenSupportMessagesAction.mockResolvedValue(3);
+      const result = await service.countOpenMessages();
+      expect(countOpenSupportMessagesAction).toHaveBeenCalledWith("token-1");
+      expect(result).toBe(3);
     });
   });
 

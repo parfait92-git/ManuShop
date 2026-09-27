@@ -24,7 +24,11 @@ export function PlatformSettingsPageContent() {
       .then((value) => {
         if (active) setEnabled(value);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(
+          "PlatformSettingsPageContent : échec du chargement des réglages",
+          err
+        );
         if (active) {
           setEnabled(true);
           setError("Échec du chargement des réglages. Réessayez.");

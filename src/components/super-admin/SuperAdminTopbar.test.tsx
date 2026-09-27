@@ -47,4 +47,42 @@ describe("SuperAdminTopbar", () => {
 
     expect(logoutMock).toHaveBeenCalled();
   });
+
+  it("always shows a way back to the public catalogue", () => {
+    render(<SuperAdminTopbar onMenuClick={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Parfait/ }));
+
+    expect(screen.getByRole("link", { name: "Catalogue" })).toHaveAttribute(
+      "href",
+      "/catalogue"
+    );
+  });
+
+  it("shows a link back to /dashboard for an account that also runs a shop", () => {
+    useAuthMock.mockReturnValue({
+      profile: { displayName: "Parfait", photoURL: null, role: "admin" },
+    });
+    render(<SuperAdminTopbar onMenuClick={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Parfait/ }));
+
+    expect(screen.getByRole("link", { name: "Mes boutiques" })).toHaveAttribute(
+      "href",
+      "/dashboard"
+    );
+  });
+
+  it("hides the dashboard link for a Super Admin who isn't also a merchant", () => {
+    useAuthMock.mockReturnValue({
+      profile: { displayName: "Parfait", photoURL: null, role: "client" },
+    });
+    render(<SuperAdminTopbar onMenuClick={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Parfait/ }));
+
+    expect(
+      screen.queryByRole("link", { name: "Mes boutiques" })
+    ).not.toBeInTheDocument();
+  });
 });

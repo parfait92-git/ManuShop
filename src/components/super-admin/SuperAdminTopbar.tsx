@@ -2,6 +2,7 @@
 
 import { ChevronDown, Menu } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -17,6 +18,7 @@ export function SuperAdminTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { profile } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const isMerchant = profile?.role === "admin" || profile?.role === "seller";
 
   async function handleLogout() {
     await authService.logout();
@@ -81,6 +83,27 @@ export function SuperAdminTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                 onClick={() => setMenuOpen(false)}
               />
               <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                {/* Un compte peut cumuler Super Admin et gérant de boutique
+                (même schéma que DashboardTopbar, dans l'autre sens) — sans
+                ça, aucun moyen de revenir gérer sa propre boutique ou de
+                consulter le catalogue depuis l'espace Super Admin, une fois
+                dedans. */}
+                {isMerchant && (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                  >
+                    Mes boutiques
+                  </Link>
+                )}
+                <Link
+                  href="/catalogue"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                >
+                  Catalogue
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}

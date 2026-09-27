@@ -160,6 +160,11 @@ export function ProductForm({
           stock: data.stock,
           stockThreshold: data.stockThreshold,
           images,
+          // Non publié par défaut : un nouveau produit part masqué le temps
+          // que le commerçant vérifie ses photos/prix, plutôt que d'être
+          // immédiatement visible aux clients (BF-90, `ProductList` permet
+          // de le publier ensuite d'un clic).
+          isPublished: false,
           ...promoFields,
         });
         clearProductDraft();
