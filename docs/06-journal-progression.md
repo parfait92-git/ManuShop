@@ -998,3 +998,13 @@ Signalé par l'utilisateur : impossible d'ouvrir la galerie pour choisir un logo
 Tests : `ShopLogoStep.test.tsx` (nouveau).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` et `npm run test:coverage` (421 tests, +4, aucune régression). À confirmer par l'utilisateur en conditions réelles (aucun outil de navigateur disponible ici). Rien de commité.
+
+### 2026-09-27 — `/api/uploads` plantait encore malgré les variables Cloudinary configurées
+
+Après configuration des variables Cloudinary sur Vercel (session précédente) et déploiement du correctif §26, l'utilisateur a testé à nouveau : toujours un 500 brut, pas le message clair attendu. Diagnostic poussé plus loin (lecture du code source du SDK Cloudinary dans `node_modules`) : la variable `CLOUDINARY_URL`, présente sur Vercel (probablement auto-ajoutée par une intégration Vercel↔Cloudinary, jamais utilisée par notre code), est lue par le SDK **dès son propre import**, avant même notre code — et plante si elle est mal formée. Un `import` statique classique ne pouvait donc pas être neutralisé à temps par un simple `delete` placé après lui dans le fichier.
+
+**Corrigé** : `src/lib/cloudinary.ts` passe à un `import()` dynamique et paresseux (`getCloudinary()`, mémorisé) — la variable est supprimée avant que le paquet lui-même ne soit chargé, pas seulement avant notre propre `.config()`. `route.ts` appelle `getCloudinary()` à l'intérieur de son `try/catch`.
+
+Tests : `cloudinary.test.ts` (nouveau, reproduit le crash avant correction puis le vérifie corrigé), `route.test.ts` mis à jour.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (425 tests, +4, aucune régression). À confirmer par l'utilisateur une fois déployé.

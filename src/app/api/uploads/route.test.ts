@@ -13,11 +13,11 @@ jest.mock("../../../lib/verifyIdToken", () => ({
 
 const uploadStreamMock = jest.fn();
 jest.mock("../../../lib/cloudinary", () => ({
-  cloudinary: {
+  getCloudinary: async () => ({
     uploader: {
       upload_stream: (...args: unknown[]) => uploadStreamMock(...args),
     },
-  },
+  }),
 }));
 
 import { POST } from "./route";

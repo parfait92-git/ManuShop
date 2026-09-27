@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { cloudinary } from "@/lib/cloudinary";
+import { getCloudinary } from "@/lib/cloudinary";
 import { verifyIdToken } from "@/lib/verifyIdToken";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
   // (src/lib/upload.ts) plante alors sur `response.json()` avant même de
   // pouvoir lire un message d'erreur utile, masquant la vraie cause côté UI.
   try {
+    const cloudinary = await getCloudinary();
     const buffer = Buffer.from(await file.arrayBuffer());
     const result = await new Promise<{ secure_url: string }>(
       (resolve, reject) => {
