@@ -56,11 +56,25 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
     Promise.all([
       productService.listProducts(shopId),
       categoryService.listCategories(shopId),
-    ]).then(([productList, categoryList]) => {
-      if (!active) return;
-      setProducts(productList);
-      setCategories(categoryList);
-    });
+    ])
+      .then(([productList, categoryList]) => {
+        if (!active) return;
+        setProducts(productList);
+        setCategories(categoryList);
+      })
+      .catch((error) => {
+        // Sans catch, un échec ici laissait `products` bloqué sur `null`
+        // pour toujours (page coincée sur "Chargement...") sans la moindre
+        // trace en console — même esprit que useDemoCatalogueAvailable
+        // (04-besoins-techniques.md §31).
+        console.error(
+          "CataloguePageContent : échec du chargement des produits/catégories",
+          error
+        );
+        if (!active) return;
+        setProducts([]);
+        setCategories([]);
+      });
     return () => {
       active = false;
     };

@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ProductForm } from "@/components/dashboard/ProductForm";
@@ -47,12 +49,28 @@ export function ProductFormPageContent({
 
   if (productId && product === null) {
     return (
-      <p className="text-sm text-destructive">Produit introuvable.</p>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-destructive">Produit introuvable.</p>
+        <Link
+          href="/dashboard/products"
+          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="size-4" />
+          Retour aux produits
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6">
+      <Link
+        href="/dashboard/products"
+        className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="size-4" />
+        Retour aux produits
+      </Link>
       <h1 className="text-2xl font-semibold tracking-tight">
         {product ? "Modifier le produit" : "Nouveau produit"}
       </h1>

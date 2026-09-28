@@ -290,6 +290,12 @@
 | BF-118 | Détail d'un commerçant | Pour un commerçant donné : nombre de boutiques détenues, et liste des privilèges premium actifs pour chacune. **Fait le 2026-09-27** : chaque ligne se déplie (pas de page séparée) pour révéler, par boutique, son statut de publication et ses privilèges premium actifs. |
 | BF-119 | Activer/désactiver un privilège premium par boutique | Le Super Admin peut activer ou désactiver un privilège premium précis pour une boutique donnée d'un commerçant, indépendamment de l'état de son abonnement. **Fait le 2026-09-27** : interrupteur par privilège dans `/super-admin/commercants` (`Shop.premiumFeatures`, `setShopPremiumFeatureAction`), mise à jour optimiste avec retour arrière en cas d'échec. Les 5 privilèges couverts (`lib/premiumFeatures.ts`) correspondent à des besoins déjà documentés (BF-102, BF-105, BF-106, BF-107, BF-112) ; `contactForm`/BF-112 et `advancedContact`/BF-105 sont construits côté commerçant à ce jour (2026-09-27) — activer les 3 autres privilèges (BF-102, BF-106, BF-107) ne débloque encore rien de visible. |
 
+### Module 23 — Ergonomie de Navigation
+
+| ID | Besoin | Description |
+|---|---|---|
+| BF-131 | Lien de retour explicite depuis les pages de création/édition | En entrant dans une page de création ou d'édition, un lien "Retour" explicite doit permettre de revenir facilement à la liste d'où l'on vient, sans dépendre uniquement du bouton retour du navigateur. **Fait le 2026-09-28, périmètre initial : création/édition de produit** : `/dashboard/products/new` et `/dashboard/products/[id]/edit` (`ProductFormPageContent`) affichent désormais un lien "← Retour aux produits" vers `/dashboard/products`, y compris sur l'état "Produit introuvable." Le reste du dashboard marchand et du Super Admin n'a pas de page de détail/édition séparée nécessitant ce traitement à ce jour (listes avec expansion en ligne plutôt que navigation, voir 04-besoins-techniques.md §53) ; le storefront public avait déjà ce lien sur la fiche produit (`ProductDetailPageContent`, "Retour à la boutique"). À étendre au cas par cas si de nouvelles pages de détail/édition apparaissent. |
+
 ---
 
 **Le reste des fonctionnalités reste à définir** (déclaration explicite de l'utilisateur le 2026-09-25) — les modules ci-dessus ne prétendent pas clore la spécification produit ; ils couvrent ce qui a été précisé à ce jour.

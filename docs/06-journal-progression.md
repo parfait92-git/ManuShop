@@ -1260,3 +1260,17 @@ Fait : `SUPPORTED_PHONE_COUNTRIES = ["CM", "US", "CA"]` dans `phone-input.tsx`, 
 Tests : `phone-input.test.tsx` étendu, un test existant adapté (utilisait la France, désormais hors liste).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (647 tests, +1, aucune régression). Rien de commité.
+
+### 2026-09-28 — "Aucun produit n'affiche" + lien de retour explicite (BF-131)
+
+Deux captures d'écran de l'utilisateur (`/boutique/{id}` et `/catalogue`, tous deux vides malgré des boutiques/produits que l'utilisateur croit publiés). Investigation complète de la chaîne lecture/écriture des produits (règles Firestore, correspondance shopId, interrupteur "Publié") : aucune anomalie de code — conclusion la plus probable, confusion avec le changement de §43 (produits créés non publiés par défaut, doivent être explicitement basculés dans `/dashboard/products`). Confirmé par l'utilisateur ensuite : le point bloquant restant est la fiabilité du diagnostic en cas de vrai problème futur, pas ce cas précis.
+
+Fait : deux trous de gestion d'erreur comblés (même motif que §31/§46) — `CataloguePageContent.tsx` n'avait aucun `.catch()` sur son chargement produits/catégories (page bloquée indéfiniment sur "Chargement..." en cas d'échec réel, sans trace) ; `useMarketCatalogue.ts` avait un `.catch()` mais sans `console.error`. Les deux journalisent désormais l'erreur et se replient sur un état honnêtement vide plutôt que de rester bloqués.
+
+Confirmé (déjà couvert par le code existant, pas de régression) : la boutique s'affiche bien même sans aucun produit publié (§42, `PublicationBanner` ne conditionne rien au nombre de produits).
+
+BF-131 (nouveau, Module 23) : demande explicite de l'utilisateur pour un lien de retour facile depuis les pages de création/édition — clarifié via question (lien "Retour" explicite plutôt que fil d'Ariane ou préservation d'état de liste). Recherche exhaustive : seule `/dashboard/products/new` et `/dashboard/products/[id]/edit` (`ProductFormPageContent`) en manquaient dans le dashboard marchand/Super Admin (le reste utilise une expansion en ligne, pas une navigation séparée) ; le storefront public l'avait déjà. Ajouté "← Retour aux produits" (y compris sur "Produit introuvable.").
+
+Tests : `CataloguePageContent.test.tsx` étendu (repli sur échec de lecture, vérifié comme échouant sur l'ancien code via `git stash`) ; `ProductFormPageContent.test.tsx` (nouveau fichier) sur les trois états.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (651 tests, +4, aucune régression). Rien de commité.
