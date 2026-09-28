@@ -1238,3 +1238,25 @@ Fait : `ShopLogoStep` (déjà construit pour l'assistant, §27) réutilisé tel 
 Tests : `ShopLogoStep.test.tsx`/`ShopSettingsForm.test.tsx`/`auth.test.ts` étendus.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (643 tests, +5, aucune régression). Rien de commité.
+
+### 2026-09-27 — Deux erreurs console sans rapport sur /dashboard/shop
+
+Deux captures d'écran de l'utilisateur, sans description : erreurs lues directement dans la console.
+
+1. `PhoneInput` (édition) suppose toujours un numéro E.164, mais l'assistant de création (`CreateShopWizard`) n'a jamais utilisé `PhoneInput` — de simples champs texte sans indicatif. Toute boutique créée jusqu'ici a donc un numéro brut en base, qui fait planter cette hypothèse à l'édition. Corrigé en branchant `PhoneInput` dans l'assistant aussi, empêchant le problème pour toute nouvelle boutique (pas de migration rétroactive des numéros déjà enregistrés).
+
+2. Plus grave : `ActivityLogService.logShopSettingsUpdated()` plantait sur `setDoc()` (métadonnée `undefined` explicite, refusée par Firestore) à **chaque** sauvegarde des paramètres de boutique — et comme `ShopSettingsForm.onSubmit` n'avait aucun `try/catch`, l'enregistrement réussissait réellement mais la confirmation ne s'affichait jamais. Bug ancien, pas introduit aujourd'hui, juste jamais remarqué. Corrigé aux deux endroits : le service ne pose plus jamais `metadata: undefined`, et le formulaire découple l'échec (secondaire) de la journalisation de la réussite (principale) de l'enregistrement.
+
+Tests : `ActivityLogService.test.ts` (le test existant masquait le bug, `toHaveBeenCalledWith({metadata: undefined})` étant égal à `{}` pour Jest — réécrit, vérifié comme échouant sur l'ancien code), `ShopSettingsForm.test.tsx`/`CreateShopWizard.test.tsx` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (646 tests, +3, aucune régression). Rien de commité.
+
+### 2026-09-27 — Champs téléphone limités à 3 pays
+
+Demande explicite : "tous les champs de numéro téléphone doivent avoir une limite et un formatage stricte, pour le moment prenons en compte juste 3 numéros de téléphone : cameroun, usa canada." Le formatage/longueur stricte par pays existait déjà (`react-phone-number-input`) ; le vrai changement était de restreindre la liste de pays sélectionnables.
+
+Fait : `SUPPORTED_PHONE_COUNTRIES = ["CM", "US", "CA"]` dans `phone-input.tsx`, propagé automatiquement à tous les champs téléphone de l'app (un seul composant partagé). Vérifié qu'aucun champ n'y échappait via un `<Input>` texte brut.
+
+Tests : `phone-input.test.tsx` étendu, un test existant adapté (utilisait la France, désormais hors liste).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (647 tests, +1, aucune régression). Rien de commité.

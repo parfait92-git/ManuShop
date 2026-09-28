@@ -145,6 +145,55 @@ describe("ShopSettingsForm", () => {
     });
   });
 
+  it("still confirms the save when logging the activity fails — the main write already succeeded", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop());
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    jest
+      .mocked(activityLogService.logShopSettingsUpdated)
+      .mockRejectedValueOnce(new Error("Missing or insufficient permissions."));
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText("Nom de la boutique") as HTMLInputElement).value
+      ).toBe("Awa Boutique")
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+    );
+
+    expect(
+      await screen.findByText("Paramètres enregistrés.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Échec de l'enregistrement/)
+    ).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("shows an error message when saving the shop itself fails", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop());
+    mockedShopService.updateProfile.mockRejectedValue(new Error("boom"));
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText("Nom de la boutique") as HTMLInputElement).value
+      ).toBe("Awa Boutique")
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+    );
+
+    expect(
+      await screen.findByText("Échec de l'enregistrement des paramètres. Réessayez.")
+    ).toBeInTheDocument();
+    expect(activityLogService.logShopSettingsUpdated).not.toHaveBeenCalled();
+  });
+
   it("shows the shop as unpublished by default and lets the merchant publish it (BF-88)", async () => {
     mockedShopService.getShop.mockResolvedValue(fakeShop({ isPublished: false }));
     mockedShopService.updateProfile.mockResolvedValue(undefined);

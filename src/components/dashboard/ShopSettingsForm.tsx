@@ -122,6 +122,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -175,19 +176,37 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
   async function onSubmit(data: ShopSettingsInput) {
     setSaved(false);
+    setFormError(null);
     // `logoMode` reste purement local à ce formulaire (bascule Galerie/Lien
     // de `ShopLogoStep`) — `Shop` ne connaît que l'URL finale du logo.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { logoMode, ...shopData } = data;
-    await shopService.updateProfile(shopId, shopData);
-    if (profile) {
-      await activityLogService.logShopSettingsUpdated({
-        shopId,
-        actorId: profile.id,
-        actorName: profile.displayName,
-      });
+    try {
+      await shopService.updateProfile(shopId, shopData);
+      // Le journal d'activité est secondaire : un échec ici (règles pas
+      // encore déployées, réseau...) ne doit pas cacher que l'enregistrement
+      // principal ci-dessus a bien réussi — capturé séparément plutôt que de
+      // laisser une exception ici interrompre la fonction avant `setSaved`.
+      if (profile) {
+        try {
+          await activityLogService.logShopSettingsUpdated({
+            shopId,
+            actorId: profile.id,
+            actorName: profile.displayName,
+          });
+        } catch (err) {
+          console.error(
+            "ShopSettingsForm : échec de la journalisation de la mise à jour",
+            err
+          );
+        }
+      }
+      setSaved(true);
+    } catch {
+      setFormError(
+        "Échec de l'enregistrement des paramètres. Réessayez."
+      );
     }
-    setSaved(true);
   }
 
   if (loading) {
@@ -698,6 +717,9 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             <p className="text-center text-sm text-emerald-600 dark:text-emerald-400">
               Paramètres enregistrés.
             </p>
+          )}
+          {formError && (
+            <p className="text-center text-sm text-destructive">{formError}</p>
           )}
         </div>
       </div>
