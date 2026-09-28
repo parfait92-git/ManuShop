@@ -1,12 +1,13 @@
 "use client";
 
 import { Lock, Mail } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCurrentShop } from "@/hooks/useCurrentShop";
+import { useSupportMessagesForShop } from "@/hooks/useSupportMessagesForShop";
 import type { SupportMessage } from "@/models/support/SupportMessage";
 import { supportMessageService } from "@/services/SupportMessageService";
 
@@ -63,29 +64,13 @@ function MessageCard({ message }: { message: SupportMessage }) {
  */
 export function SupportPageContent() {
   const { shop, loading: shopLoading } = useCurrentShop();
-  const [messages, setMessages] = useState<SupportMessage[] | null>(null);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const enabled = shop?.premiumFeatures?.includes("contactForm") ?? false;
-
-  useEffect(() => {
-    if (!shop || !enabled) return;
-    let active = true;
-    supportMessageService
-      .listForShop(shop.id)
-      .then((data) => {
-        if (active) setMessages(data);
-      })
-      .catch(() => {
-        if (active) setMessages([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [shop, enabled]);
+  const messages = useSupportMessagesForShop(enabled ? shop?.id : undefined);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -96,8 +81,8 @@ export function SupportPageContent() {
       await supportMessageService.sendMessage(subject, body);
       setSubject("");
       setBody("");
-      const data = await supportMessageService.listForShop(shop.id);
-      setMessages(data);
+      // Pas de re-fetch manuel : `useSupportMessagesForShop` reçoit déjà ce
+      // nouveau message via son écouteur temps réel.
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Échec de l'envoi. Réessayez."
@@ -177,7 +162,7 @@ export function SupportPageContent() {
             </Button>
           </form>
 
-          {messages === null ? (
+          {messages === undefined ? (
             <p className="text-sm text-muted-foreground">Chargement...</p>
           ) : messages.length === 0 ? (
             <p className="text-sm text-muted-foreground">

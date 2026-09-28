@@ -13,7 +13,9 @@ import { uploadShopLogo } from "@/lib/upload";
 type LogoMode = "gallery" | "link";
 
 /**
- * Étape 2 de l'assistant "Créer ma boutique" (BF-81). Miroir de
+ * Étape 2 de l'assistant "Créer ma boutique" (BF-81) — et réutilisé tel
+ * quel dans `ShopSettingsForm` pour modifier le logo après la création
+ * (jusque-là un simple champ URL, sans upload possible). Miroir de
  * `ProductImageUploader` mais pour un logo unique (pas de file d'attente
  * multi-fichiers) avec bascule Galerie/Lien — voir la maquette reçue
  * (docs/design-prompts.txt, item 7).
@@ -23,11 +25,16 @@ export function ShopLogoStep({
   onModeChange,
   logoUrl,
   onLogoChange,
+  hideHeading,
 }: {
   mode: LogoMode;
   onModeChange: (mode: LogoMode) => void;
   logoUrl: string | undefined;
   onLogoChange: (url: string) => void;
+  /** `ShopSettingsForm` a déjà son propre titre de section ("Profil de la
+   * boutique") juste au-dessus, et son texte d'aide ("vous pourrez
+   * l'ajouter plus tard") n'a pas de sens hors du contexte de création. */
+  hideHeading?: boolean;
 }) {
   const [pendingImageSrc, setPendingImageSrc] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -66,13 +73,15 @@ export function ShopLogoStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h3 className="text-lg font-semibold">Ajoutez votre logo</h3>
-        <p className="text-sm text-muted-foreground">
-          Optionnel — vous pourrez l&apos;ajouter plus tard. Un logo aide vos
-          clients à reconnaître votre boutique.
-        </p>
-      </div>
+      {!hideHeading && (
+        <div>
+          <h3 className="text-lg font-semibold">Ajoutez votre logo</h3>
+          <p className="text-sm text-muted-foreground">
+            Optionnel — vous pourrez l&apos;ajouter plus tard. Un logo aide
+            vos clients à reconnaître votre boutique.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 rounded-lg border border-border p-1">
         <button
@@ -101,7 +110,20 @@ export function ShopLogoStep({
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
           {logoUrl ? (
             <div className="relative size-24 overflow-hidden rounded-full border border-border">
-              <Image src={logoUrl} alt="" fill sizes="96px" className="object-cover" />
+              {/* `unoptimized` : réutilisé depuis `ShopSettingsForm` pour
+              modifier le logo d'une boutique déjà créée, `logoUrl` peut donc
+              venir d'un lien externe collé à la main (mode "Lien"), pas
+              seulement d'un upload Cloudinary — voir ShopSummaryCard/
+              ProductDetailPageContent/StorefrontHeader pour le même
+              contournement de l'allowlist de domaines de next/image. */}
+              <Image
+                src={logoUrl}
+                alt=""
+                fill
+                sizes="96px"
+                className="object-cover"
+                unoptimized
+              />
             </div>
           ) : (
             <ImagePlus className="size-8 text-muted-foreground" />

@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { deleteField } from "firebase/firestore";
 import { HelpCircle, Info, Pencil, Plus, Tag, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -15,19 +16,24 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
 import { CategorySchema, type CategoryInput } from "@/lib/validation/product";
 import type { Category } from "@/models/category/Category";
+import type { CategoryTag } from "@/models/category/CategoryTag";
 import { activityLogService } from "@/services/ActivityLogService";
 import { categoryService } from "@/services/CategoryService";
+import { categoryTagService } from "@/services/CategoryTagService";
 import { categoryTrashService } from "@/services/TrashService";
 
 function CategoryForm({
   shopId,
+  tags,
   onCreated,
 }: {
   shopId: string;
+  tags: CategoryTag[];
   onCreated: (category: Category) => void;
 }) {
   const [formError, setFormError] = useState<string | null>(null);
@@ -44,7 +50,7 @@ function CategoryForm({
     // généralement pas encore de produit associé — mieux vaut que le
     // commerçant l'active lui-même une fois prête plutôt que de l'exposer
     // aux clients vide dès la création.
-    defaultValues: { name: "", description: "", isActive: false },
+    defaultValues: { name: "", description: "", isActive: false, tagId: "" },
   });
   const isActive = useWatch({ control, name: "isActive" });
 
@@ -53,7 +59,7 @@ function CategoryForm({
     try {
       const category = await categoryService.createCategory(shopId, data);
       onCreated(category);
-      reset({ name: "", description: "", isActive: false });
+      reset({ name: "", description: "", isActive: false, tagId: "" });
     } catch {
       setFormError("Une erreur est survenue. Veuillez réessayer.");
     }
@@ -108,6 +114,21 @@ function CategoryForm({
               {errors.description.message}
             </p>
           )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tagId" className="gap-1.5">
+            Tag de catégorie système
+            <FieldHint text="Une taxonomie commune à toutes les boutiques, gérée par le Super Admin — c'est elle qui permet à un client de filtrer le Marché (/catalogue) par catégorie malgré des noms différents d'une boutique à l'autre. Facultatif." />
+          </Label>
+          <Select id="tagId" {...register("tagId")}>
+            <option value="">Aucun tag</option>
+            {tags.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
@@ -182,11 +203,13 @@ function InfoPanel() {
  */
 function EditCategoryDialog({
   category,
+  tags,
   open,
   onOpenChange,
   onSaved,
 }: {
   category: Category;
+  tags: CategoryTag[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: (category: Category) => void;
@@ -203,17 +226,32 @@ function EditCategoryDialog({
       name: category.name,
       description: category.description ?? "",
       isActive: category.isActive ?? true,
+      tagId: category.tagId ?? "",
     },
   });
 
   async function onSubmit(data: CategoryInput) {
     setFormError(null);
     try {
+      // Jamais `tagId: undefined` explicitement (Firestore refuse un champ
+      // à `undefined` sur `updateDoc`) : soit une vraie valeur, soit
+      // `deleteField()` pour retirer un tag déjà associé, soit la clé
+      // entièrement absente s'il n'y en avait déjà pas.
       await categoryService.updateCategory(category.id, {
         name: data.name,
         description: data.description,
+        ...(data.tagId
+          ? { tagId: data.tagId }
+          : category.tagId
+            ? { tagId: deleteField() }
+            : {}),
       });
-      onSaved({ ...category, name: data.name, description: data.description });
+      onSaved({
+        ...category,
+        name: data.name,
+        description: data.description,
+        tagId: data.tagId || undefined,
+      });
       onOpenChange(false);
     } catch {
       setFormError("Une erreur est survenue. Veuillez réessayer.");
@@ -267,6 +305,18 @@ function EditCategoryDialog({
             )}
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-category-tagId">Tag de catégorie système</Label>
+            <Select id="edit-category-tagId" {...register("tagId")}>
+              <option value="">Aucun tag</option>
+              {tags.map((tag) => (
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
           {formError && <p className="text-sm text-destructive">{formError}</p>}
 
           <div className="flex justify-end gap-3">
@@ -289,6 +339,7 @@ function EditCategoryDialog({
 
 function CategoryRow({
   category,
+  tags,
   onToggle,
   onDelete,
   onEdit,
@@ -296,6 +347,7 @@ function CategoryRow({
   deleting,
 }: {
   category: Category;
+  tags: CategoryTag[];
   onToggle: (category: Category) => void;
   onDelete: (category: Category) => void;
   onEdit: (category: Category) => void;
@@ -303,6 +355,7 @@ function CategoryRow({
   deleting: boolean;
 }) {
   const isActive = category.isActive ?? true;
+  const tag = tags.find((t) => t.id === category.tagId);
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
       <div
@@ -310,7 +363,22 @@ function CategoryRow({
         onDoubleClick={() => onEdit(category)}
         title="Double-cliquez pour modifier"
       >
-        <span className="text-sm font-medium">{category.name}</span>
+        <span className="flex items-center gap-1.5 text-sm font-medium">
+          {category.name}
+          {tag && (
+            <span
+              className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-normal text-muted-foreground"
+              title={`Tag système : ${tag.name}`}
+            >
+              <span
+                aria-hidden
+                className="size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: tag.color }}
+              />
+              {tag.name}
+            </span>
+          )}
+        </span>
         {category.description && (
           <span className="truncate text-sm text-muted-foreground">
             {category.description}
@@ -359,10 +427,28 @@ export function CategoryManager({
 }) {
   const { profile } = useAuth();
   const [categories, setCategories] = useState(initialCategories);
+  const [tags, setTags] = useState<CategoryTag[]>([]);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    categoryTagService
+      .listTags()
+      .then((data) => {
+        if (active) setTags(data);
+      })
+      .catch((err) => {
+        // Non bloquant : le sélecteur de tag affiche juste "Aucun tag"
+        // disponible plutôt que d'empêcher de créer/modifier une catégorie.
+        console.error("CategoryManager : échec du chargement des tags", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleCreated(category: Category) {
     setCategories((current) => [...current, category]);
@@ -427,7 +513,7 @@ export function CategoryManager({
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-        <CategoryForm shopId={shopId} onCreated={handleCreated} />
+        <CategoryForm shopId={shopId} tags={tags} onCreated={handleCreated} />
         <InfoPanel />
       </div>
 
@@ -468,6 +554,7 @@ export function CategoryManager({
               <CategoryRow
                 key={category.id}
                 category={category}
+                tags={tags}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 onEdit={setEditingCategory}
@@ -482,6 +569,7 @@ export function CategoryManager({
       {editingCategory && (
         <EditCategoryDialog
           category={editingCategory}
+          tags={tags}
           open={!!editingCategory}
           onOpenChange={(open) => {
             if (!open) setEditingCategory(null);

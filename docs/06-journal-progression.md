@@ -1196,3 +1196,67 @@ Deux captures d'écran de l'utilisateur : `/super-admin/tags` affichait "Échec 
 Ajouté au passage : `console.error` avant le repli sur l'état d'erreur dans les 4 pages Super Admin construites cette session (`CategoryTagsPageContent`, `MerchantsPageContent`, `SupportMessagesPageContent`, `PlatformSettingsPageContent`) — aucune ne loggait, rendant ce diagnostic plus difficile qu'il n'aurait dû l'être. Contenu de `firestore.rules` redonné à l'utilisateur pour republication manuelle.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (610 tests, aucune régression). Rien de commité.
+
+### 2026-09-27 — Tags de catégorie non modifiables
+
+Une fois les tags de nouveau visibles (règles republiées) : "comment je fais pour modifier mes valeurs tags ?" — même lacune que celle déjà corrigée pour les catégories du commerçant (§43, journal du même jour), jamais reproduite pour les tags Super Admin.
+
+Fait : `updateCategoryTagAction` (nouvelle Server Action), `CategoryTagService.updateTag()`, `EditTagDialog` dans `CategoryTagsPageContent` (double-clic ou icône crayon, même motif que `EditCategoryDialog`).
+
+Tests : `categoryTagActions.test.ts`/`CategoryTagService.test.ts`/`CategoryTagsPageContent.test.tsx` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (620 tests, +10, aucune régression). Rien de commité.
+
+### 2026-09-27 — Messagerie sans mise à jour en temps réel
+
+"Les messages ne se mettent pas à jour en temps réelles" : `/dashboard/support` et `/super-admin/messages` ne lisaient qu'une fois au montage, jamais rafraîchis — une réponse ou un nouveau message n'apparaissait qu'après rechargement manuel.
+
+Deux traitements différents selon la contrainte de chaque côté : côté commerçant, un vrai `onSnapshot` (nouveau hook `useSupportMessagesForShop`, les règles Firestore l'autorisent déjà) ; côté Super Admin, toujours impossible en direct (même limite que le badge de notification, §45) — sondage de la liste toutes les 15s à la place d'une lecture unique, avec conservation de la dernière liste connue si un sondage échoue ponctuellement.
+
+Tests : `useSupportMessagesForShop.test.ts` (nouveau), `SupportPageContent.test.tsx` réécrit, `SupportMessagesPageContent.test.tsx` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (629 tests, +9, aucune régression). Rien de commité.
+
+### 2026-09-27 — Sélecteur de tag système enfin branché côté commerçant
+
+Capture d'écran de l'utilisateur (`/dashboard/categories`) : aucun champ pour associer un tag Super Admin à une catégorie — délibérément laissé de côté au tour de la construction des tags (§36). Justifié par l'utilisateur : c'est ce qui permettra un jour de filtrer le Marché par une taxonomie commune plutôt que par nom de catégorie brut, qui ne marche pas entre boutiques.
+
+Fait : `CategoryForm` et `EditCategoryDialog` (`CategoryManager.tsx`) gagnent un sélecteur "Tag de catégorie système" (facultatif, alimenté par les tags déjà publics), avec la possibilité de retirer un tag déjà associé (`deleteField()`, Firestore refusant `undefined`). La ligne de catégorie affiche désormais le tag associé (couleur + nom).
+
+Explicitement pas fait cette tranche : le Marché (`/catalogue`) ne consomme pas encore ce tag pour filtrer — reste sur le nom de catégorie brut, la raison même invoquée par l'utilisateur pour ce champ. Chantier à part (jointure boutique→catégorie→tag dans `useMarketCatalogue`, fidélité de `/demo-catalogue` à revoir).
+
+Tests : `CategoryService.test.ts`/`CategoryManager.test.tsx`/`product.test.ts` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (638 tests, +9, aucune régression). Rien de commité.
+
+### 2026-09-27 — Aucun moyen de modifier le logo d'une boutique déjà créée
+
+Signalé par l'utilisateur : `/dashboard/shop` n'avait qu'un champ texte URL pour le logo — pas de galerie, contrairement à l'assistant de création qui a toujours eu les deux modes.
+
+Fait : `ShopLogoStep` (déjà construit pour l'assistant, §27) réutilisé tel quel dans `ShopSettingsForm`, avec une nouvelle prop `hideHeading` (le formulaire de paramètres a déjà son propre titre de section) et `unoptimized` ajouté à son aperçu (désormais atteignable avec un logo lié en externe, pas seulement uploadé sur Cloudinary).
+
+Tests : `ShopLogoStep.test.tsx`/`ShopSettingsForm.test.tsx`/`auth.test.ts` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (643 tests, +5, aucune régression). Rien de commité.
+
+### 2026-09-27 — Deux erreurs console sans rapport sur /dashboard/shop
+
+Deux captures d'écran de l'utilisateur, sans description : erreurs lues directement dans la console.
+
+1. `PhoneInput` (édition) suppose toujours un numéro E.164, mais l'assistant de création (`CreateShopWizard`) n'a jamais utilisé `PhoneInput` — de simples champs texte sans indicatif. Toute boutique créée jusqu'ici a donc un numéro brut en base, qui fait planter cette hypothèse à l'édition. Corrigé en branchant `PhoneInput` dans l'assistant aussi, empêchant le problème pour toute nouvelle boutique (pas de migration rétroactive des numéros déjà enregistrés).
+
+2. Plus grave : `ActivityLogService.logShopSettingsUpdated()` plantait sur `setDoc()` (métadonnée `undefined` explicite, refusée par Firestore) à **chaque** sauvegarde des paramètres de boutique — et comme `ShopSettingsForm.onSubmit` n'avait aucun `try/catch`, l'enregistrement réussissait réellement mais la confirmation ne s'affichait jamais. Bug ancien, pas introduit aujourd'hui, juste jamais remarqué. Corrigé aux deux endroits : le service ne pose plus jamais `metadata: undefined`, et le formulaire découple l'échec (secondaire) de la journalisation de la réussite (principale) de l'enregistrement.
+
+Tests : `ActivityLogService.test.ts` (le test existant masquait le bug, `toHaveBeenCalledWith({metadata: undefined})` étant égal à `{}` pour Jest — réécrit, vérifié comme échouant sur l'ancien code), `ShopSettingsForm.test.tsx`/`CreateShopWizard.test.tsx` étendus.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (646 tests, +3, aucune régression). Rien de commité.
+
+### 2026-09-27 — Champs téléphone limités à 3 pays
+
+Demande explicite : "tous les champs de numéro téléphone doivent avoir une limite et un formatage stricte, pour le moment prenons en compte juste 3 numéros de téléphone : cameroun, usa canada." Le formatage/longueur stricte par pays existait déjà (`react-phone-number-input`) ; le vrai changement était de restreindre la liste de pays sélectionnables.
+
+Fait : `SUPPORTED_PHONE_COUNTRIES = ["CM", "US", "CA"]` dans `phone-input.tsx`, propagé automatiquement à tous les champs téléphone de l'app (un seul composant partagé). Vérifié qu'aucun champ n'y échappait via un `<Input>` texte brut.
+
+Tests : `phone-input.test.tsx` étendu, un test existant adapté (utilisait la France, désormais hors liste).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (toujours 40 routes) et `npm run test:coverage` (647 tests, +1, aucune régression). Rien de commité.

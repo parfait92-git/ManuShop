@@ -38,7 +38,14 @@ export class ActivityLogService {
       action,
       targetType,
       targetId,
-      metadata,
+      // Jamais `metadata: undefined` explicitement : Firestore refuse un
+      // champ à `undefined` sur `setDoc` (contrairement à son absence pure
+      // et simple de l'objet) — `logShopSettingsUpdated` (aucune métadonnée
+      // à journaliser) plantait sur chaque sauvegarde des paramètres de
+      // boutique avant ce correctif, empêchant la confirmation
+      // "Paramètres enregistrés." de s'afficher alors que l'enregistrement
+      // lui-même avait bien réussi.
+      ...(metadata ? { metadata } : {}),
     });
   }
 

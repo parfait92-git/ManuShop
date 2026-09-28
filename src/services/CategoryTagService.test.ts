@@ -5,11 +5,14 @@ jest.mock("../lib/firebase", () => ({
 }));
 
 const createCategoryTagAction = jest.fn();
+const updateCategoryTagAction = jest.fn();
 const deleteCategoryTagAction = jest.fn();
 
 jest.mock("../server/actions/categoryTagActions", () => ({
   createCategoryTagAction: (...args: unknown[]) =>
     createCategoryTagAction(...args),
+  updateCategoryTagAction: (...args: unknown[]) =>
+    updateCategoryTagAction(...args),
   deleteCategoryTagAction: (...args: unknown[]) =>
     deleteCategoryTagAction(...args),
 }));
@@ -53,6 +56,18 @@ describe("CategoryTagService", () => {
         "#2563eb"
       );
       expect(result).toEqual({ id: "t1" });
+    });
+  });
+
+  describe("updateTag", () => {
+    it("delegates to the server action with the caller's ID token", async () => {
+      await service.updateTag("t1", "Promo", "#2563eb");
+      expect(updateCategoryTagAction).toHaveBeenCalledWith(
+        "token-1",
+        "t1",
+        "Promo",
+        "#2563eb"
+      );
     });
   });
 

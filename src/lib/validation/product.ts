@@ -56,6 +56,10 @@ export const CategorySchema = z.object({
     error: "La description est requise.",
   }),
   isActive: z.boolean(),
+  // BF-109→111 : référence à un CategoryTag (taxonomie système, gérée par
+  // le Super Admin) — chaîne vide représente "aucun tag", pas une valeur
+  // invalide : ce champ reste facultatif.
+  tagId: z.string().optional(),
 });
 
 export type CategoryInput = z.infer<typeof CategorySchema>;

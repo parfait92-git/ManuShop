@@ -14,6 +14,16 @@ import { Select } from "@/components/ui/select";
 export const DEFAULT_PHONE_COUNTRY: Country = "CM";
 
 /**
+ * Pays réellement pris en charge (demande explicite de l'utilisateur :
+ * "pour le moment prenons en compte juste 3 numéros de téléphone : Cameroun,
+ * USA, Canada") — restreint le sélecteur de pays à ces trois-là plutôt que
+ * la liste mondiale par défaut de `react-phone-number-input`. Limite la
+ * surface qu'il faut vraiment tester/supporter (WhatsApp Business, SMS...)
+ * plutôt que de prétendre couvrir n'importe quel pays sans l'avoir vérifié.
+ */
+export const SUPPORTED_PHONE_COUNTRIES: Country[] = ["CM", "US", "CA"];
+
+/**
  * Adapte notre `<Select>` (stylé comme le reste de l'app) à la signature
  * attendue par `countrySelectComponent` de `react-phone-number-input`
  * (`onChange(value)` reçoit directement la valeur, pas un événement — à la
@@ -92,6 +102,7 @@ export function PhoneInput({
       value={value}
       onChange={(next) => onChange(next ?? "")}
       defaultCountry={defaultCountry}
+      countries={SUPPORTED_PHONE_COUNTRIES}
       international
       limitMaxLength
       addInternationalOption={false}

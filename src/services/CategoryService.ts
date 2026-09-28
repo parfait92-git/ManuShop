@@ -9,6 +9,7 @@ export interface CreateCategoryInput {
   name: string;
   description: string;
   isActive: boolean;
+  tagId?: string;
 }
 
 export class CategoryService {
@@ -28,13 +29,17 @@ export class CategoryService {
 
   createCategory(
     shopId: string,
-    { name, description, isActive }: CreateCategoryInput
+    { name, description, isActive, tagId }: CreateCategoryInput
   ): Promise<Category> {
     return this.categories.create({
       shopId,
       name: name.trim(),
       description: description.trim(),
       isActive,
+      // Jamais `tagId: undefined` explicitement : Firestore refuse un champ
+      // à `undefined` sur `setDoc` (contrairement à son absence pure et
+      // simple de l'objet).
+      ...(tagId ? { tagId } : {}),
     });
   }
 

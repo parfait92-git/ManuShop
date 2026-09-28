@@ -5,6 +5,7 @@ import type { ICategoryTagRepository } from "@/repositories/interfaces/ICategory
 import {
   createCategoryTagAction,
   deleteCategoryTagAction,
+  updateCategoryTagAction,
 } from "@/server/actions/categoryTagActions";
 
 export class CategoryTagService {
@@ -21,6 +22,10 @@ export class CategoryTagService {
    * `categoryTagActions.ts`). */
   async createTag(name: string, color: string): Promise<{ id: string }> {
     return createCategoryTagAction(await this.getCallerIdToken(), name, color);
+  }
+
+  async updateTag(id: string, name: string, color: string): Promise<void> {
+    await updateCategoryTagAction(await this.getCallerIdToken(), id, name, color);
   }
 
   async deleteTag(id: string): Promise<void> {

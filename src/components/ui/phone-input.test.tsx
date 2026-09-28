@@ -18,6 +18,15 @@ function ControlledPhoneInput({ initial = "" }: { initial?: string }) {
 }
 
 describe("PhoneInput", () => {
+  it("only offers the 3 currently supported countries (Cameroun, Canada, USA)", () => {
+    render(<ControlledPhoneInput />);
+
+    const select = screen.getByLabelText("Indicatif du pays") as HTMLSelectElement;
+    expect(
+      Array.from(select.options).map((option) => option.value)
+    ).toEqual(["CM", "CA", "US"]);
+  });
+
   it("defaults to Cameroun and emits an E.164 value as the user types", async () => {
     const user = userEvent.setup();
     render(<ControlledPhoneInput />);
@@ -51,15 +60,15 @@ describe("PhoneInput", () => {
     await user.type(screen.getByRole("textbox"), "612345678");
     await user.selectOptions(
       screen.getByLabelText("Indicatif du pays"),
-      "FR"
+      "US"
     );
 
     expect(
       (screen.getByLabelText("Indicatif du pays") as HTMLSelectElement).value
-    ).toBe("FR");
+    ).toBe("US");
     // Changer de pays repart d'un numéro vierge sous le nouvel indicatif —
     // le champ ne réinterprète pas les chiffres déjà saisis.
-    expect(screen.getByTestId("value")).toHaveTextContent("+33");
+    expect(screen.getByTestId("value")).toHaveTextContent("+1");
   });
 
   it("pre-fills the country and number from an existing E.164 value", () => {

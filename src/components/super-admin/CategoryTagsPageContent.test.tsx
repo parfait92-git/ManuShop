@@ -1,13 +1,15 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const listTagsMock = jest.fn();
 const createTagMock = jest.fn();
+const updateTagMock = jest.fn();
 const deleteTagMock = jest.fn();
 jest.mock("../../services/CategoryTagService", () => ({
   categoryTagService: {
     listTags: (...args: unknown[]) => listTagsMock(...args),
     createTag: (...args: unknown[]) => createTagMock(...args),
+    updateTag: (...args: unknown[]) => updateTagMock(...args),
     deleteTag: (...args: unknown[]) => deleteTagMock(...args),
   },
 }));
@@ -140,5 +142,80 @@ describe("CategoryTagsPageContent", () => {
     expect(
       await screen.findByText("Échec de la suppression du tag. Réessayez.")
     ).toBeInTheDocument();
+  });
+
+  describe("modifier un tag (double-clic ou icône)", () => {
+    it("opens the edit dialog via the edit icon, pre-filled, and saves changes", async () => {
+      updateTagMock.mockResolvedValue(undefined);
+      listTagsMock.mockResolvedValue([fakeTag()]);
+      const user = userEvent.setup();
+      render(<CategoryTagsPageContent />);
+
+      await user.click(
+        await screen.findByRole("button", { name: "Modifier Alimentation" })
+      );
+
+      const dialog = within(await screen.findByRole("dialog"));
+      const nameField = dialog.getByLabelText("Nom du tag");
+      expect(nameField).toHaveValue("Alimentation");
+
+      await user.clear(nameField);
+      await user.type(nameField, "Alimentation & Boissons");
+      await user.click(dialog.getByRole("button", { name: "Enregistrer" }));
+
+      await waitFor(() =>
+        expect(updateTagMock).toHaveBeenCalledWith(
+          "tag1",
+          "Alimentation & Boissons",
+          "#2563eb"
+        )
+      );
+      expect(
+        await screen.findByText("Alimentation & Boissons")
+      ).toBeInTheDocument();
+    });
+
+    it("also opens the edit dialog on a double-click on the tag name", async () => {
+      listTagsMock.mockResolvedValue([fakeTag()]);
+      const user = userEvent.setup();
+      render(<CategoryTagsPageContent />);
+
+      await user.dblClick(await screen.findByText("Alimentation"));
+
+      expect(await screen.findByText("Modifier le tag")).toBeInTheDocument();
+    });
+
+    it("shows an error and keeps the dialog open when the update fails", async () => {
+      listTagsMock.mockResolvedValue([fakeTag()]);
+      updateTagMock.mockRejectedValue(
+        new Error("La couleur doit être un code hexadécimal valide.")
+      );
+      const user = userEvent.setup();
+      render(<CategoryTagsPageContent />);
+
+      await user.click(
+        await screen.findByRole("button", { name: "Modifier Alimentation" })
+      );
+      await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+      expect(
+        await screen.findByText("La couleur doit être un code hexadécimal valide.")
+      ).toBeInTheDocument();
+    });
+
+    it("closes without saving when cancelled", async () => {
+      listTagsMock.mockResolvedValue([fakeTag()]);
+      const user = userEvent.setup();
+      render(<CategoryTagsPageContent />);
+
+      await user.click(
+        await screen.findByRole("button", { name: "Modifier Alimentation" })
+      );
+      await screen.findByText("Modifier le tag");
+      await user.click(screen.getByRole("button", { name: "Annuler" }));
+
+      expect(screen.queryByText("Modifier le tag")).not.toBeInTheDocument();
+      expect(updateTagMock).not.toHaveBeenCalled();
+    });
   });
 });

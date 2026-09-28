@@ -37,6 +37,33 @@ export async function createCategoryTagAction(
   return { id: ref.id };
 }
 
+/**
+ * Seul moyen de renommer/changer la couleur d'un tag déjà créé — jusque-là,
+ * il fallait le supprimer et en recréer un, perdant la référence pour
+ * toute catégorie qui l'utilisait déjà (`Category.tagId`).
+ */
+export async function updateCategoryTagAction(
+  idToken: string,
+  id: string,
+  name: string,
+  color: string
+): Promise<void> {
+  await requireSuperAdmin(idToken);
+
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    throw new ValidationError("Le nom du tag est requis.");
+  }
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+    throw new ValidationError("La couleur doit être un code hexadécimal valide.");
+  }
+
+  await getAdminDb().collection(CATEGORY_TAGS_COLLECTION).doc(id).update({
+    name: trimmedName,
+    color,
+  });
+}
+
 export async function deleteCategoryTagAction(
   idToken: string,
   id: string

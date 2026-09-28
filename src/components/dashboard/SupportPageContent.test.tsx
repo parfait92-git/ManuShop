@@ -7,11 +7,15 @@ jest.mock("../../hooks/useCurrentShop", () => ({
   useCurrentShop: () => useCurrentShopMock(),
 }));
 
-const listForShopMock = jest.fn();
+const useSupportMessagesForShopMock = jest.fn();
+jest.mock("../../hooks/useSupportMessagesForShop", () => ({
+  useSupportMessagesForShop: (...args: unknown[]) =>
+    useSupportMessagesForShopMock(...args),
+}));
+
 const sendMessageMock = jest.fn();
 jest.mock("../../services/SupportMessageService", () => ({
   supportMessageService: {
-    listForShop: (...args: unknown[]) => listForShopMock(...args),
     sendMessage: (...args: unknown[]) => sendMessageMock(...args),
   },
 }));
@@ -47,6 +51,7 @@ function fakeMessage(overrides: Partial<SupportMessage> = {}): SupportMessage {
 describe("SupportPageContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useSupportMessagesForShopMock.mockReturnValue(undefined);
   });
 
   it("shows a loading state while the shop is loading", () => {
@@ -66,11 +71,28 @@ describe("SupportPageContent", () => {
         "Cette fonctionnalité est réservée aux boutiques disposant du privilège premium correspondant."
       )
     ).toBeInTheDocument();
+    // Le privilège n'étant pas actif, aucun abonnement temps réel ne doit
+    // être ouvert pour rien.
+    expect(useSupportMessagesForShopMock).toHaveBeenCalledWith(undefined);
+  });
+
+  it("subscribes to the shop's messages in real time once enabled", () => {
+    useCurrentShopMock.mockReturnValue({ shop: fakeShop(), loading: false });
+    render(<SupportPageContent />);
+    expect(useSupportMessagesForShopMock).toHaveBeenCalledWith("shop1");
+  });
+
+  it("shows a loading state for the message list while the subscription resolves", () => {
+    useCurrentShopMock.mockReturnValue({ shop: fakeShop(), loading: false });
+    useSupportMessagesForShopMock.mockReturnValue(undefined);
+    render(<SupportPageContent />);
+
+    expect(screen.getByText("Chargement...")).toBeInTheDocument();
   });
 
   it("shows the form and message list when enabled", async () => {
     useCurrentShopMock.mockReturnValue({ shop: fakeShop(), loading: false });
-    listForShopMock.mockResolvedValue([fakeMessage()]);
+    useSupportMessagesForShopMock.mockReturnValue([fakeMessage()]);
     render(<SupportPageContent />);
 
     expect(screen.getByLabelText("Objet")).toBeInTheDocument();
@@ -80,7 +102,7 @@ describe("SupportPageContent", () => {
 
   it("shows the reply inline when the message was answered", async () => {
     useCurrentShopMock.mockReturnValue({ shop: fakeShop(), loading: false });
-    listForShopMock.mockResolvedValue([
+    useSupportMessagesForShopMock.mockReturnValue([
       fakeMessage({
         status: "answered",
         reply: {
@@ -95,11 +117,9 @@ describe("SupportPageContent", () => {
     expect(screen.getByText("Répondu")).toBeInTheDocument();
   });
 
-  it("sends a message and refreshes the list", async () => {
+  it("sends a message and clears the form, relying on the live subscription for the update", async () => {
     useCurrentShopMock.mockReturnValue({ shop: fakeShop(), loading: false });
-    listForShopMock
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([fakeMessage({ subject: "Nouveau souci" })]);
+    useSupportMessagesForShopMock.mockReturnValue([]);
     sendMessageMock.mockResolvedValue({ id: "msg2" });
     const user = userEvent.setup();
     render(<SupportPageContent />);
@@ -113,12 +133,14 @@ describe("SupportPageContent", () => {
     await waitFor(() =>
       expect(sendMessageMock).toHaveBeenCalledWith("Nouveau souci", "Corps du message")
     );
-    expect(await screen.findByText("Nouveau souci")).toBeInTheDocument();
+    await waitFor(() =>
+      expect((screen.getByLabelText("Objet") as HTMLInputElement).value).toBe("")
+    );
   });
 
   it("shows an error message when sending fails", async () => {
     useCurrentShopMock.mockReturnValue({ shop: fakeShop(), loading: false });
-    listForShopMock.mockResolvedValue([]);
+    useSupportMessagesForShopMock.mockReturnValue([]);
     sendMessageMock.mockRejectedValue(new Error("Échec réseau."));
     const user = userEvent.setup();
     render(<SupportPageContent />);

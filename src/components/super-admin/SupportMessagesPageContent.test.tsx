@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Timestamp } from "firebase/firestore";
 
@@ -98,6 +98,76 @@ describe("SupportMessagesPageContent", () => {
     await user.click(screen.getByRole("button", { name: "Répondre" }));
 
     expect(await screen.findByText("Échec réseau.")).toBeInTheDocument();
+  });
+
+  describe("sondage périodique (pas de temps réel possible côté Super Admin)", () => {
+    beforeEach(() => {
+      jest.useFakeTimers({ doNotFake: ["queueMicrotask"] });
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("polls again after the interval elapses and reflects a newly arrived message", async () => {
+      listAllMessagesMock
+        .mockResolvedValueOnce([fakeMessage()])
+        .mockResolvedValueOnce([
+          fakeMessage(),
+          fakeMessage({ id: "msg2", subject: "Nouveau message" }),
+        ]);
+      render(<SupportMessagesPageContent />);
+
+      await waitFor(() =>
+        expect(listAllMessagesMock).toHaveBeenCalledTimes(1)
+      );
+      expect(screen.queryByText("Nouveau message")).not.toBeInTheDocument();
+
+      await act(async () => {
+        jest.advanceTimersByTime(15_000);
+      });
+
+      await waitFor(() =>
+        expect(listAllMessagesMock).toHaveBeenCalledTimes(2)
+      );
+      expect(await screen.findByText("Nouveau message")).toBeInTheDocument();
+    });
+
+    it("keeps showing the last known messages when a later poll fails", async () => {
+      listAllMessagesMock
+        .mockResolvedValueOnce([fakeMessage()])
+        .mockRejectedValueOnce(new Error("boom"));
+      render(<SupportMessagesPageContent />);
+
+      await screen.findByText("Objet du message");
+
+      await act(async () => {
+        jest.advanceTimersByTime(15_000);
+      });
+
+      await waitFor(() =>
+        expect(
+          screen.getByText("Échec du chargement des messages. Réessayez.")
+        ).toBeInTheDocument()
+      );
+      expect(screen.getByText("Objet du message")).toBeInTheDocument();
+    });
+
+    it("stops polling on unmount", async () => {
+      listAllMessagesMock.mockResolvedValue([fakeMessage()]);
+      const { unmount } = render(<SupportMessagesPageContent />);
+
+      await waitFor(() =>
+        expect(listAllMessagesMock).toHaveBeenCalledTimes(1)
+      );
+      unmount();
+
+      await act(async () => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(listAllMessagesMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("shows the existing reply instead of the form for an already-answered message", async () => {

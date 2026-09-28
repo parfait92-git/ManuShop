@@ -58,6 +58,35 @@ describe("CategoryService", () => {
     });
   });
 
+  it("includes tagId when a category tag is selected", async () => {
+    await service.createCategory("shop-1", {
+      name: "Mode",
+      description: "Vêtements",
+      isActive: true,
+      tagId: "tag1",
+    });
+
+    expect(categories.create).toHaveBeenCalledWith({
+      shopId: "shop-1",
+      name: "Mode",
+      description: "Vêtements",
+      isActive: true,
+      tagId: "tag1",
+    });
+  });
+
+  it("omits tagId entirely (never writes it as undefined) when it's an empty string", async () => {
+    await service.createCategory("shop-1", {
+      name: "Mode",
+      description: "Vêtements",
+      isActive: true,
+      tagId: "",
+    });
+
+    const [payload] = categories.create.mock.calls[0];
+    expect(payload).not.toHaveProperty("tagId");
+  });
+
   it("updates a category", async () => {
     await service.updateCategory("c1", { name: "Nouveau nom" });
     expect(categories.update).toHaveBeenCalledWith("c1", {

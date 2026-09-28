@@ -77,18 +77,26 @@ describe("ActivityLogService", () => {
     );
   });
 
-  it("logs a shop settings update, targeting the shop itself", async () => {
+  it("logs a shop settings update, targeting the shop itself, with no metadata key at all", async () => {
     await service.logShopSettingsUpdated(CONTEXT);
 
-    expect(logs.create).toHaveBeenCalledWith({
+    // Jamais `metadata: undefined` explicitement : Firestore refuse ce
+    // champ sur `setDoc` (contrairement à son absence pure et simple de
+    // l'objet) — plantait sur chaque sauvegarde des paramètres de
+    // boutique avant ce correctif. Le mock ne le détecterait pas via
+    // `toHaveBeenCalledWith` avec un objet incluant `metadata: undefined`
+    // (objet identique du point de vue de Jest), d'où l'assertion directe
+    // sur les clés reçues.
+    const [payload] = logs.create.mock.calls[0];
+    expect(payload).toEqual({
       shopId: "shop-1",
       actorId: "uid-1",
       actorName: "Ada Diallo",
       action: "shop.settings_updated",
       targetType: "shop",
       targetId: "shop-1",
-      metadata: undefined,
     });
+    expect(payload).not.toHaveProperty("metadata");
   });
 
   it("logs an order creation event with the client name in metadata", async () => {

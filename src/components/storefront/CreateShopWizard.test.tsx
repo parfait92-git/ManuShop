@@ -120,6 +120,27 @@ describe("CreateShopWizard", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("submits the phone number in E.164 format, not the raw digits typed (BF-79)", async () => {
+    createShopWithSubscriptionMock.mockResolvedValue({ shopId: "shop-new" });
+    const user = userEvent.setup();
+    render(<CreateShopWizard open onOpenChange={onOpenChange} />);
+
+    await user.type(screen.getByLabelText("Nom de la boutique"), "Chez Mado");
+    await user.type(screen.getByLabelText("Téléphone"), "690000000");
+    await user.click(screen.getByRole("button", { name: "Suivant" })); // step 0 → 1
+    await user.click(screen.getByRole("button", { name: "Suivant" })); // step 1 → 2
+    await user.click(
+      screen.getByRole("button", { name: "Continuer vers l'abonnement" })
+    ); // step 2 → 3
+    await user.click(
+      screen.getByRole("button", { name: "Confirmer et créer ma boutique" })
+    );
+
+    expect(createShopWithSubscriptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ phone: "+237690000000" })
+    );
+  });
+
   it("shows an honest error and does not navigate away on failure", async () => {
     createShopWithSubscriptionMock.mockRejectedValue(new Error("boom"));
     const user = userEvent.setup();

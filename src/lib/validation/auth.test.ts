@@ -152,6 +152,7 @@ describe("ShopSettingsSchema", () => {
   const validShop = {
     name: "Awa Boutique",
     logo: "https://example.com/logo.png",
+    logoMode: "link" as const,
     description: "Une jolie boutique de mode à Dakar.",
     address: "Dakar, Sénégal",
     phone: "+221700000000",
@@ -190,6 +191,15 @@ describe("ShopSettingsSchema", () => {
   it("rejects an invalid logo URL", () => {
     expect(
       ShopSettingsSchema.safeParse({ ...validShop, logo: "not-a-url" }).success
+    ).toBe(false);
+  });
+
+  it("accepts either logo mode and rejects an unknown one", () => {
+    expect(
+      ShopSettingsSchema.safeParse({ ...validShop, logoMode: "gallery" }).success
+    ).toBe(true);
+    expect(
+      ShopSettingsSchema.safeParse({ ...validShop, logoMode: "upload" }).success
     ).toBe(false);
   });
 

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
 import {
   CreateShopWizardSchema,
@@ -245,21 +246,29 @@ export function CreateShopWizard({
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {/* Colonne unique, pas grid-cols-2 : un PhoneInput (sélecteur
+              de pays + numéro) a besoin de plus de largeur qu'un champ texte
+              simple — même contrainte que ShopSettingsForm, encore plus
+              marquée ici dans la largeur réduite d'une boîte de dialogue. */}
+              <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="shop-phone">Téléphone</Label>
-                  <Input
+                  <PhoneInput
                     id="shop-phone"
-                    placeholder="Numéro joignable pour vos clients"
-                    {...register("phone")}
+                    value={phone ?? ""}
+                    onChange={(value) =>
+                      setValue("phone", value, { shouldValidate: true })
+                    }
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="shop-whatsapp">WhatsApp</Label>
-                  <Input
+                  <PhoneInput
                     id="shop-whatsapp"
-                    placeholder="Numéro utilisé pour recevoir les commandes"
-                    {...register("whatsapp")}
+                    value={whatsapp ?? ""}
+                    onChange={(value) =>
+                      setValue("whatsapp", value, { shouldValidate: true })
+                    }
                   />
                 </div>
               </div>
