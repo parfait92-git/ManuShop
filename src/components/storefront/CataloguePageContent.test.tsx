@@ -92,4 +92,19 @@ describe("CataloguePageContent", () => {
       screen.queryByText("Cette boutique n'a pas encore de produit à afficher.")
     ).not.toBeInTheDocument();
   });
+
+  // Avant §53, un échec de lecture ici (règles pas déployées, réseau...)
+  // n'était jamais rattrapé : la page restait bloquée sur "Chargement..."
+  // pour toujours, sans la moindre trace en console.
+  it("recovers with an honest empty state instead of hanging forever when the fetch fails", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    productServiceMock.listProducts.mockRejectedValue(new Error("boom"));
+    render(<CataloguePageContent shopId="shop-1" />);
+
+    expect(
+      await screen.findByText("Cette boutique n'a pas encore de produit à afficher.")
+    ).toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
 });

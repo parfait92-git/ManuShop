@@ -53,7 +53,15 @@ export function useMarketCatalogue(): MarketProduct[] | undefined {
           )
         );
       })
-      .catch(() => {
+      .catch((error) => {
+        // `console.error` : sans ça, un vrai échec de lecture (règles pas
+        // encore déployées, etc.) se replie silencieusement sur un marché
+        // vide, indiscernable d'une plateforme honnêtement sans produit —
+        // même esprit que `useDemoCatalogueAvailable` (04-besoins-techniques.md §31).
+        console.error(
+          "useMarketCatalogue : échec de l'agrégation des produits publiés",
+          error
+        );
         if (active) setItems([]);
       });
 
