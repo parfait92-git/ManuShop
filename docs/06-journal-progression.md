@@ -1304,3 +1304,11 @@ Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle
 Demande de l'utilisateur : ajouter au cahier des charges, pour implémentation future, quatre fonctionnalités d'aide à l'utilisateur — onboarding par page, product tour (popups séquentiels "Suivant"/"Précédent"), coach marks (bulles ponctuelles sur un champ précis) et feature discovery (mise en avant d'une fonctionnalité après mise à jour). Aucune implémentation demandée à ce stade, juste le suivi.
 
 Fait : `docs/02-besoins-fonctionnels.md`, nouveau Module 25 — BF-134 à BF-137, toutes marquées **Non commencé**. Aucun changement de code.
+
+Suivi (même session, question de l'utilisateur "que penses-tu de react-joyride ?") : recommandation donnée — `react-joyride` pour BF-135 (son cas d'usage exact), `Popover` Base UI pour BF-136 (plus simple, cohérent avec les composants déjà en place). Ajoutée aux deux entrées correspondantes sur confirmation de l'utilisateur.
+
+### 2026-09-28 — Backlog : analyse d'usage de la plateforme via Firebase Analytics (documentation seule)
+
+Demande de l'utilisateur : prévoir l'ajout de Firebase Analytics pour savoir quelles fonctionnalités sont les plus utilisées, quels boutons sont les plus cliqués, quelles boutiques sont les plus visitées (à l'échelle de la plateforme), et de quelles régions viennent les visiteurs. Distinct de BF-107 (stats d'UNE boutique pour son propre commerçant, toujours non commencé lui aussi) — vue Super Admin, plateforme entière.
+
+Fait : `docs/02-besoins-fonctionnels.md`, nouveau Module 26 — BF-138 à BF-141, toutes **Non commencé**, avec la piste technique commune notée (`firebase/analytics`, absent de `src/lib/firebase.ts` à ce jour). Aucun changement de code.

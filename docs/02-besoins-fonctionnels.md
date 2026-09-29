@@ -314,6 +314,17 @@
 | BF-136 | Coach marks | Petites bulles/tooltips ponctuelles pointant vers un élément précis de l'interface (courant en UX mobile), affichées à la demande sur un champ ou une fonctionnalité quand l'utilisateur a besoin d'aide — contrairement au product tour (BF-135), pas une séquence guidée complète. **Non commencé.** Piste retenue : construire sur le `Popover` de Base UI plutôt que `react-joyride` — plus simple pour un besoin ponctuel (pas de séquence), et reste cohérent avec la bibliothèque de composants déjà en place plutôt que d'ajouter un deuxième système de bulle. |
 | BF-137 | Feature discovery | Mise en avant ciblée d'une fonctionnalité existante, typiquement après une mise à jour de la plateforme, pour la faire découvrir aux utilisateurs qui ne l'ont pas encore remarquée. **Non commencé.** |
 
+### Module 26 — Analyse d'Usage de la Plateforme (Firebase Analytics)
+
+*Demande explicite de l'utilisateur le 2026-09-28 : ajoutée aux fins de suivi — aucune n'est commencée. Distinct de BF-107 (statistiques d'UNE boutique, consultées par son propre commerçant) : ce module vise une vue à l'échelle de la plateforme, côté Super Admin. Piste technique commune aux quatre : `firebase/analytics` (SDK client-only, `isSupported()` à vérifier avant `getAnalytics()` — absent de `src/lib/firebase.ts` à ce jour), avec le lien Google Analytics du projet Firebase à activer côté console.*
+
+| ID | Besoin | Description |
+|---|---|---|
+| BF-138 | Fonctionnalités les plus utilisées | Suivi des fonctionnalités les plus sollicitées sur la plateforme (ex. création de produit, messagerie, filtres du catalogue...) via des événements Firebase Analytics personnalisés (`logEvent`), consultable par le Super Admin. **Non commencé.** |
+| BF-139 | Boutons les plus cliqués | Suivi granulaire des interactions bouton par bouton (quels CTA/actions sont le plus utilisés dans l'app), via des événements Firebase Analytics. **Non commencé.** |
+| BF-140 | Boutiques les plus visitées (plateforme) | Classement de toutes les boutiques par nombre de visites à l'échelle de la plateforme, consultable par le Super Admin — pourrait aussi alimenter le classement "4 meilleures boutiques" du Marché encore non construit (BF-108). **Non commencé.** |
+| BF-141 | Régions des visiteurs | Répartition géographique des visiteurs (région/pays), via les rapports démographiques natifs de Firebase Analytics (GA4) plutôt qu'une collecte IP maison. **Non commencé.** |
+
 ---
 
 **Le reste des fonctionnalités reste à définir** (déclaration explicite de l'utilisateur le 2026-09-25) — les modules ci-dessus ne prétendent pas clore la spécification produit ; ils couvrent ce qui a été précisé à ce jour.
