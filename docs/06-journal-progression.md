@@ -1361,4 +1361,16 @@ Vérifié en conditions réelles (Playwright, pas seulement en test) : `/catalog
 
 Tests : `CategoryFilterPills.test.tsx` (nouveau) ; `useMarketCatalogue.test.ts`/`MarketCataloguePageContent.test.tsx` étendus, un test vérifié comme échouant sur l'ancien code via `git stash`.
 
-Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (725 tests, +8, aucune régression). Rien de commité.
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (725 tests, +8, aucune régression). Commité (`61f020f` BF-143, `18d3394` BF-110), PR #29 fusionnée, déploiement Vercel Production confirmé.
+
+### 2026-09-29 — Avis client sur une commande livrée (BF-76)
+
+Demande de l'utilisateur : "offre la possibilité au client de pouvoir donner son feedback sur une commande livrée au commerçant." Reprend BF-76 (Module 4 désormais complet, plus de blocage). Recherche préalable (agent) : le modèle `Review` avait déjà `orderId`/`authorId`/`reason` posés à l'avance, mais aucune méthode de création nulle part.
+
+Fait : `submitReviewAction` (Server Action, même schéma que `orderActions.ts` — revérifie que la commande appartient à l'appelant et qu'elle est livrée) ; `ReviewDialog` (note en étoiles facultative, commentaire requis, case "article défectueux", choix de l'article si plusieurs) sur le modèle d'`OrderReasonDialog` ; bouton "Laisser un avis" sur `/mes-commandes` pour chaque commande livrée.
+
+Écart assumé : la "transmission au vendeur via le moyen de contact configuré" (texte original de BF-76) n'est pas construite littéralement — aucune brique d'envoi email/SMS n'existe dans le projet (même blocage que BF-121). Un avis défectueux reste visible comme n'importe quel avis sur la fiche produit, déjà publique.
+
+Tests : `reviewActions.test.ts`, `ReviewDialog.test.tsx` (nouveaux) ; `ReviewService.test.ts`/`MyOrdersPageContent.test.tsx` étendus, deux tests vérifiés comme échouant sur l'ancien code via `git stash`.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (745 tests, +20, aucune régression). Rien de commité.

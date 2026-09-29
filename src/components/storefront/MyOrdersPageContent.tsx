@@ -8,10 +8,16 @@ import {
   OrderReasonDialog,
   type ReasonTarget,
 } from "@/components/dashboard/OrderReasonDialog";
+import {
+  ReviewDialog,
+  type ReviewSubmission,
+  type ReviewTarget,
+} from "@/components/storefront/ReviewDialog";
 import { Button } from "@/components/ui/button";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Order } from "@/models/order/Order";
 import { orderService } from "@/services/OrderService";
+import { reviewService } from "@/services/ReviewService";
 
 /** BF-75 : suivi de commande côté client — jusque-là explicitement bloqué
  * ("aucune commande n'est jamais écrite dans Firestore"), débloqué par le
@@ -20,6 +26,15 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reasonTarget, setReasonTarget] = useState<ReasonTarget | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
+  // BF-76 : un avis par commande suffit pour ce premier tour — masque le
+  // bouton une fois envoyé plutôt que de suivre l'état par article. Un
+  // second envoi (article différent de la même commande) resterait
+  // possible en rouvrant le dialogue depuis la console, mais l'UI ne le
+  // propose plus volontairement.
+  const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     let active = true;
@@ -55,6 +70,23 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
       toast.error("Échec de l'annulation. Réessayez.");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function handleSubmitReview(submission: ReviewSubmission) {
+    if (!reviewTarget) return;
+    const { orderId } = reviewTarget;
+    setReviewTarget(null);
+    try {
+      await reviewService.submitReview({ orderId, ...submission });
+      setReviewedOrderIds((current) => new Set(current).add(orderId));
+      toast.success("Merci pour votre avis !");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Échec de l'envoi. Réessayez."
+      );
     }
   }
 
@@ -118,6 +150,22 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
                     Annuler
                   </Button>
                 )}
+                {order.status === "delivered" &&
+                  (reviewedOrderIds.has(order.id) ? (
+                    <span className="text-sm text-muted-foreground">
+                      Merci pour votre avis !
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setReviewTarget({ orderId: order.id, items: order.items })
+                      }
+                    >
+                      Laisser un avis
+                    </Button>
+                  ))}
               </div>
               {order.cancelReason && (
                 <p className="text-xs text-muted-foreground">
@@ -134,6 +182,13 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
         target={reasonTarget}
         onCancel={() => setReasonTarget(null)}
         onConfirm={handleCancelConfirm}
+      />
+
+      <ReviewDialog
+        key={reviewTarget?.orderId}
+        target={reviewTarget}
+        onCancel={() => setReviewTarget(null)}
+        onSubmit={handleSubmitReview}
       />
     </div>
   );
