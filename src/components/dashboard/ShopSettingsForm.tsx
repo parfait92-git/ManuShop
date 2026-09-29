@@ -10,6 +10,7 @@ import {
   Settings2,
   Bell,
   Eye,
+  Volume2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -74,6 +75,9 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
     notifyOrdersByEmail: shop.notifyOrdersByEmail ?? true,
     notifyOrdersBySocial: shop.notifyOrdersBySocial ?? true,
     urgentPhoneAlerts: shop.urgentPhoneAlerts ?? true,
+    soundOnNewOrder: shop.soundOnNewOrder ?? true,
+    soundOnOrderStatusChange: shop.soundOnOrderStatusChange ?? true,
+    soundOnNewMessage: shop.soundOnNewMessage ?? true,
     contactEmail: shop.contactEmail ?? "",
     urgentPhone: shop.urgentPhone ?? "",
     clientContactMethods: shop.clientContactMethods ?? [],
@@ -146,6 +150,12 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     name: "notifyOrdersBySocial",
   });
   const urgentPhoneAlerts = useWatch({ control, name: "urgentPhoneAlerts" });
+  const soundOnNewOrder = useWatch({ control, name: "soundOnNewOrder" });
+  const soundOnOrderStatusChange = useWatch({
+    control,
+    name: "soundOnOrderStatusChange",
+  });
+  const soundOnNewMessage = useWatch({ control, name: "soundOnNewMessage" });
   const phone = useWatch({ control, name: "phone" });
   const whatsapp = useWatch({ control, name: "whatsapp" });
   const urgentPhone = useWatch({ control, name: "urgentPhone" });
@@ -658,6 +668,73 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               Ces préférences seront utilisées dès que le suivi des commandes
               (Module 4) sera disponible — elles sont déjà enregistrées.
             </p>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Volume2 className="size-4.5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Sons de notification
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Un bip est joué dans le dashboard tant que l&apos;onglet
+                  reste ouvert. Choisissez lesquels garder actifs.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">Nouvelle commande</p>
+                <p className="text-sm text-muted-foreground">
+                  Bip joué dès qu&apos;une commande arrive.
+                </p>
+              </div>
+              <Switch
+                checked={soundOnNewOrder}
+                onCheckedChange={(checked) =>
+                  setValue("soundOnNewOrder", checked)
+                }
+                aria-label="Son à la réception d'une nouvelle commande"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">
+                  Changement de statut de commande
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Bip joué quand le statut d&apos;une commande change.
+                </p>
+              </div>
+              <Switch
+                checked={soundOnOrderStatusChange}
+                onCheckedChange={(checked) =>
+                  setValue("soundOnOrderStatusChange", checked)
+                }
+                aria-label="Son au changement de statut d'une commande"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">Nouveau message</p>
+                <p className="text-sm text-muted-foreground">
+                  Bip joué à la réponse du Super Admin à un message.
+                </p>
+              </div>
+              <Switch
+                checked={soundOnNewMessage}
+                onCheckedChange={(checked) =>
+                  setValue("soundOnNewMessage", checked)
+                }
+                aria-label="Son à la réception d'un nouveau message"
+              />
+            </div>
           </section>
 
           <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">

@@ -136,6 +136,10 @@ export const ShopSettingsSchema = z.object({
   notifyOrdersByEmail: z.boolean(),
   notifyOrdersBySocial: z.boolean(),
   urgentPhoneAlerts: z.boolean(),
+  // Sons de notification dans le dashboard
+  soundOnNewOrder: z.boolean(),
+  soundOnOrderStatusChange: z.boolean(),
+  soundOnNewMessage: z.boolean(),
   // Contacts de commande
   contactEmail: z
     .email({ error: "Veuillez saisir un email valide." })

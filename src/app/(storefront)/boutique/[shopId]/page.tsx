@@ -6,8 +6,20 @@ import { useEffect, useState } from "react";
 
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { CataloguePageContent } from "@/components/storefront/CataloguePageContent";
+import { SOCIAL_NETWORK_URL_FIELD } from "@/lib/shopSocialNetworks";
 import type { Shop } from "@/models/shop/Shop";
 import { shopService } from "@/services/ShopService";
+
+/** BF-106 : un réseau n'apparaît dans `socialLinks` que si son lien est
+ * renseigné ET que la boutique a le privilège premium `socialFooterLinks` —
+ * `undefined` sinon, pour que `StorefrontFooter` n'affiche rien du tout. */
+function socialLinksFor(shop: Shop) {
+  if (!shop.premiumFeatures?.includes("socialFooterLinks")) return undefined;
+  const entries = Object.entries(SOCIAL_NETWORK_URL_FIELD)
+    .map(([network, field]) => [network, shop[field]] as const)
+    .filter(([, url]) => !!url && url.trim());
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
 
 /**
  * BF-64 (version ciblée, voir journal du 2026-09-25) : URL publique dédiée
@@ -39,7 +51,12 @@ export default function ShopStorefrontPage() {
   // une autre page storefront après navigation.
   useEffect(() => {
     if (shop) {
-      setBranding({ shopId: shop.id, name: shop.name, logo: shop.logo });
+      setBranding({
+        shopId: shop.id,
+        name: shop.name,
+        logo: shop.logo,
+        socialLinks: socialLinksFor(shop),
+      });
     }
     return () => setBranding(null);
   }, [shop, setBranding]);

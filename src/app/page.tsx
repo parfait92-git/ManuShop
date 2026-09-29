@@ -1,8 +1,10 @@
 import {
   BarChart3,
   Boxes,
+  MapPin,
   Receipt,
   Share2,
+  Store,
   Tag,
   WifiOff,
 } from "lucide-react";
@@ -19,6 +21,7 @@ import {
   type FeatureGridItem,
 } from "@/components/sections/FeatureGrid";
 import { FeaturedShowcase } from "@/components/sections/FeaturedShowcase";
+import { AboutSection } from "@/components/sections/AboutSection";
 import { LaunchPromo } from "@/components/sections/LaunchPromo";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 
@@ -98,8 +101,27 @@ export default function Home() {
 
         <FeaturedShowcase />
 
-        <LaunchPromo
+        <AboutSection
           id="apropos"
+          title="ManuShop, la boutique en ligne pensée pour les commerçants camerounais."
+          description="ManuShop aide les commerçants à vendre en ligne sans complexité : catalogue, stock, facturation et publication sur les réseaux sociaux, réunis dans une seule application pensée pour fonctionner même avec une connexion instable."
+          values={[
+            {
+              icon: MapPin,
+              text: "Conçu au Cameroun, pour des besoins locaux : paiement mobile, WhatsApp Business, connexions instables.",
+            },
+            {
+              icon: WifiOff,
+              text: "Catalogue et commandes restent consultables même hors-ligne, grâce à l'application installable (PWA).",
+            },
+            {
+              icon: Store,
+              text: "Chaque boutique reste indépendante : ses propres produits, son propre style, sa propre clientèle.",
+            },
+          ]}
+        />
+
+        <LaunchPromo
           eyebrow="Promotion de lancement"
           title="Votre première vitrine digitale commence ici."
           description="Profitez de l'offre spéciale réservée aux commerçants et démarrez avec tous les outils essentiels."

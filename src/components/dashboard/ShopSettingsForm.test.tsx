@@ -108,6 +108,45 @@ describe("ShopSettingsForm", () => {
     expect(
       screen.getByLabelText("Recevoir les commandes par e-mail")
     ).toHaveAttribute("data-checked");
+    expect(
+      screen.getByLabelText("Son à la réception d'une nouvelle commande")
+    ).toHaveAttribute("data-checked");
+  });
+
+  // BF-133 : sons de notification dans le dashboard, chacun désactivable
+  // indépendamment (demande explicite de l'utilisateur, 2026-09-28).
+  it("saves a disabled notification sound preference", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop());
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText("Son à la réception d'une nouvelle commande")
+      ).toHaveAttribute("data-checked")
+    );
+
+    await user.click(
+      screen.getByLabelText("Son à la réception d'une nouvelle commande")
+    );
+    await user.click(
+      screen.getByLabelText("Son au changement de statut d'une commande")
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Enregistrer les paramètres/ })
+    );
+
+    await waitFor(() =>
+      expect(shopService.updateProfile).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({
+          soundOnNewOrder: false,
+          soundOnOrderStatusChange: false,
+          soundOnNewMessage: true,
+        })
+      )
+    );
   });
 
   it("submits the updated settings, including a toggled notification preference", async () => {

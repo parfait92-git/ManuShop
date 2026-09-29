@@ -6,6 +6,12 @@ export interface ShopBranding {
   shopId: string;
   name: string;
   logo?: string;
+  /** BF-106 : liens renseignés pour un réseau donné, uniquement si le
+   * privilège premium `socialFooterLinks` est actif pour la boutique —
+   * `undefined`/absent sinon (pas de case à cocher séparée : la présence du
+   * lien suffit à l'activer, demande explicite de l'utilisateur). Consommé
+   * par `StorefrontFooter`. */
+  socialLinks?: Partial<Record<"whatsapp" | "facebook" | "instagram" | "tiktok", string>>;
 }
 
 interface ShopBrandingContextValue {
