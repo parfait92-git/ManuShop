@@ -27,13 +27,26 @@ interface NavItem {
   label: string;
   icon: typeof LayoutGrid;
   adminOnly?: boolean;
+  /** Ancre ciblée par un tour guidé (BF-134/BF-135, `GuidedTour`), ex.
+   * "nav-products" — absent des items non référencés par un tour. */
+  dataTour?: string;
 }
 
 const MAIN_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutGrid },
-  { href: "/dashboard/products", label: "Produits", icon: Package },
+  {
+    href: "/dashboard/products",
+    label: "Produits",
+    icon: Package,
+    dataTour: "nav-products",
+  },
   { href: "/dashboard/categories", label: "Catégories", icon: Tag },
-  { href: "/dashboard/orders", label: "Commandes", icon: ShoppingBag },
+  {
+    href: "/dashboard/orders",
+    label: "Commandes",
+    icon: ShoppingBag,
+    dataTour: "nav-orders",
+  },
   { href: "/dashboard/clients", label: "Clients", icon: Users },
   { href: "/dashboard/trash", label: "Corbeille", icon: Trash2 },
   { href: "/dashboard/activity", label: "Journal d'activité", icon: History },
@@ -43,7 +56,13 @@ const MAIN_ITEMS: NavItem[] = [
 const CONFIG_ITEMS: NavItem[] = [
   { href: "/dashboard/stats", label: "Statistiques", icon: BarChart3 },
   { href: "/dashboard/shops", label: "Mes boutiques", icon: Building2, adminOnly: true },
-  { href: "/dashboard/shop", label: "Paramètres", icon: Settings, adminOnly: true },
+  {
+    href: "/dashboard/shop",
+    label: "Paramètres",
+    icon: Settings,
+    adminOnly: true,
+    dataTour: "nav-shop-settings",
+  },
   { href: "/dashboard/team", label: "Équipe", icon: UserCog, adminOnly: true },
 ];
 
@@ -54,6 +73,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       href={item.href}
+      data-tour={item.dataTour}
       onNavigate={(event) => {
         if (!isDirty) return;
         event.preventDefault();

@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { CoachMark } from "@/components/ui/CoachMark";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ProductList } from "@/components/dashboard/ProductList";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
@@ -39,11 +40,13 @@ function StatCard({
   label,
   value,
   muted,
+  hint,
 }: {
   icon: typeof Package;
   label: string;
   value: string;
   muted?: boolean;
+  hint?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
@@ -51,7 +54,10 @@ function StatCard({
         <Icon className="size-4.5" />
       </span>
       <div>
-        <p className="text-sm text-slate-500">{label}</p>
+        <p className="flex items-center gap-1.5 text-sm text-slate-500">
+          {label}
+          {hint ? <CoachMark label={`À propos de "${label}"`}>{hint}</CoachMark> : null}
+        </p>
         <p
           className={
             muted
@@ -131,6 +137,7 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
         </div>
         <Link
           href="/catalogue"
+          data-tour="view-shop"
           className={buttonVariants({
             variant: "outline",
             className: "w-fit gap-1.5",
@@ -141,13 +148,17 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        data-tour="stat-cards"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
         <StatCard
           icon={ShoppingBag}
           label="Ventes du mois"
           value={
             orders ? `${revenueThisMonth.toLocaleString("fr-FR")} FCFA` : "…"
           }
+          hint="Ne compte que les commandes déjà livrées ce mois-ci — pas les commandes en cours."
         />
         <StatCard
           icon={Package}

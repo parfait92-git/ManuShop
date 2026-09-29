@@ -16,4 +16,7 @@ export interface IUserRepository {
    * onglets du même navigateur, par ex.). */
   addFavorite(id: string, productId: string): Promise<void>;
   removeFavorite(id: string, productId: string): Promise<void>;
+  /** BF-134/BF-135 : `arrayUnion`, même raisonnement que `addFavorite` —
+   * jamais de retrait (pas de besoin identifié de "revoir" un tour). */
+  markTourSeen(id: string, tourId: string): Promise<void>;
 }

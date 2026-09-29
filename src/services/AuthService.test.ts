@@ -116,6 +116,7 @@ describe("AuthService", () => {
       listAll: jest.fn(),
       addFavorite: jest.fn(),
       removeFavorite: jest.fn(),
+      markTourSeen: jest.fn(),
     };
     shops = {
       getById: jest.fn(),
@@ -363,6 +364,16 @@ describe("AuthService", () => {
 
       await service.removeFavorite("uid-1", "product-1");
       expect(users.removeFavorite).toHaveBeenCalledWith("uid-1", "product-1");
+    });
+  });
+
+  describe("markTourSeen", () => {
+    it("delegates to the user repository", async () => {
+      await service.markTourSeen("uid-1", "dashboard-onboarding");
+      expect(users.markTourSeen).toHaveBeenCalledWith(
+        "uid-1",
+        "dashboard-onboarding"
+      );
     });
   });
 
