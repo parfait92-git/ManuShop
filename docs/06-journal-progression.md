@@ -1312,3 +1312,27 @@ Suivi (même session, question de l'utilisateur "que penses-tu de react-joyride 
 Demande de l'utilisateur : prévoir l'ajout de Firebase Analytics pour savoir quelles fonctionnalités sont les plus utilisées, quels boutons sont les plus cliqués, quelles boutiques sont les plus visitées (à l'échelle de la plateforme), et de quelles régions viennent les visiteurs. Distinct de BF-107 (stats d'UNE boutique pour son propre commerçant, toujours non commencé lui aussi) — vue Super Admin, plateforme entière.
 
 Fait : `docs/02-besoins-fonctionnels.md`, nouveau Module 26 — BF-138 à BF-141, toutes **Non commencé**, avec la piste technique commune notée (`firebase/analytics`, absent de `src/lib/firebase.ts` à ce jour). Aucun changement de code.
+
+Poussé (`1cf2034`), PR #27 fusionnée, déploiement Vercel Production confirmé.
+
+### 2026-09-29 — Mot de passe non démasquable dans RegisterForm (BF-142)
+
+Signalé par l'utilisateur : "tu as oublié de permettre de masquer ou démasquer le mot de passe dans le composant d'inscription." Recherche : `LoginForm.tsx` avait déjà ce contrôle, `RegisterForm.tsx` non — seul formulaire du projet encore concerné, jamais documenté dans BF-01 jusqu'ici pour aucun des deux.
+
+Fait : même pattern que `LoginForm` (icône `Eye`/`EyeOff`), appliqué aux deux champs de `RegisterForm` (mot de passe + confirmation), état indépendant par champ.
+
+Tests : `RegisterForm.test.tsx` (nouveau — aucun test n'existait pour ce composant ni pour `LoginForm`), vérifié comme échouant sur l'ancien code via `git stash`.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (677 tests, +4, aucune régression). Rien de commité.
+
+### 2026-09-29 — Onboarding, Product tour et Coach marks : première implémentation (BF-134/135/136)
+
+Demande de l'utilisateur : "pour un début gère le Onboarding flow, Product tour / Guided tour, Coach marks" — construire ce qui avait été ajouté au backlog la veille. Clarifié via questions avant de coder : pilote sur `/dashboard`, mémoire "déjà vu" sur le compte (Firestore), `react-joyride` confirmé.
+
+Fait : `User.seenTours` (même pattern `arrayUnion` que les favoris, BF-129) ; `GuidedTour` (moteur réutilisable sur `react-joyride`, ajouté en dépendance — API v3, assez différente de la v2 habituellement documentée en ligne, vérifiée directement sur les types installés) ; `DashboardOnboardingTour` (application pilote sur `/dashboard`, attributs `data-tour` posés sur la sidebar/les KPI) ; `CoachMark` (nouveau `Popover` Base UI + bouton "?" cliquable, un usage pilote sur le KPI "Ventes du mois").
+
+Point notable : simuler le clic d'ouverture d'un `Popover` Base UI dans jsdom laisse un abonnement `floating-ui` qui ne se résorbe jamais (`--forceExit` + ~50s), inutilisable en suite normale — `CoachMark.test.tsx` reste donc volontairement statique. `react-joyride` n'a pas ce problème (juste plus lent sous la suite complète en parallèle, timeout de test relevé à 15s pour 2 tests).
+
+Tests : `GuidedTour.test.tsx`, `DashboardOnboardingTour.test.tsx`, `CoachMark.test.tsx` (nouveaux) ; `AuthService.test.ts` étendu.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (686 tests, +9, aucune régression). Pas de vérification Playwright (page pilote derrière authentification). Rien de commité.

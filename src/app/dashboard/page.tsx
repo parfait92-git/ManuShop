@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { DashboardHomeContent } from "@/components/dashboard/DashboardHomeContent";
+import { DashboardOnboardingTour } from "@/components/dashboard/DashboardOnboardingTour";
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -10,5 +11,10 @@ export default function DashboardPage() {
     return <p className="text-sm text-muted-foreground">Chargement...</p>;
   }
 
-  return <DashboardHomeContent shopId={profile.shopId} />;
+  return (
+    <>
+      <DashboardOnboardingTour />
+      <DashboardHomeContent shopId={profile.shopId} />
+    </>
+  );
 }

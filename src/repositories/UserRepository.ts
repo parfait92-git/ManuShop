@@ -66,6 +66,12 @@ export class UserRepository implements IUserRepository {
       favoriteProductIds: arrayRemove(productId),
     });
   }
+
+  async markTourSeen(id: string, tourId: string): Promise<void> {
+    await updateDoc(doc(db, USERS_COLLECTION, id), {
+      seenTours: arrayUnion(tourId),
+    });
+  }
 }
 
 export const userRepository = new UserRepository();

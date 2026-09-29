@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FirebaseError } from "firebase/app";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -32,6 +33,8 @@ export function RegisterForm() {
   const router = useRouter();
   const { refreshProfile } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -92,13 +95,30 @@ export function RegisterForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="password">Mot de passe</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          aria-invalid={!!errors.password}
-          {...register("password")}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            aria-invalid={!!errors.password}
+            className="pr-9"
+            {...register("password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            aria-label={
+              showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
+            }
+            className="absolute inset-y-0 right-2 flex items-center text-muted-foreground"
+          >
+            {showPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </button>
+        </div>
         {errors.password && (
           <p className="text-sm text-destructive">{errors.password.message}</p>
         )}
@@ -106,13 +126,32 @@ export function RegisterForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          aria-invalid={!!errors.confirmPassword}
-          {...register("confirmPassword")}
-        />
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            autoComplete="new-password"
+            aria-invalid={!!errors.confirmPassword}
+            className="pr-9"
+            {...register("confirmPassword")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((value) => !value)}
+            aria-label={
+              showConfirmPassword
+                ? "Masquer la confirmation du mot de passe"
+                : "Afficher la confirmation du mot de passe"
+            }
+            className="absolute inset-y-0 right-2 flex items-center text-muted-foreground"
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </button>
+        </div>
         {errors.confirmPassword && (
           <p className="text-sm text-destructive">
             {errors.confirmPassword.message}

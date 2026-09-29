@@ -41,5 +41,11 @@ export interface User {
    * (`UserRepository.addFavorite`/`removeFavorite`) le manipulent
    * atomiquement sans lecture préalable. */
   favoriteProductIds?: string[];
+  /** BF-134/BF-135 : identifiants des tours guidés (`GuidedTour`) déjà vus
+   * par ce compte, pour ne jamais les rejouer automatiquement — même
+   * pattern que `favoriteProductIds` (`arrayUnion`,
+   * `UserRepository.markTourSeen`). Un id par tour, ex.
+   * `"dashboard-onboarding"`. */
+  seenTours?: string[];
   createdAt: Timestamp;
 }

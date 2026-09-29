@@ -309,6 +309,12 @@ export class AuthService {
   removeFavorite(uid: string, productId: string): Promise<void> {
     return this.users.removeFavorite(uid, productId);
   }
+
+  /** BF-134/BF-135 : marque un tour guidé comme vu pour ne jamais le
+   * rejouer automatiquement (`GuidedTour`). */
+  markTourSeen(uid: string, tourId: string): Promise<void> {
+    return this.users.markTourSeen(uid, tourId);
+  }
 }
 
 export const authService = new AuthService();
