@@ -6,7 +6,12 @@ import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { CatalogueExplorer } from "@/components/storefront/CatalogueExplorer";
-import { getArticlesByShop, mockShops } from "@/data/mockData";
+import {
+  getArticlesByShop,
+  getCategoriesByShop,
+  mockCategoryTags,
+  mockShops,
+} from "@/data/mockData";
 import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 import type { MarketProduct } from "@/hooks/useMarketCatalogue";
 
@@ -36,9 +41,19 @@ export default function DemoCataloguePage() {
 
   const items: MarketProduct[] = useMemo(
     () =>
-      mockShops.flatMap((shop) =>
-        getArticlesByShop(shop.id).map((product) => ({ product, shop }))
-      ),
+      mockShops.flatMap((shop) => {
+        const tagByCategoryName = new Map(
+          getCategoriesByShop(shop.id).map((category) => [
+            category.name,
+            mockCategoryTags.find((tag) => tag.id === category.tagId),
+          ])
+        );
+        return getArticlesByShop(shop.id).map((product) => ({
+          product,
+          shop,
+          tag: tagByCategoryName.get(product.category),
+        }));
+      }),
     []
   );
 

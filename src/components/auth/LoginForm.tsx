@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FacebookIcon, GoogleIcon } from "@/components/icons/BrandIcons";
+import { useRedirectParam } from "@/hooks/useRedirectParam";
+import { buildAuthHref } from "@/lib/redirectParam";
 import { LoginSchema, type LoginInput } from "@/lib/validation/auth";
 import { authService } from "@/services/AuthService";
 
@@ -36,9 +38,19 @@ function authErrorMessage(error: unknown): string {
 }
 
 export function LoginForm() {
+  const { redirectTarget, justRegistered } = useRedirectParam();
+
   return (
     <div className="flex w-full max-w-sm flex-col gap-5">
-      <EmailLoginForm />
+      {redirectTarget && (
+        <p className="rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
+          {justRegistered
+            ? "Compte créé avec succès ! Connectez-vous pour continuer votre commande."
+            : "Connectez-vous pour continuer votre commande."}
+        </p>
+      )}
+
+      <EmailLoginForm redirectTarget={redirectTarget} />
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
@@ -46,12 +58,12 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <SocialLoginButtons />
+      <SocialLoginButtons redirectTarget={redirectTarget} />
 
       <p className="text-center text-sm text-muted-foreground">
         Pas encore de boutique ?{" "}
         <Link
-          href="/register"
+          href={buildAuthHref("/register", redirectTarget)}
           className="text-primary underline-offset-4 hover:underline"
         >
           Créer mon espace
@@ -61,7 +73,7 @@ export function LoginForm() {
   );
 }
 
-function EmailLoginForm() {
+function EmailLoginForm({ redirectTarget }: { redirectTarget: string | null }) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -78,7 +90,7 @@ function EmailLoginForm() {
     try {
       await authService.setRememberMe(data.rememberMe ?? false);
       await authService.login(data.email, data.password);
-      router.push("/dashboard");
+      router.push(redirectTarget ?? "/dashboard");
     } catch (error) {
       setFormError(authErrorMessage(error));
     }
@@ -153,7 +165,11 @@ function EmailLoginForm() {
   );
 }
 
-function SocialLoginButtons() {
+function SocialLoginButtons({
+  redirectTarget,
+}: {
+  redirectTarget: string | null;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -166,7 +182,7 @@ function SocialLoginButtons() {
     setError(null);
     try {
       await action();
-      router.push("/dashboard");
+      router.push(redirectTarget ?? "/dashboard");
     } catch (err) {
       setError(authErrorMessage(err));
     } finally {

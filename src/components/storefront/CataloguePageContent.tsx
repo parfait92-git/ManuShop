@@ -147,7 +147,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CategoryFilterPills
-            categories={categories.map((c) => c.name)}
+            categories={categories.map((c) => ({ value: c.name, label: c.name }))}
             selected={category}
             onSelect={setCategory}
           />

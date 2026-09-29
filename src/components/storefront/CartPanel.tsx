@@ -2,17 +2,24 @@
 
 import { Minus, Plus, X } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
+import { useAuth } from "@/components/providers/AuthProvider";
 import { buttonVariants } from "@/components/ui/button";
 import { useShop } from "@/hooks/useShop";
 import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
 import { cartTotal, useCartStore } from "@/store/cartStore";
+import { LoginRequiredDialog } from "@/components/storefront/LoginRequiredDialog";
+
+const CHECKOUT_PATH = "/checkout/payment";
 
 export function CartPanel({ onClose }: { onClose: () => void }) {
   const items = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const { shop } = useShop();
+  const { firebaseUser } = useAuth();
+  const [showLoginRequired, setShowLoginRequired] = useState(false);
 
   return (
     <div className="absolute top-full right-0 z-30 mt-2 w-80 rounded-lg border border-border bg-background p-4 shadow-lg">
@@ -123,18 +130,39 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
 
           {/* BF-78 : écran de sélection du paiement, interface seule — le
           bouton WhatsApp ci-dessus reste le seul chemin qui aboutit
-          vraiment aujourd'hui, celui-ci ne le remplace pas. */}
-          <Link
-            href="/checkout/payment"
-            className={buttonVariants({
-              variant: "outline",
-              className: "mt-2 w-full",
-            })}
-          >
-            Choisir un mode de paiement
-          </Link>
+          vraiment aujourd'hui, celui-ci ne le remplace pas. Le lien
+          WhatsApp n'est volontairement PAS soumis à ce contrôle : il
+          n'exige aucun compte, c'est tout son intérêt. */}
+          {firebaseUser ? (
+            <Link
+              href={CHECKOUT_PATH}
+              className={buttonVariants({
+                variant: "outline",
+                className: "mt-2 w-full",
+              })}
+            >
+              Choisir un mode de paiement
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowLoginRequired(true)}
+              className={buttonVariants({
+                variant: "outline",
+                className: "mt-2 w-full",
+              })}
+            >
+              Choisir un mode de paiement
+            </button>
+          )}
         </>
       )}
+
+      <LoginRequiredDialog
+        open={showLoginRequired}
+        onOpenChange={setShowLoginRequired}
+        redirectTo={CHECKOUT_PATH}
+      />
     </div>
   );
 }

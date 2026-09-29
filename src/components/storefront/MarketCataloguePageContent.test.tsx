@@ -35,6 +35,7 @@ function marketItem(overrides: {
   price?: number;
   isPromo?: boolean;
   createdAtMs?: number;
+  tag?: { id: string; name: string; color: string };
 }) {
   return {
     product: {
@@ -52,6 +53,7 @@ function marketItem(overrides: {
       updatedAt: fakeTimestamp(overrides.createdAtMs ?? 0),
     },
     shop: { id: overrides.shopId, name: overrides.shopName, logo: "" },
+    tag: overrides.tag,
   };
 }
 
@@ -115,17 +117,45 @@ describe("MarketCataloguePageContent", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("filters by category across shops", () => {
+  // BF-110 : le Marché filtre par tag système, jamais par nom de catégorie
+  // brut d'une boutique — deux boutiques peuvent nommer leurs catégories
+  // différemment, seul le tag est comparable entre elles (demande
+  // explicite de l'utilisateur, 2026-09-29).
+  it("filters by system tag across shops, not by a shop's own category name", () => {
+    const electronique = { id: "tag-electronique", name: "Électronique", color: "#2563eb" };
     useMarketCatalogueMock.mockReturnValue([
       marketItem({ id: "p1", shopId: "shop-1", shopName: "A", name: "Sac", category: "Mode" }),
-      marketItem({ id: "p2", shopId: "shop-2", shopName: "B", name: "Casque", category: "Électronique" }),
+      marketItem({
+        id: "p2",
+        shopId: "shop-2",
+        shopName: "B",
+        name: "Casque",
+        category: "Son", // nom de catégorie brut différent du tag — sans rapport avec le filtre
+        tag: electronique,
+      }),
     ]);
     render(<MarketCataloguePageContent />);
+
+    // Le nom de catégorie brut "Mode"/"Son" n'apparaît jamais comme pill —
+    // seul le tag système est proposé.
+    expect(screen.queryByRole("button", { name: "Mode" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Son" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Électronique" }));
 
     expect(screen.getByText("Casque")).toBeInTheDocument();
     expect(screen.queryByText("Sac")).not.toBeInTheDocument();
+  });
+
+  it("never offers a filter pill for a product whose category has no tag", () => {
+    useMarketCatalogueMock.mockReturnValue([
+      marketItem({ id: "p1", shopId: "shop-1", shopName: "A", name: "Sac", category: "Mode" }),
+    ]);
+    render(<MarketCataloguePageContent />);
+
+    expect(screen.queryByRole("button", { name: "Mode" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tous les produits" })).toBeInTheDocument();
+    expect(screen.getByText("Sac")).toBeInTheDocument();
   });
 
   it("searches by product name across shops", () => {

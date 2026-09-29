@@ -7,9 +7,21 @@ jest.mock("../../hooks/useShop", () => ({
   useShop: () => ({ shop: { id: "shop-1", whatsapp: "+237600000000", name: "Boutique" }, loading: false }),
 }));
 
+const useAuthMock = jest.fn();
+jest.mock("../providers/AuthProvider", () => ({
+  useAuth: (...args: unknown[]) => useAuthMock(...args),
+}));
+
+const pushMock = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
 describe("CartPanel", () => {
   beforeEach(() => {
     useCartStore.setState({ items: [] });
+    pushMock.mockClear();
+    useAuthMock.mockReturnValue({ firebaseUser: { uid: "u1" } });
   });
 
   it("shows an empty message when the cart has nothing in it", () => {
@@ -57,5 +69,57 @@ describe("CartPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retirer Sac" }));
 
     expect(useCartStore.getState().items).toEqual([]);
+  });
+
+  // BF-143 : passer commande sans être connecté doit avertir plutôt que
+  // rediriger silencieusement (ce que faisait ProtectedRoute jusqu'ici, vers
+  // /catalogue, sans explication) — demande explicite de l'utilisateur,
+  // 2026-09-29.
+  describe("choisir un mode de paiement sans être connecté", () => {
+    beforeEach(() => {
+      useAuthMock.mockReturnValue({ firebaseUser: null });
+      useCartStore.getState().addItem({ productId: "p1", name: "Sac", price: 1000, image: "" }, 1);
+    });
+
+    it("shows a login-required warning instead of navigating", () => {
+      render(<CartPanel onClose={jest.fn()} />);
+
+      expect(
+        screen.queryByRole("link", { name: "Choisir un mode de paiement" })
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Choisir un mode de paiement" })
+      );
+
+      expect(
+        screen.getByText("Connectez-vous pour continuer")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/les articles de votre panier resteront enregistrés/)
+      ).toBeInTheDocument();
+    });
+
+    it("sends the visitor to login with the checkout page remembered", () => {
+      render(<CartPanel onClose={jest.fn()} />);
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Choisir un mode de paiement" })
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+
+      expect(pushMock).toHaveBeenCalledWith(
+        "/login?redirect=%2Fcheckout%2Fpayment"
+      );
+    });
+  });
+
+  it("links straight to checkout when already logged in", () => {
+    useCartStore.getState().addItem({ productId: "p1", name: "Sac", price: 1000, image: "" }, 1);
+    render(<CartPanel onClose={jest.fn()} />);
+
+    expect(
+      screen.getByRole("link", { name: "Choisir un mode de paiement" })
+    ).toHaveAttribute("href", "/checkout/payment");
   });
 });

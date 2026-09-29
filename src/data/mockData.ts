@@ -1,6 +1,7 @@
 import { Timestamp } from "firebase/firestore";
 
 import type { Category } from "@/models/category/Category";
+import type { CategoryTag } from "@/models/category/CategoryTag";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 import type { User } from "@/models/user/User";
@@ -124,6 +125,20 @@ export const mockShops: MockShop[] = [
 ];
 
 /**
+ * Taxonomie système de démo (BF-109→111) — le Marché (`/demo-catalogue`,
+ * `CatalogueExplorer` via `tagId` ci-dessous) filtre par TAG, jamais par nom
+ * de catégorie brut (BF-110) : sans ces tags, la démo n'aurait aucun filtre
+ * pertinent à montrer, contrairement au vrai `/catalogue`.
+ */
+export const mockCategoryTags: CategoryTag[] = [
+  { id: "tag-alimentation", name: "Alimentation", color: "#16a34a", createdAt: timestampDaysAgo(240) },
+  { id: "tag-emballage", name: "Emballage", color: "#a16207", createdAt: timestampDaysAgo(240) },
+  { id: "tag-mode", name: "Mode", color: "#db2777", createdAt: timestampDaysAgo(240) },
+  { id: "tag-electronique", name: "Électronique", color: "#2563eb", createdAt: timestampDaysAgo(240) },
+  { id: "tag-beaute", name: "Beauté", color: "#9333ea", createdAt: timestampDaysAgo(240) },
+];
+
+/**
  * Catégories par boutique — 2 par boutique (une de plus pour Mode 237), avec
  * des noms qui correspondent EXACTEMENT à `mockArticles[].category`
  * ci-dessous : `ProductList` filtre les produits par
@@ -137,6 +152,7 @@ export const mockCategories: Category[] = [
     name: "Lait & Yaourts",
     description: "Lait et produits laitiers frais du quotidien.",
     isActive: true,
+    tagId: "tag-alimentation",
     createdAt: timestampDaysAgo(235),
   },
   {
@@ -145,6 +161,7 @@ export const mockCategories: Category[] = [
     name: "Fromages",
     description: "Fromages frais et affinés.",
     isActive: true,
+    tagId: "tag-alimentation",
     createdAt: timestampDaysAgo(235),
   },
   {
@@ -153,6 +170,7 @@ export const mockCategories: Category[] = [
     name: "Cartons",
     description: "Cartons et solutions d'emballage carton.",
     isActive: true,
+    tagId: "tag-emballage",
     createdAt: timestampDaysAgo(195),
   },
   {
@@ -161,6 +179,7 @@ export const mockCategories: Category[] = [
     name: "Plastiques",
     description: "Sachets et bouteilles plastiques.",
     isActive: true,
+    tagId: "tag-emballage",
     createdAt: timestampDaysAgo(195),
   },
   {
@@ -169,6 +188,7 @@ export const mockCategories: Category[] = [
     name: "Arômes",
     description: "Arômes naturels pour pâtisserie et cuisine.",
     isActive: true,
+    tagId: "tag-alimentation",
     createdAt: timestampDaysAgo(145),
   },
   {
@@ -177,6 +197,7 @@ export const mockCategories: Category[] = [
     name: "Épices",
     description: "Mélanges d'épices traditionnelles.",
     isActive: true,
+    tagId: "tag-alimentation",
     createdAt: timestampDaysAgo(145),
   },
   {
@@ -185,6 +206,7 @@ export const mockCategories: Category[] = [
     name: "Femme",
     description: "Robes, pagnes et tenues femme.",
     isActive: true,
+    tagId: "tag-mode",
     createdAt: timestampDaysAgo(85),
   },
   {
@@ -193,6 +215,7 @@ export const mockCategories: Category[] = [
     name: "Homme",
     description: "Chemises et tenues homme.",
     isActive: true,
+    tagId: "tag-mode",
     createdAt: timestampDaysAgo(85),
   },
   {
@@ -201,6 +224,7 @@ export const mockCategories: Category[] = [
     name: "Audio",
     description: "Écouteurs et accessoires audio.",
     isActive: true,
+    tagId: "tag-electronique",
     createdAt: timestampDaysAgo(55),
   },
   {
@@ -209,6 +233,7 @@ export const mockCategories: Category[] = [
     name: "Accessoires",
     description: "Chargeurs, batteries et accessoires divers.",
     isActive: true,
+    tagId: "tag-electronique",
     createdAt: timestampDaysAgo(55),
   },
   {
@@ -217,6 +242,7 @@ export const mockCategories: Category[] = [
     name: "Hygiène",
     description: "Savons et produits d'hygiène naturels.",
     isActive: true,
+    tagId: "tag-beaute",
     createdAt: timestampDaysAgo(28),
   },
   {
@@ -228,6 +254,7 @@ export const mockCategories: Category[] = [
     // masquée par défaut plutôt que comme une absence de valeur).
     description: "Huiles et crèmes — en pause le temps de renouveler le stock.",
     isActive: false,
+    tagId: "tag-beaute",
     createdAt: timestampDaysAgo(28),
   },
 ];
