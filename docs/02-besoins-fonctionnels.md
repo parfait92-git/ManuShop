@@ -303,6 +303,17 @@
 |---|---|---|
 | BF-133 | Sons de notification dans le dashboard | Un bip sonore doit jouer dans le dashboard marchand lors d'une nouvelle commande, d'un changement de statut de commande, ou d'un nouveau message — chacun indépendamment désactivable. Demande explicite de l'utilisateur le 2026-09-28, reformulée depuis "tous les paramètres du compte admin s'appliquent sur sa boutique". **Fait le 2026-09-28** : trois interrupteurs dans `/dashboard/shop` (`Shop.soundOnNewOrder`/`soundOnOrderStatusChange`/`soundOnNewMessage`, `?? true` par défaut) ; bip généré directement (Web Audio API, `src/lib/notificationSound.ts`) plutôt qu'un fichier audio — aucun fichier son n'existait dans le projet. Joue partout dans le dashboard tant que l'onglet reste ouvert (`DashboardNotificationSounds`, monté dans `app/dashboard/layout.tsx`), pas seulement sur la page concernée — pas d'infrastructure push (BF-116, toujours non commencé), donc rien ne joue onglet fermé. "Nouveau message" se déclenche sur la réponse du Super Admin (le commerçant est lui-même l'auteur de ses propres messages sortants). Voir 04-besoins-techniques.md §55. |
 
+### Module 25 — Aide Contextuelle & Découverte de Fonctionnalités
+
+*Demande explicite de l'utilisateur le 2026-09-28 : liste de fonctionnalités à implémenter par la suite, ajoutée aux fins de suivi — aucune n'est commencée.*
+
+| ID | Besoin | Description |
+|---|---|---|
+| BF-134 | Onboarding flow (prise en main par page) | Un parcours de première prise en main propre à chaque page/écran important de l'application (pas seulement à la création de boutique, voir `/onboarding` existant, BF-63 — distinct : ceci concerne l'usage courant de chaque page, pas la seule création initiale). **Non commencé.** |
+| BF-135 | Product tour / Guided tour | Série de popups/tooltips séquentiels ("Suivant"/"Précédent") pointant successivement vers chaque élément d'une fonctionnalité complexe pour l'expliquer pas à pas. **Non commencé.** Piste retenue : `react-joyride` — c'est exactement son cas d'usage (séquence + spotlight), bibliothèque établie pour ça précisément ; nécessitera un import dynamique `ssr: false` (manipule le DOM directement, incompatible SSR), et introduit son propre système de bulle/overlay indépendant de Base UI (déjà utilisé pour `Switch`/`Dialog`/etc. ailleurs dans l'app). |
+| BF-136 | Coach marks | Petites bulles/tooltips ponctuelles pointant vers un élément précis de l'interface (courant en UX mobile), affichées à la demande sur un champ ou une fonctionnalité quand l'utilisateur a besoin d'aide — contrairement au product tour (BF-135), pas une séquence guidée complète. **Non commencé.** Piste retenue : construire sur le `Popover` de Base UI plutôt que `react-joyride` — plus simple pour un besoin ponctuel (pas de séquence), et reste cohérent avec la bibliothèque de composants déjà en place plutôt que d'ajouter un deuxième système de bulle. |
+| BF-137 | Feature discovery | Mise en avant ciblée d'une fonctionnalité existante, typiquement après une mise à jour de la plateforme, pour la faire découvrir aux utilisateurs qui ne l'ont pas encore remarquée. **Non commencé.** |
+
 ---
 
 **Le reste des fonctionnalités reste à définir** (déclaration explicite de l'utilisateur le 2026-09-25) — les modules ci-dessus ne prétendent pas clore la spécification produit ; ils couvrent ce qui a été précisé à ce jour.
