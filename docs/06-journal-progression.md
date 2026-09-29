@@ -1273,4 +1273,28 @@ BF-131 (nouveau, Module 23) : demande explicite de l'utilisateur pour un lien de
 
 Tests : `CataloguePageContent.test.tsx` étendu (repli sur échec de lecture, vérifié comme échouant sur l'ancien code via `git stash`) ; `ProductFormPageContent.test.tsx` (nouveau fichier) sur les trois états.
 
-Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (651 tests, +4, aucune régression). Rien de commité.
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (651 tests, +4, aucune régression). Commité (`d2c17a5`), PR #25 fusionnée, déploiement Vercel Production confirmé.
+
+### 2026-09-28 — "Fonctionnalités", "À propos" et recherche de la landing page (BF-132)
+
+Capture d'écran de l'utilisateur : "fais fonctionner à propos, fonctionnalités et le champ de recherche du landing page." Pas d'outil navigateur/E2E disponible dans cette session — vérifié par un script Playwright ponctuel (chromium déjà en cache local, non ajouté aux dépendances) cliquant réellement les liens sur le `next dev` déjà lancé par l'utilisateur, plutôt que de deviner depuis le CSS/markup seul.
+
+Résultat de la vérification : le défilement d'ancre fonctionne correctement pour "Fonctionnalités" (`scroll-padding-top` compense déjà le header fixe). Confirmé par l'utilisateur via question de clarification : la recherche est un comportement attendu (catalogue actuellement vide, aucun produit publié — pas un bug, voir §53), et le vrai défaut est que "À propos" pointait vers `LaunchPromo` (le bloc "Offre de lancement"), jamais un contenu réel à propos de ManuShop.
+
+Fait : nouveau composant `AboutSection` (mission courte + 3 points forts : ancrage Cameroun, mode hors-ligne, indépendance de chaque boutique), branché sur `id="apropos"` à la place de `LaunchPromo` (qui reste affiché plus bas mais n'est plus la cible du lien de nav). Reconfirmé par le même script Playwright que le clic atterrit bien au bon endroit après le changement.
+
+Tests : `AboutSection.test.tsx` (nouveau fichier).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (655 tests, +4, aucune régression). Vérification Playwright manuelle (hors suite automatisée). Rien de commité.
+
+### 2026-09-28 — Sons de notification (BF-133) + icônes réseaux sociaux en pied de page (BF-106)
+
+Demande initiale : "j'aimerais que tous les paramètres du compte admin s'appliquent sur sa boutique" — trop vague pour agir directement. Clarifiée en deux passes (questions à choix, puis précision libre de l'utilisateur) : un son de notification (commande reçue / statut changé / nouveau message, chacun mutable) et des icônes réseaux sociaux en pied de page activées par la simple présence du lien (pas de case à cocher séparée).
+
+Recherche préalable (agent) : aucune des deux fonctionnalités n'existait, même partiellement — confirmé qu'aucun fichier audio n'était dans le projet, qu'aucun changement de statut de commande n'était observé en temps réel nulle part, et que BF-106 (icônes réseau) n'avait aucune UI (seul `primarySocialNetwork`, un unique réseau pour la fiche produit BF-128, existait).
+
+Fait : `Shop.soundOnNewOrder`/`soundOnOrderStatusChange`/`soundOnNewMessage` + 3 interrupteurs dans `ShopSettingsForm` ; bip généré en code (Web Audio API, `notificationSound.ts`, pas de fichier à fournir) ; `useDashboardNotificationSounds` (3 `onSnapshot` : préférences en direct, commandes diffées par `docChanges()`, messages sur apparition d'une réponse Super Admin) monté globalement dans `app/dashboard/layout.tsx`. Côté pied de page : `ShopBranding.socialLinks` (nouveau), calculé par `ShopStorefrontPage` (lien renseigné + privilège premium `socialFooterLinks`, gardé premium sur confirmation de l'utilisateur), affiché par le nouveau `StorefrontFooter` (labels texte + icône générique, `lucide-react` n'ayant plus d'icônes de marque).
+
+Tests : `notificationSound.test.ts`, `useDashboardNotificationSounds.test.ts`, `DashboardNotificationSounds.test.tsx`, `StorefrontFooter.test.tsx` (tous nouveaux) ; `ShopSettingsForm.test.tsx`/`page.test.tsx` (`/boutique/[shopId]`) étendus ; fixture `validShop` de `auth.test.ts` complétée (3 nouveaux champs requis par le schéma).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (673 tests, +18, aucune régression). Pas de vérification Playwright (nécessiterait une session marchand authentifiée + privilège premium réel). Rien de commité.

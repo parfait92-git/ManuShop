@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { CreateShopPrompt } from "@/components/dashboard/CreateShopPrompt";
+import { DashboardNotificationSounds } from "@/components/dashboard/DashboardNotificationSounds";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { PublicationBanner } from "@/components/dashboard/PublicationBanner";
@@ -24,6 +25,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-svh bg-slate-50">
+      <DashboardNotificationSounds />
       <div className="hidden md:block">
         <DashboardSidebar />
       </div>

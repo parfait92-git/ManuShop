@@ -61,6 +61,13 @@ export interface Shop {
   urgentPhoneAlerts?: boolean;
   contactEmail?: string;
   urgentPhone?: string;
+  /** Bip sonore dans le dashboard tant que l'onglet reste ouvert (pas
+   * d'infrastructure push, voir BF-116) — chacun indépendamment
+   * désactivable (`ShopSettingsForm`), `?? true` par défaut partout où ils
+   * sont lus. */
+  soundOnNewOrder?: boolean;
+  soundOnOrderStatusChange?: boolean;
+  soundOnNewMessage?: boolean;
   // Plateforme multi-boutique (Module 12). Optionnels : absents tant que la
   // bascule "Publier ma boutique" (BF-62) n'est pas construite — une
   // boutique sans `isPublished` est traitée comme non publiée (`?? false`).
