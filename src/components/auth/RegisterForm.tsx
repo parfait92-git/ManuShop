@@ -7,11 +7,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useRedirectParam } from "@/hooks/useRedirectParam";
+import { buildAuthHref } from "@/lib/redirectParam";
 import { RegisterSchema, type RegisterInput } from "@/lib/validation/auth";
 import { authService } from "@/services/AuthService";
 
@@ -32,6 +35,7 @@ function authErrorMessage(error: unknown): string {
 export function RegisterForm() {
   const router = useRouter();
   const { refreshProfile } = useAuth();
+  const { redirectTarget } = useRedirectParam();
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -47,6 +51,20 @@ export function RegisterForm() {
     setFormError(null);
     try {
       await authService.registerShopOwner(data);
+      // Arrivé depuis le panier (BF-143, demande explicite de l'utilisateur,
+      // 2026-09-29) : `createUserWithEmailAndPassword` connecte déjà le
+      // compte côté client (voir `inviteSeller`, même fichier, qui contourne
+      // ce comportement pour NE PAS déconnecter l'admin courant) — ici on le
+      // fait exprès, pour forcer une connexion explicite qui applique le
+      // `?redirect=` mémorisé et ramène l'acheteur sur sa commande.
+      if (redirectTarget) {
+        toast.success("Compte créé avec succès !");
+        await authService.logout();
+        router.push(
+          buildAuthHref("/login", redirectTarget, { registered: "1" })
+        );
+        return;
+      }
       // Voir OnboardingForm : sans ce rafraîchissement, le contexte d'auth
       // garde `profile === null` et ProtectedRoute renverrait vers
       // /onboarding en boucle. L'inscription crée un compte client (Module
@@ -167,7 +185,10 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Déjà un compte ?{" "}
-        <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+        <Link
+          href={buildAuthHref("/login", redirectTarget)}
+          className="text-primary underline-offset-4 hover:underline"
+        >
           Se connecter
         </Link>
       </p>

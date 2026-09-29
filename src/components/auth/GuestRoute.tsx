@@ -4,13 +4,16 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { getRedirectParam } from "@/lib/redirectParam";
 
 /**
  * Garde de route inverse de `ProtectedRoute` : bloque l'accès aux pages
  * réservées aux visiteurs non authentifiés (login, register, forgot-password).
  *
- * - Compte déjà onboardé (profil Firestore existant) → renvoyé vers
- *   `/erreur?code=already-authenticated` (ces pages ne le concernent plus).
+ * - Compte déjà onboardé (profil Firestore existant) → renvoyé vers la
+ *   cible mémorisée dans `?redirect=` si présente (retour à une commande en
+ *   cours, BF-143), sinon `/erreur?code=already-authenticated` comme avant
+ *   (ces pages ne le concernent plus).
  * - Compte authentifié mais onboarding pas terminé (première connexion via
  *   Google/Facebook, boutique pas encore créée) → renvoyé vers
  *   `/onboarding` directement, pas vers `/erreur` : ce n'est pas une
@@ -28,7 +31,8 @@ export function GuestRoute({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    router.replace("/erreur?code=already-authenticated");
+    const redirectTarget = getRedirectParam(window.location.search);
+    router.replace(redirectTarget ?? "/erreur?code=already-authenticated");
   }, [loading, firebaseUser, profile, router]);
 
   if (loading || firebaseUser) {

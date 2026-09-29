@@ -1335,4 +1335,30 @@ Point notable : simuler le clic d'ouverture d'un `Popover` Base UI dans jsdom la
 
 Tests : `GuidedTour.test.tsx`, `DashboardOnboardingTour.test.tsx`, `CoachMark.test.tsx` (nouveaux) ; `AuthService.test.ts` étendu.
 
-Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (686 tests, +9, aucune régression). Pas de vérification Playwright (page pilote derrière authentification). Rien de commité.
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (686 tests, +9, aucune régression). Pas de vérification Playwright (page pilote derrière authentification). Commité (`32198a5`, avec le fix mot de passe RegisterForm en attente), PR #28 fusionnée, déploiement Vercel Production confirmé.
+
+### 2026-09-29 — Avertissement de connexion avant commande + retour automatique (BF-143)
+
+Demande de l'utilisateur : avertir (pas rediriger silencieusement) un visiteur non connecté qui tente de commander, mémoriser la page pour l'y ramener après connexion, et — s'il crée un compte à la place — l'obliger à se reconnecter explicitement (message de succès + `/login`) plutôt que de profiter de la connexion automatique de Firebase.
+
+État avant vérifié : `/checkout/payment` protégé par `ProtectedRoute` redirige silencieusement vers `/catalogue` sans explication ni mémorisation ; aucun mécanisme "revenir ici après connexion" n'existait dans le projet.
+
+Fait : `?redirect=` (query param, pas `sessionStorage` — survit à la navigation de page en page) avec validation anti-redirection-ouverte (`redirectParam.ts`) ; `LoginRequiredDialog` (même pattern que `NavigationBlockerProvider`) intercepte "Choisir un mode de paiement" dans `CartPanel` si non connecté — le bouton WhatsApp, lui, reste volontairement libre d'accès (BF-78, son seul intérêt) ; `LoginForm`/`GuestRoute` consomment `?redirect=` à la place du `/dashboard`/`/erreur` habituel ; `RegisterForm` bascule sur un chemin différent UNIQUEMENT si `?redirect=` est présent (déconnexion forcée + `/login?registered=1`) — comportement d'inscription normal inchangé sinon.
+
+Tests : `redirectParam.test.ts`, `useRedirectParam.test.ts`, `LoginRequiredDialog.test.tsx`, `LoginForm.test.tsx`, `GuestRoute.test.tsx` (nouveaux, aucun test n'existait pour `LoginForm`/`GuestRoute` jusqu'ici) ; `CartPanel.test.tsx`/`RegisterForm.test.tsx` étendus ; un test vérifié comme échouant sur l'ancien code via `git stash`.
+
+Non traité (signalé dans BF-74) : un accès direct à `/checkout/payment` (pas depuis le panier) reste géré silencieusement par `ProtectedRoute` comme avant — hors du périmètre demandé cette tranche.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (717 tests, +31, aucune régression). Pas de vérification Playwright (flux d'authentification complet). Rien de commité.
+
+### 2026-09-29 — Marché filtré par tag système, pas par catégorie de boutique (BF-110)
+
+Demande de l'utilisateur : au Marché (`/catalogue`), filtrer par tag système uniquement — jamais afficher le nom de catégorie brut d'une boutique là, réservé à la page de CETTE boutique précise pour filtrer ses propres articles. Reprend BF-110 (documenté non commencé depuis §49).
+
+Fait : `useMarketCatalogue` résout, pour chaque produit, le tag système de sa catégorie DANS sa propre boutique (`Category.tagId`, scopé par boutique — deux boutiques peuvent nommer une catégorie pareil avec un tag différent) et l'attache au produit (`MarketProduct.tag`) ; `CatalogueExplorer` construit ses pills à partir de ces tags plutôt que des noms de catégorie bruts. `CategoryFilterPills` généralisé (`{value, label, color?}` plutôt qu'une simple chaîne, valeur/libellé pouvant désormais différer). `CataloguePageContent` (une boutique précise) inchangé, volontairement. Démo (`/demo-catalogue`) enrichie de 5 tags plausibles pour rester représentative.
+
+Vérifié en conditions réelles (Playwright, pas seulement en test) : `/catalogue` affiche désormais de vrais tags, filtrer par "Femme" fait passer de 14 à 5 articles cohérents. Un premier essai montrait des pills inattendues ("Électro-ménagers") — pas du cache périmé comme soupçonné (redémarrage de `next dev` fait par précaution, sur confirmation de l'utilisateur, sans effet) : `/demo-catalogue` redirige vers `/catalogue` dès qu'un vrai produit publié existe, et ces pills étaient de vrais tags déjà créés par l'utilisateur en Super Admin.
+
+Tests : `CategoryFilterPills.test.tsx` (nouveau) ; `useMarketCatalogue.test.ts`/`MarketCataloguePageContent.test.tsx` étendus, un test vérifié comme échouant sur l'ancien code via `git stash`.
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (725 tests, +8, aucune régression). Rien de commité.
