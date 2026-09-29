@@ -1,10 +1,11 @@
 import type { Timestamp } from "firebase/firestore";
 
 /**
- * Avis client sur un produit (Module 13/14, BF-72/76). `orderId`/`authorId`
- * et l'écriture elle-même sont posés par BF-76 (avis après livraison, pas
- * encore construit — nécessite une vraie commande livrée) ; cette tranche
- * ne fait que lire, pour afficher les avis existants sur la fiche produit.
+ * Avis client sur un produit (Module 13/14, BF-72/76). Écriture via
+ * `reviewService.submitReview()` → `submitReviewAction` (Server Action,
+ * `firebase-admin`) uniquement — `firestore.rules` verrouille `reviews` en
+ * écriture directe, la commande doit être revérifiée comme livrée et
+ * appartenant à l'appelant avant d'écrire quoi que ce soit.
  */
 export interface Review {
   id: string;

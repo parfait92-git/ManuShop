@@ -66,8 +66,10 @@ service cloud.firestore {
     }
 
     // Avis produit — lecture publique (fiche produit, BF-72), écriture
-    // verrouillée : la soumission (BF-76) doit vérifier une vraie commande
-    // livrée avant d'écrire, pas encore construite (Module 4 inexistant).
+    // entièrement verrouillée : la soumission (BF-76) doit vérifier une
+    // vraie commande livrée, appartenant à l'appelant, avant d'écrire —
+    // passe uniquement par `firebase-admin` via
+    // src/server/actions/reviewActions.ts (même schéma que `orders`).
     match /reviews/{reviewId} {
       allow read: if true;
       allow write: if false;
