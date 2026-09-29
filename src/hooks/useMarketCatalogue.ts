@@ -2,24 +2,31 @@
 
 import { useEffect, useState } from "react";
 
+import type { CategoryTag } from "@/models/category/CategoryTag";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
+import { categoryService } from "@/services/CategoryService";
+import { categoryTagService } from "@/services/CategoryTagService";
 import { productService } from "@/services/ProductService";
 import { shopService } from "@/services/ShopService";
 
 export interface MarketProduct {
   product: Product;
   shop: Shop;
+  /** Tag système (BF-109→111) de la catégorie de ce produit DANS sa
+   * boutique — résolu via `Category.tagId`, absent si la catégorie n'a pas
+   * de tag choisi (ou n'existe plus). Jamais le nom de catégorie brut de la
+   * boutique : ça ne veut rien dire au niveau du Marché, voir BF-110. */
+  tag?: CategoryTag;
 }
 
 /**
- * Agrégation multi-boutique côté client (page Marché, BF-108 — version
- * réduite sans classement des meilleures boutiques ni tags système, voir
- * 04-besoins-techniques.md §22) : liste les boutiques publiées puis leurs
- * produits visibles, en mémoire — même approche que
- * `useDemoCatalogueAvailable`. Une lecture par boutique ; correct au nombre
- * de boutiques actuel, à revoir (index dédié/moteur de recherche) si la
- * plateforme grossit beaucoup.
+ * Agrégation multi-boutique côté client (page Marché, BF-108/BF-110) :
+ * liste les boutiques publiées puis, pour chacune, ses produits visibles ET
+ * ses catégories (pour résoudre `Category.tagId` → tag système) — même
+ * approche que `useDemoCatalogueAvailable`. Une lecture par boutique ;
+ * correct au nombre de boutiques actuel, à revoir (index dédié/moteur de
+ * recherche) si la plateforme grossit beaucoup.
  *
  * `undefined` tant que la réponse n'est pas connue. Un échec de lecture se
  * replie sur `[]` (jamais bloqué sur "Chargement...") — l'appelant doit
@@ -32,24 +39,37 @@ export function useMarketCatalogue(): MarketProduct[] | undefined {
   useEffect(() => {
     let active = true;
 
-    shopService
-      .listPublishedShops()
-      .then((shops) =>
-        Promise.all(
+    Promise.all([shopService.listPublishedShops(), categoryTagService.listTags()])
+      .then(([shops, tags]) => {
+        const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+        return Promise.all(
           shops.map((shop) =>
-            productService
-              .listProducts(shop.id)
-              .then((products) => ({ shop, products }))
+            Promise.all([
+              productService.listProducts(shop.id),
+              categoryService.listCategories(shop.id),
+            ]).then(([products, categories]) => {
+              const tagIdByCategoryName = new Map(
+                categories.map((category) => [category.name, category.tagId])
+              );
+              return { shop, products, tagIdByCategoryName };
+            })
           )
-        )
-      )
-      .then((perShop) => {
+        ).then((perShop) => ({ perShop, tagById }));
+      })
+      .then(({ perShop, tagById }) => {
         if (!active) return;
         setItems(
-          perShop.flatMap(({ shop, products }) =>
+          perShop.flatMap(({ shop, products, tagIdByCategoryName }) =>
             products
               .filter((product) => productService.isVisibleToCustomers(product))
-              .map((product) => ({ product, shop }))
+              .map((product) => {
+                const tagId = tagIdByCategoryName.get(product.category);
+                return {
+                  product,
+                  shop,
+                  tag: tagId ? tagById.get(tagId) : undefined,
+                };
+              })
           )
         );
       })

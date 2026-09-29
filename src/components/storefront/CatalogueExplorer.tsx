@@ -38,12 +38,20 @@ function sortItems(items: MarketProduct[], order: SortOrder): MarketProduct[] {
 }
 
 /**
- * Grille de produits agrégeant plusieurs boutiques — recherche/filtre par
- * catégorie/tri/promo, bloc "Boutiques" avec flèche vers une page qui les
- * liste toutes. Partagée entre `MarketCataloguePageContent` (`/catalogue`,
- * vraies données, BF-108 §22) et `/demo-catalogue` (données de démo,
- * BF-125) — ce composant lui-même ne touche jamais Firestore, `items` est
- * déjà résolu par l'appelant (hook réel ou tableau synchrone de démo).
+ * Grille de produits agrégeant plusieurs boutiques — recherche/filtre/
+ * tri/promo, bloc "Boutiques" avec flèche vers une page qui les liste
+ * toutes. Partagée entre `MarketCataloguePageContent` (`/catalogue`, vraies
+ * données, BF-108 §22) et `/demo-catalogue` (données de démo, BF-125) — ce
+ * composant lui-même ne touche jamais Firestore, `items` est déjà résolu
+ * par l'appelant (hook réel ou tableau synchrone de démo).
+ *
+ * Filtre par TAG système (`item.tag`, BF-109→111), jamais par le nom de
+ * catégorie brut d'une boutique (demande explicite de l'utilisateur,
+ * 2026-09-29, BF-110) — un nom de catégorie n'a de sens qu'à l'intérieur
+ * d'UNE boutique (voir `CataloguePageContent`, qui continue de filtrer par
+ * nom brut, lui) ; au Marché, seul le tag système est comparable entre
+ * boutiques. Un produit dont la catégorie n'a pas de tag choisi n'apparaît
+ * dans aucun filtre (mais reste visible sous "Tous les produits").
  */
 export function CatalogueExplorer({
   items,
@@ -60,7 +68,7 @@ export function CatalogueExplorer({
 }) {
   const resolveShopHref = shopHref ?? ((shopId: string) => `/boutique/${shopId}`);
   const [term, setTerm] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+  const [tagId, setTagId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   // Voir CataloguePageContent : window.location plutôt que useSearchParams()
   // pour éviter la limite Suspense de Next, cette page étant déjà
@@ -86,11 +94,19 @@ export function CatalogueExplorer({
     return [...seen.values()];
   }, [items]);
 
-  const categories = useMemo(() => {
+  const tagOptions = useMemo(() => {
     if (!items) return [];
-    return Array.from(new Set(items.map((item) => item.product.category))).sort(
-      (a, b) => a.localeCompare(b, "fr")
-    );
+    const seen = new Map<string, { value: string; label: string; color: string }>();
+    for (const item of items) {
+      if (item.tag && !seen.has(item.tag.id)) {
+        seen.set(item.tag.id, {
+          value: item.tag.id,
+          label: item.tag.name,
+          color: item.tag.color,
+        });
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label, "fr"));
   }, [items]);
 
   const visibleItems = useMemo(() => {
@@ -103,14 +119,14 @@ export function CatalogueExplorer({
             item.product.category.toLowerCase().includes(normalized)
         )
       : items;
-    const byCategory = category
-      ? bySearch.filter((item) => item.product.category === category)
+    const byTag = tagId
+      ? bySearch.filter((item) => item.tag?.id === tagId)
       : bySearch;
     const byPromo = promoOnly
-      ? byCategory.filter((item) => item.product.isPromo)
-      : byCategory;
+      ? byTag.filter((item) => item.product.isPromo)
+      : byTag;
     return sortItems(byPromo, sortOrder);
-  }, [items, term, category, sortOrder, promoOnly]);
+  }, [items, term, tagId, sortOrder, promoOnly]);
 
   if (items !== undefined && items.length === 0) {
     return (
@@ -149,9 +165,9 @@ export function CatalogueExplorer({
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CategoryFilterPills
-            categories={categories}
-            selected={category}
-            onSelect={setCategory}
+            categories={tagOptions}
+            selected={tagId}
+            onSelect={setTagId}
           />
           <Input
             value={term}
