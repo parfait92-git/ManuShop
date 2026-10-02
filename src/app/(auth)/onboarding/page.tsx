@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { OnboardingForm } from "@/components/auth/OnboardingForm";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
+import { PageTour } from "@/components/onboarding/PageTour";
 import { authService } from "@/services/AuthService";
 
 export default function OnboardingPage() {
@@ -37,23 +38,26 @@ export default function OnboardingPage() {
   }
 
   return (
-    <LiquidGlassCard className="flex w-full max-w-sm flex-col items-center gap-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-white">
-          Plus qu&apos;une étape
-        </h1>
-        <p className="mt-1 text-sm text-white/70">
-          Donnez-nous votre nom pour terminer la création de votre compte.
-        </p>
-      </div>
-      <OnboardingForm />
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="text-sm text-white/60 underline-offset-4 hover:text-white hover:underline"
-      >
-        Se déconnecter
-      </button>
-    </LiquidGlassCard>
+    <>
+      <PageTour tourId="auth-onboarding" />
+      <LiquidGlassCard className="flex w-full max-w-sm flex-col items-center gap-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-white">
+            Plus qu&apos;une étape
+          </h1>
+          <p className="mt-1 text-sm text-white/70">
+            Donnez-nous votre nom pour terminer la création de votre compte.
+          </p>
+        </div>
+        <OnboardingForm />
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="text-sm text-white/60 underline-offset-4 hover:text-white hover:underline"
+        >
+          Se déconnecter
+        </button>
+      </LiquidGlassCard>
+    </>
   );
 }

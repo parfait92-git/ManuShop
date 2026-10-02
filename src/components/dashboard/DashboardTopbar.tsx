@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { TourReplayButton } from "@/components/onboarding/TourReplayButton";
 import { useCurrentShop } from "@/hooks/useCurrentShop";
 import { useNewOrdersCount } from "@/hooks/useNewOrdersCount";
 import { authService } from "@/services/AuthService";
@@ -50,6 +51,7 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
+        <TourReplayButton />
         <Link
           href="/dashboard/orders?status=under_review"
           aria-label={

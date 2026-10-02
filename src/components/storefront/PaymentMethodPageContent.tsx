@@ -116,7 +116,7 @@ export function PaymentMethodPageContent() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/40 p-5">
+      <div data-tour="checkout-delivery" className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/40 p-5">
         <h2 className="font-semibold">Livraison</h2>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="client-name">Nom</Label>
@@ -145,7 +145,7 @@ export function PaymentMethodPageContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div data-tour="checkout-methods" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {METHODS.map((option) => (
           <button
             key={option.id}
@@ -164,7 +164,7 @@ export function PaymentMethodPageContent() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-muted/40 p-5">
+      <div data-tour="checkout-summary" className="rounded-2xl border border-border bg-muted/40 p-5">
         <Label htmlFor="payment-field">
           {method === "visa" ? "Numéro de carte" : "Numéro de téléphone"}
         </Label>
@@ -181,6 +181,7 @@ export function PaymentMethodPageContent() {
         </p>
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
         <Button
+          data-tour="checkout-confirm"
           className="mt-4 w-full"
           disabled={!canSubmit || submitting}
           onClick={handleConfirm}

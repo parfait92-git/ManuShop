@@ -166,7 +166,7 @@ export function TrashPageContent({ shopId }: { shopId: string }) {
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="trash-list" className="rounded-xl border border-slate-200 bg-white">
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
             <Trash2 className="size-8 text-slate-300" />

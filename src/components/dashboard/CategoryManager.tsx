@@ -513,11 +513,15 @@ export function CategoryManager({
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-        <CategoryForm shopId={shopId} tags={tags} onCreated={handleCreated} />
-        <InfoPanel />
+        <div data-tour="category-create">
+          <CategoryForm shopId={shopId} tags={tags} onCreated={handleCreated} />
+        </div>
+        <div data-tour="category-tips">
+          <InfoPanel />
+        </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-background">
+      <div data-tour="category-list" className="rounded-xl border border-border bg-background">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div>
             <h2 className="text-lg font-semibold">Vos catégories</h2>

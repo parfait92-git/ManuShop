@@ -38,9 +38,13 @@ export function TeamPageContent({ shopId }: { shopId: string }) {
         </p>
       </div>
 
-      <InviteSellerForm shopId={shopId} onInvited={handleInvited} />
+      <div data-tour="team-invite">
 
-      <div className="flex flex-col gap-3">
+        <InviteSellerForm shopId={shopId} onInvited={handleInvited} />
+
+      </div>
+
+      <div data-tour="team-members" className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Membres</h2>
         {members === null ? (
           <p className="text-sm text-muted-foreground">Chargement...</p>

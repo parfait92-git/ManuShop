@@ -2,11 +2,15 @@
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ShopManagementPageContent } from "@/components/dashboard/ShopManagementPageContent";
+import { PageTour } from "@/components/onboarding/PageTour";
 
 export default function ShopsPage() {
   return (
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <ShopManagementPageContent />
-    </ProtectedRoute>
+    <>
+      <PageTour tourId="dashboard-shops" />
+      <ProtectedRoute allowedRoles={["admin"]}>
+        <ShopManagementPageContent />
+      </ProtectedRoute>
+    </>
   );
 }

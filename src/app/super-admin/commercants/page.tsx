@@ -1,7 +1,13 @@
 "use client";
 
 import { MerchantsPageContent } from "@/components/super-admin/MerchantsPageContent";
+import { PageTour } from "@/components/onboarding/PageTour";
 
 export default function MerchantsPage() {
-  return <MerchantsPageContent />;
+  return (
+    <>
+      <PageTour tourId="super-admin-merchants" />
+      <MerchantsPageContent />
+    </>
+  );
 }

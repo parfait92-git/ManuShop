@@ -272,7 +272,11 @@ export function CategoryTagsPageContent() {
         </p>
       </div>
 
-      <CreateTagForm onCreated={handleCreated} />
+      <div data-tour="tags-create">
+
+        <CreateTagForm onCreated={handleCreated} />
+
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -288,7 +292,7 @@ export function CategoryTagsPageContent() {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-background">
+        <ul data-tour="tags-list" className="divide-y divide-border rounded-xl border border-border bg-background">
           {tags.map((tag) => (
             <li
               key={tag.id}

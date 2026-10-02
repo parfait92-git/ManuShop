@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { CartPanel } from "@/components/storefront/CartPanel";
 import { CreateShopWizard } from "@/components/storefront/CreateShopWizard";
+import { TourReplayButton } from "@/components/onboarding/TourReplayButton";
 import { authService } from "@/services/AuthService";
 import { useCartItemCount } from "@/store/cartStore";
 import { isOptimizableImage } from "@/lib/imageHosts";
@@ -36,6 +37,7 @@ function AccountMenu() {
   if (!firebaseUser) {
     return (
       <Link
+        data-tour="storefront-account"
         href="/login"
         aria-label="Mon compte"
         className="flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
@@ -57,6 +59,7 @@ function AccountMenu() {
   return (
     <div className="relative">
       <button
+        data-tour="storefront-account"
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label="Mon compte"
@@ -215,7 +218,7 @@ export function StorefrontHeader() {
           </Link>
         )}
 
-        <nav className="hidden items-center gap-6 text-sm sm:flex">
+        <nav data-tour="storefront-nav" className="hidden items-center gap-6 text-sm sm:flex">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -232,6 +235,7 @@ export function StorefrontHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <TourReplayButton className="border-border text-muted-foreground hover:bg-muted hover:text-foreground" />
           <button
             type="button"
             aria-label="Notifications"
@@ -242,6 +246,7 @@ export function StorefrontHeader() {
           <AccountMenu />
           <div className="relative">
             <button
+              data-tour="storefront-cart"
               type="button"
               aria-label="Voir le panier"
               onClick={() => setCartOpen((open) => !open)}

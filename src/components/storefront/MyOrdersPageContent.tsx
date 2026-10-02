@@ -111,7 +111,7 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul data-tour="my-orders-list" className="flex flex-col gap-3">
           {orders.map((order) => (
             <li
               key={order.id}

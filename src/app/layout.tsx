@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
 
+import { TourProvider } from "@/components/onboarding/TourProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         className="min-h-full flex flex-col font-sans"
         suppressHydrationWarning
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <TourProvider>{children}</TourProvider>
+        </AuthProvider>
         <InstallPrompt />
         {/* `sonner` était une dépendance installée mais jamais montée (BNF-37
         demande des toasts pour chaque action) — un seul <Toaster/> global

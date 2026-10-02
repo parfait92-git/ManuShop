@@ -86,7 +86,7 @@ export function ActivityLogPageContent({ shopId }: { shopId: string }) {
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="activity-list" className="rounded-xl border border-slate-200 bg-white">
         {entries === null ? (
           <p className="px-6 py-16 text-center text-sm text-slate-500">
             Chargement...

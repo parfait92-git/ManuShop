@@ -146,7 +146,7 @@ export function AccountSettingsForm() {
         </p>
       </div>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+      <section data-tour="account-identity" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
         <div>
           <h2 className="text-lg font-semibold">Identité</h2>
           <p className="text-sm text-muted-foreground">
@@ -245,7 +245,7 @@ export function AccountSettingsForm() {
         </form>
       </section>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+      <section data-tour="account-security" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
         <div>
           <h2 className="text-lg font-semibold">Compte</h2>
           <p className="text-sm text-muted-foreground">

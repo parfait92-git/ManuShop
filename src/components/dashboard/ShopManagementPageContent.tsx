@@ -98,7 +98,7 @@ export function ShopManagementPageContent() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div data-tour="shops-list" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {shops.map((shop) => {
           const status = statusOf(shop);
           const plan = planLabel(shop);
@@ -148,6 +148,7 @@ export function ShopManagementPageContent() {
                   />
                 )}
                 <Button
+                  data-tour="shops-manage"
                   onClick={() => handleManage(shop)}
                   disabled={switchingId === shop.id}
                   className="w-full bg-slate-950 hover:bg-slate-800"
@@ -160,6 +161,8 @@ export function ShopManagementPageContent() {
         })}
 
         <button
+
+          data-tour="shops-create"
           type="button"
           onClick={() => setWizardOpen(true)}
           className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-slate-400 hover:text-slate-600"

@@ -133,7 +133,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
             aider à choisir simplement.
           </p>
         </div>
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-4">
+        <div data-tour="shop-contact" className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-4">
           <Truck className="size-5 text-primary" />
           <div>
             <p className="text-sm font-semibold">Livraison offerte</p>
@@ -145,7 +145,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-tour="catalogue-filters" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CategoryFilterPills
             categories={categories.map((c) => ({ value: c.name, label: c.name }))}
             selected={category}
@@ -166,7 +166,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
               ? "Chargement..."
               : `${visibleProducts.length} article${visibleProducts.length > 1 ? "s" : ""} disponible${visibleProducts.length > 1 ? "s" : ""}`}
           </span>
-          <label className="flex items-center gap-2">
+          <label data-tour="catalogue-sort" className="flex items-center gap-2">
             Trier par
             <Select
               value={sortOrder}
@@ -187,7 +187,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
             Aucun produit ne correspond à votre recherche.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div data-tour="catalogue-products" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.map((product) => (
               <StorefrontProductCard key={product.id} product={product} />
             ))}

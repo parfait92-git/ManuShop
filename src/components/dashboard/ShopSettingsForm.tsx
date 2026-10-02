@@ -235,7 +235,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-visibility" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Eye className="size-4.5" />
@@ -277,7 +277,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-profile" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div>
               <h2 className="text-lg font-semibold">Profil de la boutique</h2>
               <p className="text-sm text-muted-foreground">
@@ -421,7 +421,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-multichannel" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <MessageCircle className="size-4.5" />
@@ -489,7 +489,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-contact-methods" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Mail className="size-4.5" />
@@ -591,7 +591,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-notifications" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Bell className="size-4.5" />
@@ -786,7 +786,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
         <div className="flex flex-col gap-4">
           <InfoPanel />
-          <Button type="submit" disabled={isSubmitting} className="w-full gap-1.5">
+          <Button data-tour="shop-save" type="submit" disabled={isSubmitting} className="w-full gap-1.5">
             <Save className="size-4" />
             {isSubmitting ? "Enregistrement..." : "Enregistrer les paramètres"}
           </Button>

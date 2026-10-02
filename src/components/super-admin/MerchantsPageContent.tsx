@@ -30,7 +30,7 @@ function ShopPremiumFeatures({
           {shop.isPublished ? "Publiée" : "Non publiée"}
         </span>
       </div>
-      <ul className="flex flex-col gap-2">
+      <ul data-tour="merchants-features" className="flex flex-col gap-2">
         {PREMIUM_FEATURE_KEYS.map((key) => {
           const enabled = shop.premiumFeatures.includes(key);
           return (
@@ -199,7 +199,7 @@ export function MerchantsPageContent() {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-background">
+        <ul data-tour="merchants-list" className="divide-y divide-border rounded-xl border border-border bg-background">
           {merchants.map((merchant) => (
             <MerchantRow
               key={merchant.ownerId}

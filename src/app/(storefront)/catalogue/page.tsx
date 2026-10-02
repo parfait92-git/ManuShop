@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { MarketCataloguePageContent } from "@/components/storefront/MarketCataloguePageContent";
+import { PageTour } from "@/components/onboarding/PageTour";
 import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 
 /**
@@ -35,5 +36,10 @@ export default function CataloguePage() {
     );
   }
 
-  return <MarketCataloguePageContent />;
+  return (
+    <>
+      <PageTour tourId="storefront-catalogue" />
+      <MarketCataloguePageContent />
+    </>
+  );
 }

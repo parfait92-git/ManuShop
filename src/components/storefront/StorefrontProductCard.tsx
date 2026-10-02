@@ -74,6 +74,8 @@ export function StorefrontProductCard({
       </Link>
 
       <button
+
+        data-tour="product-favorite"
         type="button"
         onClick={() => {
           if (!firebaseUser) {
@@ -105,6 +107,7 @@ export function StorefrontProductCard({
           </Link>
         )}
         <Button
+          data-tour="product-add-to-cart"
           className="w-full"
           onClick={() =>
             addItem({

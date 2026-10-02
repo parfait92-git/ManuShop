@@ -46,7 +46,7 @@ function ReplyForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form data-tour="messages-reply" onSubmit={handleSubmit} className="flex flex-col gap-2">
       <textarea
         rows={3}
         placeholder="Votre réponse..."
@@ -208,7 +208,7 @@ export function SupportMessagesPageContent() {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-background">
+        <ul data-tour="messages-list" className="divide-y divide-border rounded-xl border border-border bg-background">
           {messages.map((message) => (
             <MessageRow key={message.id} message={message} onReplied={handleReplied} />
           ))}

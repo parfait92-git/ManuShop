@@ -78,6 +78,7 @@ export function RegisterForm() {
 
   return (
     <form
+      data-tour="register-form"
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
       noValidate
@@ -179,13 +180,14 @@ export function RegisterForm() {
 
       {formError && <p className="text-sm text-destructive">{formError}</p>}
 
-      <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+      <Button data-tour="register-submit" type="submit" disabled={isSubmitting} className="mt-2 w-full">
         {isSubmitting ? "Création du compte..." : "Créer mon compte"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         Déjà un compte ?{" "}
         <Link
+          data-tour="register-login"
           href={buildAuthHref("/login", redirectTarget)}
           className="text-primary underline-offset-4 hover:underline"
         >

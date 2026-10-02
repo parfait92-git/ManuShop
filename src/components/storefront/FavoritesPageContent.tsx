@@ -80,7 +80,7 @@ export function FavoritesPageContent() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
       <h1 className="text-3xl font-bold">Mes favoris</h1>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div data-tour="favorites-grid" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {items.map(({ product, shop }) => (
           <StorefrontProductCard key={product.id} product={product} shop={shop} />
         ))}

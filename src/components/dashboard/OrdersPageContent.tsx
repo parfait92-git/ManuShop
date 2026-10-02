@@ -270,13 +270,15 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
             Suivez et traitez les commandes de votre boutique.
           </p>
         </div>
-        <Button className="w-fit gap-1.5" onClick={() => setManualOrderOpen(true)}>
+        <Button data-tour="orders-manual" className="w-fit gap-1.5" onClick={() => setManualOrderOpen(true)}>
           <Plus className="size-4" />
           Commande manuelle
         </Button>
       </div>
 
       <Select
+
+        data-tour="orders-filter"
         value={statusFilter}
         onChange={(event) => setStatusFilter(event.target.value)}
         aria-label="Filtrer par statut"
@@ -290,7 +292,7 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
         ))}
       </Select>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="orders-table" className="rounded-xl border border-slate-200 bg-white">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
             <ShoppingBag className="size-8 text-slate-300" />

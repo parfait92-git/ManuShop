@@ -119,6 +119,7 @@ export function SupportPageContent() {
       ) : (
         <>
           <form
+            data-tour="support-form"
             onSubmit={handleSubmit}
             className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6"
           >
@@ -169,7 +170,7 @@ export function SupportPageContent() {
               Aucun message envoyé pour le moment.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul data-tour="support-history" className="flex flex-col gap-3">
               {messages.map((message) => (
                 <MessageCard key={message.id} message={message} />
               ))}

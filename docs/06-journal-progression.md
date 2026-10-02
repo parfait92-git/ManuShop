@@ -1407,3 +1407,26 @@ Demande de l'utilisateur : « l'image du produit doit être obligatoire à l'ajo
 **Avertissement** (`ProductList`, donc à la fois sur `/dashboard` et `/dashboard/products`) : bandeau `role="alert"` non fermable (« N produits n'ont pas de photo »), qui disparaît de lui-même quand le dernier est corrigé ; bouton « Voir les produits concernés » qui filtre la table ; vignette pointillée `ImageOff` + lien « Sans photo — ajouter » vers l'édition sur chaque ligne. Nouveau `productService.hasImage`.
 
 Tests : `ProductForm.test.tsx` (+4, dont une vérification par mutation), `ProductList.test.tsx` (+3), `ProductService.test.ts` (+1) ; un test existant créait un produit sans photo, mis à jour. Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (767 tests). Rien de commité.
+
+### 2026-10-02 — Règles Firestore « photo obligatoire » déployées
+
+Les règles `products` de l'entrée précédente ont été déployées par l'utilisateur (`npx firebase-tools deploy --only firestore:rules` — la CLI n'est pas installée globalement, toujours passer par `npx`). La règle est donc désormais appliquée côté serveur, plus seulement par le formulaire.
+
+### 2026-10-02 — Visites guidées étendues à toutes les interfaces (BF-134/135)
+
+Demande de l'utilisateur : « que les onboarding tour et guided tour soient appliqués dans toutes les interfaces ». Jusqu'ici, seul `/dashboard` en avait une (`DashboardOnboardingTour`, pilote du 2026-09-29).
+
+**Mécanisme générique** (`src/components/onboarding/`) :
+- `tours.ts` : le texte de chaque visite, une entrée par page. Les cibles sont des attributs `data-tour` posés dans les composants (~80 ajoutés). Une étape peut être réservée à un rôle (`roles`).
+- `PageTour` : monté dans chaque `page.tsx`. Il attend que les cibles s'affichent (5 s max, les pages lisent d'abord Firestore), puis ne garde que les étapes dont la cible est visible (liste vide, rôle, sidebar masquée sur mobile), pour que le compteur « Suivant (3/7) » reste juste. « Déjà vue » est mémorisé sur le compte (`User.seenTours`, inchangé), ou dans `localStorage` pour un visiteur non connecté (`src/lib/guestSeenTours.ts`).
+- `TourProvider` (racine) + `TourReplayButton` (« ? ») dans les 5 en-têtes (dashboard, Super Admin, vitrine, accueil, auth) : il relance la visite de la page affichée, et n'apparaît que si la page en a une. La toute première visite d'un compte ou navigateur se termine par une étape qui montre ce bouton.
+- `DashboardOnboardingTour` supprimé : remplacé par `<PageTour tourId="dashboard-onboarding" />`, même id, donc pas revue par ceux qui l'avaient déjà vue.
+
+**Pages couvertes** : les 32 pages sauf `/erreur` et les pages « bientôt disponible » Statistiques et Clients (rien à présenter). Les pages démo réutilisent la visite de leur équivalent réel.
+
+**Deux bugs trouvés en vérifiant dans Chrome (Playwright sur `next start`), invisibles aux tests unitaires** (qui remplacent `react-joyride` par un faux) :
+1. Plantage de toute page avec une visite (« This page couldn't load ») : `toStep` passait `placement: undefined`, et `react-joyride` fusionne l'étape par-dessus ses valeurs par défaut, donc la clé `undefined` écrasait `"bottom"` (`placement.startsWith`). Corrigé (clés omises si vides) ; test de non-régression vérifié par mutation.
+2. Sur la vitrine, une cible atteinte par défilement se retrouvait sous l'en-tête collant (marge par défaut 20 px) : `scrollOffset: 100` dans `GuidedTour`.
+
+**Tests** : `PageTour.test.tsx` (8), `TourReplayButton.test.tsx`, `tours.test.ts`. Ce dernier vérifie que chaque cible de `tours.ts` existe en `data-tour` dans le code et que chaque visite est montée par une page : une faute de frappe retirerait sinon l'étape en silence. 5 tests de pages vitrine ont un faux `PageTour` en plus (il chargeait le SDK Firebase). Vérifié : lint, `tsc`, build, `test:coverage`. Navigateur : `/login`, `/register`, `/`, `/catalogue`, `/boutiques` sur ordinateur, et `/login` sur mobile (lancement auto, parcours complet, non relancée après rechargement, bouton « ? »). **Pas vérifié dans un navigateur** : les pages derrière connexion (dashboard, Super Admin, mes commandes...), couvertes seulement par les tests. Rien de commité.
+

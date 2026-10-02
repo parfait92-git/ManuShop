@@ -45,6 +45,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form
+      data-tour="forgot-form"
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
       noValidate

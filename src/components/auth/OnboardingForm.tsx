@@ -44,6 +44,7 @@ export function OnboardingForm() {
 
   return (
     <form
+      data-tour="onboarding-form"
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
       noValidate

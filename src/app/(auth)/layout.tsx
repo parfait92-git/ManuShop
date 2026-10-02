@@ -1,6 +1,7 @@
 import { ArrowLeft, Store } from "lucide-react";
 import Link from "next/link";
 
+import { TourReplayButton } from "@/components/onboarding/TourReplayButton";
 import { PageBackground } from "@/components/sections/PageBackground";
 
 export default function AuthLayout({
@@ -25,13 +26,16 @@ export default function AuthLayout({
           </span>
           Manu <span className="text-cyan-300">Shop</span>
         </Link>
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
-        >
-          <ArrowLeft className="size-4" />
-          Retour à l&apos;accueil
-        </Link>
+        <div className="flex items-center gap-4">
+          <TourReplayButton className="border-white/15 text-white/70 hover:bg-white/10 hover:text-white" />
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="size-4" />
+            Retour à l&apos;accueil
+          </Link>
+        </div>
       </header>
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 pb-16">

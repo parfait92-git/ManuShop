@@ -141,7 +141,7 @@ export function CatalogueExplorer({
       {hero}
 
       {shops.length > 0 && (
-        <section className="flex flex-col gap-4">
+        <section data-tour="catalogue-shops" className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Boutiques
@@ -163,7 +163,7 @@ export function CatalogueExplorer({
       )}
 
       <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-tour="catalogue-filters" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CategoryFilterPills
             categories={tagOptions}
             selected={tagId}
@@ -184,7 +184,7 @@ export function CatalogueExplorer({
               ? "Chargement..."
               : `${visibleItems.length} article${visibleItems.length > 1 ? "s" : ""} disponible${visibleItems.length > 1 ? "s" : ""}`}
           </span>
-          <label className="flex items-center gap-2">
+          <label data-tour="catalogue-sort" className="flex items-center gap-2">
             Trier par
             <Select
               value={sortOrder}
@@ -205,7 +205,7 @@ export function CatalogueExplorer({
             Aucun produit ne correspond à votre recherche.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div data-tour="catalogue-products" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleItems.map((item) => (
               <StorefrontProductCard
                 key={item.product.id}

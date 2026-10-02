@@ -214,7 +214,7 @@ export function ProductForm({
         </p>
       )}
 
-      <div className="flex flex-col gap-1.5">
+      <div data-tour="product-name" className="flex flex-col gap-1.5">
         <Label htmlFor="name">Nom du produit</Label>
         <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
         {errors.name && (
@@ -276,7 +276,7 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div data-tour="product-stock" className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="stock">Stock</Label>
           <Input
@@ -310,7 +310,7 @@ export function ProductForm({
         </div>
       </div>
 
-      <div ref={photosRef} className="flex flex-col gap-1.5">
+      <div data-tour="product-photos" ref={photosRef} className="flex flex-col gap-1.5">
         <Label>Photos{imagesRequired && " (au moins une)"}</Label>
         {!imagesRequired && images.length === 0 && (
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -326,7 +326,7 @@ export function ProductForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
+      <div data-tour="product-promo" className="flex flex-col gap-3 rounded-lg border border-border p-3">
         <Label htmlFor="isPromo" className="items-center">
           <input
             id="isPromo"
@@ -371,7 +371,7 @@ export function ProductForm({
       {formError && <p className="text-sm text-destructive">{formError}</p>}
 
       {!product && (
-        <div className="flex items-center gap-3">
+        <div data-tour="product-draft" className="flex items-center gap-3">
           <Button
             type="button"
             variant="outline"
@@ -388,7 +388,7 @@ export function ProductForm({
         </div>
       )}
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <Button data-tour="product-submit" type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting
           ? "Enregistrement..."
           : product

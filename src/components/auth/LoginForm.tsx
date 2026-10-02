@@ -50,7 +50,11 @@ export function LoginForm() {
         </p>
       )}
 
-      <EmailLoginForm redirectTarget={redirectTarget} />
+      <div data-tour="login-form">
+
+        <EmailLoginForm redirectTarget={redirectTarget} />
+
+      </div>
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
@@ -58,9 +62,13 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <SocialLoginButtons redirectTarget={redirectTarget} />
+      <div data-tour="login-social">
 
-      <p className="text-center text-sm text-muted-foreground">
+        <SocialLoginButtons redirectTarget={redirectTarget} />
+
+      </div>
+
+      <p data-tour="login-register" className="text-center text-sm text-muted-foreground">
         Pas encore de boutique ?{" "}
         <Link
           href={buildAuthHref("/register", redirectTarget)}
@@ -116,6 +124,7 @@ function EmailLoginForm({ redirectTarget }: { redirectTarget: string | null }) {
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Mot de passe</Label>
           <Link
+            data-tour="login-forgot"
             href="/forgot-password"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >

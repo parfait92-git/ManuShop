@@ -128,6 +128,7 @@ export function ProductList({
           </p>
         </div>
         <Link
+          data-tour="products-add"
           href="/dashboard/products/new"
           className={buttonVariants({ className: "w-fit gap-1.5" })}
         >
@@ -170,7 +171,7 @@ export function ProductList({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div data-tour="products-filters" className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -202,7 +203,7 @@ export function ProductList({
         </p>
       ) : (
         <div className="-mx-4 overflow-x-auto sm:-mx-6">
-          <table className="w-full min-w-160 border-collapse text-sm">
+          <table data-tour="products-table" className="w-full min-w-160 border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
                 <th className="px-4 py-2 sm:px-6">Produit</th>
@@ -210,8 +211,8 @@ export function ProductList({
                 <th className="px-4 py-2">Prix</th>
                 <th className="px-4 py-2">Stock</th>
                 <th className="px-4 py-2">Statut</th>
-                <th className="px-4 py-2">Publié</th>
-                <th className="px-4 py-2 text-right sm:pr-6">Actions</th>
+                <th data-tour="products-publish" className="px-4 py-2">Publié</th>
+                <th data-tour="products-actions" className="px-4 py-2 text-right sm:pr-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

@@ -58,6 +58,10 @@ export function GuidedTour({
         // automatiquement (onboarding), un clic supplémentaire serait de
         // trop.
         skipBeacon: true,
+        // Marge au défilement vers une cible : la vitrine a un en-tête
+        // collant (~60px) qui recouvrait la cible avec la marge par défaut
+        // (20px) — la bulle pointait alors vers un élément caché.
+        scrollOffset: 100,
         buttons: ["back", "close", "primary", "skip"],
       }}
     />
