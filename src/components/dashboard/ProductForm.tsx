@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,14 @@ export function ProductForm({
   const router = useRouter();
   const { guard } = useNavigationBlocker();
   const [images, setImages] = useState<string[]>(product?.images ?? []);
+  // Photo obligatoire à la création. En édition, seulement si le produit en
+  // avait déjà une : un ancien produit sans photo (créé avant cette règle)
+  // reste modifiable — il est signalé par `ProductList` jusqu'à correction —
+  // mais on ne peut plus retirer la dernière photo d'un produit qui en a.
+  const imagesRequired = !product || product.images.length > 0;
+  const [imagesSubmitted, setImagesSubmitted] = useState(false);
+  const showImagesError = imagesSubmitted && imagesRequired && images.length === 0;
+  const photosRef = useRef<HTMLDivElement>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -176,9 +184,27 @@ export function ProductForm({
     }
   }
 
+  // Les photos vivent hors de react-hook-form (`ProductImageUploader`) :
+  // vérifiées ici, en même temps que la validation Zod des autres champs,
+  // pour que toutes les erreurs s'affichent d'un coup.
+  function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const missingImages = imagesRequired && images.length === 0;
+    setImagesSubmitted(true);
+    return handleSubmit((data) => {
+      if (missingImages) {
+        photosRef.current?.scrollIntoView?.({
+          behavior: "smooth",
+          block: "center",
+        });
+        return;
+      }
+      return onSubmit(data);
+    })(event);
+  }
+
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleFormSubmit}
       className="flex w-full max-w-lg flex-col gap-4"
       noValidate
     >
@@ -284,9 +310,20 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label>Photos</Label>
+      <div ref={photosRef} className="flex flex-col gap-1.5">
+        <Label>Photos{imagesRequired && " (au moins une)"}</Label>
+        {!imagesRequired && images.length === 0 && (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Ce produit n&apos;a pas encore de photo. Ajoutez-en une : les
+            clients achètent rarement un article qu&apos;ils ne voient pas.
+          </p>
+        )}
         <ProductImageUploader images={images} onChange={setImages} />
+        {showImagesError && (
+          <p role="alert" className="text-sm text-destructive">
+            Ajoutez au moins une photo du produit.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 rounded-lg border border-border p-3">

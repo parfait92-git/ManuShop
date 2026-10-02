@@ -90,6 +90,15 @@ describe("ProductService", () => {
     });
   });
 
+  describe("hasImage", () => {
+    it("is true only when the product has at least one photo", () => {
+      expect(
+        service.hasImage({ images: ["https://res.cloudinary.com/x.jpg"] } as never)
+      ).toBe(true);
+      expect(service.hasImage({ images: [] } as never)).toBe(false);
+    });
+  });
+
   describe("isVisibleToCustomers", () => {
     it("is visible when isPublished is absent (no regression for pre-existing products)", () => {
       expect(service.isVisibleToCustomers(fakeProduct())).toBe(true);

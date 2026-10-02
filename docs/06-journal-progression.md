@@ -1395,3 +1395,15 @@ Demande de l'utilisateur : « utilise le lazy loading pour charger les images af
 2. **Logos de boutique** (`ShopSummaryCard`, `StorefrontHeader`, `ProductDetailPageContent`, `ShopLogoStep`) : `unoptimized` systématique, car un logo peut être un lien externe arbitraire — donc même un logo Cloudinary était servi en 512px d'origine pour un affichage en 48px. Désormais `unoptimized={!isOptimizableImage(url)}` : nouveau `src/lib/imageHosts.ts`, liste unique d'hébergeurs lue aussi par `next.config.ts` (`remotePatterns` dérivés, plus de double maintenance).
 
 Tests : `PageBackground.test.tsx`, `imageHosts.test.ts` (nouveaux). Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (759 tests, aucune régression). Rien de commité.
+
+### 2026-10-02 — Photo produit obligatoire + avertissement des produits sans photo (BF-06)
+
+Demande de l'utilisateur : « l'image du produit doit être obligatoire à l'ajout ; s'il existe un produit sans image, avertir le commerçant jusqu'à ce qu'il en ajoute une ».
+
+**Formulaire** (`ProductForm`) : les photos vivent hors de react-hook-form (`ProductImageUploader`), donc vérifiées dans un `handleFormSubmit` qui enveloppe `handleSubmit` — l'erreur « Ajoutez au moins une photo du produit. » s'affiche en même temps que les erreurs Zod, et disparaît dès qu'une photo est ajoutée. Règle : obligatoire à la création ; en édition, seulement si le produit avait déjà une photo (impossible de retirer la dernière). Choix assumé : un ancien produit sans photo reste modifiable (sinon le commerçant ne pourrait plus changer un prix ou un stock en urgence), avec un encart l'invitant à en ajouter une.
+
+**Côté serveur** (`firestore.rules`, `products`) : `create` exige `images` liste non vide ; `update` refuse de vider `images` d'un produit qui en a (via `get('images', [])` pour ne pas bloquer les anciens docs sans le champ). `update`/`delete` séparés pour ça. **Pas déployé** et non testé contre l'émulateur (le projet n'a pas de tests de règles) — à faire avec `firebase deploy --only firestore:rules`.
+
+**Avertissement** (`ProductList`, donc à la fois sur `/dashboard` et `/dashboard/products`) : bandeau `role="alert"` non fermable (« N produits n'ont pas de photo »), qui disparaît de lui-même quand le dernier est corrigé ; bouton « Voir les produits concernés » qui filtre la table ; vignette pointillée `ImageOff` + lien « Sans photo — ajouter » vers l'édition sur chaque ligne. Nouveau `productService.hasImage`.
+
+Tests : `ProductForm.test.tsx` (+4, dont une vérification par mutation), `ProductList.test.tsx` (+3), `ProductService.test.ts` (+1) ; un test existant créait un produit sans photo, mis à jour. Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (767 tests). Rien de commité.

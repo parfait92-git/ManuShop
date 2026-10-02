@@ -104,6 +104,13 @@ export class ProductService {
     return null;
   }
 
+  /** Photo obligatoire depuis la création (`ProductForm`), mais d'anciens
+   * produits peuvent encore n'en avoir aucune : signalés au commerçant
+   * (`ProductList`) jusqu'à ce qu'il en ajoute une. */
+  hasImage(product: Product): boolean {
+    return product.images.length > 0;
+  }
+
   /** Dérivé de `stock`/`stockThreshold`, pas d'un module Stock dédié (pas
    * encore construit) — la seule donnée fiable disponible aujourd'hui. */
   getStockStatus(product: Product): StockStatus {
