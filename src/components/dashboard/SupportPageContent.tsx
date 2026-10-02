@@ -133,7 +133,7 @@ export function SupportPageContent() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="support-subject">Objet</Label>
+              <Label htmlFor="support-subject" help="Le sujet de votre demande en quelques mots, ex. « Problème d'ajout de photo ».">Objet</Label>
               <Input
                 id="support-subject"
                 value={subject}
@@ -142,7 +142,7 @@ export function SupportPageContent() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="support-body">Message</Label>
+              <Label htmlFor="support-body" help="Décrivez votre question ou votre problème : ce que vous faisiez, ce qui s'est passé. Plus c'est précis, plus la réponse sera rapide.">Message</Label>
               <textarea
                 id="support-body"
                 rows={4}

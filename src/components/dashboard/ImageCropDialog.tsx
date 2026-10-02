@@ -6,6 +6,7 @@ import Cropper, { type Area } from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { DialogTour } from "@/components/onboarding/DialogTour";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   Dialog,
   DialogDescription,
@@ -92,6 +93,9 @@ export function ImageCropDialog({
           <label htmlFor="crop-zoom" className="text-sm text-muted-foreground">
             Zoom
           </label>
+          <CoachMark label="Aide : zoom">
+            Agrandissez la photo pour resserrer le cadrage sur le produit, puis faites-la glisser pour la centrer.
+          </CoachMark>
           <input
             id="crop-zoom"
             type="range"

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { DemoPreviewBanner } from "@/components/dashboard/DemoPreviewBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CoachMark } from "@/components/ui/CoachMark";
 import { mockUsers } from "@/data/mockData";
 import type { User } from "@/models/user/User";
 import { platformAdminService } from "@/services/PlatformAdminService";
@@ -183,15 +184,20 @@ export function SuperAdminPanel() {
       </div>
 
       <form data-tour="sa-search" onSubmit={handleSearch} className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-            placeholder="Pseudo, email ou téléphone..."
-            aria-label="Rechercher un utilisateur"
-            className="pl-9"
-          />
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={term}
+              onChange={(event) => setTerm(event.target.value)}
+              placeholder="Pseudo, email ou téléphone..."
+              aria-label="Rechercher un utilisateur"
+              className="pl-9"
+            />
+          </div>
+          <CoachMark label="Aide : recherche d'utilisateur">
+            Saisissez le pseudo, l&apos;email ou le téléphone d&apos;un compte pour le retrouver, puis lui donner ou lui retirer le rôle de gérant de boutique.
+          </CoachMark>
         </div>
         <Button type="submit" disabled={searching}>
           {searching ? "Recherche..." : "Rechercher"}

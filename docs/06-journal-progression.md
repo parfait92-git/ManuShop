@@ -1462,3 +1462,24 @@ Demande de l'utilisateur : que les tableaux de données soient défilables horiz
 - Panneau panier plafonné à la largeur de l'écran ; ligne « N articles · Trier par » et prix des cartes produit en `flex-wrap` ; bulle de visite guidée plafonnée à `calc(100vw - 24px)` (380 px par défaut).
 
 **Vérification réelle** sur les émulateurs Firebase (compte gérant, boutique, 6 produits et 5 commandes de test, noms volontairement longs), dans Chrome à 320 px, police à 100 % puis 150 % appliquée dès le chargement : 18 écrans (tout le tableau de bord, `/mon-compte`, catalogue, boutique, fiche produit, mes commandes, favoris). Aucun débordement horizontal de page ; seuls les tableaux défilent. Deux pièges de mesure à retenir pour de futurs audits : en émulation mobile, Chrome élargit `innerWidth` jusqu'au contenu qui déborde (il faut comparer à `documentElement.clientWidth`) ; et une police agrandie après le chargement fausse les éléments mesurés au démarrage, comme le voile de visite guidée. Limite : Chrome sous Linux n'a pas de dictionnaire de césure, les rares mots plus larges que la colonne fixe y sont coupés sans trait d'union (Android en a un). Tests : `scrollable-table.test.tsx` (3). Vérifié : lint, `tsc`, build, `test:coverage` (821 tests). Rien de commité.
+
+### 2026-10-02 — Bouton d'aide « ? » sur tous les champs (BF-136 étendu)
+
+Demande de l'utilisateur : une icône « ? » sur tous les champs, qui affiche au survol (ordinateur) ou au clic l'aide sur le rôle du champ et son utilité.
+
+**Mécanisme unique** :
+- `CoachMark` (bulle « ? » existante, BF-136) s'ouvre désormais au survol (`openOnHover`, délai de 150 ms), au toucher sur mobile et au clavier. Sa zone de toucher fait 24 × 24 px au minimum (WCAG 2.5.8).
+- `Label` reçoit une prop `help` qui place le « ? » à côté du libellé, jamais dedans : un bouton dans un `<label>` est invalide, et un clic activerait aussi le champ. Le bouton s'appelle « Aide : <libellé> », nom déduit du texte du libellé.
+- L'ancien `FieldHint` (`title` natif, survol seulement, donc inutilisable sur mobile) est supprimé ; ses 10 textes ont été repris.
+
+**Couverture** : 97 points d'aide, dont 66 libellés (`help`) et 31 directs. Ces derniers couvrent les interrupteurs des paramètres (sur le titre de la ligne), les recherches et filtres, le tri du catalogue, la colonne « Publié », « Se souvenir de moi », les articles de la commande manuelle, le zoom du recadrage, les privilèges premium, la note et la case « défectueux » de l'avis, la source et le lien du logo, et le moyen de paiement. Trois zones de texte sans libellé visible en ont reçu un, avec son aide (motif de commande, avis, réponse du Super Admin) : c'était aussi un défaut d'accessibilité. Seul exclu : la recherche de l'en-tête de l'accueil, où le « ? » se trouverait collé au « ? » de la visite guidée (deux icônes identiques aux rôles différents).
+
+**Honnêteté des textes**, après vérification dans le code :
+- `promoEnd` n'est lu nulle part : une promotion ne s'arrête pas d'elle-même à sa date de fin, l'aide le dit.
+- « Commandes par e-mail » et « alertes urgentes par téléphone » n'ont aucun effet aujourd'hui ; « Notifications par email » (compte) non plus.
+- Le paiement en ligne n'est pas actif.
+- Deux privilèges premium (filtre de ventes par intervalle, statistiques de consultation) ne sont pas encore construits.
+
+**Bug trouvé en vérifiant dans Chrome** : la bulle s'affichait derrière la carte des pages de connexion. Le `z-50` était posé sur la bulle, mais son positionneur Base UI (placé par `transform`) crée un contexte d'empilement, et la carte en `z-10` passait devant. Corrigé dans `ui/popover.tsx` (`z-50` sur le positionneur), ce qui profite aussi aux autres popovers.
+
+Tests : `label.test.tsx` (nouveau). `CategoryManager.test.tsx` et `ShopSettingsForm.test.tsx` ont leurs requêtes `getByLabelText(/X/)` ancrées en `/^X/`, car elles trouvaient aussi le bouton « Aide : X ». Vérifié : lint, `tsc`, build, `test:coverage`. Chrome (`next start`) sur `/login` : survol (ouvre puis ferme), clavier (Tab puis Entrée), toucher mobile (ouvre, toucher ailleurs ferme), sans soumettre le formulaire ni faire déborder la page. Rien de commité.

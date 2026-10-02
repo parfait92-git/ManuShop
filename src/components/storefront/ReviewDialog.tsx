@@ -13,6 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { DialogTour } from "@/components/onboarding/DialogTour";
+import { CoachMark } from "@/components/ui/CoachMark";
 import type { OrderItem } from "@/models/order/OrderItem";
 
 export interface ReviewTarget {
@@ -61,7 +62,7 @@ export function ReviewDialog({
 
         {target && target.items.length > 1 && (
           <div data-tour="review-product" className="flex flex-col gap-1.5">
-            <Label htmlFor="review-product">Article concerné</Label>
+            <Label htmlFor="review-product" help="La commande contient plusieurs articles : choisissez celui que vous notez. Votre avis apparaîtra sur sa fiche.">Article concerné</Label>
             <Select
               id="review-product"
               value={productId}
@@ -76,6 +77,12 @@ export function ReviewDialog({
           </div>
         )}
 
+        <div className="flex items-center gap-1.5 text-sm font-medium">
+          Note (facultative)
+          <CoachMark label="Aide : note">
+            De 1 à 5 étoiles, selon votre satisfaction. Facultatif : votre commentaire suffit si vous ne souhaitez pas noter.
+          </CoachMark>
+        </div>
         <div
           data-tour="review-rating"
           className="flex items-center gap-1"
@@ -103,7 +110,14 @@ export function ReviewDialog({
           ))}
         </div>
 
+        <Label
+          htmlFor="review-comment"
+          help="Racontez votre expérience : qualité, conformité à la description, livraison… Obligatoire. Il sera publié sur la fiche de l'article."
+        >
+          Votre avis
+        </Label>
         <textarea
+          id="review-comment"
           data-tour="review-comment"
           value={comment}
           onChange={(event) => setComment(event.target.value)}
@@ -112,15 +126,20 @@ export function ReviewDialog({
           className="w-full resize-none rounded-lg border border-border bg-background p-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring"
         />
 
-        <label data-tour="review-defective" className="flex items-center gap-2 text-sm text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={defective}
-            onChange={(event) => setDefective(event.target.checked)}
-            className="size-4"
-          />
-          Signaler un article défectueux
-        </label>
+        <div className="flex items-center gap-2">
+          <label data-tour="review-defective" className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={defective}
+              onChange={(event) => setDefective(event.target.checked)}
+              className="size-4"
+            />
+            Signaler un article défectueux
+          </label>
+          <CoachMark label="Aide : article défectueux">
+            Cochez si l&apos;article est arrivé abîmé ou ne fonctionne pas. Votre avis est alors marqué comme signalant un défaut, pour alerter la boutique.
+          </CoachMark>
+        </div>
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel}>

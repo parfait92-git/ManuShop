@@ -14,10 +14,15 @@ function PopoverContent({
   Pick<PopoverPrimitive.Positioner.Props, "sideOffset" | "side" | "align">) {
   return (
     <PopoverPrimitive.Portal>
+      {/* `z-50` sur le positionneur, pas seulement sur la bulle : il est
+      placé par `transform`, ce qui crée un contexte d'empilement — un
+      `z-index` posé sur la bulle y resterait enfermé, et un contenu de page
+      en `z-10` (carte des pages de connexion) passait par-dessus. */}
       <PopoverPrimitive.Positioner
         sideOffset={sideOffset}
         side={side}
         align={align}
+        className="z-50"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

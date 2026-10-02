@@ -18,8 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { FieldHint } from "@/components/dashboard/FieldHint";
 import { DialogTour } from "@/components/onboarding/DialogTour";
+import { CoachMark } from "@/components/ui/CoachMark";
 import { CategorySchema, type CategoryInput } from "@/lib/validation/product";
 import type { Category } from "@/models/category/Category";
 import type { CategoryTag } from "@/models/category/CategoryTag";
@@ -82,9 +82,8 @@ function CategoryForm({
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="name" className="gap-1.5">
+          <Label htmlFor="name" className="gap-1.5" help="Le nom court affiché à vos clients et dans le formulaire produit — ex. Mode, Chaussures, Accessoires.">
             Nom de la catégorie <span className="text-destructive">*</span>
-            <FieldHint text="Le nom court affiché à vos clients et dans le formulaire produit — ex. Mode, Chaussures, Accessoires." />
           </Label>
           <Input
             id="name"
@@ -98,9 +97,8 @@ function CategoryForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="description" className="gap-1.5">
+          <Label htmlFor="description" className="gap-1.5" help="Une phrase qui rappelle ce que contient cette catégorie. Elle vous aide à vous y retrouver, même des mois plus tard.">
             Description <span className="text-destructive">*</span>
-            <FieldHint text="Une phrase qui rappelle ce que contient cette catégorie. Elle vous aide à vous y retrouver, même des mois plus tard." />
           </Label>
           <textarea
             id="description"
@@ -118,9 +116,8 @@ function CategoryForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tagId" className="gap-1.5">
+          <Label htmlFor="tagId" className="gap-1.5" help="Une taxonomie commune à toutes les boutiques, gérée par le Super Admin — c'est elle qui permet à un client de filtrer le Marché (/catalogue) par catégorie malgré des noms différents d'une boutique à l'autre. Facultatif.">
             Tag de catégorie système
-            <FieldHint text="Une taxonomie commune à toutes les boutiques, gérée par le Super Admin — c'est elle qui permet à un client de filtrer le Marché (/catalogue) par catégorie malgré des noms différents d'une boutique à l'autre. Facultatif." />
           </Label>
           <Select id="tagId" {...register("tagId")}>
             <option value="">Aucun tag</option>
@@ -134,7 +131,12 @@ function CategoryForm({
 
         <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
           <div>
-            <p className="text-sm font-medium">Afficher la catégorie</p>
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              Afficher la catégorie
+              <CoachMark label="Aide : afficher la catégorie">
+                Une catégorie masquée n&apos;apparaît plus aux clients, et ne peut plus être choisie pour un nouveau produit. Vous pouvez la réafficher à tout moment.
+              </CoachMark>
+            </p>
             <p className="text-sm text-muted-foreground">
               Si elle est affichée, les clients pourront la voir et les
               produits pourront y être associés.
@@ -282,7 +284,7 @@ function EditCategoryDialog({
           noValidate
         >
           <div data-tour="edit-category-name" className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-category-name">Nom de la catégorie</Label>
+            <Label htmlFor="edit-category-name" help="Le nom court affiché à vos clients et dans le formulaire produit — ex. Mode, Chaussures, Accessoires.">Nom de la catégorie</Label>
             <Input
               id="edit-category-name"
               aria-invalid={!!errors.name}
@@ -294,7 +296,7 @@ function EditCategoryDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-category-description">Description</Label>
+            <Label htmlFor="edit-category-description" help="Une phrase qui rappelle ce que contient cette catégorie. Elle vous aide à vous y retrouver, même des mois plus tard.">Description</Label>
             <textarea
               id="edit-category-description"
               rows={3}
@@ -310,7 +312,7 @@ function EditCategoryDialog({
           </div>
 
           <div data-tour="edit-category-tag" className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-category-tagId">Tag de catégorie système</Label>
+            <Label htmlFor="edit-category-tagId" help="Relie cette catégorie à un rayon commun du Marché, géré par le Super Admin : c'est ce qui permet aux clients de retrouver vos produits en filtrant le Marché. Facultatif.">Tag de catégorie système</Label>
             <Select id="edit-category-tagId" {...register("tagId")}>
               <option value="">Aucun tag</option>
               {tags.map((tag) => (
@@ -528,7 +530,12 @@ export function CategoryManager({
       <div data-tour="category-list" className="rounded-xl border border-border bg-background">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div>
-            <h2 className="text-lg font-semibold">Vos catégories</h2>
+            <h2 className="flex items-center gap-1.5 text-lg font-semibold">
+              Vos catégories
+              <CoachMark label="Aide : vos catégories">
+                L&apos;interrupteur de chaque ligne affiche ou masque la catégorie à vos clients. Le crayon la modifie, la corbeille la supprime.
+              </CoachMark>
+            </h2>
             <p className="text-sm text-muted-foreground">
               {categories.length === 0
                 ? "Aucune catégorie pour le moment"

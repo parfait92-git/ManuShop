@@ -17,6 +17,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   STICKY_COLUMN_CONTENT,
   ScrollableTable,
@@ -176,29 +177,39 @@ export function ProductList({
       )}
 
       <div data-tour="products-filters" className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-            placeholder="Rechercher par nom ou catégorie"
-            aria-label="Rechercher un produit"
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 text-sm outline-none placeholder:text-slate-400 focus-visible:border-slate-400"
-          />
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={term}
+              onChange={(event) => setTerm(event.target.value)}
+              placeholder="Rechercher par nom ou catégorie"
+              aria-label="Rechercher un produit"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 text-sm outline-none placeholder:text-slate-400 focus-visible:border-slate-400"
+            />
+          </div>
+          <CoachMark label="Aide : recherche de produit">
+            Retrouvez un produit en tapant une partie de son nom ou de sa catégorie. La liste se filtre au fur et à mesure.
+          </CoachMark>
         </div>
-        <Select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          aria-label="Filtrer par catégorie"
-          className="h-10 sm:w-56"
-        >
-          <option value="">Toutes les catégories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>
-              {cat.name}
-            </option>
-          ))}
-        </Select>
+        <div className="flex items-center gap-2 sm:w-64">
+          <Select
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            aria-label="Filtrer par catégorie"
+            className="h-10 flex-1"
+          >
+            <option value="">Toutes les catégories</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
+          </Select>
+          <CoachMark label="Aide : filtre par catégorie">
+            N&apos;affiche que les produits d&apos;une catégorie. Choisissez « Toutes les catégories » pour tout revoir.
+          </CoachMark>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -215,7 +226,14 @@ export function ProductList({
                 <th className="px-4 py-2">Prix</th>
                 <th className="px-4 py-2">Stock</th>
                 <th className="px-4 py-2">Statut</th>
-                <th data-tour="products-publish" className="px-4 py-2">Publié</th>
+                <th data-tour="products-publish" className="px-4 py-2">
+                  <span className="inline-flex items-center gap-1.5">
+                    Publié
+                    <CoachMark label="Aide : publication d'un produit">
+                      Activé, le produit est visible par vos clients et peut être commandé. Désactivé, il reste dans votre catalogue mais leur est caché. Un nouveau produit commence masqué.
+                    </CoachMark>
+                  </span>
+                </th>
                 <th data-tour="products-actions" className="px-4 py-2 text-right sm:pr-6">Actions</th>
               </tr>
             </thead>

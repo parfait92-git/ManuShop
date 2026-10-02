@@ -69,7 +69,7 @@ export function PlatformSettingsPageContent() {
       ) : (
         <div data-tour="settings-card" className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="demo-catalogue-toggle">
+            <Label htmlFor="demo-catalogue-toggle" help="Tant qu'aucune boutique publiée n'a de produit visible, le Marché affiche une démonstration. Désactivez pour ne jamais l'afficher.">
               Afficher le catalogue de démonstration
             </Label>
             <p className="text-sm text-muted-foreground">

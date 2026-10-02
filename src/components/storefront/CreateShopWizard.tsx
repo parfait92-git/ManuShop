@@ -230,7 +230,7 @@ export function CreateShopWizard({
                 </p>
               </div>
               <div data-tour="wizard-shop-name" className="flex flex-col gap-1.5">
-                <Label htmlFor="shop-name">Nom de la boutique</Label>
+                <Label htmlFor="shop-name" help="Le nom de votre boutique, tel que vos clients le verront. Vous pourrez le modifier plus tard.">Nom de la boutique</Label>
                 <Input
                   id="shop-name"
                   placeholder="Ex. : Chez Mado"
@@ -245,7 +245,7 @@ export function CreateShopWizard({
               </div>
               <div data-tour="wizard-shop-details" className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="shop-sector">Secteur d&apos;activité</Label>
+                  <Label htmlFor="shop-sector" help="Votre domaine d'activité (mode, alimentation, beauté…), pour aider les clients à comprendre ce que vous vendez.">Secteur d&apos;activité</Label>
                   <Input
                     id="shop-sector"
                     placeholder="Ex. : Mode, alimentation, beauté"
@@ -253,7 +253,7 @@ export function CreateShopWizard({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="shop-address">Ville</Label>
+                  <Label htmlFor="shop-address" help="La ville où se trouve votre boutique, affichée à vos clients.">Ville</Label>
                   <Input
                     id="shop-address"
                     placeholder="Ex. : Douala"
@@ -267,7 +267,7 @@ export function CreateShopWizard({
               marquée ici dans la largeur réduite d'une boîte de dialogue. */}
               <div data-tour="wizard-shop-contacts" className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="shop-phone">Téléphone</Label>
+                  <Label htmlFor="shop-phone" help="Le numéro principal de la boutique, pour que vos clients puissent vous appeler. Facultatif.">Téléphone</Label>
                   <PhoneInput
                     id="shop-phone"
                     value={phone ?? ""}
@@ -277,7 +277,7 @@ export function CreateShopWizard({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="shop-whatsapp">WhatsApp</Label>
+                  <Label htmlFor="shop-whatsapp" help="Le numéro WhatsApp qui recevra les commandes de vos clients. Facultatif, modifiable plus tard.">WhatsApp</Label>
                   <PhoneInput
                     id="shop-whatsapp"
                     value={whatsapp ?? ""}

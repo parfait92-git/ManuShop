@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DialogTour } from "@/components/onboarding/DialogTour";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogDescription,
@@ -66,7 +67,14 @@ export function OrderReasonDialog({
             <DialogDescription>{copy.description}</DialogDescription>
           </>
         )}
+        <Label
+          htmlFor="order-reason"
+          help="Expliquez pourquoi en une phrase, ex. « Produit en rupture » ou « Article arrivé cassé ». Le motif est obligatoire et visible par le client."
+        >
+          Motif
+        </Label>
         <textarea
+          id="order-reason"
           data-tour="reason-text"
           value={reason}
           onChange={(event) => setReason(event.target.value)}

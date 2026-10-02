@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   AccountSettingsSchema,
   type AccountSettingsInput,
@@ -189,7 +190,7 @@ export function AccountSettingsForm() {
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="displayName">Nom</Label>
+            <Label htmlFor="displayName" help="Votre nom tel qu'il apparaît dans l'application : en haut de l'écran, dans le journal d'activité et auprès de votre équipe.">Nom</Label>
             <Input
               id="displayName"
               aria-invalid={!!errors.displayName}
@@ -203,7 +204,7 @@ export function AccountSettingsForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="phone">Téléphone</Label>
+            <Label htmlFor="phone" help="Votre numéro personnel, facultatif. Choisissez d'abord le pays pour obtenir le bon indicatif.">Téléphone</Label>
             <PhoneInput
               id="phone"
               value={phone ?? ""}
@@ -219,7 +220,12 @@ export function AccountSettingsForm() {
 
           <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
             <div>
-              <p className="text-sm font-medium">Notifications par email</p>
+              <p className="flex items-center gap-1.5 text-sm font-medium">
+                Notifications par email
+                <CoachMark label="Aide : notifications par email">
+                  Indique si vous acceptez de recevoir des emails de ManuShop (nouveautés de la plateforme…). Aucun email n&apos;est encore envoyé : votre choix sera respecté dès que ce sera le cas.
+                </CoachMark>
+              </p>
               <p className="text-sm text-muted-foreground">
                 Préférence enregistrée dès maintenant ; elle sera utilisée dès
                 que l&apos;envoi d&apos;emails (nouveautés de la plateforme,

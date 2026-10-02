@@ -215,7 +215,7 @@ export function ProductForm({
       )}
 
       <div data-tour="product-name" className="flex flex-col gap-1.5">
-        <Label htmlFor="name">Nom du produit</Label>
+        <Label htmlFor="name" help="Le nom affiché à vos clients sur la boutique. Soyez précis (marque, modèle, taille) : c'est aussi ce qui permet de le retrouver par la recherche.">Nom du produit</Label>
         <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
         {errors.name && (
           <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -223,7 +223,7 @@ export function ProductForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description" help="Les détails utiles à l'achat : matière, dimensions, utilisation, contenu… Une bonne description évite bien des questions.">Description</Label>
         <textarea
           id="description"
           rows={3}
@@ -240,7 +240,7 @@ export function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="price">Prix (FCFA)</Label>
+          <Label htmlFor="price" help="Le prix de vente en FCFA, tel qu'il sera affiché à vos clients.">Prix (FCFA)</Label>
           <Input
             id="price"
             type="number"
@@ -255,7 +255,7 @@ export function ProductForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="category">Catégorie</Label>
+          <Label htmlFor="category" help="Le rayon de votre boutique où ranger ce produit. Les catégories se créent dans le menu Catégories.">Catégorie</Label>
           <Select
             id="category"
             aria-invalid={!!errors.category}
@@ -278,7 +278,7 @@ export function ProductForm({
 
       <div data-tour="product-stock" className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="stock">Stock</Label>
+          <Label htmlFor="stock" help="La quantité disponible à la vente. Elle diminue à chaque commande ; à 0, le produit apparaît en rupture.">Stock</Label>
           <Input
             id="stock"
             type="number"
@@ -293,7 +293,7 @@ export function ProductForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="stockThreshold">Seuil d&apos;alerte</Label>
+          <Label htmlFor="stockThreshold" help="Quand le stock descend à ce nombre ou en dessous, le produit est signalé « Stock faible » pour vous rappeler de le réapprovisionner.">Seuil d&apos;alerte</Label>
           <Input
             id="stockThreshold"
             type="number"
@@ -311,7 +311,7 @@ export function ProductForm({
       </div>
 
       <div data-tour="product-photos" ref={photosRef} className="flex flex-col gap-1.5">
-        <Label>Photos{imagesRequired && " (au moins une)"}</Label>
+        <Label help="Au moins une photo est obligatoire. Chaque photo est recadrée en carré puis compressée pour rester légère. La première est la photo principale.">Photos{imagesRequired && " (au moins une)"}</Label>
         {!imagesRequired && images.length === 0 && (
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Ce produit n&apos;a pas encore de photo. Ajoutez-en une : les
@@ -327,7 +327,7 @@ export function ProductForm({
       </div>
 
       <div data-tour="product-promo" className="flex flex-col gap-3 rounded-lg border border-border p-3">
-        <Label htmlFor="isPromo" className="items-center">
+        <Label htmlFor="isPromo" help="Cochez pour vendre ce produit à un prix réduit : l'ancien prix apparaît barré à côté du prix promo." className="items-center">
           <input
             id="isPromo"
             type="checkbox"
@@ -340,7 +340,7 @@ export function ProductForm({
         {isPromo && (
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="promoPrice">Prix promo (FCFA)</Label>
+              <Label htmlFor="promoPrice" help="Le prix réduit affiché pendant la promotion. Il doit être inférieur au prix normal.">Prix promo (FCFA)</Label>
               <Input
                 id="promoPrice"
                 type="number"
@@ -357,7 +357,7 @@ export function ProductForm({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="promoEndDate">Fin de la promo</Label>
+              <Label htmlFor="promoEndDate" help="Date de fin prévue, pour mémoire. Attention : la promotion n'est pas encore retirée automatiquement à cette date — décochez « En promotion » le moment venu.">Fin de la promo</Label>
               <Input
                 id="promoEndDate"
                 type="date"

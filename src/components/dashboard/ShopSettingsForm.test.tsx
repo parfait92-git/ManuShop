@@ -99,11 +99,11 @@ describe("ShopSettingsForm", () => {
     );
 
     expect(
-      (screen.getByLabelText(/Langue de la boutique/) as HTMLSelectElement)
+      (screen.getByLabelText(/^Langue de la boutique/) as HTMLSelectElement)
         .value
     ).toBe("fr");
     expect(
-      (screen.getByLabelText(/Devise/) as HTMLSelectElement).value
+      (screen.getByLabelText(/^Devise/) as HTMLSelectElement).value
     ).toBe("XAF");
     expect(
       screen.getByLabelText("Recevoir les commandes par e-mail")
@@ -295,14 +295,14 @@ describe("ShopSettingsForm", () => {
     const user = userEvent.setup();
     render(<ShopSettingsForm shopId="shop-1" />);
 
-    await screen.findByLabelText(/Lien de votre page WhatsApp/);
+    await screen.findByLabelText(/^Lien de votre page WhatsApp/);
 
     await user.selectOptions(
       screen.getByLabelText("Réseau social principal"),
       "instagram"
     );
 
-    const linkField = await screen.findByLabelText(/Lien de votre page Instagram/);
+    const linkField = await screen.findByLabelText(/^Lien de votre page Instagram/);
     expect(linkField).toHaveValue("https://instagram.com/awaboutique");
 
     await user.click(

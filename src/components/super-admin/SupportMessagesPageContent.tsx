@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import type { SupportMessage } from "@/models/support/SupportMessage";
 import { supportMessageService } from "@/services/SupportMessageService";
 
@@ -47,7 +48,14 @@ function ReplyForm({
 
   return (
     <form data-tour="messages-reply" onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <Label
+        htmlFor={`reply-${message.id}`}
+        help="Votre réponse est envoyée au commerçant, qui la voit dans son espace Support (avec un son de notification s'il l'a activé)."
+      >
+        Votre réponse
+      </Label>
       <textarea
+        id={`reply-${message.id}`}
         rows={3}
         placeholder="Votre réponse..."
         className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-input dark:bg-input/30"

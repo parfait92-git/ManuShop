@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
 import { DialogTour } from "@/components/onboarding/DialogTour";
+import { CoachMark } from "@/components/ui/CoachMark";
 import type { OrderItem } from "@/models/order/OrderItem";
 import type { Product } from "@/models/product/Product";
 
@@ -121,7 +122,7 @@ export function ManualOrderDialog({
 
         <div data-tour="manual-order-client" className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="manual-order-client-name">Nom du client</Label>
+            <Label htmlFor="manual-order-client-name" help="Le nom du client, pour retrouver la commande dans votre liste.">Nom du client</Label>
             <Input
               id="manual-order-client-name"
               value={clientName}
@@ -129,7 +130,7 @@ export function ManualOrderDialog({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="manual-order-client-phone">
+            <Label htmlFor="manual-order-client-phone" help="Facultatif : pour joindre le client au moment de la livraison.">
               Téléphone (optionnel)
             </Label>
             <PhoneInput
@@ -139,7 +140,7 @@ export function ManualOrderDialog({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="manual-order-client-address">
+            <Label htmlFor="manual-order-client-address" help="Facultatif : l'adresse où livrer, si la commande n'est pas retirée en boutique.">
               Adresse (optionnel)
             </Label>
             <Input
@@ -151,7 +152,12 @@ export function ManualOrderDialog({
         </div>
 
         <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-          <p className="text-sm font-medium">Articles</p>
+          <p className="flex items-center gap-1.5 text-sm font-medium">
+            Articles
+            <CoachMark label="Aide : articles de la commande">
+              Choisissez un produit, sa quantité, puis appuyez sur « + » pour l&apos;ajouter. Répétez pour chaque article ; le total se calcule tout seul.
+            </CoachMark>
+          </p>
           <div data-tour="manual-order-add" className="flex items-end gap-2">
             <Select
               value={productId}

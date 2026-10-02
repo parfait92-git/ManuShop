@@ -8,6 +8,7 @@ import { StorefrontProductCard } from "@/components/storefront/StorefrontProduct
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { CoachMark } from "@/components/ui/CoachMark";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
@@ -151,13 +152,18 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
             selected={category}
             onSelect={setCategory}
           />
-          <Input
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-            placeholder="Rechercher un article"
-            aria-label="Rechercher un article"
-            className="sm:max-w-xs"
-          />
+          <div className="flex items-center gap-2 sm:max-w-xs">
+            <Input
+              value={term}
+              onChange={(event) => setTerm(event.target.value)}
+              placeholder="Rechercher un article"
+              aria-label="Rechercher un article"
+              className="flex-1"
+            />
+            <CoachMark label="Aide : recherche d'article">
+              Tapez une partie du nom d&apos;un article pour n&apos;afficher que ceux qui correspondent. Combinable avec le filtre par catégorie.
+            </CoachMark>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
@@ -166,20 +172,25 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
               ? "Chargement..."
               : `${visibleProducts.length} article${visibleProducts.length > 1 ? "s" : ""} disponible${visibleProducts.length > 1 ? "s" : ""}`}
           </span>
-          <label data-tour="catalogue-sort" className="flex items-center gap-2">
-            Trier par
-            <Select
-              value={sortOrder}
-              onChange={(event) =>
-                setSortOrder(event.target.value as SortOrder)
-              }
-              className="w-auto"
-            >
-              <option value="newest">Nouveautés</option>
-              <option value="price-asc">Prix croissant</option>
-              <option value="price-desc">Prix décroissant</option>
-            </Select>
-          </label>
+          <div className="flex items-center gap-2">
+            <label data-tour="catalogue-sort" className="flex items-center gap-2">
+              Trier par
+              <Select
+                value={sortOrder}
+                onChange={(event) =>
+                  setSortOrder(event.target.value as SortOrder)
+                }
+                className="w-auto"
+              >
+                <option value="newest">Nouveautés</option>
+                <option value="price-asc">Prix croissant</option>
+                <option value="price-desc">Prix décroissant</option>
+              </Select>
+            </label>
+            <CoachMark label="Aide : tri des articles">
+              Change l&apos;ordre d&apos;affichage : les plus récents d&apos;abord, ou du moins cher au plus cher (et inversement).
+            </CoachMark>
+          </div>
         </div>
 
         {products !== null && visibleProducts.length === 0 ? (

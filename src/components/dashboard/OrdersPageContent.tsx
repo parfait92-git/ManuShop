@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   STICKY_COLUMN_CONTENT,
   ScrollableTable,
@@ -280,21 +281,25 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
         </Button>
       </div>
 
-      <Select
-
-        data-tour="orders-filter"
-        value={statusFilter}
-        onChange={(event) => setStatusFilter(event.target.value)}
-        aria-label="Filtrer par statut"
-        className="h-10 sm:w-64"
-      >
-        <option value="">Tous les statuts</option>
-        {FILTERABLE_STATUSES.map((status) => (
-          <option key={status} value={status}>
-            {ORDER_STATUS_LABEL[status]}
-          </option>
-        ))}
-      </Select>
+      <div className="flex items-center gap-2 sm:w-72">
+        <Select
+          data-tour="orders-filter"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          aria-label="Filtrer par statut"
+          className="h-10 flex-1"
+        >
+          <option value="">Tous les statuts</option>
+          {FILTERABLE_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {ORDER_STATUS_LABEL[status]}
+            </option>
+          ))}
+        </Select>
+        <CoachMark label="Aide : filtre par statut">
+          N&apos;affiche que les commandes à une étape donnée — par exemple « En cours d&apos;analyse » pour traiter d&apos;abord les nouvelles.
+        </CoachMark>
+      </div>
 
       <div data-tour="orders-table" className="rounded-xl border border-slate-200 bg-white">
         {filtered.length === 0 ? (

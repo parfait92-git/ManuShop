@@ -105,7 +105,7 @@ export function ContactSuperAdminCta() {
               noValidate
             >
               <div data-tour="contact-subject" className="flex flex-col gap-1.5">
-                <Label htmlFor="contact-subject">Objet</Label>
+                <Label htmlFor="contact-subject" help="Le sujet de votre message en quelques mots.">Objet</Label>
                 <Input
                   id="contact-subject"
                   value={subject}
@@ -114,7 +114,7 @@ export function ContactSuperAdminCta() {
               </div>
 
               <div data-tour="contact-body" className="flex flex-col gap-1.5">
-                <Label htmlFor="contact-body">Message</Label>
+                <Label htmlFor="contact-body" help="Votre message pour l'équipe ManuShop : question, demande d'ouverture de boutique, problème rencontré…">Message</Label>
                 <textarea
                   id="contact-body"
                   rows={4}

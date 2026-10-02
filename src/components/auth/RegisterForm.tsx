@@ -84,7 +84,7 @@ export function RegisterForm() {
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="displayName">Votre nom</Label>
+        <Label htmlFor="displayName" help="Le nom affiché sur votre compte. Vous pourrez le modifier plus tard dans Paramètres du compte.">Votre nom</Label>
         <Input
           id="displayName"
           autoComplete="name"
@@ -99,7 +99,7 @@ export function RegisterForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" help="Votre adresse email sert à vous connecter et à récupérer votre mot de passe si vous l'oubliez.">Email</Label>
         <Input
           id="email"
           type="email"
@@ -113,7 +113,7 @@ export function RegisterForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Mot de passe</Label>
+        <Label htmlFor="password" help="Choisissez un mot de passe que vous seul connaissez. L'icône en forme d'œil l'affiche en clair.">Mot de passe</Label>
         <div className="relative">
           <Input
             id="password"
@@ -144,7 +144,7 @@ export function RegisterForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+        <Label htmlFor="confirmPassword" help="Retapez le même mot de passe, pour éviter une faute de frappe qui vous empêcherait de vous connecter.">Confirmer le mot de passe</Label>
         <div className="relative">
           <Input
             id="confirmPassword"

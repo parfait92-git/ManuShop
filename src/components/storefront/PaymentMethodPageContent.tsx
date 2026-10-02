@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { CoachMark } from "@/components/ui/CoachMark";
 import { useShop } from "@/hooks/useShop";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { orderService } from "@/services/OrderService";
@@ -119,7 +120,7 @@ export function PaymentMethodPageContent() {
       <div data-tour="checkout-delivery" className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/40 p-5">
         <h2 className="font-semibold">Livraison</h2>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="client-name">Nom</Label>
+          <Label htmlFor="client-name" help="Le nom de la personne qui recevra la commande.">Nom</Label>
           <Input
             id="client-name"
             value={clientName}
@@ -127,7 +128,7 @@ export function PaymentMethodPageContent() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="client-phone">Téléphone</Label>
+          <Label htmlFor="client-phone" help="Le livreur vous appellera à ce numéro pour convenir de la livraison.">Téléphone</Label>
           <PhoneInput
             id="client-phone"
             value={clientPhone}
@@ -135,7 +136,7 @@ export function PaymentMethodPageContent() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="client-address">Adresse de livraison</Label>
+          <Label htmlFor="client-address" help="Où livrer : quartier, ville et un point de repère pour aider le livreur à vous trouver.">Adresse de livraison</Label>
           <Input
             id="client-address"
             value={clientAddress}
@@ -145,6 +146,12 @@ export function PaymentMethodPageContent() {
         </div>
       </div>
 
+      <div className="flex items-center gap-1.5 font-semibold">
+        Moyen de paiement
+        <CoachMark label="Aide : moyen de paiement">
+          Choisissez comment vous comptez payer. Le paiement en ligne n&apos;est pas encore actif : quel que soit votre choix, vous réglez à la livraison.
+        </CoachMark>
+      </div>
       <div data-tour="checkout-methods" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {METHODS.map((option) => (
           <button
@@ -165,7 +172,7 @@ export function PaymentMethodPageContent() {
       </div>
 
       <div data-tour="checkout-summary" className="rounded-2xl border border-border bg-muted/40 p-5">
-        <Label htmlFor="payment-field">
+        <Label htmlFor="payment-field" help="Le numéro associé au moyen de paiement choisi. Le paiement en ligne n'est pas encore actif : vous paierez à la livraison.">
           {method === "visa" ? "Numéro de carte" : "Numéro de téléphone"}
         </Label>
         <Input

@@ -66,7 +66,7 @@ function CreateTagForm({ onCreated }: { onCreated: (tag: CategoryTag) => void })
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
-          <Label htmlFor="tag-name">Nom du tag</Label>
+          <Label htmlFor="tag-name" help="Le nom du rayon commun du Marché (ex. Alimentation). Les commerçants y rattachent leurs catégories, et les clients filtrent le Marché avec.">Nom du tag</Label>
           <Input
             id="tag-name"
             placeholder="Ex. Alimentation"
@@ -75,7 +75,7 @@ function CreateTagForm({ onCreated }: { onCreated: (tag: CategoryTag) => void })
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tag-color">Couleur</Label>
+          <Label htmlFor="tag-color" help="La couleur du tag dans les filtres du Marché, pour le repérer d'un coup d'œil.">Couleur</Label>
           <Input
             id="tag-color"
             type="color"
@@ -158,7 +158,7 @@ function EditTagDialog({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div data-tour="edit-tag-name" className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="edit-tag-name">Nom du tag</Label>
+              <Label htmlFor="edit-tag-name" help="Le nom du rayon commun du Marché. Le modifier le renomme pour toutes les boutiques qui l'utilisent.">Nom du tag</Label>
               <Input
                 id="edit-tag-name"
                 value={name}
@@ -166,7 +166,7 @@ function EditTagDialog({
               />
             </div>
             <div data-tour="edit-tag-color" className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-tag-color">Couleur</Label>
+              <Label htmlFor="edit-tag-color" help="La couleur du tag dans les filtres du Marché.">Couleur</Label>
               <Input
                 id="edit-tag-color"
                 type="color"
