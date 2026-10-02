@@ -3,6 +3,17 @@ import { auth } from "@/lib/firebase";
 /** Accepte un `Blob` brut (pas seulement `File`) : les photos passent par un
  * recadrage canvas (`cropImageToSquare`) avant l'envoi, qui produit un
  * `Blob` sans nom de fichier. */
+const EXTENSIONS: Record<string, string> = {
+  "image/webp": "webp",
+  "image/png": "png",
+};
+
+/** L'extension suit le format réellement produit par la compression
+ * (`compressCanvas` : WebP, ou JPEG en repli) plutôt qu'un ".jpg" figé. */
+function withExtension(file: Blob, basename: string): string {
+  return `${basename}.${EXTENSIONS[file.type] ?? "jpg"}`;
+}
+
 async function uploadImage(
   file: Blob,
   filename: string,
@@ -36,13 +47,13 @@ async function uploadImage(
 }
 
 export function uploadProductImage(file: Blob): Promise<string> {
-  return uploadImage(file, "product-image.jpg");
+  return uploadImage(file, withExtension(file, "product-image"));
 }
 
 export function uploadShopLogo(file: Blob): Promise<string> {
-  return uploadImage(file, "shop-logo.jpg", "manushop/shops");
+  return uploadImage(file, withExtension(file, "shop-logo"), "manushop/shops");
 }
 
 export function uploadAvatar(file: Blob): Promise<string> {
-  return uploadImage(file, "avatar.jpg", "manushop/users");
+  return uploadImage(file, withExtension(file, "avatar"), "manushop/users");
 }

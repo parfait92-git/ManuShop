@@ -7,7 +7,12 @@ import type { Area } from "react-easy-crop";
 
 import { ImageCropDialog } from "@/components/dashboard/ImageCropDialog";
 import { Input } from "@/components/ui/input";
-import { LOGO_IMAGE_SIZE, cropImageToSquare } from "@/lib/imageCrop";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  LOGO_IMAGE_SIZE,
+  SMALL_IMAGE_MAX_BYTES,
+  cropImageToSquare,
+} from "@/lib/imageCrop";
 import { uploadShopLogo } from "@/lib/upload";
 
 type LogoMode = "gallery" | "link";
@@ -37,7 +42,8 @@ export function ShopLogoStep({
   hideHeading?: boolean;
 }) {
   const [pendingImageSrc, setPendingImageSrc] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const uploading = busyLabel !== null;
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,16 +57,22 @@ export function ShopLogoStep({
 
   async function handleCropConfirm(crop: Area) {
     if (!pendingImageSrc) return;
-    setUploading(true);
+    setBusyLabel("Compression du logo...");
     setError(null);
     try {
-      const blob = await cropImageToSquare(pendingImageSrc, crop, LOGO_IMAGE_SIZE);
+      const blob = await cropImageToSquare(
+        pendingImageSrc,
+        crop,
+        LOGO_IMAGE_SIZE,
+        SMALL_IMAGE_MAX_BYTES
+      );
+      setBusyLabel("Envoi du logo...");
       const url = await uploadShopLogo(blob);
       onLogoChange(url);
     } catch {
       setError("Échec de l'envoi du logo. Réessayez.");
     } finally {
-      setUploading(false);
+      setBusyLabel(null);
       if (pendingImageSrc) URL.revokeObjectURL(pendingImageSrc);
       setPendingImageSrc(null);
     }
@@ -147,8 +159,9 @@ export function ShopLogoStep({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="cursor-pointer text-sm font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {uploading && <Spinner />}
             {uploading ? "Envoi en cours..." : "Déposez votre logo ici"}
           </button>
           <p className="text-xs text-muted-foreground">
@@ -171,6 +184,7 @@ export function ShopLogoStep({
         imageSrc={pendingImageSrc}
         onCancel={handleCropCancel}
         onConfirm={handleCropConfirm}
+        busyLabel={busyLabel}
       />
     </div>
   );

@@ -1374,3 +1374,15 @@ Fait : `submitReviewAction` (Server Action, même schéma que `orderActions.ts` 
 Tests : `reviewActions.test.ts`, `ReviewDialog.test.tsx` (nouveaux) ; `ReviewService.test.ts`/`MyOrdersPageContent.test.tsx` étendus, deux tests vérifiés comme échouant sur l'ancien code via `git stash`.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (745 tests, +20, aucune régression). Rien de commité.
+
+### 2026-10-02 — Compression des images avant envoi + indicateur de chargement
+
+Demande de l'utilisateur : « les images doivent être compressées avant d'être sauvegardées et ajoute un loading pendant tout traitement ». Les trois chemins d'upload (photos produit, logo boutique, avatar) passent tous par `cropImageToSquare` puis `/api/uploads`.
+
+**Compression** (`src/lib/imageCrop.ts`) : avant, JPEG qualité 0.9 sans plafond de poids. Désormais `compressCanvas` encode en WebP en baissant la qualité (0.82 → 0.72 → 0.62 → 0.5) jusqu'à passer sous un poids visé — 250 Ko pour une photo produit (1000×1000), 100 Ko pour logo/avatar (512×512). Repli JPEG si le navigateur ne sait pas encoder le WebP (il renvoie alors silencieusement du PNG, détecté via `blob.type`). `upload.ts` nomme le fichier selon le format réel (`.webp`/`.jpg`) ; `/api/uploads` acceptait déjà le WebP, inchangé.
+
+**Chargement** : `ImageCropDialog` reçoit `busyLabel` (« Compression de la photo... » puis « Envoi de la photo... ») et affiche un overlay `role="status"` avec spinner ; pendant ce temps, Valider/Annuler/zoom sont désactivés et le dialogue ne se ferme pas (Échap/clic extérieur). Ce verrouillage corrige au passage un vrai défaut : le dialogue restait ouvert pendant l'upload avec « Valider » cliquable, ce qui permettait un double envoi. L'overlay s'affiche aussi pendant le décodage d'une grosse photo (`onMediaLoaded`). Nouveau composant `src/components/ui/spinner.tsx`, également utilisé sur les boutons déclencheurs (« Envoi en cours... »).
+
+Tests : `imageCrop.test.ts`, `ImageCropDialog.test.tsx` (nouveaux), `upload.test.ts` étendu ; la garde anti-fermeture vérifiée par mutation (le test échoue si on la retire).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (754 tests, aucune régression). Pas vérifié dans un vrai navigateur (encodage WebP réel et poids obtenus non mesurés). Rien de commité.
