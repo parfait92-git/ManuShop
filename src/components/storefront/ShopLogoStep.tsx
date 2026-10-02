@@ -14,6 +14,7 @@ import {
   cropImageToSquare,
 } from "@/lib/imageCrop";
 import { uploadShopLogo } from "@/lib/upload";
+import { isOptimizableImage } from "@/lib/imageHosts";
 
 type LogoMode = "gallery" | "link";
 
@@ -127,14 +128,15 @@ export function ShopLogoStep({
               venir d'un lien externe collé à la main (mode "Lien"), pas
               seulement d'un upload Cloudinary — voir ShopSummaryCard/
               ProductDetailPageContent/StorefrontHeader pour le même
-              contournement de l'allowlist de domaines de next/image. */}
+              contournement de l'allowlist de domaines de next/image
+              (limité aux hébergeurs inconnus, voir `imageHosts.ts`). */}
               <Image
                 src={logoUrl}
                 alt=""
                 fill
                 sizes="96px"
                 className="object-cover"
-                unoptimized
+                unoptimized={!isOptimizableImage(logoUrl)}
               />
             </div>
           ) : (

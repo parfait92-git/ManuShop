@@ -1,31 +1,14 @@
 import type { NextConfig } from "next";
 
+import { OPTIMIZABLE_IMAGE_HOSTS } from "./src/lib/imageHosts";
+
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "platform-lookaside.fbsbx.com",
-        pathname: "/**",
-      },
-      {
-        // Images de démo (src/data/mockData.ts) — jamais utilisé pour de
-        // vraies données produit/boutique.
-        protocol: "https",
-        hostname: "picsum.photos",
-        pathname: "/**",
-      },
-    ],
+    remotePatterns: OPTIMIZABLE_IMAGE_HOSTS.map((hostname) => ({
+      protocol: "https",
+      hostname,
+      pathname: "/**",
+    })),
   },
 };
 

@@ -1386,3 +1386,12 @@ Demande de l'utilisateur : « les images doivent être compressées avant d'êtr
 Tests : `imageCrop.test.ts`, `ImageCropDialog.test.tsx` (nouveaux), `upload.test.ts` étendu ; la garde anti-fermeture vérifiée par mutation (le test échoue si on la retire).
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (754 tests, aucune régression). Pas vérifié dans un vrai navigateur (encodage WebP réel et poids obtenus non mesurés). Rien de commité.
+
+### 2026-10-02 — Lazy loading des images : audit et deux fuites corrigées
+
+Demande de l'utilisateur : « utilise le lazy loading pour charger les images afin de rendre l'application plus légère ». Audit : aucune balise `<img>` brute, toutes les images passent par `next/image`, déjà en `loading="lazy"` par défaut. Deux exceptions réelles corrigées :
+
+1. **`PageBackground`** (landing `/` + pages d'auth) : deux `<Image priority>` (mobile ~500 Ko, desktop ~700 Ko), l'une masquée en CSS selon le breakpoint — mais `priority` les préchargeait **toutes les deux** à chaque visite. Remplacé par un `<picture>` via `getImageProps` (guide « Art direction » de `node_modules/next/dist/docs/.../image.md`) : le navigateur ne télécharge que la variante correspondant à l'écran, désormais redimensionnée par l'optimiseur Next (avant : servie aussi, mais doublée). Reste `loading="eager"` + `fetchPriority="high"` (visible à l'arrivée — seule image volontairement non différée). `priority` est par ailleurs déprécié depuis Next 16. Vérifié sur le HTML de `next start` : 0 `<link rel="preload">` de fond, un seul `<picture>`.
+2. **Logos de boutique** (`ShopSummaryCard`, `StorefrontHeader`, `ProductDetailPageContent`, `ShopLogoStep`) : `unoptimized` systématique, car un logo peut être un lien externe arbitraire — donc même un logo Cloudinary était servi en 512px d'origine pour un affichage en 48px. Désormais `unoptimized={!isOptimizableImage(url)}` : nouveau `src/lib/imageHosts.ts`, liste unique d'hébergeurs lue aussi par `next.config.ts` (`remotePatterns` dérivés, plus de double maintenance).
+
+Tests : `PageBackground.test.tsx`, `imageHosts.test.ts` (nouveaux). Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (759 tests, aucune régression). Rien de commité.

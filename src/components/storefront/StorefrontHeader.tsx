@@ -12,6 +12,7 @@ import { CartPanel } from "@/components/storefront/CartPanel";
 import { CreateShopWizard } from "@/components/storefront/CreateShopWizard";
 import { authService } from "@/services/AuthService";
 import { useCartItemCount } from "@/store/cartStore";
+import { isOptimizableImage } from "@/lib/imageHosts";
 
 // Pas de page /promotions dédiée pour l'instant (aucune maquette fournie) :
 // le lien réutilise le catalogue avec le filtre promo pré-appliqué plutôt
@@ -196,7 +197,7 @@ export function StorefrontHeader() {
                 // Voir ShopSummaryCard : le logo peut venir d'une URL
                 // externe collée à la main, pas seulement d'un upload
                 // Cloudinary.
-                unoptimized
+                unoptimized={!isOptimizableImage(branding.logo)}
               />
             ) : (
               <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">

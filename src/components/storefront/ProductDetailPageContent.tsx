@@ -25,6 +25,7 @@ import { productService, type StockStatus } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
 import { useCartStore } from "@/store/cartStore";
+import { isOptimizableImage } from "@/lib/imageHosts";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -246,7 +247,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                       // Voir ShopSummaryCard : le logo peut venir d'une URL
                       // externe collée à la main, pas seulement d'un upload
                       // Cloudinary.
-                      unoptimized
+                      unoptimized={!isOptimizableImage(shop.logo)}
                     />
                   ) : (
                     <span className="flex size-full items-center justify-center text-muted-foreground">
