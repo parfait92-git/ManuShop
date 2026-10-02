@@ -14,12 +14,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import {
   AccountSettingsSchema,
   type AccountSettingsInput,
 } from "@/lib/validation/auth";
-import { AVATAR_IMAGE_SIZE, cropImageToSquare } from "@/lib/imageCrop";
+import {
+  AVATAR_IMAGE_SIZE,
+  SMALL_IMAGE_MAX_BYTES,
+  cropImageToSquare,
+} from "@/lib/imageCrop";
 import { uploadAvatar } from "@/lib/upload";
 import type { User } from "@/models/user/User";
 import { authService } from "@/services/AuthService";
@@ -37,7 +42,8 @@ export function AccountSettingsForm() {
   const { firebaseUser, profile, refreshProfile } = useAuth();
   const [saved, setSaved] = useState(false);
   const [pendingImageSrc, setPendingImageSrc] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarBusyLabel, setAvatarBusyLabel] = useState<string | null>(null);
+  const uploadingAvatar = avatarBusyLabel !== null;
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,20 +96,22 @@ export function AccountSettingsForm() {
 
   async function handleCropConfirm(crop: Area) {
     if (!pendingImageSrc) return;
-    setUploadingAvatar(true);
+    setAvatarBusyLabel("Compression de la photo...");
     setAvatarError(null);
     try {
       const blob = await cropImageToSquare(
         pendingImageSrc,
         crop,
-        AVATAR_IMAGE_SIZE
+        AVATAR_IMAGE_SIZE,
+        SMALL_IMAGE_MAX_BYTES
       );
+      setAvatarBusyLabel("Envoi de la photo...");
       const url = await uploadAvatar(blob);
       setValue("photoURL", url, { shouldDirty: true });
     } catch {
       setAvatarError("Échec de l'envoi de la photo. Réessayez.");
     } finally {
-      setUploadingAvatar(false);
+      setAvatarBusyLabel(null);
       if (pendingImageSrc) URL.revokeObjectURL(pendingImageSrc);
       setPendingImageSrc(null);
     }
@@ -170,7 +178,7 @@ export function AccountSettingsForm() {
               htmlFor="avatar-file"
               className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-primary"
             >
-              <ImagePlus className="size-4" />
+              {uploadingAvatar ? <Spinner /> : <ImagePlus className="size-4" />}
               {uploadingAvatar ? "Envoi en cours..." : "Changer la photo"}
             </label>
             {avatarError && (
@@ -287,6 +295,7 @@ export function AccountSettingsForm() {
         imageSrc={pendingImageSrc}
         onCancel={handleCropCancel}
         onConfirm={handleCropConfirm}
+        busyLabel={avatarBusyLabel}
       />
     </div>
   );

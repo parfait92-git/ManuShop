@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import type { Area } from "react-easy-crop";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { ImageCropDialog } from "@/components/dashboard/ImageCropDialog";
 import { cropImageToSquare } from "@/lib/imageCrop";
 import { uploadProductImage } from "@/lib/upload";
@@ -19,7 +20,9 @@ export function ProductImageUploader({
 }) {
   // File d'attente d'object URLs à recadrer une par une avant l'envoi.
   const [queue, setQueue] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
+  // Étape en cours, affichée dans le dialogue de recadrage — `null` au repos.
+  const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const uploading = busyLabel !== null;
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,16 +50,17 @@ export function ProductImageUploader({
 
   async function handleCropConfirm(crop: Area) {
     if (!currentImageSrc) return;
-    setUploading(true);
+    setBusyLabel("Compression de la photo...");
     setError(null);
     try {
       const blob = await cropImageToSquare(currentImageSrc, crop);
+      setBusyLabel("Envoi de la photo...");
       const url = await uploadProductImage(blob);
       onChange([...images, url]);
     } catch {
       setError("Échec de l'envoi d'une image. Réessayez.");
     } finally {
-      setUploading(false);
+      setBusyLabel(null);
       dequeue();
     }
   }
@@ -106,11 +110,12 @@ export function ProductImageUploader({
         onClick={() => inputRef.current?.click()}
         className="w-fit"
       >
+        {uploading && <Spinner />}
         {uploading ? "Envoi en cours..." : "Ajouter des photos"}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Chaque photo est recadrée au format carré avant l&apos;envoi, pour un
-        catalogue uniforme.
+        Chaque photo est recadrée au format carré et compressée avant
+        l&apos;envoi, pour un catalogue uniforme et léger.
       </p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -120,6 +125,7 @@ export function ProductImageUploader({
         imageSrc={currentImageSrc}
         onCancel={dequeue}
         onConfirm={handleCropConfirm}
+        busyLabel={busyLabel}
       />
     </div>
   );

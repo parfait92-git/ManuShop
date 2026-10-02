@@ -13,22 +13,6 @@
   opacity: 0.65;
 }
 
-.backgroundImage--mobile {
-  display: block;
-
-  @include bp.respond-to(md) {
-    display: none;
-  }
-}
-
-.backgroundImage--web {
-  display: none;
-
-  @include bp.respond-to(md) {
-    display: block;
-  }
-}
-
 .blob {
   position: absolute;
   border-radius: 9999px;

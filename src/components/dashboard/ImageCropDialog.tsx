@@ -4,6 +4,7 @@ import { useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogDescription,
@@ -20,22 +21,33 @@ export function ImageCropDialog({
   imageSrc,
   onCancel,
   onConfirm,
+  busyLabel,
 }: {
   /** `null` ferme le dialogue (contrôlé par le parent, une image à la fois). */
   imageSrc: string | null;
   onCancel: () => void;
   onConfirm: (crop: Area) => void;
+  /** Étape en cours après validation ("Compression...", "Envoi..."). Tant
+   * qu'il est renseigné, le dialogue reste ouvert avec un indicateur de
+   * chargement et ne peut être ni validé une 2ᵉ fois (double envoi) ni
+   * fermé (le parent ferme lui-même une fois le traitement terminé). */
+  busyLabel?: string | null;
 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  // Une photo de téléphone de plusieurs Mo met un moment à se décoder.
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+
+  const busy = Boolean(busyLabel);
+  const overlayLabel = busyLabel ?? (mediaLoaded ? null : "Chargement de la photo...");
 
   function handleOpenChange(open: boolean) {
-    if (!open) onCancel();
+    if (!open && !busy) onCancel();
   }
 
   function handleConfirm() {
-    if (croppedAreaPixels) onConfirm(croppedAreaPixels);
+    if (croppedAreaPixels && !busy) onConfirm(croppedAreaPixels);
   }
 
   return (
@@ -58,7 +70,17 @@ export function ImageCropDialog({
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+              onMediaLoaded={() => setMediaLoaded(true)}
             />
+          )}
+          {overlayLabel && (
+            <div
+              role="status"
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 text-sm font-medium backdrop-blur-sm"
+            >
+              <Spinner className="size-6 text-primary" />
+              {overlayLabel}
+            </div>
           )}
         </div>
 
@@ -74,16 +96,27 @@ export function ImageCropDialog({
             step={0.1}
             value={zoom}
             onChange={(event) => setZoom(Number(event.target.value))}
+            disabled={busy}
             className="flex-1"
           />
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={busy}
+          >
             Annuler
           </Button>
-          <Button type="button" onClick={handleConfirm}>
-            Valider le recadrage
+          <Button
+            type="button"
+            onClick={handleConfirm}
+            disabled={busy || !mediaLoaded}
+          >
+            {busy && <Spinner />}
+            {busy ? "Traitement..." : "Valider le recadrage"}
           </Button>
         </div>
       </DialogPortal>

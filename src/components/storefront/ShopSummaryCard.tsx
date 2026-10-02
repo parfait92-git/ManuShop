@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { Shop } from "@/models/shop/Shop";
+import { isOptimizableImage } from "@/lib/imageHosts";
 
 /**
  * Carte résumée d'une boutique — partagée entre le mini-bloc "Boutiques" du
@@ -38,8 +39,10 @@ export function ShopSummaryCard({
             // Le logo peut venir d'une URL externe collée à la main (mode
             // "Lien" de `ShopLogoStep`/`ShopSettingsForm`), pas seulement
             // d'un upload Cloudinary — impossible de whitelister tous les
-            // hébergeurs d'images possibles dans `next.config.ts`.
-            unoptimized
+            // hébergeurs d'images possibles dans `next.config.ts`. Seuls
+            // ceux-là sortent de l'optimisation : un logo Cloudinary est
+            // servi redimensionné, en lazy loading (voir `imageHosts.ts`).
+            unoptimized={!isOptimizableImage(shop.logo)}
           />
         ) : (
           <div className="flex size-full items-center justify-center">

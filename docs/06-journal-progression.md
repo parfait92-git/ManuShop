@@ -1374,3 +1374,36 @@ Fait : `submitReviewAction` (Server Action, même schéma que `orderActions.ts` 
 Tests : `reviewActions.test.ts`, `ReviewDialog.test.tsx` (nouveaux) ; `ReviewService.test.ts`/`MyOrdersPageContent.test.tsx` étendus, deux tests vérifiés comme échouant sur l'ancien code via `git stash`.
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (745 tests, +20, aucune régression). Rien de commité.
+
+### 2026-10-02 — Compression des images avant envoi + indicateur de chargement
+
+Demande de l'utilisateur : « les images doivent être compressées avant d'être sauvegardées et ajoute un loading pendant tout traitement ». Les trois chemins d'upload (photos produit, logo boutique, avatar) passent tous par `cropImageToSquare` puis `/api/uploads`.
+
+**Compression** (`src/lib/imageCrop.ts`) : avant, JPEG qualité 0.9 sans plafond de poids. Désormais `compressCanvas` encode en WebP en baissant la qualité (0.82 → 0.72 → 0.62 → 0.5) jusqu'à passer sous un poids visé — 250 Ko pour une photo produit (1000×1000), 100 Ko pour logo/avatar (512×512). Repli JPEG si le navigateur ne sait pas encoder le WebP (il renvoie alors silencieusement du PNG, détecté via `blob.type`). `upload.ts` nomme le fichier selon le format réel (`.webp`/`.jpg`) ; `/api/uploads` acceptait déjà le WebP, inchangé.
+
+**Chargement** : `ImageCropDialog` reçoit `busyLabel` (« Compression de la photo... » puis « Envoi de la photo... ») et affiche un overlay `role="status"` avec spinner ; pendant ce temps, Valider/Annuler/zoom sont désactivés et le dialogue ne se ferme pas (Échap/clic extérieur). Ce verrouillage corrige au passage un vrai défaut : le dialogue restait ouvert pendant l'upload avec « Valider » cliquable, ce qui permettait un double envoi. L'overlay s'affiche aussi pendant le décodage d'une grosse photo (`onMediaLoaded`). Nouveau composant `src/components/ui/spinner.tsx`, également utilisé sur les boutons déclencheurs (« Envoi en cours... »).
+
+Tests : `imageCrop.test.ts`, `ImageCropDialog.test.tsx` (nouveaux), `upload.test.ts` étendu ; la garde anti-fermeture vérifiée par mutation (le test échoue si on la retire).
+
+Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (754 tests, aucune régression). Pas vérifié dans un vrai navigateur (encodage WebP réel et poids obtenus non mesurés). Rien de commité.
+
+### 2026-10-02 — Lazy loading des images : audit et deux fuites corrigées
+
+Demande de l'utilisateur : « utilise le lazy loading pour charger les images afin de rendre l'application plus légère ». Audit : aucune balise `<img>` brute, toutes les images passent par `next/image`, déjà en `loading="lazy"` par défaut. Deux exceptions réelles corrigées :
+
+1. **`PageBackground`** (landing `/` + pages d'auth) : deux `<Image priority>` (mobile ~500 Ko, desktop ~700 Ko), l'une masquée en CSS selon le breakpoint — mais `priority` les préchargeait **toutes les deux** à chaque visite. Remplacé par un `<picture>` via `getImageProps` (guide « Art direction » de `node_modules/next/dist/docs/.../image.md`) : le navigateur ne télécharge que la variante correspondant à l'écran, désormais redimensionnée par l'optimiseur Next (avant : servie aussi, mais doublée). Reste `loading="eager"` + `fetchPriority="high"` (visible à l'arrivée — seule image volontairement non différée). `priority` est par ailleurs déprécié depuis Next 16. Vérifié sur le HTML de `next start` : 0 `<link rel="preload">` de fond, un seul `<picture>`.
+2. **Logos de boutique** (`ShopSummaryCard`, `StorefrontHeader`, `ProductDetailPageContent`, `ShopLogoStep`) : `unoptimized` systématique, car un logo peut être un lien externe arbitraire — donc même un logo Cloudinary était servi en 512px d'origine pour un affichage en 48px. Désormais `unoptimized={!isOptimizableImage(url)}` : nouveau `src/lib/imageHosts.ts`, liste unique d'hébergeurs lue aussi par `next.config.ts` (`remotePatterns` dérivés, plus de double maintenance).
+
+Tests : `PageBackground.test.tsx`, `imageHosts.test.ts` (nouveaux). Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (759 tests, aucune régression). Rien de commité.
+
+### 2026-10-02 — Photo produit obligatoire + avertissement des produits sans photo (BF-06)
+
+Demande de l'utilisateur : « l'image du produit doit être obligatoire à l'ajout ; s'il existe un produit sans image, avertir le commerçant jusqu'à ce qu'il en ajoute une ».
+
+**Formulaire** (`ProductForm`) : les photos vivent hors de react-hook-form (`ProductImageUploader`), donc vérifiées dans un `handleFormSubmit` qui enveloppe `handleSubmit` — l'erreur « Ajoutez au moins une photo du produit. » s'affiche en même temps que les erreurs Zod, et disparaît dès qu'une photo est ajoutée. Règle : obligatoire à la création ; en édition, seulement si le produit avait déjà une photo (impossible de retirer la dernière). Choix assumé : un ancien produit sans photo reste modifiable (sinon le commerçant ne pourrait plus changer un prix ou un stock en urgence), avec un encart l'invitant à en ajouter une.
+
+**Côté serveur** (`firestore.rules`, `products`) : `create` exige `images` liste non vide ; `update` refuse de vider `images` d'un produit qui en a (via `get('images', [])` pour ne pas bloquer les anciens docs sans le champ). `update`/`delete` séparés pour ça. **Pas déployé** et non testé contre l'émulateur (le projet n'a pas de tests de règles) — à faire avec `firebase deploy --only firestore:rules`.
+
+**Avertissement** (`ProductList`, donc à la fois sur `/dashboard` et `/dashboard/products`) : bandeau `role="alert"` non fermable (« N produits n'ont pas de photo »), qui disparaît de lui-même quand le dernier est corrigé ; bouton « Voir les produits concernés » qui filtre la table ; vignette pointillée `ImageOff` + lien « Sans photo — ajouter » vers l'édition sur chaque ligne. Nouveau `productService.hasImage`.
+
+Tests : `ProductForm.test.tsx` (+4, dont une vérification par mutation), `ProductList.test.tsx` (+3), `ProductService.test.ts` (+1) ; un test existant créait un produit sans photo, mis à jour. Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (767 tests). Rien de commité.

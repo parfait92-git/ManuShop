@@ -28,7 +28,7 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-06 | Ajouter produit | Nom, description, prix, catégorie, photo, stock (terminé) |
+| BF-06 | Ajouter produit | Nom, description, prix, catégorie, photo, stock (terminé). **2026-10-02** : au moins une photo est désormais obligatoire à la création (formulaire + `firestore.rules`), et on ne peut plus retirer la dernière photo d'un produit. Les anciens produits sans photo restent modifiables mais sont signalés au commerçant (`ProductList`, tableau de bord + page Produits) tant qu'ils n'en ont pas. |
 | BF-07 | Modifier produit | Mise à jour de toutes les informations (terminé) |
 | BF-08 | Supprimer produit | Suppression avec confirmation (terminé) |
 | BF-09 | Catégories | Créer/gérer des catégories (ex: Laitiers, Arômes, Emballages), avec description et bascule affichée/masquée (terminé) |

@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ImageOff,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -41,11 +48,23 @@ export function ProductList({
   const [category, setCategory] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [onlyWithoutImage, setOnlyWithoutImage] = useState(false);
+
+  const withoutImageCount = products.filter(
+    (p) => !productService.hasImage(p)
+  ).length;
+  // Le filtre se désactive de lui-même une fois tous les produits corrigés.
+  const showOnlyWithoutImage = onlyWithoutImage && withoutImageCount > 0;
 
   const filtered = useMemo(() => {
     const searched = productService.search(products, term);
-    return category ? searched.filter((p) => p.category === category) : searched;
-  }, [products, term, category]);
+    const byCategory = category
+      ? searched.filter((p) => p.category === category)
+      : searched;
+    return showOnlyWithoutImage
+      ? byCategory.filter((p) => !productService.hasImage(p))
+      : byCategory;
+  }, [products, term, category, showOnlyWithoutImage]);
 
   async function handleDelete(product: Product) {
     const confirmed = window.confirm(
@@ -117,6 +136,40 @@ export function ProductList({
         </Link>
       </div>
 
+      {/* Pas de bouton "fermer" : l'avertissement reste tant qu'un produit
+      n'a pas de photo, et disparaît dès que le dernier est corrigé. */}
+      {withoutImageCount > 0 && (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex gap-2.5">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <p className="text-sm">
+              <span className="font-semibold">
+                {withoutImageCount === 1
+                  ? "1 produit n'a pas de photo."
+                  : `${withoutImageCount} produits n'ont pas de photo.`}
+              </span>{" "}
+              Les clients achètent rarement un article qu&apos;ils ne voient
+              pas : ajoutez une photo à chacun.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setOnlyWithoutImage((current) => !current)}
+            aria-pressed={showOnlyWithoutImage}
+            className="w-fit shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+          >
+            {showOnlyWithoutImage
+              ? "Afficher tous les produits"
+              : "Voir les produits concernés"}
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
@@ -164,12 +217,19 @@ export function ProductList({
             <tbody className="divide-y divide-slate-100">
               {filtered.map((product) => {
                 const status = productService.getStockStatus(product);
+                const hasImage = productService.hasImage(product);
                 return (
                   <tr key={product.id}>
                     <td className="px-4 py-3 sm:px-6">
                       <div className="flex items-center gap-3">
-                        <div className="relative size-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                          {product.images[0] && (
+                        <div
+                          className={`relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border ${
+                            hasImage
+                              ? "border-slate-200 bg-slate-50"
+                              : "border-dashed border-amber-300 bg-amber-50"
+                          }`}
+                        >
+                          {hasImage ? (
                             <Image
                               src={product.images[0]}
                               alt=""
@@ -177,11 +237,23 @@ export function ProductList({
                               sizes="44px"
                               className="object-cover"
                             />
+                          ) : (
+                            <ImageOff className="size-4 text-amber-600" />
                           )}
                         </div>
-                        <span className="font-medium text-slate-900">
-                          {product.name}
-                        </span>
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="font-medium text-slate-900">
+                            {product.name}
+                          </span>
+                          {!hasImage && (
+                            <Link
+                              href={`/dashboard/products/${product.id}/edit`}
+                              className="text-xs font-medium text-amber-700 hover:underline"
+                            >
+                              Sans photo — ajouter
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">

@@ -152,4 +152,80 @@ describe("ProductList", () => {
     expect(productTrashService.softDelete).not.toHaveBeenCalled();
     expect(screen.getByText("Ensemble Wax")).toBeInTheDocument();
   });
+
+  describe("produits sans photo", () => {
+    const withPhoto = (id: string, name: string) =>
+      fakeProduct({
+        id,
+        name,
+        images: ["https://res.cloudinary.com/demo/image/upload/x.jpg"],
+      });
+
+    it("warns about every product without a photo and flags each one in the table", () => {
+      render(
+        <ProductList
+          initialProducts={[
+            fakeProduct({ id: "p1", name: "Sans photo A" }),
+            fakeProduct({ id: "p2", name: "Sans photo B" }),
+            withPhoto("p3", "Avec photo"),
+          ]}
+          categories={[]}
+        />
+      );
+
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "2 produits n'ont pas de photo."
+      );
+      const fixLinks = screen.getAllByRole("link", {
+        name: "Sans photo — ajouter",
+      });
+      expect(fixLinks).toHaveLength(2);
+      expect(fixLinks[0]).toHaveAttribute(
+        "href",
+        "/dashboard/products/p1/edit"
+      );
+    });
+
+    it("shows no warning when every product has a photo", () => {
+      render(
+        <ProductList
+          initialProducts={[withPhoto("p1", "Avec photo")]}
+          categories={[]}
+        />
+      );
+
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: "Sans photo — ajouter" })
+      ).not.toBeInTheDocument();
+    });
+
+    it("cannot be dismissed, but can narrow the table to the affected products", async () => {
+      const user = userEvent.setup();
+      render(
+        <ProductList
+          initialProducts={[
+            fakeProduct({ id: "p1", name: "Sans photo A" }),
+            withPhoto("p2", "Avec photo"),
+          ]}
+          categories={[]}
+        />
+      );
+
+      expect(
+        screen.queryByRole("button", { name: /fermer|ignorer/i })
+      ).not.toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: "Voir les produits concernés" })
+      );
+      expect(screen.getByText("Sans photo A")).toBeInTheDocument();
+      expect(screen.queryByText("Avec photo")).not.toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: "Afficher tous les produits" })
+      );
+      expect(screen.getByText("Avec photo")).toBeInTheDocument();
+    });
+  });
 });

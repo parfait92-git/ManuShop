@@ -11,7 +11,16 @@ jest.mock("./firebase", () => ({
   },
 }));
 
-import { uploadProductImage, uploadShopLogo } from "@/lib/upload";
+import {
+  uploadAvatar,
+  uploadProductImage,
+  uploadShopLogo,
+} from "@/lib/upload";
+
+function sentFile(): File {
+  const body = (global.fetch as jest.Mock).mock.calls[0][1].body as FormData;
+  return body.get("file") as File;
+}
 
 describe("upload", () => {
   beforeEach(() => {
@@ -36,6 +45,15 @@ describe("upload", () => {
 
     const body = (global.fetch as jest.Mock).mock.calls[0][1].body as FormData;
     expect(body.get("folder")).toBe("manushop/shops");
+  });
+
+  it("names the file after the format actually produced by the compression (WebP, JPEG fallback)", async () => {
+    await uploadProductImage(new Blob(["x"], { type: "image/webp" }));
+    expect(sentFile().name).toBe("product-image.webp");
+
+    (global.fetch as jest.Mock).mockClear();
+    await uploadAvatar(new Blob(["x"], { type: "image/jpeg" }));
+    expect(sentFile().name).toBe("avatar.jpg");
   });
 
   it("throws when nobody is signed in", async () => {
