@@ -24,6 +24,10 @@ interface CartState {
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  /** Remplace le prix des articles par leur prix actuel (`productId` →
+   * prix), ex. après la fin d'une promotion. Les articles absents de la
+   * table gardent leur prix. */
+  refreshPrices: (prices: Record<string, number>) => void;
   clear: () => void;
 }
 
@@ -74,6 +78,14 @@ export const useCartStore = create<CartState>()(
                     ? { ...i, quantity: clampToStock(quantity, i.stock) }
                     : i
                 ),
+        })),
+      refreshPrices: (prices) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            prices[i.productId] === undefined || prices[i.productId] === i.price
+              ? i
+              : { ...i, price: prices[i.productId] }
+          ),
         })),
       clear: () => set({ items: [] }),
     }),

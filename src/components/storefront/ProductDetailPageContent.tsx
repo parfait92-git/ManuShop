@@ -26,6 +26,7 @@ import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
 import { useCartStore } from "@/store/cartStore";
 import { isOptimizableImage } from "@/lib/imageHosts";
+import { effectivePrice } from "@/lib/promo";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -118,8 +119,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
 
   const badge = productService.getBadge(product);
   const status = productService.getStockStatus(product);
-  const price =
-    product.isPromo && product.promoPrice ? product.promoPrice : product.price;
+  const price = effectivePrice(product);
   const averageRating = reviewService.getAverageRating(reviews);
   const socialUrl = shop ? getPrimarySocialNetworkUrl(shop) : null;
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;

@@ -11,6 +11,7 @@ import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 import { productService } from "@/services/ProductService";
 import { useCartStore } from "@/store/cartStore";
+import { effectivePrice } from "@/lib/promo";
 
 export function StorefrontProductCard({
   product,
@@ -32,7 +33,7 @@ export function StorefrontProductCard({
   const { firebaseUser, profile, toggleFavorite } = useAuth();
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
   const badge = productService.getBadge(product);
-  const price = product.isPromo && product.promoPrice ? product.promoPrice : product.price;
+  const price = effectivePrice(product);
 
   return (
     // `relative` ici (pas sur la seule zone image) : le bouton favoris sort du

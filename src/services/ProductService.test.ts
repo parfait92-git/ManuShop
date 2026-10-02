@@ -215,10 +215,26 @@ describe("ProductService", () => {
 
   describe("compareByRelevance", () => {
     it("ranks a promo product before a non-promo one", () => {
-      const promo = fakeProduct({ id: "promo", isPromo: true });
+      const promo = fakeProduct({ id: "promo", isPromo: true, promoPrice: 500 });
       const regular = fakeProduct({ id: "regular", isPromo: false });
       expect(service.compareByRelevance(promo, regular)).toBeLessThan(0);
       expect(service.compareByRelevance(regular, promo)).toBeGreaterThan(0);
+    });
+
+    it("no longer ranks a product first once its promo end date is past", () => {
+      const expired = fakeProduct({
+        id: "expired",
+        isPromo: true,
+        promoPrice: 500,
+        promoEnd: Timestamp.fromDate(new Date("2020-01-01T00:00:00Z")),
+        createdAt: Timestamp.fromDate(new Date("2020-01-01T00:00:00Z")),
+      });
+      const recent = fakeProduct({
+        id: "recent",
+        isPromo: false,
+        createdAt: Timestamp.fromDate(new Date("2025-01-01T00:00:00Z")),
+      });
+      expect(service.compareByRelevance(recent, expired)).toBeLessThan(0);
     });
 
     it("ranks the most recent product first when promo status is equal", () => {

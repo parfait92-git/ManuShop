@@ -13,6 +13,7 @@ import { CoachMark } from "@/components/ui/CoachMark";
 import { useShop } from "@/hooks/useShop";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { orderService } from "@/services/OrderService";
+import { useCartPriceSync } from "@/hooks/useCartPriceSync";
 
 type PaymentMethod = "visa" | "orange-money" | "mtn-momo";
 
@@ -41,6 +42,7 @@ export function PaymentMethodPageContent() {
   const { shop } = useShop();
   const items = useCartStore((state) => state.items);
   const clear = useCartStore((state) => state.clear);
+  const changedPrices = useCartPriceSync();
   const total = cartTotal(items);
 
   const [method, setMethod] = useState<PaymentMethod>("visa");
@@ -116,6 +118,14 @@ export function PaymentMethodPageContent() {
           Total · {total.toLocaleString("fr-FR")} FCFA
         </p>
       </div>
+
+      {changedPrices.length > 0 && (
+        <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {changedPrices.length === 1
+            ? `Le prix de « ${changedPrices[0]} » a changé depuis son ajout au panier (fin de promotion, par exemple) : le total est à jour.`
+            : `Le prix de ${changedPrices.length} articles a changé depuis leur ajout au panier (fin de promotion, par exemple) : le total est à jour.`}
+        </p>
+      )}
 
       <div data-tour="checkout-delivery" className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/40 p-5">
         <h2 className="font-semibold">Livraison</h2>

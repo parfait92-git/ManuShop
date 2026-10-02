@@ -8,6 +8,7 @@ import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 import { useMarketCatalogue, type MarketProduct } from "@/hooks/useMarketCatalogue";
 import type { Product } from "@/models/product/Product";
 import { productService } from "@/services/ProductService";
+import { effectivePrice } from "@/lib/promo";
 
 // Un dégradé par boutique de démo plutôt que par position dans la liste,
 // pour que la carte reste visuellement liée à la boutique même si le
@@ -44,7 +45,7 @@ function gradientForRealShop(shopId: string): string {
 }
 
 function priceLabel(product: Product): string {
-  const price = product.isPromo && product.promoPrice ? product.promoPrice : product.price;
+  const price = effectivePrice(product);
   return `${price.toLocaleString("fr-FR")} FCFA`;
 }
 

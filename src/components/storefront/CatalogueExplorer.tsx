@@ -13,6 +13,7 @@ import { Select } from "@/components/ui/select";
 import { CoachMark } from "@/components/ui/CoachMark";
 import type { MarketProduct } from "@/hooks/useMarketCatalogue";
 import type { Shop } from "@/models/shop/Shop";
+import { effectivePrice, isPromoActive } from "@/lib/promo";
 
 // Assez pour donner un aperçu sans dupliquer toute la page "toutes les
 // boutiques" — celle-ci reste à un clic via la flèche "Voir toutes les
@@ -25,9 +26,9 @@ function sortItems(items: MarketProduct[], order: SortOrder): MarketProduct[] {
   const sorted = [...items];
   switch (order) {
     case "price-asc":
-      return sorted.sort((a, b) => a.product.price - b.product.price);
+      return sorted.sort((a, b) => effectivePrice(a.product) - effectivePrice(b.product));
     case "price-desc":
-      return sorted.sort((a, b) => b.product.price - a.product.price);
+      return sorted.sort((a, b) => effectivePrice(b.product) - effectivePrice(a.product));
     case "newest":
     default:
       return sorted.sort(
@@ -124,7 +125,7 @@ export function CatalogueExplorer({
       ? bySearch.filter((item) => item.tag?.id === tagId)
       : bySearch;
     const byPromo = promoOnly
-      ? byTag.filter((item) => item.product.isPromo)
+      ? byTag.filter((item) => isPromoActive(item.product))
       : byTag;
     return sortItems(byPromo, sortOrder);
   }, [items, term, tagId, sortOrder, promoOnly]);

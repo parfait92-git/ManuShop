@@ -1483,3 +1483,28 @@ Demande de l'utilisateur : une icône « ? » sur tous les champs, qui affiche a
 **Bug trouvé en vérifiant dans Chrome** : la bulle s'affichait derrière la carte des pages de connexion. Le `z-50` était posé sur la bulle, mais son positionneur Base UI (placé par `transform`) crée un contexte d'empilement, et la carte en `z-10` passait devant. Corrigé dans `ui/popover.tsx` (`z-50` sur le positionneur), ce qui profite aussi aux autres popovers.
 
 Tests : `label.test.tsx` (nouveau). `CategoryManager.test.tsx` et `ShopSettingsForm.test.tsx` ont leurs requêtes `getByLabelText(/X/)` ancrées en `/^X/`, car elles trouvaient aussi le bouton « Aide : X ». Vérifié : lint, `tsc`, build, `test:coverage`. Chrome (`next start`) sur `/login` : survol (ouvre puis ferme), clavier (Tab puis Entrée), toucher mobile (ouvre, toucher ailleurs ferme), sans soumettre le formulaire ni faire déborder la page. Rien de commité.
+
+### 2026-10-02 — Fin de promotion automatique (BF-31)
+
+Demande de l'utilisateur, après la découverte que `promoEnd` était enregistré mais lu nulle part : brancher la fin de promotion automatique.
+
+**Règle unique** (`src/lib/promo.ts`, sans dépendance aux SDK Firebase, utilisée par le navigateur comme par le serveur) : `isPromoActive`, `effectivePrice`, `isPromoExpired`, `promoEndsAt`. Une promotion est active jusqu'à la fin de son jour de fin, **heure du Cameroun** (UTC+1 fixe, pas d'heure d'été). Le décalage est figé dans le code plutôt que lu sur la machine, pour que le serveur (UTC) et les navigateurs tranchent pareil au même instant. Le jour se lit sur les composantes UTC, car `ProductForm` enregistre la date choisie comme minuit UTC.
+
+**Branché partout** :
+- **Vitrine** : prix des cartes, fiche produit, mise en avant de l'accueil, badge « -X % » (`getBadge`), classement (`compareByRelevance`), filtre « Promotions » et tri par prix des deux catalogues. Le tri utilisait le prix normal même en promo, il utilise maintenant le prix réellement affiché.
+- **Facturation** (`createOrderAction`) : le serveur reprenait tel quel le prix envoyé par le panier, qui est stocké dans le navigateur avec le prix du moment de l'ajout. Un article ajouté pendant une promo puis commandé après sa fin aurait été facturé au prix promo (et un client pouvait envoyer n'importe quel prix). Pour une commande en ligne, chaque prix est maintenant recalculé dans la transaction depuis le produit relu. Un produit sans prix lisible fait refuser la commande (`ValidationError`), au lieu d'enregistrer `NaN`. La commande manuelle garde le prix saisi par le commerçant.
+- **Panier** : `cartStore.refreshPrices` + `useCartPriceSync` relisent les produits à l'ouverture du panier et de l'écran de paiement. Le total et le message « Commander via WhatsApp » annoncent ainsi le prix réel, et un message prévient le client quand un prix a changé.
+- **Formulaire produit** : encart « Cette promotion est terminée depuis le … » quand la case est cochée mais la date passée ; textes d'aide corrigés.
+
+**Erreur de ma part corrigée** : l'aide de « Produit en promotion » (commit `2d1ead6`) affirmait que l'ancien prix apparaissait barré. Aucun prix barré n'existe : la vitrine montre le prix promo avec un badge de réduction.
+
+**Hors périmètre, signalé** : la commande manuelle propose toujours le prix normal, même pendant une promotion (choix existant, non modifié). Pas de date de début de promotion.
+
+Tests : `promo.test.ts` (dont la limite exacte : 22 h 59 UTC actif, 23 h 00 UTC terminé), `useCartPriceSync.test.ts`, 3 nouveaux cas dans `orderActions.test.ts`, et un cas dans `ProductService.test.ts` (promo expirée qui ne passe plus en tête). Tests existants adaptés : prix ajouté aux faux produits du serveur, et un faux `useCartPriceSync` dans les tests du panier et du paiement. Vérifié : lint, `tsc`, 833 tests.
+
+**Scénario réel sur les émulateurs** (compte client, produit à promo terminée la veille, et un autre à promo en cours) :
+- vitrine : 20 000 FCFA sans badge pour la promo terminée, 8 000 FCFA « -20% » pour la promo en cours ;
+- panier rempli « pendant la promo » (15 000 + 8 000) : l'écran de paiement affiche l'avertissement et passe à 28 000 FCFA ;
+- commande confirmée : enregistrée à 20 000 + 8 000 = 28 000, et non au prix promo envoyé par le panier.
+
+Rien de commité.

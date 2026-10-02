@@ -22,6 +22,7 @@ import {
   loadProductDraft,
   saveProductDraft,
 } from "@/lib/productDraft";
+import { isPromoExpired } from "@/lib/promo";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { productService } from "@/services/ProductService";
@@ -327,7 +328,7 @@ export function ProductForm({
       </div>
 
       <div data-tour="product-promo" className="flex flex-col gap-3 rounded-lg border border-border p-3">
-        <Label htmlFor="isPromo" help="Cochez pour vendre ce produit à un prix réduit : l'ancien prix apparaît barré à côté du prix promo." className="items-center">
+        <Label htmlFor="isPromo" help="Cochez pour vendre ce produit à un prix réduit : la boutique affiche le prix promo avec un badge de réduction (ex. -20 %), et c'est ce prix qui est facturé." className="items-center">
           <input
             id="isPromo"
             type="checkbox"
@@ -336,6 +337,19 @@ export function ProductForm({
           />
           Produit en promotion
         </Label>
+
+        {isPromo && product && isPromoExpired(product) && (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Cette promotion est terminée depuis le{" "}
+            {product.promoEnd!.toDate().toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              timeZone: "UTC",
+            })}{" "}
+            : vos clients voient de nouveau le prix normal. Choisissez une
+            nouvelle date de fin pour la relancer, ou décochez la case.
+          </p>
+        )}
 
         {isPromo && (
           <div className="grid grid-cols-2 gap-4">
@@ -357,7 +371,7 @@ export function ProductForm({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="promoEndDate" help="Date de fin prévue, pour mémoire. Attention : la promotion n'est pas encore retirée automatiquement à cette date — décochez « En promotion » le moment venu.">Fin de la promo</Label>
+              <Label htmlFor="promoEndDate" help="Facultatif. La promotion s'arrête automatiquement à la fin de cette journée (heure du Cameroun) : le prix normal revient tout seul, sans rien décocher. Sans date, elle dure jusqu'à ce que vous la décochiez.">Fin de la promo</Label>
               <Input
                 id="promoEndDate"
                 type="date"

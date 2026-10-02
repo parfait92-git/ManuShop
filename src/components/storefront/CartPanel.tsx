@@ -11,6 +11,7 @@ import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { LoginRequiredDialog } from "@/components/storefront/LoginRequiredDialog";
 import { DialogTour } from "@/components/onboarding/DialogTour";
+import { useCartPriceSync } from "@/hooks/useCartPriceSync";
 
 const CHECKOUT_PATH = "/checkout/payment";
 
@@ -18,6 +19,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const items = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  const changedPrices = useCartPriceSync();
   const { shop } = useShop();
   const { firebaseUser } = useAuth();
   const [showLoginRequired, setShowLoginRequired] = useState(false);
@@ -38,6 +40,14 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
+
+{changedPrices.length > 0 && (
+        <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {changedPrices.length === 1
+            ? `Le prix de « ${changedPrices[0]} » a changé depuis son ajout au panier (fin de promotion, par exemple) : le total est à jour.`
+            : `Le prix de ${changedPrices.length} articles a changé depuis leur ajout au panier (fin de promotion, par exemple) : le total est à jour.`}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Votre panier est vide.</p>

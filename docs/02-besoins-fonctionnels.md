@@ -83,7 +83,7 @@
 | ID | Besoin | Description |
 |---|---|---|
 | BF-30 | Créer promotion | Réduction en % ou montant fixe sur un produit ou catégorie |
-| BF-31 | Promotion limitée | Définir une date de début et fin de promotion |
+| BF-31 | Promotion limitée | Définir une date de début et fin de promotion (partiel — **fin automatique faite le 2026-10-02** : la promotion s'arrête d'elle-même à la fin de sa journée de fin, heure du Cameroun, sur toute la vitrine et dans la facturation (`src/lib/promo.ts`) ; pas encore de date de **début** : une promotion cochée commence immédiatement) |
 | BF-32 | Code promo | Générer et gérer des codes promotionnels |
 | BF-33 | Promotion flash | Affichage spécial sur la boutique (compteur de temps) |
 | BF-34 | Historique promos | Voir les promotions passées et leur impact |

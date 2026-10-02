@@ -13,6 +13,7 @@ import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
 import { productService } from "@/services/ProductService";
+import { effectivePrice, isPromoActive } from "@/lib/promo";
 
 type SortOrder = "newest" | "price-asc" | "price-desc";
 
@@ -20,9 +21,9 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
   const sorted = [...products];
   switch (order) {
     case "price-asc":
-      return sorted.sort((a, b) => a.price - b.price);
+      return sorted.sort((a, b) => effectivePrice(a) - effectivePrice(b));
     case "price-desc":
-      return sorted.sort((a, b) => b.price - a.price);
+      return sorted.sort((a, b) => effectivePrice(b) - effectivePrice(a));
     case "newest":
     default:
       return sorted.sort(
@@ -94,7 +95,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       ? bySearch.filter((product) => product.category === category)
       : bySearch;
     const byPromo = promoOnly
-      ? byCategory.filter((product) => product.isPromo)
+      ? byCategory.filter((product) => isPromoActive(product))
       : byCategory;
     return sortProducts(byPromo, sortOrder);
   }, [publishedProducts, term, category, sortOrder, promoOnly]);
