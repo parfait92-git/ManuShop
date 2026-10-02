@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FieldHint } from "@/components/dashboard/FieldHint";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import { CategorySchema, type CategoryInput } from "@/lib/validation/product";
 import type { Category } from "@/models/category/Category";
 import type { CategoryTag } from "@/models/category/CategoryTag";
@@ -267,7 +268,10 @@ function EditCategoryDialog({
       }}
     >
       <DialogPortal className="max-w-md">
-        <DialogTitle>Modifier la catégorie</DialogTitle>
+        <div className="flex items-start justify-between gap-3">
+          <DialogTitle>Modifier la catégorie</DialogTitle>
+          <DialogTour tourId="dialog-edit-category" />
+        </div>
         <DialogDescription>
           Le statut affiché/masqué se change directement depuis la liste.
         </DialogDescription>
@@ -277,7 +281,7 @@ function EditCategoryDialog({
           className="flex flex-col gap-4"
           noValidate
         >
-          <div className="flex flex-col gap-1.5">
+          <div data-tour="edit-category-name" className="flex flex-col gap-1.5">
             <Label htmlFor="edit-category-name">Nom de la catégorie</Label>
             <Input
               id="edit-category-name"
@@ -305,7 +309,7 @@ function EditCategoryDialog({
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div data-tour="edit-category-tag" className="flex flex-col gap-1.5">
             <Label htmlFor="edit-category-tagId">Tag de catégorie système</Label>
             <Select id="edit-category-tagId" {...register("tagId")}>
               <option value="">Aucun tag</option>
@@ -327,7 +331,7 @@ function EditCategoryDialog({
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button data-tour="edit-category-save" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>

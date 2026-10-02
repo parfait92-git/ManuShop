@@ -10,6 +10,7 @@ import { useShop } from "@/hooks/useShop";
 import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { LoginRequiredDialog } from "@/components/storefront/LoginRequiredDialog";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 
 const CHECKOUT_PATH = "/checkout/payment";
 
@@ -25,21 +26,24 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     <div className="absolute top-full right-0 z-30 mt-2 w-80 rounded-lg border border-border bg-background p-4 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Votre panier</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer le panier"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <X className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <DialogTour tourId="panel-cart" className="size-7 border-border" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer le panier"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
       </div>
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Votre panier est vide.</p>
       ) : (
         <>
-          <ul className="flex flex-col gap-3">
+          <ul data-tour="cart-items" className="flex flex-col gap-3">
             {items.map((item) => {
               // `stock` absent (article ajouté avant ce champ, voir
               // cartStore) : pas de limite connue à afficher/appliquer.
@@ -54,7 +58,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                         {item.price.toLocaleString("fr-FR")} FCFA
                       </p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div data-tour="cart-quantity" className="flex items-center gap-1">
                       <button
                         type="button"
                         aria-label="Diminuer la quantité"
@@ -111,6 +115,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           n'est pas chargée (pas de lien WhatsApp valide à proposer). */}
           {shop ? (
             <a
+              data-tour="cart-whatsapp"
               href={buildWhatsAppOrderLink(shop, items)}
               target="_blank"
               rel="noreferrer"
@@ -120,6 +125,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
             </a>
           ) : (
             <button
+              data-tour="cart-whatsapp"
               type="button"
               disabled
               className={buttonVariants({ className: "mt-3 w-full" })}
@@ -135,6 +141,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           n'exige aucun compte, c'est tout son intérêt. */}
           {firebaseUser ? (
             <Link
+              data-tour="cart-checkout"
               href={CHECKOUT_PATH}
               className={buttonVariants({
                 variant: "outline",
@@ -145,6 +152,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
             </Link>
           ) : (
             <button
+              data-tour="cart-checkout"
               type="button"
               onClick={() => setShowLoginRequired(true)}
               className={buttonVariants({

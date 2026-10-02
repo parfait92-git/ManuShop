@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import type { OrderItem } from "@/models/order/OrderItem";
 import type { Product } from "@/models/product/Product";
 
@@ -110,12 +111,15 @@ export function ManualOrderDialog({
       }}
     >
       <DialogPortal className="max-w-lg">
-        <DialogTitle>Nouvelle commande manuelle</DialogTitle>
+        <div className="flex items-start justify-between gap-3">
+          <DialogTitle>Nouvelle commande manuelle</DialogTitle>
+          <DialogTour tourId="dialog-manual-order" />
+        </div>
         <DialogDescription>
           Pour un client physique, sans compte (BF-21).
         </DialogDescription>
 
-        <div className="flex flex-col gap-3">
+        <div data-tour="manual-order-client" className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="manual-order-client-name">Nom du client</Label>
             <Input
@@ -148,7 +152,7 @@ export function ManualOrderDialog({
 
         <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
           <p className="text-sm font-medium">Articles</p>
-          <div className="flex items-end gap-2">
+          <div data-tour="manual-order-add" className="flex items-end gap-2">
             <Select
               value={productId}
               onChange={(event) => setProductId(event.target.value)}
@@ -182,7 +186,7 @@ export function ManualOrderDialog({
           </div>
 
           {lines.length > 0 && (
-            <ul className="flex flex-col gap-1.5">
+            <ul data-tour="manual-order-lines" className="flex flex-col gap-1.5">
               {lines.map((line) => (
                 <li
                   key={line.key}
@@ -218,6 +222,7 @@ export function ManualOrderDialog({
             Annuler
           </Button>
           <Button
+            data-tour="manual-order-submit"
             type="button"
             disabled={!clientName.trim() || lines.length === 0 || submitting}
             onClick={handleSubmit}

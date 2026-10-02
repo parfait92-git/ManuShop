@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import type { CategoryTag } from "@/models/category/CategoryTag";
 import { categoryTagService } from "@/services/CategoryTagService";
 
@@ -146,14 +147,17 @@ function EditTagDialog({
       }}
     >
       <DialogPortal className="max-w-md">
-        <DialogTitle>Modifier le tag</DialogTitle>
+        <div className="flex items-start justify-between gap-3">
+          <DialogTitle>Modifier le tag</DialogTitle>
+          <DialogTour tourId="dialog-edit-tag" />
+        </div>
         <DialogDescription>
           Visible par tous les commerçants en créant une catégorie.
         </DialogDescription>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div data-tour="edit-tag-name" className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor="edit-tag-name">Nom du tag</Label>
               <Input
                 id="edit-tag-name"
@@ -161,7 +165,7 @@ function EditTagDialog({
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div data-tour="edit-tag-color" className="flex flex-col gap-1.5">
               <Label htmlFor="edit-tag-color">Couleur</Label>
               <Input
                 id="edit-tag-color"
@@ -183,7 +187,7 @@ function EditTagDialog({
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={submitting || !name.trim()}>
+            <Button data-tour="edit-tag-save" type="submit" disabled={submitting || !name.trim()}>
               {submitting ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>

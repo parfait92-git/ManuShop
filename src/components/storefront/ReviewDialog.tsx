@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import type { OrderItem } from "@/models/order/OrderItem";
 
 export interface ReviewTarget {
@@ -50,13 +51,16 @@ export function ReviewDialog({
   return (
     <Dialog open={!!target} onOpenChange={(open) => !open && onCancel()}>
       <DialogPortal className="max-w-sm">
-        <DialogTitle>Laisser un avis</DialogTitle>
+        <div className="flex items-start justify-between gap-3">
+          <DialogTitle>Laisser un avis</DialogTitle>
+          <DialogTour tourId="dialog-review" />
+        </div>
         <DialogDescription>
           Votre avis sera visible sur la fiche du produit concerné.
         </DialogDescription>
 
         {target && target.items.length > 1 && (
-          <div className="flex flex-col gap-1.5">
+          <div data-tour="review-product" className="flex flex-col gap-1.5">
             <Label htmlFor="review-product">Article concerné</Label>
             <Select
               id="review-product"
@@ -73,6 +77,7 @@ export function ReviewDialog({
         )}
 
         <div
+          data-tour="review-rating"
           className="flex items-center gap-1"
           role="radiogroup"
           aria-label="Note"
@@ -99,6 +104,7 @@ export function ReviewDialog({
         </div>
 
         <textarea
+          data-tour="review-comment"
           value={comment}
           onChange={(event) => setComment(event.target.value)}
           rows={3}
@@ -106,7 +112,7 @@ export function ReviewDialog({
           className="w-full resize-none rounded-lg border border-border bg-background p-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring"
         />
 
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <label data-tour="review-defective" className="flex items-center gap-2 text-sm text-muted-foreground">
           <input
             type="checkbox"
             checked={defective}
@@ -121,6 +127,7 @@ export function ReviewDialog({
             Annuler
           </Button>
           <Button
+            data-tour="review-submit"
             type="button"
             disabled={!comment.trim() || !productId}
             onClick={() =>

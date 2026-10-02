@@ -103,9 +103,18 @@ function definitionsFor(
  * étapes de chaque page sont dans `tours.ts`, les cibles sont des
  * attributs `data-tour` posés sur les éléments de la page.
  */
-export function PageTour({ tourId }: { tourId: TourId }) {
+export function PageTour({
+  tourId,
+  replayHint = true,
+}: {
+  tourId: TourId;
+  /** Terminer la toute première visite par l'étape montrant le bouton
+   * "Revoir la visite" de l'en-tête. Désactivé dans une fenêtre
+   * (`DialogTour`) : ce bouton-là est caché derrière elle. */
+  replayHint?: boolean;
+}) {
   const { profile, loading, refreshProfile } = useAuth();
-  const { register } = useTour();
+  const { register, markRunning } = useTour();
   const [steps, setSteps] = useState<Step[]>([]);
   const [run, setRun] = useState(false);
   // Remonte `GuidedTour` à chaque lancement : `react-joyride` ne repart
@@ -117,7 +126,7 @@ export function PageTour({ tourId }: { tourId: TourId }) {
   const seen = seenTours.includes(tourId);
   // Toute première visite de ce compte/navigateur : elle se termine en
   // montrant où la relancer.
-  const isFirstTour = seenTours.length === 0;
+  const isFirstTour = replayHint && seenTours.length === 0;
 
   const launch = useCallback(
     (signal: { cancelled: boolean }) =>
@@ -142,6 +151,10 @@ export function PageTour({ tourId }: { tourId: TourId }) {
 
   // Relance à la demande depuis l'en-tête, même déjà vue.
   useEffect(() => register(() => void launch({ cancelled: false })), [register, launch]);
+
+  // Signale la visite affichée : une fenêtre ouverte ne doit ni se fermer
+  // ni bloquer les clics sur la bulle pendant ce temps (voir `Dialog`).
+  useEffect(() => (run ? markRunning() : undefined), [run, markRunning]);
 
   async function handleFinish() {
     setRun(false);

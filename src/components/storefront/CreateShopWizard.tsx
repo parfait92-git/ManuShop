@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
 import {
   CreateShopWizardSchema,
@@ -27,6 +28,15 @@ import {
 import { authService } from "@/services/AuthService";
 
 const STEP_LABELS = ["Infos", "Logo", "Récapitulatif", "Abonnement"] as const;
+
+/** Une visite guidée par étape (BF-134/135) : chaque étape n'affiche que
+ * ses propres champs, une visite unique en aurait perdu la moitié. */
+const STEP_TOURS = [
+  "create-shop-infos",
+  "create-shop-logo",
+  "create-shop-summary",
+  "create-shop-plan",
+] as const;
 type StepIndex = 0 | 1 | 2 | 3;
 
 const STEP_FIELDS: Record<StepIndex, (keyof CreateShopWizardInput)[]> = {
@@ -169,19 +179,24 @@ export function CreateShopWizard({
             </p>
             <DialogTitle>Créer ma boutique</DialogTitle>
           </div>
-          <DialogClose
-            aria-label="Fermer"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="size-5" />
-          </DialogClose>
+          <div className="flex items-center gap-2">
+            {/* `key` : remonte la visite à chaque étape, pour qu'elle se
+            lance (une fois) sur les champs de la nouvelle étape. */}
+            <DialogTour key={step} tourId={STEP_TOURS[step]} />
+            <DialogClose
+              aria-label="Fermer"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-5" />
+            </DialogClose>
+          </div>
         </div>
         <DialogDescription className="sr-only">
           Assistant de création de boutique en 4 étapes : informations, logo,
           récapitulatif, abonnement.
         </DialogDescription>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div data-tour="wizard-progress" className="grid grid-cols-4 gap-2">
           {STEP_LABELS.map((label, index) => (
             <div key={label} className="flex flex-col gap-1.5">
               <div
@@ -214,7 +229,7 @@ export function CreateShopWizard({
                   facilement votre commerce.
                 </p>
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div data-tour="wizard-shop-name" className="flex flex-col gap-1.5">
                 <Label htmlFor="shop-name">Nom de la boutique</Label>
                 <Input
                   id="shop-name"
@@ -228,7 +243,7 @@ export function CreateShopWizard({
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div data-tour="wizard-shop-details" className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="shop-sector">Secteur d&apos;activité</Label>
                   <Input
@@ -250,7 +265,7 @@ export function CreateShopWizard({
               de pays + numéro) a besoin de plus de largeur qu'un champ texte
               simple — même contrainte que ShopSettingsForm, encore plus
               marquée ici dans la largeur réduite d'une boîte de dialogue. */}
-              <div className="flex flex-col gap-4">
+              <div data-tour="wizard-shop-contacts" className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="shop-phone">Téléphone</Label>
                   <PhoneInput
@@ -303,7 +318,7 @@ export function CreateShopWizard({
                   Relisez les informations avant de choisir votre abonnement.
                 </p>
               </div>
-              <div className="divide-y divide-border rounded-lg border border-border">
+              <div data-tour="wizard-recap" className="divide-y divide-border rounded-lg border border-border">
                 <RecapRow
                   label="Boutique"
                   value={name}
@@ -339,7 +354,7 @@ export function CreateShopWizard({
                   activité.
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div data-tour="wizard-plans" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SUBSCRIPTION_PLANS.map((plan) => {
                   const selected = subscriptionPlan === plan.id;
                   return (
@@ -392,11 +407,11 @@ export function CreateShopWizard({
               // `type` (button -> submit) pendant le clic qui fait passer à
               // l'étape 4, et le navigateur soumet alors le formulaire tout
               // seul avant même que l'utilisateur ait vu l'étape Abonnement.
-              <Button key="next" type="button" onClick={goNext}>
+              <Button data-tour="wizard-next" key="next" type="button" onClick={goNext}>
                 {step === 2 ? "Continuer vers l'abonnement" : "Suivant"}
               </Button>
             ) : (
-              <Button key="submit" type="submit" disabled={submitting}>
+              <Button data-tour="wizard-submit" key="submit" type="submit" disabled={submitting}>
                 {submitting ? "Création..." : "Confirmer et créer ma boutique"}
               </Button>
             )}

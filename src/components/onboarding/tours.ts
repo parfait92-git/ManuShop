@@ -242,6 +242,191 @@ export const TOURS = {
     },
   ],
 
+  // ——— Fenêtres et panneaux (DialogTour) ———
+  "create-shop-infos": [
+    {
+      target: "wizard-progress",
+      content:
+        "La création se fait en 4 étapes : infos, logo, récapitulatif puis abonnement. Rien n'est enregistré avant la confirmation finale.",
+    },
+    {
+      target: "wizard-shop-name",
+      content: "Le nom de votre boutique, tel que vos clients le verront.",
+    },
+    {
+      target: "wizard-shop-details",
+      content: "Votre secteur d'activité et votre ville aident les clients à vous trouver.",
+    },
+    {
+      target: "wizard-shop-contacts",
+      content:
+        "Votre téléphone et votre WhatsApp : c'est par là que vos clients vous joindront.",
+    },
+    {
+      target: "wizard-next",
+      content: "Passez à l'étape suivante. Vous pourrez revenir en arrière.",
+    },
+  ],
+  "create-shop-logo": [
+    {
+      target: "logo-mode",
+      content:
+        "Choisissez une photo depuis votre appareil (Galerie), ou collez le lien d'une image en ligne (Lien).",
+    },
+    {
+      target: "logo-gallery",
+      content:
+        "Ajoutez votre logo : il est recadré en carré puis compressé. Facultatif, vous pourrez l'ajouter plus tard.",
+    },
+  ],
+  "create-shop-summary": [
+    {
+      target: "wizard-recap",
+      content:
+        "Relisez vos informations. Le bouton de chaque ligne vous ramène à l'étape pour la corriger.",
+    },
+  ],
+  "create-shop-plan": [
+    {
+      target: "wizard-plans",
+      content:
+        "Choisissez la durée de votre abonnement. Vous pourrez la faire évoluer selon votre activité.",
+    },
+    {
+      target: "wizard-submit",
+      content: "Confirmez pour créer votre boutique.",
+    },
+  ],
+  "dialog-manual-order": [
+    {
+      target: "manual-order-client",
+      content:
+        "Les coordonnées du client — utile pour une vente au comptoir ou par téléphone, sans compte client.",
+    },
+    {
+      target: "manual-order-add",
+      content: "Choisissez un produit et sa quantité, puis ajoutez-le à la commande.",
+    },
+    {
+      target: "manual-order-lines",
+      content: "Les articles ajoutés, que vous pouvez encore retirer.",
+    },
+    {
+      target: "manual-order-submit",
+      content: "Enregistrez la commande : elle rejoint la liste des commandes.",
+    },
+  ],
+  "dialog-order-reason": [
+    {
+      target: "reason-text",
+      content: "Indiquez le motif : il est obligatoire et visible par le client.",
+    },
+    {
+      target: "reason-confirm",
+      content: "Confirmez pour mettre à jour la commande.",
+    },
+  ],
+  "dialog-review": [
+    {
+      target: "review-product",
+      content: "Choisissez l'article concerné par votre avis.",
+    },
+    {
+      target: "review-rating",
+      content: "Donnez une note en étoiles — facultatif.",
+    },
+    {
+      target: "review-comment",
+      content: "Racontez votre expérience : ce commentaire est obligatoire.",
+    },
+    {
+      target: "review-defective",
+      content: "L'article est arrivé abîmé ou ne fonctionne pas ? Cochez cette case.",
+    },
+    {
+      target: "review-submit",
+      content: "Envoyez votre avis : il apparaîtra sur la fiche de l'article.",
+    },
+  ],
+  "dialog-contact": [
+    {
+      target: "contact-subject",
+      content: "L'objet de votre message, en quelques mots.",
+    },
+    {
+      target: "contact-body",
+      content: "Votre message pour l'équipe ManuShop.",
+    },
+    {
+      target: "contact-send",
+      content: "Envoyez : nous vous répondrons rapidement.",
+    },
+  ],
+  "dialog-edit-category": [
+    {
+      target: "edit-category-name",
+      content: "Le nom de la catégorie, visible par vos clients.",
+    },
+    {
+      target: "edit-category-tag",
+      content:
+        "Le tag système relie cette catégorie à un rayon du Marché, pour que vos produits y apparaissent.",
+    },
+    {
+      target: "edit-category-save",
+      content: "Enregistrez vos modifications.",
+    },
+  ],
+  "dialog-edit-tag": [
+    {
+      target: "edit-tag-name",
+      content: "Le nom du tag, affiché comme filtre sur le Marché.",
+    },
+    {
+      target: "edit-tag-color",
+      content: "La couleur associée au tag.",
+    },
+    {
+      target: "edit-tag-save",
+      content: "Enregistrez vos modifications.",
+    },
+  ],
+  "dialog-image-crop": [
+    {
+      target: "crop-area",
+      content:
+        "Faites glisser la photo pour choisir le cadrage : elle sera enregistrée au format carré.",
+    },
+    {
+      target: "crop-zoom",
+      content: "Zoomez pour resserrer le cadrage.",
+    },
+    {
+      target: "crop-confirm",
+      content:
+        "Validez : la photo est recadrée, compressée puis envoyée.",
+    },
+  ],
+  "panel-cart": [
+    {
+      target: "cart-items",
+      content: "Les articles de votre panier.",
+    },
+    {
+      target: "cart-quantity",
+      content: "Ajustez la quantité de chaque article.",
+    },
+    {
+      target: "cart-whatsapp",
+      content:
+        "Commandez directement par WhatsApp : votre panier est envoyé à la boutique, sans compte nécessaire.",
+    },
+    {
+      target: "cart-checkout",
+      content: "Ou choisissez un mode de paiement pour confirmer votre commande.",
+    },
+  ],
+
   // ——— Super Admin ———
   "super-admin-home": [
     {

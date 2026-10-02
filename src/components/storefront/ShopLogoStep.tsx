@@ -96,7 +96,7 @@ export function ShopLogoStep({
         </div>
       )}
 
-      <div className="grid grid-cols-2 rounded-lg border border-border p-1">
+      <div data-tour="logo-mode" className="grid grid-cols-2 rounded-lg border border-border p-1">
         <button
           type="button"
           onClick={() => onModeChange("gallery")}
@@ -120,7 +120,7 @@ export function ShopLogoStep({
       </div>
 
       {mode === "gallery" ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <div data-tour="logo-gallery" className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
           {logoUrl ? (
             <div className="relative size-24 overflow-hidden rounded-full border border-border">
               {/* `unoptimized` : réutilisé depuis `ShopSettingsForm` pour

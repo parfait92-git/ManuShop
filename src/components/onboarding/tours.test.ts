@@ -40,9 +40,14 @@ describe("tours", () => {
     expect(isTargetDeclared(REPLAY_HINT_STEP.target)).toBe(true);
   });
 
-  it("every tour is mounted by at least one page", () => {
+  it("every tour is mounted by at least one page, dialog or panel", () => {
     const unused = Object.keys(TOURS).filter(
-      (tourId) => !SOURCE.includes(`<PageTour tourId="${tourId}"`)
+      (tourId) =>
+        !SOURCE.includes(`<PageTour tourId="${tourId}"`) &&
+        !SOURCE.includes(`<DialogTour tourId="${tourId}"`) &&
+        // Ids choisis à l'exécution (une visite par étape de
+        // CreateShopWizard, `STEP_TOURS`).
+        !SOURCE.includes(`"${tourId}",`)
     );
     expect(unused).toEqual([]);
   });

@@ -1,43 +1,76 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 interface TourContextValue {
-  /** Vrai quand la page affichée a une visite guidée (`PageTour` monté). */
+  /** Vrai quand l'écran affiché a une visite guidée (`PageTour` monté). */
   hasTour: boolean;
-  /** Relance la visite de la page affichée, même déjà vue. */
+  /** Relance la visite de l'écran au premier plan, même déjà vue. */
   replay: () => void;
-  /** Réservé à `PageTour` : déclare la visite de la page, renvoie le
-   * désenregistrement à appeler au démontage. */
+  /** Réservé à `PageTour` : déclare une visite, renvoie le
+   * désenregistrement à appeler au démontage. La dernière déclarée passe
+   * au premier plan — celle d'une fenêtre ouverte par-dessus la page. */
   register: (start: () => void) => () => void;
+  /** Vrai pendant qu'une visite est affichée. Lu par `Dialog` : une
+   * fenêtre ne doit ni se fermer ni bloquer les clics sur la bulle de
+   * visite (rendue hors de la fenêtre) pendant ce temps. */
+  isRunning: boolean;
+  /** Réservé à `PageTour` : signale une visite affichée, renvoie la fin. */
+  markRunning: () => () => void;
 }
 
 const TourContext = createContext<TourContextValue | null>(null);
 
 /**
- * BF-134/135 : relie la visite de la page affichée (`PageTour`, monté dans
- * la page) au bouton "Revoir la visite" (`TourReplayButton`, monté dans
- * l'en-tête de chaque espace) — deux arbres de composants qui ne se
- * connaissent pas, d'où ce contexte global.
+ * BF-134/135 : relie les visites (`PageTour`, montées dans les pages et les
+ * fenêtres) au bouton "Revoir la visite" (`TourReplayButton`) et aux
+ * fenêtres (`Dialog`) — des arbres de composants qui ne se connaissent pas,
+ * d'où ce contexte global.
  */
 export function TourProvider({ children }: { children: React.ReactNode }) {
-  const startRef = useRef<(() => void) | null>(null);
+  // Pile : la page enregistre sa visite, une fenêtre ouverte par-dessus
+  // enregistre la sienne au-dessus, et la page reprend la main à sa
+  // fermeture.
+  const stackRef = useRef<(() => void)[]>([]);
   const [hasTour, setHasTour] = useState(false);
+  const [runningCount, setRunningCount] = useState(0);
 
   const register = useCallback((start: () => void) => {
-    startRef.current = start;
+    // Enveloppe propre à cet enregistrement : deux enregistrements de la
+    // même fonction restent distincts dans la pile.
+    const entry = () => start();
+    stackRef.current = [...stackRef.current, entry];
     setHasTour(true);
     return () => {
-      if (startRef.current === start) {
-        startRef.current = null;
-        setHasTour(false);
-      }
+      stackRef.current = stackRef.current.filter((item) => item !== entry);
+      setHasTour(stackRef.current.length > 0);
     };
   }, []);
 
-  const replay = useCallback(() => startRef.current?.(), []);
+  const replay = useCallback(() => stackRef.current.at(-1)?.(), []);
 
-  const value = useMemo(() => ({ hasTour, replay, register }), [hasTour, replay, register]);
+  const markRunning = useCallback(() => {
+    setRunningCount((count) => count + 1);
+    return () => setRunningCount((count) => count - 1);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      hasTour,
+      replay,
+      register,
+      isRunning: runningCount > 0,
+      markRunning,
+    }),
+    [hasTour, replay, register, runningCount, markRunning]
+  );
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;
 }
@@ -47,6 +80,8 @@ const NO_TOUR: TourContextValue = {
   hasTour: false,
   replay: () => {},
   register: () => () => {},
+  isRunning: false,
+  markRunning: () => () => {},
 };
 
 export function useTour(): TourContextValue {

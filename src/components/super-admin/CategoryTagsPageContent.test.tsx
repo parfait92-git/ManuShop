@@ -1,3 +1,7 @@
+// Visite guidée de la fenêtre (BF-134/135, testée dans onboarding/) : elle
+// charge le SDK Firebase via useAuth et se lancerait sur le profil de test.
+jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
+
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 

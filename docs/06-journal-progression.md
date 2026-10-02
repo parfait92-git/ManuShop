@@ -1430,3 +1430,17 @@ Demande de l'utilisateur : « que les onboarding tour et guided tour soient appl
 
 **Tests** : `PageTour.test.tsx` (8), `TourReplayButton.test.tsx`, `tours.test.ts`. Ce dernier vérifie que chaque cible de `tours.ts` existe en `data-tour` dans le code et que chaque visite est montée par une page : une faute de frappe retirerait sinon l'étape en silence. 5 tests de pages vitrine ont un faux `PageTour` en plus (il chargeait le SDK Firebase). Vérifié : lint, `tsc`, build, `test:coverage`. Navigateur : `/login`, `/register`, `/`, `/catalogue`, `/boutiques` sur ordinateur, et `/login` sur mobile (lancement auto, parcours complet, non relancée après rechargement, bouton « ? »). **Pas vérifié dans un navigateur** : les pages derrière connexion (dashboard, Super Admin, mes commandes...), couvertes seulement par les tests. Rien de commité.
 
+### 2026-10-02 — Visites guidées dans les fenêtres et formulaires en surimpression
+
+Demande de l'utilisateur, sur une capture de l'assistant « Créer ma boutique » : la visite guidée doit aussi tourner dans les fenêtres et formulaires ouverts, sur toutes les pages (réponse à une question de clarification : « Visite dans les fenêtres »).
+
+**Problème technique** : la bulle `react-joyride` est rendue hors de la fenêtre (portail dans `body`). Or une fenêtre Base UI modale bloque les clics extérieurs et se ferme sur un clic extérieur : cliquer « Suivant » aurait fermé la fenêtre. Le portail de joyride dans la fenêtre a été écarté, car la fenêtre est positionnée par `transform`, ce qui fausse le `position: fixed` de la bulle et du voile.
+
+**Solution** :
+- `Dialog` (`ui/dialog.tsx`) devient une enveloppe de `Dialog.Root` : pendant une visite (`useTour().isRunning`), la fenêtre passe en `modal={false}` + `disablePointerDismissal` et ignore toute demande de fermeture (Échap sert aussi à quitter la visite). Testé dans `TourProvider.test.tsx`.
+- `TourProvider` : pile de visites (celle de la fenêtre passe devant celle de la page, qui reprend la main à la fermeture) et compteur `isRunning`/`markRunning`.
+- `DialogTour` : `PageTour` sans l'étape « revoir ici » (elle viserait le « ? » de l'en-tête, caché derrière la fenêtre), plus son propre bouton « ? », placé à côté du titre de chaque fenêtre.
+
+**Couvert** : assistant « Créer ma boutique » (une visite par étape, `STEP_TOURS`, remontée via `key={step}`), commande manuelle, motif d'annulation/retour/défaut, avis client, « Nous contacter », édition de catégorie, édition de tag, recadrage photo, et le panneau panier (pas une fenêtre, même mécanisme). Pas de visite sur les simples confirmations (données non enregistrées, connexion requise, suppression définitive avec compte à rebours) : deux boutons, au moment où l'utilisateur doit décider, une visite y gênerait plus qu'elle n'aiderait.
+
+Tests : `TourProvider.test.tsx` (pile, `Dialog` ignore Échap pendant une visite et le respecte sinon) ; `tours.test.ts` étendu à `DialogTour` et aux ids dynamiques. Les 9 tests de fenêtres existants ont un faux `DialogTour` : sur le profil de test, la vraie visite se lançait et le test de l'assistant prenait 415 s. Vérifié : lint, `tsc`, build, `test:coverage` (818 tests). Chrome (`next start`) : « Nous contacter » sur `/` et panier sur `/catalogue`. Visite complète, la fenêtre reste ouverte pendant tout le parcours, puis Échap la ferme normalement. Les fenêtres derrière connexion ne sont pas vérifiées dans un navigateur. Rien de commité.

@@ -5,6 +5,7 @@ import Cropper, { type Area } from "react-easy-crop";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import {
   Dialog,
   DialogDescription,
@@ -53,13 +54,16 @@ export function ImageCropDialog({
   return (
     <Dialog open={imageSrc !== null} onOpenChange={handleOpenChange}>
       <DialogPortal className="max-w-md">
-        <DialogTitle>Recadrer la photo</DialogTitle>
+        <div className="flex items-start justify-between gap-3">
+          <DialogTitle>Recadrer la photo</DialogTitle>
+          <DialogTour tourId="dialog-image-crop" />
+        </div>
         <DialogDescription>
           Ajustez le cadrage et le zoom. La photo sera enregistrée au format
           carré, comme elle apparaîtra dans le catalogue.
         </DialogDescription>
 
-        <div className="relative h-72 w-full overflow-hidden rounded-lg bg-muted">
+        <div data-tour="crop-area" className="relative h-72 w-full overflow-hidden rounded-lg bg-muted">
           {imageSrc && (
             <Cropper
               image={imageSrc}
@@ -84,7 +88,7 @@ export function ImageCropDialog({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div data-tour="crop-zoom" className="flex items-center gap-3">
           <label htmlFor="crop-zoom" className="text-sm text-muted-foreground">
             Zoom
           </label>
@@ -111,6 +115,7 @@ export function ImageCropDialog({
             Annuler
           </Button>
           <Button
+            data-tour="crop-confirm"
             type="button"
             onClick={handleConfirm}
             disabled={busy || !mediaLoaded}

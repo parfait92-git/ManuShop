@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import {
   Dialog,
   DialogDescription,
@@ -58,11 +59,15 @@ export function OrderReasonDialog({
       <DialogPortal className="max-w-sm">
         {copy && (
           <>
-            <DialogTitle>{copy.title}</DialogTitle>
+            <div className="flex items-start justify-between gap-3">
+              <DialogTitle>{copy.title}</DialogTitle>
+              <DialogTour tourId="dialog-order-reason" />
+            </div>
             <DialogDescription>{copy.description}</DialogDescription>
           </>
         )}
         <textarea
+          data-tour="reason-text"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           rows={3}
@@ -74,6 +79,7 @@ export function OrderReasonDialog({
             Retour
           </Button>
           <Button
+            data-tour="reason-confirm"
             type="button"
             variant="destructive"
             disabled={!reason.trim()}
