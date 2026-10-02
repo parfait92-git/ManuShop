@@ -64,7 +64,9 @@ export function StorefrontProductCard({
           <p className="text-xs font-semibold tracking-wide text-primary uppercase">
             {product.category}
           </p>
-          <div className="flex items-center justify-between gap-2">
+          {/* `flex-wrap` : avec une police agrandie, le prix passe sous le
+          nom au lieu de sortir de la carte. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <h3 className="text-sm font-semibold">{product.name}</h3>
             <span className="shrink-0 text-sm font-semibold">
               {price.toLocaleString("fr-FR")} FCFA

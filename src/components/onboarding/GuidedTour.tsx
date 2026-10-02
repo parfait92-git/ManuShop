@@ -62,6 +62,9 @@ export function GuidedTour({
         // collant (~60px) qui recouvrait la cible avec la marge par défaut
         // (20px) — la bulle pointait alors vers un élément caché.
         scrollOffset: 100,
+        // 380px par défaut : plus large qu'un petit téléphone (320px). La
+        // bulle prend toute la largeur disponible, marges comprises.
+        width: "min(380px, calc(100vw - 24px))",
         buttons: ["back", "close", "primary", "skip"],
       }}
     />

@@ -81,7 +81,7 @@ function AccountMenu() {
         <span className="hidden max-w-24 truncate text-sm font-medium text-foreground sm:block">
           {displayName}
         </span>
-        <ChevronDown className="size-3.5" />
+        <ChevronDown className="hidden size-3.5 sm:block" />
       </button>
 
       {open && (
@@ -184,7 +184,9 @@ export function StorefrontHeader() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+      {/* Petits écrans et police agrandie : marges réduites, logo qui se
+      tronque plutôt que de pousser les boutons hors de l'écran. */}
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
         {branding ? (
           <Link
             href={`/boutique/${branding.shopId}`}
@@ -210,11 +212,13 @@ export function StorefrontHeader() {
             <span className="truncate">{branding.name}</span>
           </Link>
         ) : (
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="flex size-7 items-center justify-center rounded-full bg-primary/10">
+          <Link href="/" className="flex min-w-0 items-center gap-2 font-semibold">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Store className="size-4 text-primary" />
             </span>
-            Manu <span className="text-primary">Shop</span>
+            <span className="truncate">
+              Manu <span className="text-primary">Shop</span>
+            </span>
           </Link>
         )}
 
@@ -234,12 +238,14 @@ export function StorefrontHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <TourReplayButton className="border-border text-muted-foreground hover:bg-muted hover:text-foreground" />
+          {/* Masquée sur mobile : aucune action n'y est encore branchée,
+          et la place manque à côté du compte et du panier. */}
           <button
             type="button"
             aria-label="Notifications"
-            className="flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground"
+            className="hidden size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground sm:flex"
           >
             <Bell className="size-4" />
           </button>

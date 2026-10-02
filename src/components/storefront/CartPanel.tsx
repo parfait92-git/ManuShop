@@ -23,7 +23,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const [showLoginRequired, setShowLoginRequired] = useState(false);
 
   return (
-    <div className="absolute top-full right-0 z-30 mt-2 w-80 rounded-lg border border-border bg-background p-4 shadow-lg">
+    <div className="absolute top-full right-0 z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-background p-4 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Votre panier</h2>
         <div className="flex items-center gap-2">

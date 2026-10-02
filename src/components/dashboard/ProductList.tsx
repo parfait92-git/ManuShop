@@ -17,6 +17,10 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  STICKY_COLUMN_CONTENT,
+  ScrollableTable,
+} from "@/components/ui/scrollable-table";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { activityLogService } from "@/services/ActivityLogService";
@@ -202,11 +206,11 @@ export function ProductList({
           Aucun produit trouvé.
         </p>
       ) : (
-        <div className="-mx-4 overflow-x-auto sm:-mx-6">
+        <ScrollableTable label="Liste des produits" className="-mx-4 sm:-mx-6">
           <table data-tour="products-table" className="w-full min-w-160 border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
-                <th className="px-4 py-2 sm:px-6">Produit</th>
+                <th className="px-3 py-2 sm:px-6">Produit</th>
                 <th className="px-4 py-2">Catégorie</th>
                 <th className="px-4 py-2">Prix</th>
                 <th className="px-4 py-2">Stock</th>
@@ -221,8 +225,10 @@ export function ProductList({
                 const hasImage = productService.hasImage(product);
                 return (
                   <tr key={product.id}>
-                    <td className="px-4 py-3 sm:px-6">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 py-3 sm:px-6">
+                      <div
+                        className={`flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3 ${STICKY_COLUMN_CONTENT}`}
+                      >
                         <div
                           className={`relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border ${
                             hasImage
@@ -258,7 +264,7 @@ export function ProductList({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-slate-600">
                         {product.category}
                       </span>
                     </td>
@@ -268,7 +274,7 @@ export function ProductList({
                     <td className="px-4 py-3 text-slate-700">{product.stock}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${STOCK_STATUS_CLASS[status]}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${STOCK_STATUS_CLASS[status]}`}
                       >
                         {STOCK_STATUS_LABEL[status]}
                       </span>
@@ -307,7 +313,7 @@ export function ProductList({
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollableTable>
       )}
     </div>
   );
