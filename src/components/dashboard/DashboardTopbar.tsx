@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronDown, Menu } from "lucide-react";
+import { Bell, ChevronDown, ExternalLink, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { TourReplayButton } from "@/components/onboarding/TourReplayButton";
 import { useCurrentShop } from "@/hooks/useCurrentShop";
 import { useNewOrdersCount } from "@/hooks/useNewOrdersCount";
+import { shopPath } from "@/lib/seo";
 import { authService } from "@/services/AuthService";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -55,6 +56,19 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-4">
         <TourReplayButton />
+        {/* Le site de la boutique, tel que ses clients le voient. */}
+        {profile?.shopId && (
+          <Link
+            href={shopPath(profile.shopId)}
+            target="_blank"
+            data-tour="topbar-view-shop"
+            aria-label="Voir ma boutique (nouvel onglet)"
+            className="flex h-9 items-center gap-1.5 rounded-full border border-shell-border px-3 text-sm font-medium text-shell-text hover:bg-shell-hover"
+          >
+            <ExternalLink className="size-4" aria-hidden />
+            <span className="hidden lg:inline">Voir ma boutique</span>
+          </Link>
+        )}
         <Link
           href="/dashboard/orders?status=under_review"
           aria-label={

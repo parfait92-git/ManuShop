@@ -85,7 +85,7 @@ export function DashboardOverview({
   return (
     <div
       data-dashboard-theme={theme}
-      className="@container mx-auto max-w-7xl rounded-[28px] bg-dash-bg p-5 text-dash-text bg-[radial-gradient(ellipse_at_top_right,var(--dashboard-bg-glow),transparent_55%)] lg:p-7"
+      className="@container -mx-4 -mb-6 min-h-[calc(100svh-4.75rem)] bg-dash-bg p-5 text-dash-text bg-[radial-gradient(ellipse_at_top_right,var(--dashboard-bg-glow),transparent_55%)] sm:-mx-6 lg:-mx-8 lg:p-8"
     >
       {body}
     </div>
