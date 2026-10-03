@@ -2303,3 +2303,27 @@ Demande de l'utilisateur : permettre au commerçant de générer des rapports su
 **Tests** : calculs des deux rapports (tri, valeurs, totaux, sans coût pour un vendeur, période, produit supprimé), CSV (BOM, séparateur, guillemets, nombres bruts), page (colonnes du gérant, du vendeur, téléchargements, nom de fichier, couleur, période personnalisée).
 
 Vérifié : lint, `tsc`, tests, build. Rien de commité.
+
+### 2026-10-03 — Heure de l'utilisateur ; catégories non publiées masquées
+
+Demande de l'utilisateur : le fuseau horaire doit dépendre de l'endroit où se trouve la personne qui utilise la plateforme, et non du Cameroun ; les catégories non publiées ne doivent plus apparaître sur la vitrine.
+
+**Fuseau horaire** — tout suit désormais l'heure de l'appareil :
+- dates et heures affichées (commandes, graphiques, carte d'accueil, rapports, Super Admin) : plus de `timeZone: "Africa/Douala"` imposé ;
+- périodes des statistiques, du tableau de bord et des rapports (jour, semaine, mois, année, dates choisies) : calculées sur le calendrier local (`profitReport.ts`, `dashboardMetrics.ts`) ;
+- fin de la promotion de l'accueil (Super Admin) : saisie à l'heure de l'appareil, enregistrée comme un instant précis (UTC), donc la même pour tous les visiteurs ;
+- facture PDF : le navigateur envoie son fuseau (`?tz=`), validé par le serveur ; à défaut, heure du Cameroun (le serveur tourne en UTC) ;
+- page publique de vérification : rendue par le serveur à l'heure du Cameroun, puis réaffichée à l'heure du lecteur (`LocalDateTime`) ;
+- textes d'aide « heure du Cameroun » remplacés par « votre heure locale ».
+
+**Gardé volontairement à l'heure du Cameroun** : la fin des promotions produit (`lib/promo.ts`). C'est une règle de prix : elle doit finir au même instant pour tous les clients, quel que soit leur pays.
+
+**Tests** : Jest tourne avec `TZ=Africa/Douala` (`jest.config.mjs`), pour des résultats identiques sur toute machine.
+
+**Catégories** : la vitrine n'affiche plus que les catégories actives (`CategoryService.listVisible`), sans les supprimées.
+
+**Vérification réelle sur émulateurs** :
+- une commande du 1er octobre à 23 h 30 UTC s'affiche « 1 oct. 2026 à 19:30 » à New York et « 2 oct. 2026 à 00:30 » à Douala ;
+- vitrine : la catégorie non publiée n'apparaît plus, la catégorie active oui.
+
+Vérifié : lint, `tsc`, 2 168 tests, build. Rien de commité.

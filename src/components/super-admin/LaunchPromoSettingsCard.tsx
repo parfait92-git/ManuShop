@@ -27,7 +27,7 @@ import { configurationService } from "@/services/ConfigurationService";
 export function LaunchPromoSettingsCard() {
   const { t, intlLocale } = useI18n();
   const [promo, setPromo] = useState<LaunchPromoSettings | null>(null);
-  /** Valeur brute du champ `datetime-local`, heure du Cameroun. */
+  /** Valeur brute du champ `datetime-local`, heure de l'appareil. */
   const [endsAtInput, setEndsAtInput] = useState("");
   const [errors, setErrors] = useState<LaunchPromoErrors>({});
   const [saving, setSaving] = useState(false);
@@ -65,8 +65,7 @@ export function LaunchPromoSettingsCard() {
           date: new Date(current.endsAt).toLocaleString(intlLocale, {
             dateStyle: "long",
             timeStyle: "short",
-            timeZone: "Africa/Douala",
-          }),
+                }),
         })
       : t("launchPromoSettings.statusEnded");
 

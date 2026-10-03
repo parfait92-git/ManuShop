@@ -109,6 +109,22 @@ describe("GET /api/factures/[orderId]", () => {
     });
   });
 
+  it("prints the issue date in the reader's time zone, Cameroon by default", async () => {
+    mockOrder();
+    await GET(
+      new Request("http://localhost/api/factures/o1?tz=Europe%2FParis", { headers: { authorization: "Bearer t" } }),
+      params
+    );
+    expect(renderToBufferMock.mock.calls[0][0].props.invoice.timeZone).toBe("Europe/Paris");
+
+    mockOrder();
+    await GET(
+      new Request("http://localhost/api/factures/o1?tz=Pas%2FUnFuseau", { headers: { authorization: "Bearer t" } }),
+      params
+    );
+    expect(renderToBufferMock.mock.calls[1][0].props.invoice.timeZone).toBe("Africa/Douala");
+  });
+
   it("lets a seller of the order's shop download it", async () => {
     mockOrder();
     verifyIdTokenMock.mockResolvedValue({ uid: "seller-1" });

@@ -28,12 +28,12 @@ describe("LaunchPromoSettingsCard", () => {
     setLaunchPromoMock.mockResolvedValue(undefined);
   });
 
-  it("loads the current promotion, shows the end date in Cameroon time, and saves edits", async () => {
+  it("loads the current promotion, shows the end date in the device time zone, and saves edits", async () => {
     const user = userEvent.setup();
     render(<LaunchPromoSettingsCard />);
 
     const title = await screen.findByLabelText("Titre");
-    expect((screen.getByLabelText("Fin de l'offre (heure du Cameroun)") as HTMLInputElement).value).toBe(
+    expect((screen.getByLabelText("Fin de l'offre (votre heure locale)") as HTMLInputElement).value).toBe(
       "2099-10-30T23:59"
     );
     expect(screen.getByRole("status")).toHaveTextContent("En cours jusqu'au");
@@ -45,6 +45,8 @@ describe("LaunchPromoSettingsCard", () => {
     await waitFor(() =>
       expect(setLaunchPromoMock).toHaveBeenCalledWith({
         ...saved,
+        // Même instant, réécrit en UTC depuis l'heure de l'appareil.
+        endsAt: "2099-10-30T22:59:59.000Z",
         title: "Ouvrez votre boutique à moitié prix",
       })
     );
@@ -53,7 +55,7 @@ describe("LaunchPromoSettingsCard", () => {
   it("refuses a past end date while the offer is enabled, and tells why", async () => {
     const user = userEvent.setup();
     render(<LaunchPromoSettingsCard />);
-    const endsAt = await screen.findByLabelText("Fin de l'offre (heure du Cameroun)");
+    const endsAt = await screen.findByLabelText("Fin de l'offre (votre heure locale)");
 
     fireEvent.change(endsAt, { target: { value: "2020-01-01T10:00" } });
     await user.click(screen.getByRole("button", { name: "Enregistrer la promotion" }));

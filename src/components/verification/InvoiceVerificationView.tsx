@@ -3,19 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { CertifiedSeal } from "@/components/verification/CertifiedSeal";
+import { LocalDateTime } from "@/components/verification/LocalDateTime";
 import { isOptimizableImage } from "@/lib/imageHosts";
 import { shopPath } from "@/lib/seo";
 import type { InvoiceVerification } from "@/server/integrity/verifyInvoice";
 
-const dateTime = (date: Date) =>
-  date.toLocaleString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Africa/Douala",
-  });
+const dateTime = (date: Date) => <LocalDateTime iso={date.toISOString()} />;
 
 /**
  * Page publique de vérification d'une facture (2026-10-03), ouverte en

@@ -47,7 +47,7 @@ describe("InvoiceService", () => {
 
     await new InvoiceService().download("o1");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/factures/o1", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/factures/o1?tz=Africa%2FDouala", {
       headers: { Authorization: "Bearer token-1" },
     });
     expect(clicked?.download).toBe("facture-F-00012.pdf");

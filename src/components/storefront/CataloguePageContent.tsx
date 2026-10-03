@@ -64,7 +64,9 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
     let active = true;
     Promise.all([
       productService.listProducts(shopId),
-      categoryService.listCategories(shopId),
+      // Seulement les catégories affichées : une catégorie masquée par le
+      // commerçant, ou à la corbeille, n'apparaît pas aux clients.
+      categoryService.listVisible(shopId),
     ])
       .then(([productList, categoryList]) => {
         if (!active) return;

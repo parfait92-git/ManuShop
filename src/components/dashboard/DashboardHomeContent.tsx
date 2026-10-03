@@ -92,7 +92,7 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
   }, [shopId]);
 
   // Mêmes chiffres que la vue tablette et ordinateur
-  // (`dashboardMetrics.ts`) : mois à l'heure du Cameroun, commandes
+  // (`dashboardMetrics.ts`) : mois à l'heure de l'appareil, commandes
   // annulées exclues, nouveaux clients = première commande ce mois-ci.
   const metrics = orders ? computeDashboardMetrics(orders, products ?? []) : null;
   const revenueThisMonth = metrics?.revenue.value ?? 0;

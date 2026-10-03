@@ -18,6 +18,9 @@ export interface InvoiceDocumentData {
   number: string;
   orderId: string;
   issuedAt: Date;
+  /** Fuseau horaire de l'appareil qui télécharge (ex. « Europe/Paris »),
+   * pour la date d'émission imprimée. */
+  timeZone?: string;
   seller: {
     name: string;
     address: string;
@@ -156,7 +159,7 @@ export function InvoiceDocument({
   const { lines, totals } = computeInvoice(invoice.items, invoice.vatRate, invoice);
   const money = (amount: number) => formatInvoiceMoney(amount, invoice.currency, invoice.rateToXaf);
   const cols = columns(withVat);
-  const issued = formatDateTime(invoice.issuedAt, "long");
+  const issued = formatDateTime(invoice.issuedAt, "long", invoice.timeZone);
   const sellerName = toPdfText(invoice.seller.name) || "Boutique";
 
   const cell = (line: (typeof lines)[number], key: string) => {

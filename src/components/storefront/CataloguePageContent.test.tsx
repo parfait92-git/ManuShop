@@ -8,7 +8,7 @@ jest.mock("../../services/ProductService", () => ({
 }));
 
 jest.mock("../../services/CategoryService", () => ({
-  categoryService: { listCategories: jest.fn() },
+  categoryService: { listVisible: jest.fn() },
 }));
 
 jest.mock("./StorefrontProductCard", () => ({
@@ -48,7 +48,7 @@ function fakeProduct(overrides: Partial<Product> = {}): Product {
 describe("CataloguePageContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    categoryServiceMock.listCategories.mockResolvedValue([]);
+    categoryServiceMock.listVisible.mockResolvedValue([]);
     productServiceMock.search.mockImplementation((products) => products);
     productServiceMock.isVisibleToCustomers.mockReturnValue(true);
   });

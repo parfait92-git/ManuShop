@@ -2,6 +2,7 @@ import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import { createElement, type ReactElement } from "react";
 
+import { validTimeZone } from "@/lib/dateTime";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { verifyIdToken } from "@/lib/verifyIdToken";
 import { NotFoundError, ValidationError } from "@/server/errors";
@@ -115,6 +116,9 @@ export async function GET(
     number: invoice.number,
     orderId,
     issuedAt,
+    // Heure du lecteur (`?tz=` envoyé par le navigateur) ; à défaut, le
+    // Cameroun — le serveur, lui, tourne en UTC.
+    timeZone: validTimeZone(new URL(request.url).searchParams.get("tz")) ?? "Africa/Douala",
     seller: invoice.seller,
     client: invoice.client,
     items: invoice.items,
