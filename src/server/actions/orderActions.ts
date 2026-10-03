@@ -105,6 +105,14 @@ export async function createOrderAction(
     input.items.forEach((item, index) => {
       // Sans prix lisible, la commande en ligne ne peut pas être chiffrée
       // (le prix n'est plus repris du panier, voir plus bas).
+      // Une commande concerne une seule boutique : refuser un article d'une
+      // autre (le panier le garantit côté client, `useAddToCart`, mais une
+      // requête peut toujours être forgée).
+      if (productSnapshots[index].data()?.shopId !== input.shopId) {
+        throw new ValidationError(
+          `« ${item.name} » n'appartient pas à cette boutique.`
+        );
+      }
       const currentPrice = productSnapshots[index].data()?.price;
       if (!input.manual && typeof currentPrice !== "number") {
         throw new ValidationError(`Le produit « ${item.name} » n'est plus disponible.`);

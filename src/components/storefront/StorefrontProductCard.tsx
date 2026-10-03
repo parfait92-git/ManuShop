@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 import { productService } from "@/services/ProductService";
-import { useCartStore } from "@/store/cartStore";
 import { effectivePrice } from "@/lib/promo";
+import { useAddToCart } from "@/hooks/useAddToCart";
+import { useMoney } from "@/hooks/useMoney";
+import { useShopCurrency } from "@/hooks/useShopCurrency";
 
 export function StorefrontProductCard({
   product,
@@ -29,11 +31,12 @@ export function StorefrontProductCard({
    * n'est pas fourni. */
   shopHref?: string;
 }) {
-  const addItem = useCartStore((state) => state.addItem);
+  const addItem = useAddToCart();
   const { firebaseUser, profile, toggleFavorite } = useAuth();
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
   const badge = productService.getBadge(product);
   const price = effectivePrice(product);
+  const money = useMoney(useShopCurrency(product.shopId));
 
   return (
     // `relative` ici (pas sur la seule zone image) : le bouton favoris sort du
@@ -70,7 +73,7 @@ export function StorefrontProductCard({
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <h3 className="text-sm font-semibold">{product.name}</h3>
             <span className="shrink-0 text-sm font-semibold">
-              {price.toLocaleString("fr-FR")} FCFA
+              {money(price)}
             </span>
           </div>
         </div>
@@ -119,6 +122,7 @@ export function StorefrontProductCard({
               price,
               image: product.images[0] ?? "",
               stock: product.stock,
+              shopId: product.shopId,
             })
           }
         >

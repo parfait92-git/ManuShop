@@ -14,4 +14,11 @@ export interface PlatformConfiguration {
    * une boutique publiée a un produit visible réel, plus besoin de démo.
    */
   demoCatalogueEnabled?: boolean;
+  /**
+   * Valeur d'un dollar US en FCFA, saisie par le Super Admin (2026-10-02).
+   * Sert à afficher les prix des boutiques dont la devise est le dollar
+   * (voir `src/lib/currency.ts`) — l'euro a une parité fixe, il n'a pas
+   * besoin de taux. Absent : ces boutiques affichent leurs prix en FCFA.
+   */
+  usdToXafRate?: number;
 }

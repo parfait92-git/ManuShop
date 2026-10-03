@@ -34,8 +34,8 @@ jest.mock("../providers/AuthProvider", () => ({
 }));
 
 let mockShop: { id: string } | null = { id: "shop-1" };
-jest.mock("../../hooks/useShop", () => ({
-  useShop: () => ({ shop: mockShop, loading: false }),
+jest.mock("../../hooks/useCartShop", () => ({
+  useCartShop: () => ({ shop: mockShop, loading: false }),
 }));
 
 const createOrderMock = jest.fn();

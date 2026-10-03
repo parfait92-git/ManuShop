@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CoachMark } from "@/components/ui/CoachMark";
-import { useShop } from "@/hooks/useShop";
+import { useCartShop } from "@/hooks/useCartShop";
+import { useMoney } from "@/hooks/useMoney";
+import { shopCurrency } from "@/lib/currency";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { orderService } from "@/services/OrderService";
 import { useCartPriceSync } from "@/hooks/useCartPriceSync";
@@ -39,7 +41,8 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
 export function PaymentMethodPageContent() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { shop } = useShop();
+  const { shop } = useCartShop();
+  const money = useMoney(shopCurrency(shop));
   const items = useCartStore((state) => state.items);
   const clear = useCartStore((state) => state.clear);
   const changedPrices = useCartPriceSync();
@@ -115,7 +118,7 @@ export function PaymentMethodPageContent() {
       <div>
         <h1 className="text-4xl font-bold">Confirmer ma commande</h1>
         <p className="mt-1 text-muted-foreground">
-          Total · {total.toLocaleString("fr-FR")} FCFA
+          Total · {money(total)}
         </p>
       </div>
 
@@ -205,7 +208,7 @@ export function PaymentMethodPageContent() {
         >
           {submitting
             ? "Enregistrement..."
-            : `Confirmer ma commande · ${total.toLocaleString("fr-FR")} FCFA`}
+            : `Confirmer ma commande · ${money(total)}`}
         </Button>
       </div>
     </div>

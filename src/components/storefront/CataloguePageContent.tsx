@@ -14,6 +14,8 @@ import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
 import { productService } from "@/services/ProductService";
 import { effectivePrice, isPromoActive } from "@/lib/promo";
+import { useMoney } from "@/hooks/useMoney";
+import { useShopCurrency } from "@/hooks/useShopCurrency";
 
 type SortOrder = "newest" | "price-asc" | "price-desc";
 
@@ -32,7 +34,12 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
   }
 }
 
+/** Seuil de livraison offerte, en FCFA (devise de référence), affiché
+ * converti dans la devise de la boutique. */
+const FREE_DELIVERY_THRESHOLD_XAF = 50000;
+
 export function CataloguePageContent({ shopId }: { shopId: string }) {
+  const money = useMoney(useShopCurrency(shopId));
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [term, setTerm] = useState("");
@@ -140,7 +147,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
           <div>
             <p className="text-sm font-semibold">Livraison offerte</p>
             <p className="text-sm text-muted-foreground">
-              Dès 50 000 FCFA de commande
+              Dès {money(FREE_DELIVERY_THRESHOLD_XAF)} de commande
             </p>
           </div>
         </div>

@@ -11,8 +11,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { CartPanel } from "@/components/storefront/CartPanel";
 import { useCartStore } from "@/store/cartStore";
 
-jest.mock("../../hooks/useShop", () => ({
-  useShop: () => ({ shop: { id: "shop-1", whatsapp: "+237600000000", name: "Boutique" }, loading: false }),
+jest.mock("../../hooks/useCartShop", () => ({
+  useCartShop: () => ({ shop: { id: "shop-1", whatsapp: "+237600000000", name: "Boutique" }, loading: false }),
 }));
 
 const useAuthMock = jest.fn();

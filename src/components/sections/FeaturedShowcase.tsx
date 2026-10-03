@@ -8,6 +8,9 @@ import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 import { useMarketCatalogue, type MarketProduct } from "@/hooks/useMarketCatalogue";
 import type { Product } from "@/models/product/Product";
 import { productService } from "@/services/ProductService";
+import { useCurrencyRates } from "@/components/providers/CurrencyContext";
+import { useI18n } from "@/i18n/I18nProvider";
+import { BASE_CURRENCY, formatMoney, shopCurrency, type CurrencyCode } from "@/lib/currency";
 import { effectivePrice } from "@/lib/promo";
 
 // Un dégradé par boutique de démo plutôt que par position dans la liste,
@@ -44,16 +47,15 @@ function gradientForRealShop(shopId: string): string {
   return REAL_GRADIENTS[Math.abs(hash) % REAL_GRADIENTS.length];
 }
 
-function priceLabel(product: Product): string {
-  const price = effectivePrice(product);
-  return `${price.toLocaleString("fr-FR")} FCFA`;
-}
+/** Prix affiché dans la devise de la boutique de l'article. */
+type PriceFormatter = (product: Product, currency: CurrencyCode) => string;
 
-function demoShowcase(): ShowcaseProduct[] {
+function demoShowcase(format: PriceFormatter): ShowcaseProduct[] {
   return getFeaturedArticles(3).map((article) => ({
     category: article.category,
     name: article.name,
-    priceLabel: priceLabel(article),
+    // Boutiques de démonstration : en FCFA.
+    priceLabel: format(article, BASE_CURRENCY),
     gradient: DEMO_GRADIENTS[article.shopId] ?? DEMO_GRADIENTS["shop-mode-237"],
     image: article.images[0],
   }));
@@ -63,7 +65,7 @@ function demoShowcase(): ShowcaseProduct[] {
  * les 3 meilleurs parmi eux — garantit des boutiques distinctes plutôt que
  * plusieurs articles d'une même boutique (même règle que
  * `getFeaturedArticles`, appliquée ici à de vraies données). */
-function realShowcase(items: MarketProduct[]): ShowcaseProduct[] {
+function realShowcase(items: MarketProduct[], format: PriceFormatter): ShowcaseProduct[] {
   const topPerShop = new Map<string, MarketProduct>();
   for (const item of items) {
     const current = topPerShop.get(item.shop.id);
@@ -78,7 +80,7 @@ function realShowcase(items: MarketProduct[]): ShowcaseProduct[] {
     .map(({ product, shop }) => ({
       category: product.category,
       name: product.name,
-      priceLabel: priceLabel(product),
+      priceLabel: format(product, shopCurrency(shop)),
       gradient: gradientForRealShop(shop.id),
       image: product.images[0],
     }));
@@ -96,13 +98,17 @@ function realShowcase(items: MarketProduct[]): ShowcaseProduct[] {
 export function FeaturedShowcase() {
   const demoAvailable = useDemoCatalogueAvailable();
   const marketCatalogue = useMarketCatalogue();
+  const rates = useCurrencyRates();
+  const { intlLocale } = useI18n();
 
   const products = useMemo(() => {
+    const format: PriceFormatter = (product, currency) =>
+      formatMoney(effectivePrice(product), currency, rates, intlLocale);
     if (demoAvailable === undefined) return undefined;
-    if (demoAvailable) return demoShowcase();
+    if (demoAvailable) return demoShowcase(format);
     if (marketCatalogue === undefined) return undefined;
-    return realShowcase(marketCatalogue);
-  }, [demoAvailable, marketCatalogue]);
+    return realShowcase(marketCatalogue, format);
+  }, [demoAvailable, marketCatalogue, rates, intlLocale]);
 
   if (!products || products.length === 0) return null;
 

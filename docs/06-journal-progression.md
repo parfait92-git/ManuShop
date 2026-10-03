@@ -1579,3 +1579,49 @@ Demande de l'utilisateur : implémenter la page Clients, jusque-là « bientôt 
 **Note d'environnement** : l'utilisateur avait son propre `next dev` sur le port 3000, et Next 16 refuse un second serveur de dev dans le même dossier. Le serveur de test a donc tourné sur une copie du projet dans le dossier temporaire, avec `--webpack` (Turbopack refuse un `node_modules` relié par lien symbolique hors du projet). Le serveur de l'utilisateur n'a pas été touché.
 
 Rien de commité.
+
+### 2026-10-02 — Devise de la boutique côté clients (BF-145) + préparation multilingue (BF-146)
+
+Demande de l'utilisateur : appliquer la devise configurée par la boutique à tous ses articles, avec calculs et conversion côté clients ; prévoir les fichiers de langue pour l'étape suivante.
+
+**Constat de départ** : `Shop.currency` (FCFA, EUR, USD) était enregistré mais lu nulle part. « FCFA » était écrit en dur 62 fois dans 23 fichiers, et tous les prix existants sont en FCFA.
+
+**Choix de l'utilisateur** (questions posées) :
+- prix toujours saisis et enregistrés en FCFA, et affichés convertis aux clients ;
+- taux fixés par le Super Admin, sans service externe ;
+- sur le Marché, chaque article dans la devise de sa boutique ;
+- pour la langue : la structure et les textes de prix maintenant, la traduction complète plus tard.
+
+**Devise** :
+- `src/lib/currency.ts` : conversion et `formatMoney` (`Intl`, sans centimes pour le FCFA). Euro à la parité fixe 655,957. Dollar au taux `PlatformConfiguration.usdToXafRate`, saisi par le Super Admin dans Réglages via `setUsdToXafRateAction`, borné de 50 à 5 000 côté serveur et côté client. Sans taux, l'affichage reste en FCFA plutôt que faux.
+- `CurrencyContext` (léger) et `CurrencyProvider` (charge les taux une fois), `useMoney(devise)`, `useShopCurrency(shopId)` (cache par boutique, service chargé à la demande).
+- Converti côté clients : cartes, fiche produit, mise en avant de l'accueil, panier, message WhatsApp, paiement, « Mes commandes », seuil de livraison offerte de la vitrine.
+- Restent en FCFA : tout l'espace commerçant (référence, gains), les abonnements et la notification WhatsApp au commerçant. Il voit un aperçu « Vos clients verront : 15,24 € » dans le formulaire produit, et une note de conversion dans ses paramètres.
+
+**Bug majeur corrigé, découvert en chemin** : le panier et le paiement utilisaient `useShop()`, qui renvoie la **première boutique de la base**. Sur une plateforme à plusieurs boutiques, toute commande et tout message WhatsApp partaient chez elle, quels que soient les articles. Le serveur ne vérifiait pas non plus l'appartenance des articles à la boutique de la commande. Corrigé :
+- `CartItem.shopId`, complété au rafraîchissement pour les paniers existants ;
+- `useAddToCart` : un panier = une seule boutique, avec confirmation pour vider ;
+- `useCartShop` remplace `useShop()` ;
+- `createOrderAction` refuse un article d'une autre boutique.
+
+`useShop`/`getPrimaryShop` ne sont plus utilisés par le panier.
+
+**Langue** :
+- `src/i18n/config.ts` (fr par défaut, en), `dictionaries/fr.json` et `en.json`.
+- `I18nProvider`/`useI18n` : `t()` typé par les clés du dictionnaire français, variables `{nom}`.
+- Utilisé pour les textes de devise, de taux et de panier. Un test vérifie que chaque langue a exactement les mêmes clés et les mêmes variables.
+- Reste, à l'étape langue : routage `app/[lang]` (guide Next), sélecteur, et traduction de tous les écrans.
+
+**Tests** : `currency.test.ts`, `dictionaries.test.ts`, `useAddToCart.test.ts` (nouveaux), test « autre boutique » dans `orderActions.test.ts`, et `useCartPriceSync.test.ts` étendu. Tests adaptés : faux produits serveur avec `shopId`, tests du panier et du paiement sur `useCartShop`, faux service de configuration étendu. Délai de 15 s pour un test `ShopSettingsForm` qui tape une URL caractère par caractère : il était déjà à 12,7 s pour l'ensemble du fichier, et dépassait 5 s sous la suite complète. Vérifié : lint, `tsc`, 878 tests.
+
+**Vérification réelle sur les émulateurs** (copie isolée, le `next dev` de l'utilisateur sur :3000 n'a pas été touché) :
+- trois boutiques EUR, USD et XAF : 15,24 €, 10 000 FCFA (taux du dollar pas encore fixé) et 10 000 FCFA ;
+- achat en euros cohérent partout (fiche, panier, WhatsApp, paiement, « Mes commandes ») ;
+- confirmation affichée pour un article d'une autre boutique ;
+- commande enregistrée chez la boutique EUR, en FCFA (10 000) ;
+- Super Admin : 12 refusé, 600 enregistré, puis la boutique USD affiche 16,67 $US ;
+- aperçu et note de conversion présents côté commerçant.
+
+Piège de test : `platformAdmins` est indexé par **email**, pas par uid.
+
+Rien de commité.

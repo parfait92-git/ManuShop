@@ -1,0 +1,28 @@
+{
+  "currency": {
+    "names": {
+      "XAF": "CFA franc (XAF)",
+      "EUR": "Euro (EUR)",
+      "USD": "US dollar (USD)"
+    },
+    "shopSettingsHelp": "The currency your customers see your prices, cart and orders in. You keep entering your prices in CFA francs: conversion is automatic.",
+    "conversionNote": "Your prices are still entered in CFA francs. Your customers see them converted to {currency} (1 {currency} = {rate} CFA francs).",
+    "usdRateMissing": "The US dollar rate hasn't been set by the ManuShop team yet: until it is, your customers see your prices in CFA francs.",
+    "clientPreview": "Your customers will see: {amount}",
+    "referenceNotice": "Amounts in CFA francs, the reference currency of your prices."
+  },
+  "platformRates": {
+    "title": "Exchange rates",
+    "description": "Rates used to display the prices of shops that chose a currency other than the CFA franc. Prices are still stored in CFA francs.",
+    "eurFixed": "Euro: official fixed parity, €1 = {rate} CFA francs.",
+    "usdLabel": "1 US dollar is worth (in CFA francs)",
+    "usdHelp": "The US dollar has no fixed parity with the CFA franc: update this rate regularly. Without a rate, shops in dollars show their prices in CFA francs.",
+    "save": "Save the rate",
+    "saved": "US dollar rate saved.",
+    "invalid": "Enter a rate between 50 and 5,000 CFA francs.",
+    "error": "The rate couldn't be saved. Please try again."
+  },
+  "cart": {
+    "otherShopConfirm": "Your cart contains items from another shop. An order can only involve one shop: empty the cart to add this item?"
+  }
+}

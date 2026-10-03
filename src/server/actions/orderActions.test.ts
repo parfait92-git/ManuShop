@@ -106,7 +106,7 @@ describe("createOrderAction", () => {
     // redéfinit explicitement (`mockResolvedValueOnce`).
     transactionGetMock.mockResolvedValue({
       exists: true,
-      data: () => ({ stock: 100, price: 5000 }),
+      data: () => ({ shopId: "shop-1", stock: 100, price: 5000 }),
     });
     productCostGetMock.mockResolvedValue({ data: () => undefined });
   });
@@ -142,7 +142,27 @@ describe("createOrderAction", () => {
     expect(JSON.stringify(orderWrite)).not.toContain("3000");
   });
 
-  describe("prix recalculé côté serveur (fin de promotion automatique)", () => {
+  it("rejects an item belonging to another shop — an order goes to a single shop", async () => {
+    transactionGetMock.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({ shopId: "other-shop", stock: 10, price: 5000 }),
+    });
+
+    await expect(
+      createOrderAction("token", {
+        shopId: "shop-1",
+        clientName: "Fatou Ba",
+        clientPhone: "+237600000000",
+        clientAddress: "Douala",
+        items: ITEMS,
+        subtotal: 10000,
+        total: 10000,
+      })
+    ).rejects.toThrow("n'appartient pas à cette boutique");
+    expect(transactionSetMock).not.toHaveBeenCalled();
+  });
+
+    describe("prix recalculé côté serveur (fin de promotion automatique)", () => {
     const base = {
       shopId: "shop-1",
       clientName: "Fatou Ba",
@@ -155,7 +175,7 @@ describe("createOrderAction", () => {
     it("charges the current promo price, whatever price the cart sent", async () => {
       transactionGetMock.mockResolvedValueOnce({
         exists: true,
-        data: () => ({ stock: 10, price: 5000, isPromo: true, promoPrice: 4000, promoEnd: timestampIn(3 * DAY) }),
+        data: () => ({ shopId: "shop-1", stock: 10, price: 5000, isPromo: true, promoPrice: 4000, promoEnd: timestampIn(3 * DAY) }),
       });
 
       await createOrderAction("token", {
@@ -178,7 +198,7 @@ describe("createOrderAction", () => {
     it("charges the regular price once the promo end date is past — an item kept in the cart since the promo no longer gets it", async () => {
       transactionGetMock.mockResolvedValueOnce({
         exists: true,
-        data: () => ({ stock: 10, price: 5000, isPromo: true, promoPrice: 4000, promoEnd: timestampIn(-3 * DAY) }),
+        data: () => ({ shopId: "shop-1", stock: 10, price: 5000, isPromo: true, promoPrice: 4000, promoEnd: timestampIn(-3 * DAY) }),
       });
 
       await createOrderAction("token", {
@@ -198,7 +218,7 @@ describe("createOrderAction", () => {
     });
 
     it("rejects an online order for a product without a readable price rather than recording NaN", async () => {
-      transactionGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ stock: 10 }) });
+      transactionGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ shopId: "shop-1", stock: 10 }) });
 
       await expect(
         createOrderAction("token", { ...base, items: ITEMS, subtotal: 10000, total: 10000 })
@@ -243,7 +263,7 @@ describe("createOrderAction", () => {
   it("rejects the order when a product doesn't have enough stock left", async () => {
     transactionGetMock.mockResolvedValueOnce({
       exists: true,
-      data: () => ({ stock: 1, price: 5000 }),
+      data: () => ({ shopId: "shop-1", stock: 1, price: 5000 }),
     });
 
     await expect(
@@ -282,7 +302,7 @@ describe("createOrderAction", () => {
   it("allows an order that exactly matches the remaining stock", async () => {
     transactionGetMock.mockResolvedValueOnce({
       exists: true,
-      data: () => ({ stock: 2, price: 5000 }),
+      data: () => ({ shopId: "shop-1", stock: 2, price: 5000 }),
     });
 
     await expect(

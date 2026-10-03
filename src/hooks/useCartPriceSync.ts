@@ -32,15 +32,15 @@ export function useCartPriceSync(): string[] {
       )
     ).then((products) => {
       if (!active) return;
-      const prices: Record<string, number> = {};
+      const current: Record<string, { price: number; shopId: string }> = {};
       const changed: string[] = [];
       products.forEach((product, index) => {
         if (!product) return;
         const price = effectivePrice(product);
-        prices[product.id] = price;
+        current[product.id] = { price, shopId: product.shopId };
         if (price !== items[index].price) changed.push(items[index].name);
       });
-      refreshPrices(prices);
+      refreshPrices(current);
       setChangedNames(changed);
     });
 

@@ -24,9 +24,11 @@ import type { ClientContactMethod, Shop } from "@/models/shop/Shop";
 import { productService, type StockStatus } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
-import { useCartStore } from "@/store/cartStore";
 import { isOptimizableImage } from "@/lib/imageHosts";
 import { effectivePrice } from "@/lib/promo";
+import { useAddToCart } from "@/hooks/useAddToCart";
+import { useMoney } from "@/hooks/useMoney";
+import { shopCurrency } from "@/lib/currency";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -50,8 +52,9 @@ const STOCK_CLASS: Record<StockStatus, string> = {
 export function ProductDetailPageContent({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [shop, setShop] = useState<Shop | null>(null);
+  const money = useMoney(shopCurrency(shop));
   const [reviews, setReviews] = useState<Review[]>([]);
-  const addItem = useCartStore((state) => state.addItem);
+  const addItem = useAddToCart();
   const { firebaseUser, profile, toggleFavorite } = useAuth();
 
   useEffect(() => {
@@ -185,7 +188,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             {badge ? ` · ${badge}` : ""}
           </Badge>
           <p className="text-3xl font-bold">
-            {price.toLocaleString("fr-FR")} FCFA
+            {money(price)}
           </p>
           <p className="text-muted-foreground">{product.description}</p>
           <p className={`text-sm font-medium ${STOCK_CLASS[status]}`}>
@@ -205,6 +208,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                   price,
                   image: product.images[0] ?? "",
                   stock: product.stock,
+                  shopId: product.shopId,
                 })
               }
             >

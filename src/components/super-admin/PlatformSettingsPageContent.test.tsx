@@ -41,6 +41,8 @@ const isDemoCatalogueEnabledMock = jest.fn();
 const setDemoCatalogueEnabledMock = jest.fn();
 jest.mock("../../services/ConfigurationService", () => ({
   configurationService: {
+    getUsdToXafRate: () => Promise.resolve(undefined),
+    setUsdToXafRate: () => Promise.resolve(),
     isDemoCatalogueEnabled: (...args: unknown[]) =>
       isDemoCatalogueEnabledMock(...args),
     setDemoCatalogueEnabled: (...args: unknown[]) =>

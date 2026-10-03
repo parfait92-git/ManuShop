@@ -44,6 +44,9 @@ import type {
 } from "@/models/shop/Shop";
 import { activityLogService } from "@/services/ActivityLogService";
 import { shopService } from "@/services/ShopService";
+import { useCurrencyRates } from "@/components/providers/CurrencyContext";
+import { useI18n } from "@/i18n/I18nProvider";
+import { BASE_CURRENCY, CURRENCIES, shopCurrency } from "@/lib/currency";
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -145,6 +148,9 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     name: "primarySocialNetwork",
   });
   const notifyOrdersByEmail = useWatch({ control, name: "notifyOrdersByEmail" });
+  const currency = shopCurrency({ currency: useWatch({ control, name: "currency" }) });
+  const rates = useCurrencyRates();
+  const { t, intlLocale } = useI18n();
   const notifyOrdersBySocial = useWatch({
     control,
     name: "notifyOrdersBySocial",
@@ -409,14 +415,26 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="currency" className="gap-1.5" help="La devise utilisée pour afficher vos prix. Pour le Cameroun, le FCFA (XAF) est recommandé.">
+                <Label htmlFor="currency" className="gap-1.5" help={t("currency.shopSettingsHelp")}>
                   Devise
                 </Label>
                 <Select id="currency" {...register("currency")}>
-                  <option value="XAF">FCFA (XAF)</option>
-                  <option value="EUR">Euro (EUR)</option>
-                  <option value="USD">Dollar US (USD)</option>
+                  {CURRENCIES.map((code) => (
+                    <option key={code} value={code}>
+                      {t(`currency.names.${code}`)}
+                    </option>
+                  ))}
                 </Select>
+                {currency !== BASE_CURRENCY && (
+                  <p className="text-sm text-muted-foreground">
+                    {rates[currency]
+                      ? t("currency.conversionNote", {
+                          currency,
+                          rate: rates[currency]!.toLocaleString(intlLocale),
+                        })
+                      : t("currency.usdRateMissing")}
+                  </p>
+                )}
               </div>
             </div>
           </section>

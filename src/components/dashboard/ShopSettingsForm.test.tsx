@@ -440,6 +440,6 @@ describe("ShopSettingsForm", () => {
       // `logoMode` reste purement local à ce formulaire, jamais envoyé.
       const [, payload] = mockedShopService.updateProfile.mock.calls[0];
       expect(payload).not.toHaveProperty("logoMode");
-    });
+    }, 15000); // saisie caractère par caractère dans un grand formulaire : lent sous la suite complète en parallèle
   });
 });

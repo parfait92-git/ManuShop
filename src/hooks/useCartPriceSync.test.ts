@@ -27,17 +27,20 @@ describe("useCartPriceSync", () => {
       id === "p1"
         ? {
             id: "p1",
+            shopId: "shop-1",
             price: 5000,
             isPromo: true,
             promoPrice: 4000,
             promoEnd: { toDate: () => new Date(Date.now() - 3 * DAY) },
           }
-        : { id: "p2", price: 500, isPromo: false }
+        : { id: "p2", shopId: "shop-1", price: 500, isPromo: false }
     );
 
     const { result } = renderHook(() => useCartPriceSync());
 
     await waitFor(() => expect(result.current).toEqual(["Wax"]));
+    // Boutique complétée sur un panier enregistré avant le champ `shopId`.
+    expect(useCartStore.getState().items.map((i) => i.shopId)).toEqual(["shop-1", "shop-1"]);
     expect(useCartStore.getState().items.map((i) => i.price)).toEqual([5000, 500]);
   });
 

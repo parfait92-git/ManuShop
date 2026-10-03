@@ -18,10 +18,19 @@ import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus"
 import type { Order } from "@/models/order/Order";
 import { orderService } from "@/services/OrderService";
 import { reviewService } from "@/services/ReviewService";
+import { useMoney } from "@/hooks/useMoney";
+import { useShopCurrency } from "@/hooks/useShopCurrency";
 
 /** BF-75 : suivi de commande côté client — jusque-là explicitement bloqué
  * ("aucune commande n'est jamais écrite dans Firestore"), débloqué par le
  * Module 4. Annulation (BF-23) uniquement tant que `under_review`. */
+/** Montant d'une commande dans la devise de sa boutique — un client peut
+ * avoir commandé dans plusieurs boutiques, de devises différentes. */
+function OrderAmount({ amountXaf, shopId }: { amountXaf: number; shopId: string }) {
+  const money = useMoney(useShopCurrency(shopId));
+  return <>{money(amountXaf)}</>;
+}
+
 export function MyOrdersPageContent({ clientId }: { clientId: string }) {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -136,7 +145,7 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
               </p>
               <div className="flex items-center justify-between">
                 <span className="font-medium">
-                  {order.total.toLocaleString("fr-FR")} FCFA
+                  <OrderAmount amountXaf={order.total} shopId={order.shopId} />
                 </span>
                 {order.status === "under_review" && (
                   <Button

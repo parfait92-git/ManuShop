@@ -3,9 +3,98 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useI18n } from "@/i18n/I18nProvider";
+import { EUR_TO_XAF } from "@/lib/currency";
 import { configurationService } from "@/services/ConfigurationService";
+
+/** Mêmes bornes que `setUsdToXafRateAction`, vérifiées ici pour un
+ * message immédiat et clair. */
+const MIN_USD_RATE = 50;
+const MAX_USD_RATE = 5000;
+
+/**
+ * Taux du dollar en FCFA (devises des boutiques, 2026-10-02) — l'euro n'en
+ * a pas besoin (parité fixe), il est seulement rappelé.
+ */
+function ExchangeRatesCard() {
+  const { t, intlLocale } = useI18n();
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    configurationService
+      .getUsdToXafRate()
+      .then((rate) => {
+        if (active && rate) setValue(String(rate));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const rate = Number(value.replace(",", "."));
+    if (!Number.isFinite(rate) || rate < MIN_USD_RATE || rate > MAX_USD_RATE) {
+      setError(t("platformRates.invalid"));
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    try {
+      await configurationService.setUsdToXafRate(rate);
+      toast.success(t("platformRates.saved"));
+    } catch {
+      setError(t("platformRates.error"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      data-tour="settings-rates"
+      onSubmit={handleSubmit}
+      noValidate
+      className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6"
+    >
+      <div>
+        <h2 className="text-lg font-semibold">{t("platformRates.title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("platformRates.description")}</p>
+      </div>
+      <p className="text-sm">
+        {t("platformRates.eurFixed", { rate: EUR_TO_XAF.toLocaleString(intlLocale) })}
+      </p>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="usd-rate" help={t("platformRates.usdHelp")}>
+          {t("platformRates.usdLabel")}
+        </Label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            id="usd-rate"
+            inputMode="decimal"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            placeholder="Ex. 600"
+            aria-invalid={!!error}
+            className="sm:max-w-40"
+          />
+          <Button type="submit" disabled={saving} className="w-fit">
+            {t("platformRates.save")}
+          </Button>
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </div>
+    </form>
+  );
+}
 
 /**
  * BF-122 : jusqu'ici, désactiver `/demo-catalogue` demandait de modifier
@@ -92,6 +181,8 @@ export function PlatformSettingsPageContent() {
           />
         </div>
       )}
+
+      <ExchangeRatesCard />
     </div>
   );
 }

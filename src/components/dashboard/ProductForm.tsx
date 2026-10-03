@@ -29,6 +29,10 @@ import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { costService } from "@/services/CostService";
 import { productService } from "@/services/ProductService";
+import { useMoney } from "@/hooks/useMoney";
+import { useShopCurrency } from "@/hooks/useShopCurrency";
+import { useI18n } from "@/i18n/I18nProvider";
+import { BASE_CURRENCY } from "@/lib/currency";
 
 function toDateInputValue(timestamp?: Timestamp): string {
   if (!timestamp) return "";
@@ -89,6 +93,11 @@ export function ProductForm({
 
   const isPromo = useWatch({ control, name: "isPromo" });
   const priceValue = useWatch({ control, name: "price" });
+  // Prix saisis en FCFA ; aperçu de ce que voient les clients d'une
+  // boutique dans une autre devise.
+  const clientCurrency = useShopCurrency(shopId);
+  const clientMoney = useMoney(clientCurrency);
+  const { t } = useI18n();
   const purchasePriceValue = useWatch({ control, name: "purchasePrice" });
 
   // Prix d'achat et marge : réservés au gérant (choix de l'utilisateur,
@@ -315,6 +324,11 @@ export function ProductForm({
           />
           {errors.price && (
             <p className="text-sm text-destructive">{errors.price.message}</p>
+          )}
+          {clientCurrency !== BASE_CURRENCY && Number(priceValue) > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {t("currency.clientPreview", { amount: clientMoney(Number(priceValue)) })}
+            </p>
           )}
         </div>
 

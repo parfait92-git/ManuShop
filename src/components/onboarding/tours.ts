@@ -525,6 +525,11 @@ export const TOURS = {
       content:
         "Affichez ou non le catalogue de démonstration sur le Marché, pour toute la plateforme.",
     },
+    {
+      target: "settings-rates",
+      content:
+        "Le taux du dollar, utilisé pour afficher les prix des boutiques en dollars. L'euro a une parité fixe.",
+    },
   ],
   "super-admin-tags": [
     {

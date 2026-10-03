@@ -6,7 +6,9 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { buttonVariants } from "@/components/ui/button";
-import { useShop } from "@/hooks/useShop";
+import { useCartShop } from "@/hooks/useCartShop";
+import { useMoney } from "@/hooks/useMoney";
+import { shopCurrency } from "@/lib/currency";
 import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { LoginRequiredDialog } from "@/components/storefront/LoginRequiredDialog";
@@ -20,7 +22,8 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const changedPrices = useCartPriceSync();
-  const { shop } = useShop();
+  const { shop } = useCartShop();
+  const money = useMoney(shopCurrency(shop));
   const { firebaseUser } = useAuth();
   const [showLoginRequired, setShowLoginRequired] = useState(false);
 
@@ -65,7 +68,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.price.toLocaleString("fr-FR")} FCFA
+                        {money(item.price)}
                       </p>
                     </div>
                     <div data-tour="cart-quantity" className="flex items-center gap-1">
@@ -116,7 +119,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm font-medium">
             <span>Total</span>
-            <span>{cartTotal(items).toLocaleString("fr-FR")} FCFA</span>
+            <span>{money(cartTotal(items))}</span>
           </div>
 
           {/* Un vrai <a>, pas <Button render={<a/>}> : Base UI documente
@@ -126,7 +129,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           {shop ? (
             <a
               data-tour="cart-whatsapp"
-              href={buildWhatsAppOrderLink(shop, items)}
+              href={buildWhatsAppOrderLink(shop, items, money)}
               target="_blank"
               rel="noreferrer"
               className={buttonVariants({ className: "mt-3 w-full" })}
