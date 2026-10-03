@@ -1716,3 +1716,17 @@ Autres changements :
 Vérifié sur le HTML brut (émulateurs) et par 896 tests et le build.
 
 **Signalé, non modifié** : la page d'accueil *visible* (`src/app/page.tsx`, `features`) présente toujours des cartes « Facturation automatique » et « Publication multicanal ». Le texte visible pèse davantage que les métadonnées pour Google, et promet aux futurs abonnés des fonctions absentes. Décision laissée à l'utilisateur (feuille de route assumée ou à reformuler).
+
+**Complément, même jour : page d'accueil honnête.** Sur recommandation acceptée par l'utilisateur, la page d'accueil ne présente plus comme disponibles des fonctions qui n'existent pas. Elle annonçait :
+- « Facturation automatique » et « Publication multicanal » (Facebook, Instagram, TikTok) ;
+- « variantes », « codes promo et ventes flash » ;
+- un catalogue « consultable hors ligne » (BF-40 n'est que partiel) ;
+- le « paiement mobile ».
+
+Les textes sont regroupés dans `src/components/sections/landingContent.ts` :
+- six cartes, toutes vraies : votre boutique votre site, commandes en ligne et WhatsApp, catalogue et stock, promotions à fin automatique, vos gains en clair (avec le fichier clients), sur votre téléphone (PWA, devises, aide) ;
+- bannière d'en-tête et section « À propos » reformulées avec les mots clés du référencement.
+
+`ComingSoonStrip` annonce la feuille de route **comme telle** : facturation, publication sur les réseaux, Mobile Money, codes promo. `landingContent.test.tsx` refuse ces termes partout ailleurs que dans cette bande, vérifié par mutation. Rendu contrôlé dans Chrome (ordinateur, et 320 px à 150 %) : aucun débordement.
+
+**Signalé** : le compte à rebours de la « Promotion de lancement » (`LaunchPromo`, `targetDate` du 16/09/2026) est échu. Date ou offre à revoir par l'utilisateur.

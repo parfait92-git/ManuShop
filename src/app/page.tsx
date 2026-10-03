@@ -1,14 +1,3 @@
-import {
-  BarChart3,
-  Boxes,
-  MapPin,
-  Receipt,
-  Share2,
-  Store,
-  Tag,
-  WifiOff,
-} from "lucide-react";
-
 import { PageBackground } from "@/components/sections/PageBackground";
 import { SiteHeader } from "@/components/sections/SiteHeader";
 import { ContactSuperAdminCta } from "@/components/storefront/ContactSuperAdminCta";
@@ -16,10 +5,16 @@ import {
   HeroAccent,
   HeroSection,
 } from "@/components/sections/HeroSection";
+import { ComingSoonStrip } from "@/components/sections/ComingSoonStrip";
+import { FeatureGrid } from "@/components/sections/FeatureGrid";
 import {
-  FeatureGrid,
-  type FeatureGridItem,
-} from "@/components/sections/FeatureGrid";
+  ABOUT_DESCRIPTION,
+  ABOUT_VALUES,
+  FEATURES,
+  HERO_DESCRIPTION,
+  HERO_EYEBROW,
+  HERO_WATERMARK,
+} from "@/components/sections/landingContent";
 import { FeaturedShowcase } from "@/components/sections/FeaturedShowcase";
 import { AboutSection } from "@/components/sections/AboutSection";
 import { LaunchPromo } from "@/components/sections/LaunchPromo";
@@ -36,44 +31,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const features: FeatureGridItem[] = [
-  {
-    icon: Boxes,
-    title: "Catalogue & Stock",
-    description:
-      "Gérez vos produits, catégories et variantes, avec un suivi de stock en temps réel et des alertes de rupture.",
-  },
-  {
-    icon: Receipt,
-    title: "Facturation automatique",
-    description:
-      "Générez des factures numérotées et personnalisées, à envoyer directement sur WhatsApp Business.",
-  },
-  {
-    icon: Share2,
-    title: "Publication multicanal",
-    description:
-      "Publiez vos produits en un clic sur WhatsApp, Facebook, Instagram et TikTok depuis un seul endroit.",
-  },
-  {
-    icon: Tag,
-    title: "Promotions flash",
-    description:
-      "Créez des réductions, des codes promo et des ventes flash pour booster votre panier moyen.",
-  },
-  {
-    icon: BarChart3,
-    title: "Tableau de bord",
-    description:
-      "Suivez votre chiffre d'affaires, vos meilleures ventes et l'état de votre stock en un coup d'œil.",
-  },
-  {
-    icon: WifiOff,
-    title: "Mode hors-ligne",
-    description:
-      "Application installable (PWA) : votre catalogue reste consultable même avec une connexion instable.",
-  },
-];
 
 export default function Home() {
   return (
@@ -89,11 +46,11 @@ export default function Home() {
 
         <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-16 px-6 py-10 sm:gap-20 sm:py-16">
           <HeroSection
-            watermark="Digitalisez votre boutique : catalogue, stock, facturation et publication sur les réseaux sociaux, réunis dans une seule application installable, pensée pour le Cameroun."
+            watermark={HERO_WATERMARK}
             eyebrow={
               <>
                 <span className="size-1.5 rounded-full bg-cyan-300" />
-                boutique installable et hors-ligne
+                {HERO_EYEBROW}
               </>
             }
             heading={
@@ -101,7 +58,7 @@ export default function Home() {
                 Votre boutique, sans <HeroAccent>limites.</HeroAccent>
               </>
             }
-            description="Digitalisez votre commerce au Cameroun : catalogue, stock, facturation et publication sociale, réunis dans une seule application installable."
+            description={HERO_DESCRIPTION}
             ctas={[
               {
                 label: "Découvrir la boutique",
@@ -114,28 +71,18 @@ export default function Home() {
             ]}
           />
 
-          <FeatureGrid id="fonctionnalites" items={features} />
+          <div className="flex w-full flex-col gap-6">
+            <FeatureGrid id="fonctionnalites" items={FEATURES} />
+            <ComingSoonStrip />
+          </div>
 
           <FeaturedShowcase />
 
           <AboutSection
             id="apropos"
             title="ManuShop, la boutique en ligne pensée pour les commerçants camerounais."
-            description="ManuShop aide les commerçants à vendre en ligne sans complexité : catalogue, stock, facturation et publication sur les réseaux sociaux, réunis dans une seule application pensée pour fonctionner même avec une connexion instable."
-            values={[
-              {
-                icon: MapPin,
-                text: "Conçu au Cameroun, pour des besoins locaux : paiement mobile, WhatsApp Business, connexions instables.",
-              },
-              {
-                icon: WifiOff,
-                text: "Catalogue et commandes restent consultables même hors-ligne, grâce à l'application installable (PWA).",
-              },
-              {
-                icon: Store,
-                text: "Chaque boutique reste indépendante : ses propres produits, son propre style, sa propre clientèle.",
-              },
-            ]}
+            description={ABOUT_DESCRIPTION}
+            values={ABOUT_VALUES}
           />
 
           <LaunchPromo
