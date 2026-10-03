@@ -45,3 +45,28 @@ describe("dashboard overview components", () => {
     expect(found).toEqual([]);
   });
 });
+
+/**
+ * Pages de l'espace de gestion (2026-10-03) : neutres et couleur d'accent
+ * passent par les variables du cadre (`text-shell-*`, `bg-shell-*`…) pour
+ * suivre le thème de la boutique. Les couleurs d'état (vert « en stock »,
+ * rouge « rupture », jaune « avertissement »…) restent permises : elles
+ * portent un sens, identique dans tous les thèmes.
+ */
+const NEUTRAL_OR_BRAND =
+  /\b(bg|text|border|ring|divide|from|to|via|placeholder|outline)-(slate|gray|zinc|neutral|stone|cyan|white|black)\b/;
+/** Coche blanche posée sur une pastille de couleur au choix du commerçant. */
+const ALLOWED: Record<string, RegExp> = { "ShopInvoiceSettings.tsx": /text-white/g };
+
+const dashboardDir = join(__dirname, "..");
+const pages = readdirSync(dashboardDir).filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"));
+
+describe("dashboard pages", () => {
+  it.each(pages)("%s takes neutrals and accent from the theme", (file) => {
+    let source = readFileSync(join(dashboardDir, file), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+    if (ALLOWED[file]) source = source.replace(ALLOWED[file], "");
+    expect(source.match(NEUTRAL_OR_BRAND)?.[0] ?? null).toBeNull();
+  });
+});

@@ -158,28 +158,28 @@ export function TrashPageContent({ shopId }: { shopId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
           Corbeille
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-shell-subtle">
           Restaurez un élément ou supprimez-le définitivement.
         </p>
       </div>
 
-      <div data-tour="trash-list" className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="trash-list" className="rounded-xl border border-shell-border bg-shell-surface">
         {rows.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-            <Trash2 className="size-8 text-slate-300" />
-            <p className="text-sm text-slate-500">La corbeille est vide.</p>
+            <Trash2 className="size-8 text-shell-faint" />
+            <p className="text-sm text-shell-subtle">La corbeille est vide.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-shell-border">
             {rows.map((row) => (
               <li
                 key={`${row.type}-${row.id}`}
                 className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6"
               >
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-shell-muted">
                   {row.typeLabel} · {row.name} ·{" "}
                   {row.deletedAt.toLocaleDateString("fr-FR", {
                     day: "numeric",

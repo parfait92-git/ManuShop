@@ -99,7 +99,7 @@ function InfoPanel() {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-cyan-300">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-shell-brand text-shell-brand-icon">
           <Settings2 className="size-4.5" />
         </span>
         <div>

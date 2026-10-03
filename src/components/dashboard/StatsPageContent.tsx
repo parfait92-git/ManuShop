@@ -76,14 +76,14 @@ function KpiCard({
   tone?: "positive" | "negative";
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4">
-      <p className="flex items-center gap-1.5 text-sm text-slate-500">
+    <div className="flex flex-col gap-1 rounded-xl border border-shell-border bg-shell-surface p-4">
+      <p className="flex items-center gap-1.5 text-sm text-shell-subtle">
         {label}
         <CoachMark label={`Aide : ${label}`}>{hint}</CoachMark>
       </p>
       <p
         className={cn(
-          "text-xl font-semibold text-slate-950",
+          "text-xl font-semibold text-shell-text",
           tone === "positive" && "text-emerald-700",
           tone === "negative" && "text-red-600"
         )}
@@ -175,10 +175,10 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
           Gains et statistiques
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-shell-subtle">
           Ce que vous rapportent vos ventes livrées, une fois le prix d&apos;achat
           déduit.
         </p>
@@ -187,7 +187,7 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
       <section
         data-tour="stats-period"
         aria-label="Période"
-        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4"
+        className="flex flex-col gap-3 rounded-xl border border-shell-border bg-shell-surface p-4"
       >
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((option) => (
@@ -199,8 +199,8 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
               className={cn(
                 "rounded-full border px-3 py-1.5 text-sm font-medium",
                 preset === option.id
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  ? "border-shell-active bg-shell-active text-shell-active-text"
+                  : "border-shell-border text-shell-muted hover:bg-shell-hover"
               )}
             >
               {option.label}
@@ -274,7 +274,7 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
             />
           </div>
 
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-shell-subtle">
             {report.ordersCount} commande{report.ordersCount > 1 ? "s" : ""} livrée
             {report.ordersCount > 1 ? "s" : ""} · {totals.quantity} article
             {totals.quantity > 1 ? "s" : ""} vendu{totals.quantity > 1 ? "s" : ""}
@@ -311,7 +311,7 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
           <section
             data-tour="stats-breakdown"
             aria-label="Détail des gains"
-            className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-6"
+            className="flex flex-col gap-4 rounded-xl border border-shell-border bg-shell-surface p-4 sm:p-6"
           >
             <div className="flex flex-wrap gap-2">
               {BREAKDOWNS.map((option) => (
@@ -323,8 +323,8 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-sm font-medium",
                     breakdown === option.id
-                      ? "bg-cyan-50 text-cyan-700"
-                      : "text-slate-500 hover:bg-slate-50"
+                      ? "bg-shell-accent-soft text-shell-accent"
+                      : "text-shell-subtle hover:bg-shell-hover"
                   )}
                 >
                   {option.label}
@@ -334,8 +334,8 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
 
             {rows.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-10 text-center">
-                <BarChart3 aria-hidden className="size-8 text-slate-300" />
-                <p className="text-sm text-slate-500">
+                <BarChart3 aria-hidden className="size-8 text-shell-faint" />
+                <p className="text-sm text-shell-subtle">
                   Aucune vente livrée sur cette période.
                 </p>
               </div>
@@ -343,7 +343,7 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
               <ScrollableTable label={`Gains ${BREAKDOWNS.find((b) => b.id === breakdown)!.label.toLowerCase()}`} className="-mx-4 sm:-mx-6">
                 <table className="w-full min-w-160 border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                    <tr className="border-b border-shell-border text-left text-xs font-semibold tracking-wide text-shell-subtle uppercase">
                       <th className="px-3 py-2 sm:px-6">{column}</th>
                       <th className="px-4 py-2 text-right">Vendus</th>
                       <th className="px-4 py-2 text-right">Chiffre d&apos;affaires</th>
@@ -352,12 +352,12 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
                       <th className="px-4 py-2 text-right sm:pr-6">Marge</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-shell-border">
                     {rows.map((row) => (
                       <tr key={row.key}>
                         <td className="px-3 py-3 sm:px-6">
                           <div className={STICKY_COLUMN_CONTENT}>
-                            <p className="font-medium text-slate-900">{row.label}</p>
+                            <p className="font-medium text-shell-text">{row.label}</p>
                             {(row.estimatedLines > 0 || row.unknownLines > 0) && (
                               <p className="text-xs text-amber-700">
                                 {row.unknownLines > 0 ? "Prix d'achat manquant" : "Gain estimé"}
@@ -365,20 +365,20 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700">
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-shell-muted">
                           {row.quantity}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700">
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-shell-muted">
                           {money(row.revenue)}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700">
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-shell-muted">
                           {row.revenueWithCost > 0 ? money(row.cost) : "—"}
                         </td>
                         <td
                           className={cn(
                             "px-4 py-3 text-right font-medium whitespace-nowrap",
                             row.revenueWithCost === 0
-                              ? "text-slate-400"
+                              ? "text-shell-subtle"
                               : row.gain < 0
                                 ? "text-red-600"
                                 : "text-emerald-700"
@@ -386,7 +386,7 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
                         >
                           {row.revenueWithCost > 0 ? money(row.gain) : "—"}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700 sm:pr-6">
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-shell-muted sm:pr-6">
                           {percent(row.marginRate)}
                         </td>
                       </tr>
@@ -402,16 +402,16 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
       <section
         data-tour="stats-stock"
         aria-label="Valeur du stock"
-        className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-4"
+        className="flex flex-col gap-1 rounded-xl border border-shell-border bg-shell-surface p-4"
       >
-        <p className="flex items-center gap-1.5 text-sm text-slate-500">
+        <p className="flex items-center gap-1.5 text-sm text-shell-subtle">
           Valeur du stock au prix d&apos;achat
           <CoachMark label="Aide : valeur du stock">
             Ce que vous a coûté la marchandise encore en rayon (quantité en stock ×
             prix d&apos;achat). Elle ne dépend pas de la période choisie.
           </CoachMark>
         </p>
-        <p className="text-xl font-semibold text-slate-950">{money(stock.value)}</p>
+        <p className="text-xl font-semibold text-shell-text">{money(stock.value)}</p>
         {stock.productsWithoutCost > 0 && (
           <p className="text-sm text-amber-700">
             {stock.productsWithoutCost} produit{stock.productsWithoutCost > 1 ? "s" : ""} en

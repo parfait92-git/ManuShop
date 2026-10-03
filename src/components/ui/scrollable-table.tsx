@@ -104,10 +104,10 @@ export function ScrollableTable({
           tabIndex={overflowing ? 0 : undefined}
           data-scrolled={edges.start || undefined}
           className={cn(
-            "overflow-x-auto overscroll-x-contain outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 focus-visible:ring-inset",
+            "overflow-x-auto overscroll-x-contain outline-none focus-visible:ring-2 focus-visible:ring-shell-accent/60 focus-visible:ring-inset",
             // Première colonne fixe, sur fond opaque pour masquer ce qui
             // défile dessous, avec une ombre dès que le tableau a défilé.
-            "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-white",
+            "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-shell-surface",
             "data-scrolled:[&_tr>*:first-child]:shadow-[6px_0_8px_-6px_rgb(15_23_42/0.25)]"
           )}
         >
@@ -116,7 +116,7 @@ export function ScrollableTable({
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-slate-900/10 to-transparent transition-opacity",
+            "pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-shell-text/10 to-transparent transition-opacity",
             edges.end ? "opacity-100" : "opacity-0"
           )}
         />

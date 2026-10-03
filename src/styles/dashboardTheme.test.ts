@@ -117,7 +117,15 @@ SHELL_PAIRS.push(
   ["--shell-promo-title", "--shell-promo-bg", 4.5],
   ["--shell-promo-text", "--shell-promo-bg", 4.5],
   ["--shell-brand-icon", "--shell-brand-bg", 3],
-  ["--tour-primary-text", "--tour-primary", 4.5]
+  ["--tour-primary-text", "--tour-primary", 4.5],
+  ["--shell-brand-text", "--shell-brand-bg", 4.5],
+  ["--shell-accent", "--shell-surface", 4.5],
+  ["--shell-accent", "--shell-accent-soft", 4.5],
+  ["--shell-text", "--shell-accent-soft", 4.5],
+  ["--shell-accent-fill-text", "--shell-accent-fill", 4.5],
+  ["--shell-accent-fill-text", "--shell-accent-fill-hover", 4.5],
+  ["--shell-brand-icon", "--shell-brand-bg", 3],
+  ["--shell-border-strong", "--shell-surface", 3]
 );
 
 const SITE_THEMES = [...new Set(THEMES.map((t) => t.siteTheme))];

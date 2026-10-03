@@ -41,20 +41,20 @@ function StatCard({
   hint?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
-      <span className="flex size-9 items-center justify-center rounded-full bg-cyan-50 text-cyan-600">
+    <div className="flex flex-col gap-3 rounded-xl border border-shell-border bg-shell-surface p-4">
+      <span className="flex size-9 items-center justify-center rounded-full bg-shell-accent-soft text-shell-accent">
         <Icon className="size-4.5" />
       </span>
       <div>
-        <p className="flex items-center gap-1.5 text-sm text-slate-500">
+        <p className="flex items-center gap-1.5 text-sm text-shell-subtle">
           {label}
           {hint ? <CoachMark label={`À propos de "${label}"`}>{hint}</CoachMark> : null}
         </p>
         <p
           className={
             muted
-              ? "text-lg font-semibold text-slate-400"
-              : "text-2xl font-semibold text-slate-950"
+              ? "text-lg font-semibold text-shell-subtle"
+              : "text-2xl font-semibold text-shell-text"
           }
         >
           {value}
@@ -119,11 +119,11 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm text-cyan-600">{today}</p>
-          <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
+          <p className="text-sm text-shell-accent">{today}</p>
+          <h1 className="text-2xl font-semibold text-shell-text sm:text-3xl">
             Bonjour{firstName ? `, ${firstName}` : ""}.
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-shell-subtle">
             Voici ce qui se passe dans votre boutique aujourd&apos;hui.
           </p>
         </div>
@@ -176,39 +176,39 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 lg:col-span-2">
+        <div className="flex flex-col gap-3 rounded-xl border border-shell-border bg-shell-surface p-4 sm:p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-950">
+              <h2 className="text-lg font-semibold text-shell-text">
                 Ventes récentes
               </h2>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-shell-subtle">
                 Les dernières commandes reçues
               </p>
             </div>
             <Link
               href="/dashboard/orders"
-              className="text-sm font-medium text-cyan-600 hover:underline"
+              className="text-sm font-medium text-shell-accent hover:underline"
             >
               Tout voir
             </Link>
           </div>
           {recentOrders.length === 0 ? (
-            <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+            <p className="rounded-lg bg-shell-bg px-4 py-6 text-center text-sm text-shell-subtle">
               Aucune commande pour le moment.
             </p>
           ) : (
-            <ul className="flex flex-col divide-y divide-slate-100">
+            <ul className="flex flex-col divide-y divide-shell-border">
               {recentOrders.map((order) => (
                 <li
                   key={order.id}
                   className="flex items-center justify-between gap-3 py-2.5"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-shell-text">
                       {order.clientName}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-shell-subtle">
                       {order.total.toLocaleString("fr-FR")} FCFA
                     </p>
                   </div>
@@ -223,17 +223,17 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
           )}
         </div>
 
-        <div className="flex flex-col gap-3 rounded-xl bg-slate-950 p-4 text-white sm:p-6">
+        <div className="flex flex-col gap-3 rounded-xl bg-shell-brand p-4 text-shell-brand-text sm:p-6">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold tracking-widest text-cyan-300 uppercase">
+            <p className="text-xs font-semibold tracking-widest text-shell-brand-icon uppercase">
               Conseil du jour
             </p>
-            <AlertTriangle className="size-4 text-cyan-300" />
+            <AlertTriangle className="size-4 text-shell-brand-icon" />
           </div>
           {attentionCount > 0 ? (
             <>
               <h3 className="text-lg font-semibold">Mettez vos stocks à jour</h3>
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-shell-brand-text/75">
                 {attentionCount} article{attentionCount > 1 ? "s" : ""}{" "}
                 nécessite
                 {attentionCount > 1 ? "nt" : ""} votre attention. Un stock bien
@@ -241,7 +241,7 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
               </p>
               <Link
                 href="/dashboard/products"
-                className="mt-1 w-fit rounded-lg bg-cyan-400 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300"
+                className="mt-1 w-fit rounded-lg bg-shell-accent-fill px-3 py-2 text-sm font-medium text-shell-accent-fill-text hover:bg-shell-accent-fill-hover"
               >
                 Voir les alertes
               </Link>
@@ -249,7 +249,7 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
           ) : (
             <>
               <h3 className="text-lg font-semibold">Vos stocks sont à jour</h3>
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-shell-brand-text/75">
                 Aucun article ne nécessite votre attention pour le moment.
               </p>
             </>

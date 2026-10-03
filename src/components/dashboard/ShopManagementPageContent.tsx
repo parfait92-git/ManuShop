@@ -36,7 +36,7 @@ const STATUS_LABEL: Record<ShopStatus, string> = {
 const STATUS_CLASS: Record<ShopStatus, string> = {
   published: "bg-emerald-50 text-emerald-700",
   expired: "bg-red-50 text-red-700",
-  draft: "bg-slate-100 text-slate-600",
+  draft: "bg-shell-hover text-shell-muted",
 };
 
 function planLabel(shop: Shop): string | null {
@@ -90,10 +90,10 @@ export function ShopManagementPageContent() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
           Gestion de boutique
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-shell-subtle">
           Retrouvez toutes vos boutiques et basculez entre elles.
         </p>
       </div>
@@ -105,14 +105,14 @@ export function ShopManagementPageContent() {
           return (
             <div
               key={shop.id}
-              className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4"
+              className="flex flex-col gap-3 rounded-xl border border-shell-border bg-shell-surface p-4"
             >
-              <div className="flex size-12 items-center justify-center rounded-full bg-cyan-50 text-cyan-600">
+              <div className="flex size-12 items-center justify-center rounded-full bg-shell-accent-soft text-shell-accent">
                 <Store className="size-5" />
               </div>
               <div>
-                <p className="font-semibold text-slate-950">{shop.name}</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-semibold text-shell-text">{shop.name}</p>
+                <p className="text-sm text-shell-subtle">
                   {[shop.address, shop.sector].filter(Boolean).join(" · ") ||
                     "Aucune information"}
                 </p>
@@ -124,11 +124,11 @@ export function ShopManagementPageContent() {
                   {STATUS_LABEL[status]}
                 </span>
                 {plan && (
-                  <span className="text-xs text-slate-400">{plan}</span>
+                  <span className="text-xs text-shell-subtle">{plan}</span>
                 )}
               </div>
               {shop.subscriptionExpiresAt && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-shell-subtle">
                   Expire le{" "}
                   {shop.subscriptionExpiresAt
                     .toDate()
@@ -151,7 +151,7 @@ export function ShopManagementPageContent() {
                   data-tour="shops-manage"
                   onClick={() => handleManage(shop)}
                   disabled={switchingId === shop.id}
-                  className="w-full bg-slate-950 hover:bg-slate-800"
+                  className="w-full bg-shell-active text-shell-active-text hover:bg-shell-active/90"
                 >
                   {switchingId === shop.id ? "..." : "Gérer"}
                 </Button>
@@ -165,7 +165,7 @@ export function ShopManagementPageContent() {
           data-tour="shops-create"
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-slate-400 hover:text-slate-600"
+          className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-shell-border-strong text-shell-subtle hover:border-shell-border-strong hover:text-shell-muted"
         >
           <Plus className="size-6" />
           Créer une nouvelle boutique

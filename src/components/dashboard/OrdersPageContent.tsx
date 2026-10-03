@@ -278,10 +278,10 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
             Commandes
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-shell-subtle">
             Suivez et traitez les commandes de votre boutique.
           </p>
         </div>
@@ -311,11 +311,11 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
         </CoachMark>
       </div>
 
-      <div data-tour="orders-table" className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="orders-table" className="overflow-hidden rounded-xl border border-shell-border bg-shell-surface">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-            <ShoppingBag className="size-8 text-slate-300" />
-            <p className="text-sm text-slate-500">
+            <ShoppingBag className="size-8 text-shell-faint" />
+            <p className="text-sm text-shell-subtle">
               {orders.length === 0
                 ? "Aucune commande pour le moment."
                 : "Aucune commande ne correspond à ce filtre."}
@@ -325,7 +325,7 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
           <ScrollableTable label="Liste des commandes" hintClassName="pt-3">
             <table className="w-full min-w-160 border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                <tr className="border-b border-shell-border text-left text-xs font-semibold tracking-wide text-shell-subtle uppercase">
                   <th className="px-3 py-2 sm:px-6">Client</th>
                   <th className="px-4 py-2">Articles</th>
                   <th className="px-4 py-2">Total</th>
@@ -334,28 +334,28 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
                   <th className="px-4 py-2 text-right sm:pr-6">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-shell-border">
                 {filtered.map((order) => (
                   <tr key={order.id}>
                     <td className="px-3 py-3 sm:px-6">
                       <div className={STICKY_COLUMN_CONTENT}>
-                        <p className="font-medium text-slate-900">
+                        <p className="font-medium text-shell-text">
                           {order.clientName}
                         </p>
                         {!order.clientId && (
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-shell-subtle">
                             Commande manuelle
                           </p>
                         )}
                       </div>
                     </td>
-                    <td className="min-w-48 px-4 py-3 text-slate-700">
+                    <td className="min-w-48 px-4 py-3 text-shell-muted">
                       {itemsSummary(order)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-shell-muted">
                       {order.total.toLocaleString("fr-FR")} FCFA
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-shell-subtle">
                       {order.createdAt.toDate().toLocaleDateString("fr-FR", {
                         day: "numeric",
                         month: "short",

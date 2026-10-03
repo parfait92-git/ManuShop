@@ -81,10 +81,10 @@ export function ProductsPageContent({ shopId }: { shopId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
           Produits et publication
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-shell-subtle">
           Gérez votre catalogue et décidez quels articles sont visibles par
           vos clients.
         </p>

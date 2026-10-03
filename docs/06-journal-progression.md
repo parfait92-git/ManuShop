@@ -2043,3 +2043,25 @@ Suite du test de « Wax Soleil », accepté par l'utilisateur : la barre latéra
 - Il reste environ 200 couleurs en dur dans les pages de gestion elles-mêmes (Produits, Commandes, Statistiques…) : elles restent grises et cyan dans un autre thème. La vitrine n'en a plus qu'une.
 
 Vérifié : lint, `tsc`, 1 304 tests, build. Rien de commité.
+
+### 2026-10-03 — Pages de gestion habillées par le thème
+
+Suite, acceptée par l'utilisateur : les pages de l'espace de gestion gardaient environ 200 couleurs en dur (gris et cyan).
+
+**Fait** :
+- **Neutres** (gris ardoise) remplacés par les variables du cadre (`text-shell-text`, `text-shell-muted`, `text-shell-subtle`, `bg-shell-surface`, `bg-shell-bg`, `bg-shell-hover`, `border-shell-border`…). Dans le thème par défaut, elles reprennent le même gris : l'apparence ne change pas.
+- **Cyan** remplacé par l'accent du thème (`--shell-accent`, `--shell-accent-soft`, `--shell-accent-fill`).
+- Segments et boutons noirs sélectionnés : couleur du menu actif. Cartes sombres (« Conseil du jour », pastille « À retenir ») : couleur de la marque.
+- **Couleurs d'état** (vert « en stock », rouge « rupture », jaune « avertissement », bleu « en livraison »…) : gardées, identiques dans tous les thèmes.
+- Nouvelles variables, chacune vérifiée en contraste pour chaque thème : bordure appuyée, icône pâle, texte sur la marque, accent (texte, fond léger, remplissage et son texte).
+- `ScrollableTable` : colonne fixe et ombre de défilement aux couleurs du thème.
+- **Garde-fou** : un test interdit les gris et le cyan en dur dans toutes les pages de gestion. Seule exception documentée : la coche blanche posée sur les pastilles de couleur des factures.
+- Douze fichiers convertis : Clients, Statistiques, Produits, accueil mobile, Mes boutiques, Commandes, Journal, Corbeille, Paramètres, Catégories…
+
+**Corrigé en testant** :
+- dans les tableaux à colonne fixe (Clients, Commandes), les cellules fixes, carrées et opaques, débordaient des coins arrondis de la carte. Le défaut existait déjà dans le thème par défaut, invisible blanc sur blanc. Les conteneurs rognent maintenant les coins ;
+- deux teintes ajustées au contraste : bordure appuyée par défaut, fond d'accent de « Wax Soleil ».
+
+**Vérification réelle sur émulateurs** : deux boutiques, une par thème, et neuf pages de gestion capturées dans chacun (plus l'accueil mobile). En « Wax Soleil », tout est crème et terracotta. Par défaut, apparence d'origine. Aucune erreur.
+
+Vérifié : lint, `tsc`, 1 352 tests, build. Rien de commité.

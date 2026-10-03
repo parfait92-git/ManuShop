@@ -78,26 +78,26 @@ export function ActivityLogPageContent({ shopId }: { shopId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
           Journal d&apos;activité
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-shell-subtle">
           Historique des actions effectuées sur votre boutique.
         </p>
       </div>
 
-      <div data-tour="activity-list" className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="activity-list" className="rounded-xl border border-shell-border bg-shell-surface">
         {entries === null ? (
-          <p className="px-6 py-16 text-center text-sm text-slate-500">
+          <p className="px-6 py-16 text-center text-sm text-shell-subtle">
             Chargement...
           </p>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-            <History className="size-8 text-slate-300" />
-            <p className="text-sm text-slate-500">Aucune activité pour le moment.</p>
+            <History className="size-8 text-shell-faint" />
+            <p className="text-sm text-shell-subtle">Aucune activité pour le moment.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-shell-border">
             {entries.map((entry) => {
               const Icon = ACTION_ICON[entry.targetType];
               return (
@@ -105,12 +105,12 @@ export function ActivityLogPageContent({ shopId }: { shopId: string }) {
                   key={entry.id}
                   className="flex items-center gap-4 px-4 py-3 sm:px-6"
                 >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-shell-hover text-shell-subtle">
                     <Icon className="size-4" />
                   </div>
                   <div className="flex flex-1 flex-col">
-                    <p className="text-sm text-slate-700">{describe(entry)}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-sm text-shell-muted">{describe(entry)}</p>
+                    <p className="text-xs text-shell-subtle">
                       {entry.actorName} ·{" "}
                       {entry.createdAt.toDate().toLocaleString("fr-FR", {
                         day: "numeric",

@@ -56,6 +56,14 @@
   --shell-promo-title: #164e63;
   --shell-promo-text: #155e75;
   --shell-overlay: rgba(2, 6, 23, 0.4);
+  --shell-border-strong: #64748b;
+  --shell-faint: #cbd5e1;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #0e7490;
+  --shell-accent-soft: #ecfeff;
+  --shell-accent-fill: #22d3ee;
+  --shell-accent-fill-hover: #67e8f9;
+  --shell-accent-fill-text: #020617;
   --tour-primary: #0e7490;
   --tour-primary-text: #ffffff;
 }
@@ -188,6 +196,14 @@
   --shell-promo-title: #3b1f0e;
   --shell-promo-text: #6b4a33;
   --shell-overlay: rgba(42, 22, 8, 0.45);
+  --shell-border-strong: #b08866;
+  --shell-faint: #e2c9ad;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #b4451f;
+  --shell-accent-soft: #fdeee1;
+  --shell-accent-fill: #fb923c;
+  --shell-accent-fill-hover: #fdba74;
+  --shell-accent-fill-text: #2a1608;
   --tour-primary: #b4451f;
   --tour-primary-text: #ffffff;
 }
@@ -371,6 +387,14 @@
   --color-shell-promo-title: var(--shell-promo-title);
   --color-shell-promo-text: var(--shell-promo-text);
   --color-shell-overlay: var(--shell-overlay);
+  --color-shell-border-strong: var(--shell-border-strong);
+  --color-shell-faint: var(--shell-faint);
+  --color-shell-brand-text: var(--shell-brand-text);
+  --color-shell-accent: var(--shell-accent);
+  --color-shell-accent-soft: var(--shell-accent-soft);
+  --color-shell-accent-fill: var(--shell-accent-fill);
+  --color-shell-accent-fill-hover: var(--shell-accent-fill-hover);
+  --color-shell-accent-fill-text: var(--shell-accent-fill-text);
   --radius-dash: var(--dashboard-card-radius);
   --shadow-dash: var(--dashboard-card-shadow);
 }
