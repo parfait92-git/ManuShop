@@ -47,6 +47,8 @@ import { shopService } from "@/services/ShopService";
 import { useCurrencyRates } from "@/components/providers/CurrencyContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { BASE_CURRENCY, CURRENCIES, shopCurrency } from "@/lib/currency";
+import { resolveInvoiceColor, resolveVatRate } from "@/lib/invoice";
+import { ShopInvoiceSettings } from "@/components/dashboard/ShopInvoiceSettings";
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -86,6 +88,10 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
     clientContactMethods: shop.clientContactMethods ?? [],
     publicContactEmail: shop.publicContactEmail ?? "",
     isPublished: shop.isPublished ?? false,
+    themeColor: resolveInvoiceColor(shop.themeColor),
+    vatRate: resolveVatRate(shop.vatRate),
+    taxId: shop.taxId ?? "",
+    tradeRegister: shop.tradeRegister ?? "",
   };
 }
 
@@ -166,6 +172,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const whatsapp = useWatch({ control, name: "whatsapp" });
   const urgentPhone = useWatch({ control, name: "urgentPhone" });
   const isPublished = useWatch({ control, name: "isPublished" });
+  const themeColor = useWatch({ control, name: "themeColor" });
   const facebookUrl = useWatch({ control, name: "facebookUrl" });
   const instagramUrl = useWatch({ control, name: "instagramUrl" });
   const clientContactMethods = useWatch({
@@ -438,6 +445,15 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
             </div>
           </section>
+
+          <ShopInvoiceSettings
+            color={themeColor}
+            onColorChange={(value) =>
+              setValue("themeColor", value, { shouldValidate: true, shouldDirty: true })
+            }
+            register={register}
+            errors={errors}
+          />
 
           <section data-tour="shop-multichannel" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">

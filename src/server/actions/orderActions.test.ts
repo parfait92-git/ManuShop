@@ -80,6 +80,11 @@ jest.mock("../../lib/firebaseAdmin", () => ({
   }),
 }));
 
+const ensureInvoiceMock = jest.fn();
+jest.mock("../invoices/issueInvoice", () => ({
+  ensureInvoice: (...args: unknown[]) => ensureInvoiceMock(...args),
+}));
+
 const sendOrderNotificationMock = jest.fn();
 jest.mock("../../lib/whatsappBusiness", () => ({
   sendOrderNotification: (...args: unknown[]) => sendOrderNotificationMock(...args),
@@ -492,6 +497,21 @@ describe("updateOrderStatusAction", () => {
         message: expect.stringContaining("Chez Awa"),
       })
     );
+    expect(batchCommitMock).toHaveBeenCalledTimes(1);
+    // Facture émise dès la livraison (BF-24).
+    expect(ensureInvoiceMock).toHaveBeenCalledWith(expect.anything(), "order-1");
+  });
+
+  it("keeps the delivery when issuing the invoice fails", async () => {
+    mockOrder({ status: "delivering" });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "admin", shopId: "shop-1" }) });
+    shopGetMock.mockResolvedValue({ data: () => ({ name: "Chez Awa" }) });
+    ensureInvoiceMock.mockRejectedValueOnce(new Error("réseau"));
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(
+      updateOrderStatusAction("token", "order-1", { status: "delivered" })
+    ).resolves.toBeUndefined();
     expect(batchCommitMock).toHaveBeenCalledTimes(1);
   });
 

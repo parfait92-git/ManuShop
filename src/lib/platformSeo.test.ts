@@ -33,7 +33,7 @@ describe("référencement de la plateforme", () => {
     }
   });
 
-  it("never promises features that aren't built yet (invoicing, Mobile Money, social posting)", () => {
+  it("never promises features that aren't built yet (invoice sending, Mobile Money, social posting)", () => {
     const everything = [
       PLATFORM_TITLE,
       PLATFORM_DESCRIPTION,
@@ -44,7 +44,18 @@ describe("référencement de la plateforme", () => {
     ]
       .join(" ")
       .toLowerCase();
-    for (const notYet of ["factur", "mobile money", "orange money", "tiktok", "instagram", "facebook"]) {
+    // Factures PDF : construites (2026-10-03) ; leur envoi par WhatsApp et
+    // les factures groupées, pas encore.
+    for (const notYet of [
+      "facturation automatique",
+      "factures par whatsapp",
+      "factures groupées",
+      "mobile money",
+      "orange money",
+      "tiktok",
+      "instagram",
+      "facebook",
+    ]) {
       expect(everything).not.toContain(notYet);
     }
   });

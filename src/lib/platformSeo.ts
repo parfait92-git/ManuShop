@@ -5,7 +5,8 @@
  *
  * Mots clés choisis pour les recherches de commerçants qui veulent vendre
  * en ligne au Cameroun (2026-10-02). Règle : **ne citer que ce que la
- * plateforme fait réellement** — ni facturation (BF-24→29), ni publication
+ * plateforme fait réellement** — ni envoi des factures par WhatsApp
+ * (BF-27), ni factures groupées (BF-104), ni publication
  * sur les réseaux sociaux (BF-41→45), ni paiement Mobile Money réel
  * (BF-78, écran seulement) tant qu'ils ne sont pas construits. Une page qui
  * promet plus que ce qu'elle offre déçoit ceux qui s'abonnent, et Google
@@ -33,6 +34,7 @@ export const PLATFORM_KEYWORDS = [
   "gestion de stock",
   "gestion des commandes",
   "fichier clients",
+  "facture PDF",
   "commerce en ligne Douala",
   "commerce en ligne Yaoundé",
   "marketplace Cameroun",

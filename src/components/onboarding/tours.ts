@@ -264,6 +264,11 @@ export const TOURS = {
         "Le nom, le logo, l'adresse, la description et les contacts de votre boutique.",
     },
     {
+      target: "shop-invoice",
+      content:
+        "Vos factures : couleur, taux de TVA (0 si vous n'y êtes pas assujetti), NIU et RCCM. Chaque commande livrée reçoit sa facture PDF.",
+    },
+    {
       target: "shop-multichannel",
       content:
         "Votre réseau social principal : il définit le format d'image conseillé pour vos articles.",

@@ -8,6 +8,7 @@ import type { OrderStatus } from "@/models/order/OrderStatus";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
 import { effectivePrice, type PromoFields } from "@/lib/promo";
+import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
 
 const ORDERS_COLLECTION = "orders";
@@ -308,4 +309,15 @@ export async function updateOrderStatusAction(
   }
 
   await batch.commit();
+
+  // Facture émise dès la livraison (BF-24), après l'écriture du statut :
+  // un échec ici ne doit pas annuler la livraison — la facture sera alors
+  // émise au premier téléchargement (`ensureInvoice` est idempotente).
+  if (input.status === "delivered" && order.status !== "delivered") {
+    try {
+      await ensureInvoice(db, orderId);
+    } catch (error) {
+      console.error("updateOrderStatusAction : échec de l'émission de la facture", error);
+    }
+  }
 }

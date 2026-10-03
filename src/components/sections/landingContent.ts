@@ -15,7 +15,8 @@ import type { FeatureGridItem } from "@/components/sections/FeatureGrid";
  * Textes de la page d'accueil (2026-10-02). Règle, vérifiée par
  * `landingContent.test.ts` : **ne présenter comme disponible que ce qui
  * existe vraiment**. Les fonctions prévues mais pas encore construites
- * (facturation BF-24→29, publication sur les réseaux sociaux BF-41→45,
+ * (envoi des factures par WhatsApp BF-27, factures groupées par période
+ * BF-104, publication sur les réseaux sociaux BF-41→45,
  * paiement Mobile Money réel BF-78…) ne figurent que dans `COMING_SOON`,
  * annoncées comme telles. ManuShop vit d'abonnements : un commerçant qui
  * s'abonne pour une fonction absente se désabonne — et Google pénalise une
@@ -41,7 +42,7 @@ export const FEATURES: FeatureGridItem[] = [
     icon: MessageCircle,
     title: "Commandes en ligne et WhatsApp",
     description:
-      "Vos clients remplissent leur panier et commandent en ligne ou par WhatsApp en un clic. Vous enregistrez aussi vos ventes en boutique.",
+      "Vos clients commandent en ligne ou par WhatsApp en un clic. À la livraison, chacun reçoit sa facture PDF, à vos couleurs.",
   },
   {
     icon: Boxes,
@@ -89,7 +90,7 @@ export const ABOUT_VALUES = [
 
 /** Prévu, pas encore disponible — annoncé comme tel, jamais ailleurs. */
 export const COMING_SOON = [
-  "Facturation automatique",
+  "Factures envoyées par WhatsApp",
   "Publication sur vos réseaux sociaux",
   "Paiement Mobile Money",
   "Codes promo",

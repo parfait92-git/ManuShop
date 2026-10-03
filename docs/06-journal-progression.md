@@ -1784,3 +1784,60 @@ Aucun débordement horizontal, aucune erreur dans la console.
 **À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`), qui ajoutent `notifications` et `orderFeedback`. Sans elles, la cloche reste vide et la page d'avis ne trouve pas l'avis de livraison.
 
 Rien de commité.
+
+### 2026-10-03 — Factures PDF des commandes livrées
+
+Demande de l'utilisateur : un service de facturation côté serveur, appelé à chaque livraison, qui permet au client de télécharger sa facture. La facture suit le modèle fourni : logo de la boutique, nom de la boutique comme vendeur, couleur de la boutique, signature ManuShop au pied de chaque page. Si les articles débordent, le tableau continue sur une page suivante identique, et les totaux ne viennent qu'à la fin. Choix de l'utilisateur :
+- couleur choisie dans les Paramètres ;
+- taux de TVA par boutique, 0 par défaut ;
+- téléchargement par le client et par le commerçant ;
+- NIU et RCCM facultatifs.
+
+**Fait** :
+- **Émission** (`src/server/invoices/issueInvoice.ts`, `ensureInvoice`) :
+  - appelée par `updateOrderStatusAction` quand une commande passe « Livrée », après l'écriture du statut ; un échec n'annule pas la livraison ;
+  - transaction : numéro continu par boutique (`F-00012`, compteur `invoiceCounters/{shopId}`), sans doublon ni trou ;
+  - facture figée dans `invoices/{orderId}` : vendeur, client, articles, remise, total, TVA, devise et taux du jour, couleur. Une facture émise ne change plus, même si la boutique modifie ensuite ses paramètres (vérifié : F-00001 reste bleue sans TVA après le passage au vert à 19,25 %) ;
+  - idempotente : une commande livrée avant cette date reçoit sa facture au premier téléchargement.
+- **PDF** (`InvoiceDocument`, `@react-pdf/renderer`, déjà installé et exclu du bundle serveur par Next) :
+  - avec TVA : colonnes Prix unitaire HT, % TVA, Total TVA, Total TTC. Les prix payés sont TTC, le HT et la TVA en sont déduits, et les totaux partent du montant réellement payé ;
+  - sans TVA : tableau simple et « TVA non applicable » ;
+  - plusieurs pages : l'en-tête complet et l'en-tête du tableau se répètent sur chaque page, aucune ligne n'est coupée, et la dernière ligne reste avec les totaux (jamais de totaux sous un tableau vide) ;
+  - pied de page sur chaque page : coordonnées, NIU, RCCM, « Page x sur y », bandeau « Facture émise avec ManuShop » ;
+  - logo téléchargé par le serveur, converti en PNG quand il vient de Cloudinary. S'il est absent, illisible (WebP, SVG) ou injoignable, la facture affiche l'initiale de la boutique ;
+  - les caractères que les polices du PDF ne savent pas dessiner (émojis, autres alphabets) sont retirés plutôt qu'imprimés en signes illisibles.
+- **Route** `GET /api/factures/[orderId]` :
+  - jeton Firebase dans `Authorization` ;
+  - accès réservé au client de la commande et à l'équipe de sa boutique ; pour tout autre appelant, même réponse qu'une commande inexistante ;
+  - commande livrée, retournée ou défectueuse ;
+  - PDF produit à chaque demande, `Cache-Control: private, no-store`.
+- **Interface** :
+  - bouton « Facture » dans « Mes commandes » et dans Commandes ;
+  - section « Facturation » des Paramètres : palette de huit couleurs plus un choix libre, taux de TVA, NIU, RCCM, avec aides « ? » et une étape dans la visite guidée.
+- **Règles Firestore** : `invoices` lisible par le client et l'équipe de la boutique, écriture interdite ; `invoiceCounters` fermé.
+- **Honnêteté de l'accueil et du référencement** : la carte « Commandes en ligne et WhatsApp » mentionne la facture PDF. « Bientôt » annonce maintenant « Factures envoyées par WhatsApp » (BF-27). Les tests interdisent toujours de promettre l'envoi par WhatsApp et les factures groupées (BF-104).
+
+**Tests** :
+- nouveaux : `invoice.test.ts`, `issueInvoice.test.ts`, `loadInvoiceLogo.test.ts`, `route.test.ts` (accès), `InvoiceService.test.ts` ;
+- complétés : `ShopSettingsForm`, `MyOrdersPageContent`, `orderActions`, `auth` (schéma), tests d'honnêteté.
+
+Vérifié : lint, `tsc`, 960 tests, build.
+
+**Vérification réelle sur émulateurs** :
+1. Deux commandes livrées, avec un changement de réglages entre les deux.
+2. Téléchargement par le commerçant (ordinateur) et par le client (320 px, police à 150 %, aucun débordement) ; sans jeton, la route répond 401.
+3. PDF contrôlés en image :
+   - une commande de 2 articles tient sur 1 page ;
+   - une commande de 38 articles en fait 4, avec l'en-tête répété et les totaux en page 4 sous la dernière ligne.
+4. Mêmes PDF servis par le build de production (`next start`).
+
+**Corrigé en testant** :
+- le pied de page n'affichait que le bandeau et le coupait sur la dernière page : ses deux blocs sont maintenant positionnés séparément ;
+- un interligne laissait un blanc entre l'adresse et le téléphone ;
+- les totaux pouvaient se retrouver seuls sous un tableau vide.
+
+**Non fait** : aperçu avant impression (BF-25, le PDF s'ouvre directement), envoi par WhatsApp (BF-27), factures groupées par période (BF-104).
+
+**À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`).
+
+Rien de commité.

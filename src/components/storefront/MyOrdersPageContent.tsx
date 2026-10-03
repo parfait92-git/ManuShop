@@ -9,9 +9,11 @@ import {
   OrderReasonDialog,
   type ReasonTarget,
 } from "@/components/dashboard/OrderReasonDialog";
+import { InvoiceDownloadButton } from "@/components/orders/InvoiceDownloadButton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Order } from "@/models/order/Order";
+import { hasInvoice } from "@/services/InvoiceService";
 import { orderService } from "@/services/OrderService";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
@@ -130,13 +132,19 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
                 )}
                 {/* Avis étape par étape (livraison, puis chaque article),
                 sur sa propre page — la même que la notification ouvre. */}
-                {order.status === "delivered" && (
-                  <Link
-                    href={`/mes-commandes/${order.id}/avis`}
-                    className={buttonVariants({ variant: "outline", size: "sm" })}
-                  >
-                    Donner mon avis
-                  </Link>
+                {hasInvoice(order.status) && (
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {/* Facture PDF, émise à la livraison (BF-26). */}
+                    <InvoiceDownloadButton orderId={order.id} dataTour="my-orders-invoice" />
+                    {order.status === "delivered" && (
+                      <Link
+                        href={`/mes-commandes/${order.id}/avis`}
+                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                      >
+                        Donner mon avis
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
               {order.cancelReason && (

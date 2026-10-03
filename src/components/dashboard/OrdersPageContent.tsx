@@ -4,6 +4,7 @@ import { Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { InvoiceDownloadButton } from "@/components/orders/InvoiceDownloadButton";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -84,6 +85,7 @@ function OrderRowActions({
     case "delivered":
       return (
         <div className="flex justify-end gap-1.5">
+          <InvoiceDownloadButton orderId={order.id} />
           <Button
             size="sm"
             variant="outline"
@@ -100,6 +102,14 @@ function OrderRowActions({
           >
             Défectueux
           </Button>
+        </div>
+      );
+    // Retournée ou défectueuse : la facture de la vente reste disponible.
+    case "returned":
+    case "defective":
+      return (
+        <div className="flex justify-end">
+          <InvoiceDownloadButton orderId={order.id} />
         </div>
       );
     default:

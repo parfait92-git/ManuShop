@@ -99,6 +99,23 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Factures (BF-24→29, 2026-10-03) — figées à l'émission, émises par le
+    // serveur seulement (src/server/invoices/issueInvoice.ts). Lues par le
+    // client de la commande et par l'équipe de la boutique ; le PDF passe
+    // par /api/factures/[orderId], qui revérifie ces mêmes droits.
+    match /invoices/{orderId} {
+      allow read: if request.auth != null
+        && (resource.data.clientId == request.auth.uid
+          || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+            && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId));
+      allow write: if false;
+    }
+
+    // Compteurs de numérotation des factures : serveur seulement.
+    match /invoiceCounters/{shopId} {
+      allow read, write: if false;
+    }
+
     // Notifications dans l'application (2026-10-02) — chacun lit les
     // siennes et peut seulement les marquer comme lues ; créées par le
     // serveur (`src/server/notifications.ts`).
