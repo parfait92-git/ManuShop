@@ -59,6 +59,47 @@ export const THEMES: ThemeDefinition[] = [
     siteTheme: "ocean-neon",
     invoiceColor: "#0062D6",
   },
+  // Thèmes métier (2026-10-03).
+  {
+    id: "laiterie",
+    name: "Crème Laitière",
+    description:
+      "Pour les produits laitiers : blanc crème, bleu lait et jaune beurre, des formes douces et très arrondies qui évoquent la fraîcheur.",
+    highlights: ["Frais et lumineux", "Bleu lait et jaune beurre", "Idéal laiterie, fromagerie, yaourts"],
+    dashboardTheme: "laiterie",
+    siteTheme: "laiterie",
+    invoiceColor: "#1D6FB8",
+  },
+  {
+    id: "herboristerie",
+    name: "Herboristerie",
+    description:
+      "Pour la médecine naturelle : beige, vert feuille et touches de miel, une ambiance végétale, apaisante et digne de confiance.",
+    highlights: ["Ambiance végétale", "Vert feuille et beige", "Idéal plantes, tisanes, produits bio"],
+    dashboardTheme: "herboristerie",
+    siteTheme: "herboristerie",
+    invoiceColor: "#2F6B3A",
+  },
+  {
+    id: "cosmetique",
+    name: "Rose Éclat",
+    description:
+      "Pour la cosmétique : rose poudré, or rose et prune, des courbes généreuses pour une boutique élégante et soignée.",
+    highlights: ["Élégant et doux", "Rose poudré et prune", "Idéal beauté, soins, maquillage"],
+    dashboardTheme: "cosmetique",
+    siteTheme: "cosmetique",
+    invoiceColor: "#A82E64",
+  },
+  {
+    id: "verre-alu",
+    name: "Verre & Alu",
+    description:
+      "Pour la miroiterie, le vitrage du bâtiment et les cadres aluminium : gris acier, bleu verre et graphite, des angles nets et précis.",
+    highlights: ["Net et technique", "Gris acier et bleu verre", "Idéal miroirs, vitrages, aluminium"],
+    dashboardTheme: "verre-alu",
+    siteTheme: "verre-alu",
+    invoiceColor: "#0E6F8A",
+  },
 ];
 
 /** Thème connu, ou celui par défaut (id absent, retiré du catalogue…). */

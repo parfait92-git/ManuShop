@@ -2173,3 +2173,22 @@ Signalé par l'utilisateur : le thème ne s'appliquait pas tout de suite sur la 
 **Tests** : `ShopBrandingProvider` (boutique gardée d'une page et d'un rechargement à l'autre, retirée par le Marché), en-tête (fermeture du panier en dehors et avec Échap, pas dans le panneau), route des factures (couleur du thème en cours, couleur du commerçant prioritaire).
 
 Vérifié : lint, `tsc`, tests, build. Rien de commité (les offres premium non plus).
+
+### 2026-10-03 — Quatre thèmes métier
+
+Demande de l'utilisateur : des thèmes qui reflètent les produits laitiers, la médecine naturelle, la cosmétique, et la vente de miroirs, de vitrages pour le bâtiment et de cadres aluminium.
+
+**Fait** : quatre thèmes, chacun avec son tableau de bord, l'habillage du site (vitrine, espace de gestion, menus, visites guidées) et sa couleur de facture. Tous premium par défaut ; leur prix est à fixer par le Super Admin.
+
+| Thème | Métier | Ambiance | Facture |
+|---|---|---|---|
+| « Crème Laitière » (`laiterie`) | produits laitiers | blanc crème, bleu lait, jaune beurre, formes très arrondies | `#1D6FB8` |
+| « Herboristerie » (`herboristerie`) | médecine naturelle | beige, vert feuille, miel | `#2F6B3A` |
+| « Rose Éclat » (`cosmetique`) | cosmétique | rose poudré, or rose, prune, courbes généreuses | `#A82E64` |
+| « Verre & Alu » (`verre-alu`) | miroiterie, vitrage, aluminium | vitrine gris acier et bleu verre ; tableau de bord graphite sombre ; angles nets | `#0E6F8A` |
+
+Blocs CSS générés depuis une palette par thème (environ 120 variables chacun). Le test de contraste les vérifie tous ; un seul défaut à corriger, le texte secondaire de la bannière de « Crème Laitière » sur le début de son dégradé (dégradé assombri).
+
+**Vérification réelle sur émulateurs** : page Thèmes (7 thèmes, badge Premium, « Acquis » pour ceux accordés). Pour chacun des quatre thèmes : tableau de bord et vitrine capturés, espace de gestion en `data-shop-theme` correct, aucune erreur.
+
+Vérifié : lint, `tsc`, 1 861 tests, build. Rien de commité.

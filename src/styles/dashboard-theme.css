@@ -340,6 +340,501 @@
   --dashboard-welcome-muted: #fde7d3;
 }
 
+/* Thèmes métier (2026-10-03) — générés depuis une palette par thème ;
+ * chaque valeur est vérifiée par le test de contraste. */
+
+/* ——— « Crème Laitière » (2026-10-03) : produits laitiers — blanc crème, bleu lait, jaune beurre, formes très arrondies ——— */
+[data-shop-theme="laiterie"],
+:root[data-shop-theme="laiterie"] {
+  --background: #fbfdff;
+  --foreground: #0f2a44;
+  --card: #ffffff;
+  --card-foreground: #0f2a44;
+  --popover: #ffffff;
+  --popover-foreground: #0f2a44;
+  --primary: #1d6fb8;
+  --primary-foreground: #ffffff;
+  --secondary: #eef5fb;
+  --secondary-foreground: #0f2a44;
+  --muted: #eef5fb;
+  --muted-foreground: #46607a;
+  --accent: #e3f0fa;
+  --accent-foreground: #0f2a44;
+  --destructive: #b91c1c;
+  --border: #d3e3f1;
+  --input: #d3e3f1;
+  --ring: #1d6fb8;
+  --radius: 1.25rem;
+
+  --shell-bg: #f4f9fe;
+  --shell-surface: #ffffff;
+  --shell-border: #d3e3f1;
+  --shell-hover: #e8f2fb;
+  --shell-text: #0f2a44;
+  --shell-text-muted: #46607a;
+  --shell-text-subtle: #46607a;
+  --shell-nav-active-bg: #1d6fb8;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #0f2a44;
+  --shell-brand-icon: #fde68a;
+  --shell-brand-accent: #1d6fb8;
+  --shell-badge-bg: #1d6fb8;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #e3f0fa;
+  --shell-avatar-text: #1a5f9e;
+  --shell-promo-bg: #e3f0fa;
+  --shell-promo-title: #0f2a44;
+  --shell-promo-text: #46607a;
+  --shell-overlay: rgba(15, 42, 68, 0.4);
+  --shell-border-strong: #7d97ae;
+  --shell-faint: #c6d8e8;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #1a5f9e;
+  --shell-accent-soft: #eaf4fc;
+  --shell-accent-fill: #fcd34d;
+  --shell-accent-fill-hover: #fde68a;
+  --shell-accent-fill-text: #0f2a44;
+  --tour-primary: #1d6fb8;
+  --tour-primary-text: #ffffff;
+}
+
+[data-dashboard-theme="laiterie"] {
+  color-scheme: light;
+
+  --dashboard-bg: #f3f8fd;
+  --dashboard-bg-glow: rgba(29, 111, 184, 0.12);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-gradient-start: #ffffff;
+  --dashboard-card-gradient-end: #f6fbff;
+  --dashboard-card-border: rgba(15, 42, 68, 0.08);
+  --dashboard-card-radius: 28px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(15, 42, 68, 0.3);
+
+  --dashboard-text: #0f2a44;
+  --dashboard-text-muted: #46607a;
+  --dashboard-text-subtle: #516a82;
+
+  --dashboard-accent: #1d6fb8;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #1d6fb8;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #46607a;
+
+  --chart-1: #1d6fb8;
+  --chart-2: #a16207;
+  --chart-gradient-start: #5aa9e6;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #ffffff;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #2b7bc0;
+  --chart-grid: rgba(15, 42, 68, 0.08);
+  --chart-axis: #46607a;
+  --chart-tooltip-bg: #0f2a44;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(15, 42, 68, 0.08);
+
+  --gauge-track: #e3eef8;
+  --gauge-fill: #3b8fd4;
+  --gauge-fill-end: #1d6fb8;
+
+  --dashboard-table-header: #46607a;
+  --dashboard-table-row-border: rgba(15, 42, 68, 0.08);
+  --dashboard-table-row-hover: rgba(29, 111, 184, 0.06);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #46607a;
+  --status-muted-bg: rgba(29, 111, 184, 0.06);
+
+  --dashboard-welcome-gradient-start: #185e9c;
+  --dashboard-welcome-gradient-end: #1e4f86;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #e0efff;
+}
+
+/* ——— « Herboristerie » (2026-10-03) : médecine naturelle — beige, vert feuille, miel, ambiance végétale ——— */
+[data-shop-theme="herboristerie"],
+:root[data-shop-theme="herboristerie"] {
+  --background: #f8f6ef;
+  --foreground: #1f2a1c;
+  --card: #fffdf6;
+  --card-foreground: #1f2a1c;
+  --popover: #fffdf6;
+  --popover-foreground: #1f2a1c;
+  --primary: #2f6b3a;
+  --primary-foreground: #ffffff;
+  --secondary: #ede9dc;
+  --secondary-foreground: #1f2a1c;
+  --muted: #ede9dc;
+  --muted-foreground: #545f4b;
+  --accent: #e2ead5;
+  --accent-foreground: #1f2a1c;
+  --destructive: #b91c1c;
+  --border: #d8d2bd;
+  --input: #d8d2bd;
+  --ring: #2f6b3a;
+  --radius: 0.75rem;
+
+  --shell-bg: #f2efe4;
+  --shell-surface: #fffdf6;
+  --shell-border: #d8d2bd;
+  --shell-hover: #e9e5d6;
+  --shell-text: #1f2a1c;
+  --shell-text-muted: #545f4b;
+  --shell-text-subtle: #545f4b;
+  --shell-nav-active-bg: #2f6b3a;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #1f2a1c;
+  --shell-brand-icon: #c8e6a0;
+  --shell-brand-accent: #2f6b3a;
+  --shell-badge-bg: #2f6b3a;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #e2ead5;
+  --shell-avatar-text: #2a5e33;
+  --shell-promo-bg: #e2ead5;
+  --shell-promo-title: #1f2a1c;
+  --shell-promo-text: #545f4b;
+  --shell-overlay: rgba(31, 42, 28, 0.45);
+  --shell-border-strong: #8a8670;
+  --shell-faint: #d6d0bb;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #2a5e33;
+  --shell-accent-soft: #edf2e4;
+  --shell-accent-fill: #b5d98a;
+  --shell-accent-fill-hover: #cbe6aa;
+  --shell-accent-fill-text: #1f2a1c;
+  --tour-primary: #2f6b3a;
+  --tour-primary-text: #ffffff;
+}
+
+[data-dashboard-theme="herboristerie"] {
+  color-scheme: light;
+
+  --dashboard-bg: #f2efe4;
+  --dashboard-bg-glow: rgba(47, 107, 58, 0.12);
+
+  --dashboard-card-bg: #fffdf6;
+  --dashboard-card-gradient-start: #fffdf6;
+  --dashboard-card-gradient-end: #f8f5ea;
+  --dashboard-card-border: rgba(31, 42, 28, 0.09);
+  --dashboard-card-radius: 18px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(31, 42, 28, 0.32);
+
+  --dashboard-text: #1f2a1c;
+  --dashboard-text-muted: #545f4b;
+  --dashboard-text-subtle: #5c6753;
+
+  --dashboard-accent: #2f6b3a;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #3d7a47;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #545f4b;
+
+  --chart-1: #2f6b3a;
+  --chart-2: #8a5a14;
+  --chart-gradient-start: #6aa56f;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #fffdf6;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #4c7f3c;
+  --chart-grid: rgba(31, 42, 28, 0.09);
+  --chart-axis: #545f4b;
+  --chart-tooltip-bg: #1f2a1c;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(31, 42, 28, 0.09);
+
+  --gauge-track: #e6e1cf;
+  --gauge-fill: #5a9550;
+  --gauge-fill-end: #2f6b3a;
+
+  --dashboard-table-header: #545f4b;
+  --dashboard-table-row-border: rgba(31, 42, 28, 0.09);
+  --dashboard-table-row-hover: rgba(47, 107, 58, 0.06);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #545f4b;
+  --status-muted-bg: rgba(47, 107, 58, 0.06);
+
+  --dashboard-welcome-gradient-start: #2f6b3a;
+  --dashboard-welcome-gradient-end: #4a5a24;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #e6f0d8;
+}
+
+/* ——— « Rose Éclat » (2026-10-03) : cosmétique — rose poudré, or rose, prune, élégance ——— */
+[data-shop-theme="cosmetique"],
+:root[data-shop-theme="cosmetique"] {
+  --background: #fff8fa;
+  --foreground: #3a1f2b;
+  --card: #ffffff;
+  --card-foreground: #3a1f2b;
+  --popover: #ffffff;
+  --popover-foreground: #3a1f2b;
+  --primary: #a82e64;
+  --primary-foreground: #ffffff;
+  --secondary: #f8e9ef;
+  --secondary-foreground: #3a1f2b;
+  --muted: #f8e9ef;
+  --muted-foreground: #6b4757;
+  --accent: #fbe1ea;
+  --accent-foreground: #3a1f2b;
+  --destructive: #b91c1c;
+  --border: #efd2dd;
+  --input: #efd2dd;
+  --ring: #a82e64;
+  --radius: 1.5rem;
+
+  --shell-bg: #fdf2f6;
+  --shell-surface: #ffffff;
+  --shell-border: #efd2dd;
+  --shell-hover: #f8e6ed;
+  --shell-text: #3a1f2b;
+  --shell-text-muted: #6b4757;
+  --shell-text-subtle: #6b4757;
+  --shell-nav-active-bg: #a82e64;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #3a1f2b;
+  --shell-brand-icon: #f5c2d6;
+  --shell-brand-accent: #a82e64;
+  --shell-badge-bg: #a82e64;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #fbe1ea;
+  --shell-avatar-text: #962a5a;
+  --shell-promo-bg: #fbe1ea;
+  --shell-promo-title: #3a1f2b;
+  --shell-promo-text: #6b4757;
+  --shell-overlay: rgba(58, 31, 43, 0.45);
+  --shell-border-strong: #a07e8c;
+  --shell-faint: #ead1db;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #962a5a;
+  --shell-accent-soft: #fdeef3;
+  --shell-accent-fill: #f3a6c4;
+  --shell-accent-fill-hover: #f7c2d7;
+  --shell-accent-fill-text: #3a1f2b;
+  --tour-primary: #a82e64;
+  --tour-primary-text: #ffffff;
+}
+
+[data-dashboard-theme="cosmetique"] {
+  color-scheme: light;
+
+  --dashboard-bg: #fdf2f6;
+  --dashboard-bg-glow: rgba(168, 46, 100, 0.12);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-gradient-start: #ffffff;
+  --dashboard-card-gradient-end: #fff6f9;
+  --dashboard-card-border: rgba(58, 31, 43, 0.08);
+  --dashboard-card-radius: 26px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(58, 31, 43, 0.3);
+
+  --dashboard-text: #3a1f2b;
+  --dashboard-text-muted: #6b4757;
+  --dashboard-text-subtle: #755162;
+
+  --dashboard-accent: #a82e64;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #b8407a;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #6b4757;
+
+  --chart-1: #b8407a;
+  --chart-2: #8a5a2b;
+  --chart-gradient-start: #e889b0;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #ffffff;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #a82e64;
+  --chart-grid: rgba(58, 31, 43, 0.08);
+  --chart-axis: #6b4757;
+  --chart-tooltip-bg: #3a1f2b;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(58, 31, 43, 0.08);
+
+  --gauge-track: #f6dfe8;
+  --gauge-fill: #d0548b;
+  --gauge-fill-end: #962a5a;
+
+  --dashboard-table-header: #6b4757;
+  --dashboard-table-row-border: rgba(58, 31, 43, 0.08);
+  --dashboard-table-row-hover: rgba(168, 46, 100, 0.06);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #6b4757;
+  --status-muted-bg: rgba(168, 46, 100, 0.06);
+
+  --dashboard-welcome-gradient-start: #962a5a;
+  --dashboard-welcome-gradient-end: #5e2b62;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #fbe1ec;
+}
+
+/* ——— « Verre & Alu » (2026-10-03) : miroiterie, vitrage et menuiserie aluminium — gris acier, bleu verre, graphite, angles nets ——— */
+[data-shop-theme="verre-alu"],
+:root[data-shop-theme="verre-alu"] {
+  --background: #f4f7f8;
+  --foreground: #14202a;
+  --card: #ffffff;
+  --card-foreground: #14202a;
+  --popover: #ffffff;
+  --popover-foreground: #14202a;
+  --primary: #0e6f8a;
+  --primary-foreground: #ffffff;
+  --secondary: #e6ecef;
+  --secondary-foreground: #14202a;
+  --muted: #e6ecef;
+  --muted-foreground: #4a5a66;
+  --accent: #dbeaf0;
+  --accent-foreground: #14202a;
+  --destructive: #b91c1c;
+  --border: #cdd8de;
+  --input: #cdd8de;
+  --ring: #0e6f8a;
+  --radius: 0.25rem;
+
+  --shell-bg: #eef2f4;
+  --shell-surface: #ffffff;
+  --shell-border: #cdd8de;
+  --shell-hover: #e3eaee;
+  --shell-text: #14202a;
+  --shell-text-muted: #4a5a66;
+  --shell-text-subtle: #4a5a66;
+  --shell-nav-active-bg: #0e6f8a;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #14202a;
+  --shell-brand-icon: #7fd3e8;
+  --shell-brand-accent: #0e6f8a;
+  --shell-badge-bg: #0e6f8a;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #dbeaf0;
+  --shell-avatar-text: #0c6179;
+  --shell-promo-bg: #dbeaf0;
+  --shell-promo-title: #14202a;
+  --shell-promo-text: #4a5a66;
+  --shell-overlay: rgba(20, 32, 42, 0.45);
+  --shell-border-strong: #7c8b95;
+  --shell-faint: #c7d2d8;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #0c6179;
+  --shell-accent-soft: #e6f2f6;
+  --shell-accent-fill: #8fd6e8;
+  --shell-accent-fill-hover: #b3e4f0;
+  --shell-accent-fill-text: #14202a;
+  --tour-primary: #0e6f8a;
+  --tour-primary-text: #ffffff;
+}
+
+[data-dashboard-theme="verre-alu"] {
+  color-scheme: dark;
+
+  --dashboard-bg: #12181d;
+  --dashboard-bg-glow: rgba(92, 200, 224, 0.16);
+
+  --dashboard-card-bg: #1b232a;
+  --dashboard-card-gradient-start: #202a32;
+  --dashboard-card-gradient-end: #161d23;
+  --dashboard-card-border: rgba(255, 255, 255, 0.08);
+  --dashboard-card-radius: 6px;
+  --dashboard-card-shadow: 0 20px 45px -25px rgba(0, 0, 0, 0.6);
+
+  --dashboard-text: #f1f5f8;
+  --dashboard-text-muted: #a8b6c0;
+  --dashboard-text-subtle: #98a7b2;
+
+  --dashboard-accent: #5cc8e0;
+  --dashboard-accent-foreground: #0b1418;
+  --dashboard-icon-bg: #1f7a92;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #4ade80;
+  --kpi-negative: #f87171;
+  --kpi-neutral: #a8b6c0;
+
+  --chart-1: #5cc8e0;
+  --chart-2: #c0cad1;
+  --chart-gradient-start: #5cc8e0;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #12181d;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #c0cad1;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: #a8b6c0;
+  --chart-tooltip-bg: #2a353e;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(255, 255, 255, 0.08);
+
+  --gauge-track: #2c3740;
+  --gauge-fill: #5cc8e0;
+  --gauge-fill-end: #2fa3bf;
+
+  --dashboard-table-header: #a8b6c0;
+  --dashboard-table-row-border: rgba(255, 255, 255, 0.08);
+  --dashboard-table-row-hover: rgba(255, 255, 255, 0.04);
+
+  --status-pending: #fbbf24;
+  --status-pending-bg: rgba(251, 191, 36, 0.14);
+  --status-progress: #7cb5ff;
+  --status-progress-bg: rgba(59, 139, 255, 0.16);
+  --status-success: #4ade80;
+  --status-success-bg: rgba(74, 222, 128, 0.14);
+  --status-warning: #fdba74;
+  --status-warning-bg: rgba(253, 186, 116, 0.14);
+  --status-danger: #ff8a8a;
+  --status-danger-bg: rgba(255, 107, 107, 0.14);
+  --status-muted: #a8b6c0;
+  --status-muted-bg: rgba(255, 255, 255, 0.04);
+
+  --dashboard-welcome-gradient-start: #1f3a47;
+  --dashboard-welcome-gradient-end: #2b4652;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #cfe3ea;
+}
+
 /* ——— Thème clair : non proposé aux commerçants pour l'instant. Il sert à
  * vérifier qu'un thème clair reste lisible avec ces mêmes composants
  * (test de contraste), et de modèle aux thèmes à venir. ——— */
