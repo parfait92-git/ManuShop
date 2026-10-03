@@ -2335,3 +2335,33 @@ Demande de l'utilisateur : recenser ce qui est fait et ce qui reste. Constat : `
 Fait : statuts corrigés dans les deux documents ; nouveau Module 27 (BF-148 thèmes, BF-149 offres premium, BF-150 heure de l'utilisateur) ; section « État au 2026-10-03 » dans le plan de travail, avec la liste ordonnée de ce qui reste.
 
 Prochaine étape, validée par l'utilisateur : Module 3 — Stock (historique, réapprovisionnement, variantes).
+
+### 2026-10-03 — Module Stock : historique des mouvements, réapprovisionnement, correction d'inventaire (BF-15, BF-16)
+
+Suite du bilan, validée par l'utilisateur : historique et réapprovisionnement d'abord, variantes ensuite.
+
+**Fait** :
+- **Historique** (`stockMovements`, `models/stock/StockMovement.ts`) : un mouvement par changement de stock, écrit par le serveur avec le stock lui-même (même transaction ou même lot) — variation, stock après, auteur, commande, note.
+  - commandes (`orderActions.ts`) : sortie à la création (stock après exact, dans la transaction) ; remise en stock à l'annulation, au retour, au défaut (stock après lu juste avant le lot : peut différer d'une unité si une commande passe entre-temps, la variation reste exacte) ;
+  - **corrigé au passage** : remettre en stock un produit supprimé depuis faisait échouer tout le changement de statut ; il est maintenant ignoré.
+- **Actions serveur** (`stockActions.ts`, gérant et vendeurs de la boutique) :
+  - `restockProductAction` : unités reçues, note, nouveau prix d'achat facultatif (gérant seulement, remplace l'ancien) ;
+  - `adjustStockAction` : stock remis au chiffre compté, motif obligatoire, refus si aucun écart ;
+  - `recordInitialStockAction` : stock de départ d'un produit créé (sans effet s'il a déjà un historique).
+- **Fenêtre Stock** (`StockDialog`) : onglets Réapprovisionner / Corriger / Historique ; ouverte par l'icône « Stock » de la liste des produits ou « Gérer le stock » sur la fiche ; visite guidée `dialog-stock`.
+- **Fiche produit** : « Stock initial » à la création ; en modification, stock en lecture seule (plus envoyé avec les autres champs).
+- **Règles Firestore** : `stockMovements` lisible par l'équipe de la boutique, jamais écrit depuis le navigateur ; `products` : le stock ne change plus depuis le navigateur après la création. **À déployer** : `npx firebase-tools deploy --only firestore:rules`.
+- **Rapports** : troisième rapport « Mouvements de stock » sur une période (PDF/CSV), totaux entrées / sorties / réapprovisionnements / écart des corrections ; PDF en paysage quand les colonnes ne tiennent pas en portrait.
+
+**Vérification réelle sur émulateurs** :
+- réapprovisionnement de 12 avec prix d'achat 300 et note : stock 0 → 12, prix d'achat enregistré ; correction à 10 (« 2 savons abîmés ») : écart -2 ; historique et liste à jour ;
+- annulation d'une commande par le commerçant : deux remises en stock (+1, +3) avec le motif ;
+- fiche produit : stock en lecture seule, enregistrement des autres champs accepté ;
+- règles : écriture du stock depuis le navigateur refusée (403), seuil accepté (200), écriture d'un mouvement refusée (403), lecture de l'historique par le gérant acceptée ;
+- rapport PDF « Mouvements de stock » lisible en paysage ; visite guidée de la fenêtre lancée la première fois ; aucune erreur.
+
+**Tests** : actions stock (16), service, fenêtre Stock (7), mouvements dans les commandes, fiche produit, rapport (calculs et page).
+
+Vérifié : lint, `tsc`, 2 200 tests, build. Rien de commité.
+
+Prochaine étape : variantes (BF-17).

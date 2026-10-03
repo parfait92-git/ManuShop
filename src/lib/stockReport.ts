@@ -10,13 +10,18 @@
  * - **Sorties de stock** sur une période : quantités commandées, livrées
  *   et remises en stock (annulation, retour, défaut), d'après les
  *   commandes — datées par leur création, comme la page Statistiques.
+ * - **Mouvements de stock** sur une période (BF-15) : chaque entrée et
+ *   sortie inscrite dans l'historique (commandes, réapprovisionnements,
+ *   corrections d'inventaire), dans l'ordre chronologique.
  *
  * Montants en FCFA, la devise de référence des prix saisis.
  */
 
+import { formatDateTime } from "@/lib/dateTime";
 import type { Period } from "@/lib/profitReport";
 import type { Order } from "@/models/order/Order";
 import type { Product } from "@/models/product/Product";
+import { STOCK_MOVEMENT_LABEL, type StockMovement } from "@/models/stock/StockMovement";
 
 export type StockStatusLabel = "Rupture" | "Faible" | "En stock";
 
@@ -171,6 +176,34 @@ export function buildStockOutflowReport(
   };
 }
 
+export interface StockMovementsReport {
+  movements: StockMovement[];
+  totals: { movements: number; unitsIn: number; unitsOut: number; restocked: number; adjusted: number };
+}
+
+/** Mouvements de la période, du plus ancien au plus récent. Un mouvement
+ * dont la date serveur n'est pas encore connue est laissé de côté. */
+export function buildStockMovementsReport(movements: StockMovement[], period: Period): StockMovementsReport {
+  const inPeriod = movements
+    .filter((m) => {
+      const ms = m.createdAt?.toMillis?.();
+      return ms !== undefined && ms >= period.from.getTime() && ms < period.to.getTime();
+    })
+    .sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+  // Le stock de départ d'un produit n'est ni une entrée ni une sortie.
+  const counted = inPeriod.filter((m) => m.type !== "initial");
+  return {
+    movements: inPeriod,
+    totals: {
+      movements: inPeriod.length,
+      unitsIn: counted.reduce((s, m) => s + Math.max(m.quantity, 0), 0),
+      unitsOut: counted.reduce((s, m) => s + Math.max(-m.quantity, 0), 0),
+      restocked: inPeriod.filter((m) => m.type === "restock").reduce((s, m) => s + m.quantity, 0),
+      adjusted: inPeriod.filter((m) => m.type === "adjustment").reduce((s, m) => s + m.quantity, 0),
+    },
+  };
+}
+
 /** Tableau prêt à exporter : en-têtes et cellules en texte ou nombre. */
 export interface ReportTable {
   headers: string[];
@@ -223,6 +256,37 @@ export function stockOutflowTable(report: StockOutflowReport): ReportTable {
       r.currentStock ?? "Supprimé",
     ]),
   };
+}
+
+/** `display` : variation signée « +6 » (PDF, écran) ; sinon nombre brut
+ * (CSV, pour les calculs dans un tableur). */
+export function stockMovementsTable(report: StockMovementsReport, display: boolean): ReportTable {
+  return {
+    headers: ["Date", "Article", "Mouvement", "Variation", "Stock après", "Par", "Commande / note"],
+    numeric: [false, false, false, true, true, false, false],
+    rows: report.movements.map((m) => [
+      formatDateTime(m.createdAt.toDate()),
+      m.productName,
+      STOCK_MOVEMENT_LABEL[m.type],
+      display && m.type !== "initial" && m.quantity > 0 ? `+${m.quantity}` : m.quantity,
+      m.stockAfter,
+      m.actorName ?? (m.type === "order" ? "Client" : ""),
+      [m.orderId ? `Commande ${m.orderId.slice(0, 8).toUpperCase()}` : "", m.note ?? ""].filter(Boolean).join(" — "),
+    ]),
+  };
+}
+
+const signedUnits = (n: number) => (n > 0 ? `+${n}` : String(n));
+
+export function stockMovementsTotals(report: StockMovementsReport): [string, string][] {
+  const t = report.totals;
+  return [
+    ["Mouvements", String(t.movements)],
+    ["Unités entrées", String(t.unitsIn)],
+    ["Unités sorties", String(t.unitsOut)],
+    ["Dont réapprovisionnements", String(t.restocked)],
+    ["Écart des corrections d'inventaire", signedUnits(t.adjusted)],
+  ];
 }
 
 /** Lignes de totaux affichées à la fin du rapport. */

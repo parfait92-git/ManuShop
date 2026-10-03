@@ -18,6 +18,10 @@ const listProductCostsMock = jest.fn();
 jest.mock("../../../services/CostService", () => ({
   costService: { listProductCosts: (...a: unknown[]) => listProductCostsMock(...a) },
 }));
+const listShopMovementsMock = jest.fn();
+jest.mock("../../../services/StockService", () => ({
+  stockService: { listShopMovements: (...a: unknown[]) => listShopMovementsMock(...a) },
+}));
 const downloadCsvMock = jest.fn();
 const downloadPdfMock = jest.fn().mockResolvedValue(undefined);
 jest.mock("./downloadReport", () => ({
@@ -43,6 +47,37 @@ describe("StockReportsPageContent", () => {
     listActiveMock.mockResolvedValue(products);
     listByShopMock.mockResolvedValue([]);
     listProductCostsMock.mockResolvedValue([{ productId: "p1", purchasePrice: 9000 }]);
+    listShopMovementsMock.mockResolvedValue([]);
+  });
+
+  it("lists this month's stock movements in order, with raw numbers in the CSV", async () => {
+    useAuthMock.mockReturnValue({ profile: { role: "seller" } });
+    const now = Date.now();
+    const at = (ms: number) => ({ toMillis: () => ms, toDate: () => new Date(ms) });
+    listShopMovementsMock.mockResolvedValue([
+      { id: "m2", productName: "Robe", type: "order", quantity: -2, stockAfter: 1, orderId: "abcdefgh1", createdAt: at(now - 1000) },
+      { id: "m1", productName: "Robe", type: "restock", quantity: 3, stockAfter: 3, actorName: "Awa", note: "Fournisseur", createdAt: at(now - 2000) },
+      { id: "old", productName: "Sac", type: "restock", quantity: 9, stockAfter: 9, createdAt: at(now - 400 * 86_400_000) },
+    ]);
+    const user = userEvent.setup();
+    render(<StockReportsPageContent shopId="shop-1" />);
+
+    await user.click(await screen.findByRole("radio", { name: /Mouvements de stock/ }));
+
+    expect(screen.getByRole("columnheader", { name: "Stock après" })).toBeInTheDocument();
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("Réapprovisionnement");
+    expect(rows[0]).toHaveTextContent("+3");
+    expect(rows[0]).toHaveTextContent("Fournisseur");
+    expect(rows[1]).toHaveTextContent("Commande ABCDEFGH");
+    expect(screen.getByText("Unités entrées").nextSibling).toHaveTextContent("3");
+    expect(screen.getByText("Unités sorties").nextSibling).toHaveTextContent("2");
+
+    await user.click(screen.getByRole("button", { name: "Télécharger en CSV" }));
+    const [csvProps, csvName] = downloadCsvMock.mock.calls[0];
+    expect(csvName).toMatch(/^mouvements-de-stock-.*-chez-awa\.csv$/);
+    expect(csvProps.table.rows[0].slice(1, 6)).toEqual(["Robe", "Réapprovisionnement", 3, 3, "Awa"]);
   });
 
   it("shows the manager the stock state with purchase prices, and downloads it", async () => {

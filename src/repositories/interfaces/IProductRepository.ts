@@ -1,8 +1,10 @@
 import type { Product } from "@/models/product/Product";
 
 export type CreateProductDto = Omit<Product, "id" | "createdAt" | "updatedAt">;
+/** Sans `stock` : après la création, il ne change que par le serveur
+ * (commandes, réapprovisionnement, correction), qui le trace (BF-15). */
 export type UpdateProductDto = Partial<
-  Omit<Product, "id" | "shopId" | "createdAt" | "updatedAt">
+  Omit<Product, "id" | "shopId" | "stock" | "createdAt" | "updatedAt">
 >;
 
 export interface IProductRepository {

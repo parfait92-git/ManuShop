@@ -1,3 +1,4 @@
+jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Timestamp } from "firebase/firestore";
@@ -34,6 +35,18 @@ if (!Element.prototype.releasePointerCapture) {
 }
 
 jest.mock("../../lib/firebase", () => ({ db: {} }));
+
+const recordInitialStockMock: jest.Mock = jest.fn(async () => undefined);
+const restockMock: jest.Mock = jest.fn();
+const listProductHistoryMock: jest.Mock = jest.fn(async () => []);
+jest.mock("../../services/StockService", () => ({
+  stockService: {
+    recordInitialStock: (...args: unknown[]) => recordInitialStockMock(...args),
+    restock: (...args: unknown[]) => restockMock(...args),
+    adjust: jest.fn(),
+    listProductHistory: (...args: unknown[]) => listProductHistoryMock(...args),
+  },
+}));
 
 jest.mock("../providers/AuthProvider", () => ({
   useAuth: () => ({

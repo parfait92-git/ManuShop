@@ -1,7 +1,20 @@
+jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 jest.mock("../../lib/firebase", () => ({ db: {} }));
+
+const recordInitialStockMock: jest.Mock = jest.fn(async () => undefined);
+const restockMock: jest.Mock = jest.fn();
+const listProductHistoryMock: jest.Mock = jest.fn(async () => []);
+jest.mock("../../services/StockService", () => ({
+  stockService: {
+    recordInitialStock: (...args: unknown[]) => recordInitialStockMock(...args),
+    restock: (...args: unknown[]) => restockMock(...args),
+    adjust: jest.fn(),
+    listProductHistory: (...args: unknown[]) => listProductHistoryMock(...args),
+  },
+}));
 
 // Rôle configurable par test : le prix d'achat est réservé au gérant.
 let mockRole = "admin";
@@ -201,7 +214,7 @@ describe("ProductForm — photo obligatoire", () => {
     await user.type(screen.getByLabelText("Description"), "Deux pièces.");
     await user.type(screen.getByLabelText("Prix (FCFA)"), "10000");
     await user.selectOptions(screen.getByLabelText("Catégorie"), "Mode");
-    await user.type(screen.getByLabelText("Stock"), "5");
+    await user.type(screen.getByLabelText("Stock initial"), "5");
     await user.type(screen.getByLabelText("Seuil d'alerte"), "1");
   }
 
@@ -325,7 +338,7 @@ describe("ProductForm — prix d'achat (gérant uniquement)", () => {
     await user.type(screen.getByLabelText("Description"), "Deux pièces.");
     await user.type(screen.getByLabelText("Prix (FCFA)"), "10000");
     await user.selectOptions(screen.getByLabelText("Catégorie"), "Mode");
-    await user.type(screen.getByLabelText("Stock"), "5");
+    await user.type(screen.getByLabelText("Stock initial"), "5");
     await user.type(screen.getByLabelText("Seuil d'alerte"), "1");
     await user.click(screen.getByRole("button", { name: "fake-add-photo" }));
   }
@@ -344,6 +357,8 @@ describe("ProductForm — prix d'achat (gérant uniquement)", () => {
     await waitFor(() =>
       expect(savePurchasePriceMock).toHaveBeenCalledWith("new-id", "shop-1", 7000)
     );
+    // Premier maillon de l'historique du stock du nouveau produit.
+    expect(recordInitialStockMock).toHaveBeenCalledWith("new-id");
     // Jamais sur le produit lui-même, lisible par tout le monde.
     expect(mockedProductService.createProduct).toHaveBeenCalledWith(
       expect.not.objectContaining({ purchasePrice: expect.anything() })
@@ -417,6 +432,41 @@ describe("ProductForm — prix d'achat (gérant uniquement)", () => {
   });
 });
 
+describe("ProductForm — stock tracé (BF-15)", () => {
+  const existing = {
+    id: "p1",
+    shopId: "shop-1",
+    name: "Ensemble Wax",
+    description: "Deux pièces.",
+    price: 10000,
+    category: "Mode",
+    stock: 5,
+    stockThreshold: 1,
+    isPromo: false,
+    images: ["https://res.cloudinary.com/demo/old.jpg"],
+    createdAt: {} as never,
+    updatedAt: {} as never,
+  };
+
+  it("shows the stock read-only on an existing product and never sends it with the other changes", async () => {
+    jest.clearAllMocks();
+    mockRole = "seller";
+    mockedProductService.updateProduct.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ProductForm shopId="shop-1" categories={[activeCategory]} product={existing} />);
+
+    const stock = screen.getByLabelText("Stock") as HTMLInputElement;
+    expect(stock.value).toBe("5");
+    expect(stock).toHaveAttribute("readonly");
+    expect(screen.getByRole("button", { name: "Gérer le stock" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Enregistrer les modifications" }));
+
+    await waitFor(() => expect(mockedProductService.updateProduct).toHaveBeenCalled());
+    expect(mockedProductService.updateProduct.mock.calls[0][1]).not.toHaveProperty("stock");
+  });
+});
+
 describe("ProductForm — prix d'achat existant", () => {
   it("never erases an existing purchase price when it couldn't be loaded and the owner edits something else", async () => {
     jest.clearAllMocks();
@@ -445,8 +495,8 @@ describe("ProductForm — prix d'achat existant", () => {
       />
     );
 
-    await user.clear(screen.getByLabelText("Stock"));
-    await user.type(screen.getByLabelText("Stock"), "8");
+    await user.clear(screen.getByLabelText("Seuil d'alerte"));
+    await user.type(screen.getByLabelText("Seuil d'alerte"), "2");
     await user.click(screen.getByRole("button", { name: "Enregistrer les modifications" }));
 
     await waitFor(() => expect(mockedProductService.updateProduct).toHaveBeenCalled());
