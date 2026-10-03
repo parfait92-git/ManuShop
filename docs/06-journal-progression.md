@@ -2270,3 +2270,36 @@ Signalé par l'utilisateur : seul l'euro était pris en compte ; ajouter le doll
 - facture : « 3 octobre 2026 à 22:39 ».
 
 Vérifié : lint, `tsc`, 2 157 tests, build. Rien de commité.
+
+### 2026-10-03 — Rapports de stock en PDF et en CSV
+
+Demande de l'utilisateur : permettre au commerçant de générer des rapports sur la gestion de son stock, en PDF ou en CSV ; la conception m'a été laissée.
+
+**Fait** :
+- **Page « Rapports de stock »** (`/dashboard/rapports`, menu Configuration, gérant et vendeur).
+- **Deux rapports** (`lib/stockReport.ts`, fonctions pures) :
+  - **État du stock**, à l'heure de génération : article, catégorie, stock, seuil, statut (rupture, faible, en stock, en tête ce qui demande une action), prix de vente, valeur au prix de vente, publié. Pour le gérant seulement, prix d'achat et valeur au prix d'achat : les vendeurs ne les lisent pas, comme le veulent déjà les règles de `productCosts`. Totaux : produits, unités, ruptures et stocks faibles, valeurs, nombre de produits sans prix d'achat ;
+  - **Sorties de stock**, sur une période (semaine, mois, année ou dates choisies) : quantités commandées (hors annulées), livrées (y compris retournées ou défectueuses ensuite) et remises en stock (annulées, retournées, défectueuses), avec le stock actuel. Commandes datées par leur création, à l'heure de l'utilisateur, comme la page Statistiques.
+- **Aperçu à l'écran** : totaux et 25 premières lignes ; les fichiers contiennent tout.
+- **PDF** produit dans le navigateur (`@react-pdf/renderer`, chargé seulement au clic) :
+  - titre, nom de la boutique, période ou heure de génération ;
+  - tableau à la couleur de la boutique (celle de ses factures), en-tête répété sur chaque page, totaux en fin de rapport ;
+  - pied de page « Généré le … · Rapport émis avec ManuShop » et numéro de page ;
+  - format paysage au-delà de 8 colonnes.
+- **CSV** pour Excel et les tableurs français : séparateur « ; », marque BOM (accents corrects), montants en nombres bruts.
+- **Fichiers nommés** par rapport, date locale et boutique, ex. `sorties-de-stock-2026-10-01-au-2026-10-03-chez-awa.pdf`.
+- Aides « ? », visite guidée ; le test « aucune couleur en dur » couvre la page.
+
+**Vérification réelle sur émulateurs** (40 produits, 30 commandes, thème « Or Lumière ») :
+- gérant : 10 colonnes ; PDF de l'état du stock sur 3 pages, en paysage, aux couleurs dorées ; CSV correct ; PDF des sorties ;
+- vendeur : 8 colonnes, sans prix d'achat ;
+- 360 px : aucun débordement ;
+- aucune erreur.
+
+**Corrigé en testant** :
+- colonnes du PDF trop serrées (« 2Rupture », « 0 FCFAOui ») : espacement des cellules et largeurs selon le contenu ;
+- date du nom de fichier en UTC (« 2026-09-30 » pour une période commençant le 1er octobre) : date locale.
+
+**Tests** : calculs des deux rapports (tri, valeurs, totaux, sans coût pour un vendeur, période, produit supprimé), CSV (BOM, séparateur, guillemets, nombres bruts), page (colonnes du gérant, du vendeur, téléchargements, nom de fichier, couleur, période personnalisée).
+
+Vérifié : lint, `tsc`, tests, build. Rien de commité.

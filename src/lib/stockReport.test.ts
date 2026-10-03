@@ -1,0 +1,90 @@
+import {
+  buildStockOutflowReport,
+  buildStockStateReport,
+  stockOutflowTable,
+  stockStateTable,
+  stockStateTotals,
+  toCsv,
+} from "./stockReport";
+import type { Order } from "@/models/order/Order";
+import type { Product } from "@/models/product/Product";
+
+const product = (id: string, overrides: Partial<Product> = {}) =>
+  ({ id, name: `Article ${id}`, category: "Mode", price: 1000, stock: 10, stockThreshold: 2, isPublished: true, ...overrides }) as Product;
+
+let n = 0;
+function order(at: string, status: Order["status"], items: [string, number][]): Order {
+  n += 1;
+  const ms = Date.parse(at);
+  return {
+    id: `o${n}`,
+    status,
+    items: items.map(([productId, quantity]) => ({ productId, name: `Commandé ${productId}`, quantity, unitPrice: 1000 })),
+    createdAt: { toMillis: () => ms },
+  } as unknown as Order;
+}
+
+describe("stockReport", () => {
+  const products = [
+    product("a", { stock: 0 }),
+    product("b", { stock: 2, price: 2500 }),
+    product("c", { stock: 8, name: "Robe", isPublished: false }),
+  ];
+
+  it("lists the stock, what needs action first, with values", () => {
+    const report = buildStockStateReport(products, new Map([["b", 1500]]));
+    expect(report.rows.map((r) => [r.name, r.status])).toEqual([
+      ["Article a", "Rupture"],
+      ["Article b", "Faible"],
+      ["Robe", "En stock"],
+    ]);
+    expect(report.rows[1]).toEqual(expect.objectContaining({ valueAtPrice: 5000, purchasePrice: 1500, valueAtCost: 3000 }));
+    expect(report.totals).toEqual({
+      products: 3,
+      units: 10,
+      out: 1,
+      low: 1,
+      inStock: 1,
+      valueAtPrice: 13000,
+      valueAtCost: 3000,
+      missingCost: 1,
+    });
+    expect(stockStateTotals(report).at(-1)).toEqual(["Valeur au prix d'achat", "3 000 FCFA (1 sans prix d'achat)"]);
+  });
+
+  it("leaves purchase prices out for a seller", () => {
+    const report = buildStockStateReport(products, null);
+    expect(report.rows[1]).not.toHaveProperty("purchasePrice");
+    expect(report.totals.valueAtCost).toBeNull();
+    const table = stockStateTable(report, false, true);
+    expect(table.headers).not.toContain("Prix d'achat");
+    expect(table.rows[2]).toEqual(["Robe", "Mode", 8, 2, "En stock", "1 000 FCFA", "8 000 FCFA", "Non"]);
+  });
+
+  it("counts what was ordered, delivered and put back in stock over the period", () => {
+    const period = { from: new Date("2026-10-01T00:00:00Z"), to: new Date("2026-11-01T00:00:00Z") };
+    const report = buildStockOutflowReport(
+      [
+        order("2026-10-02T10:00:00Z", "delivered", [["b", 2], ["c", 1]]),
+        order("2026-10-03T10:00:00Z", "returned", [["b", 1]]),
+        order("2026-10-04T10:00:00Z", "cancelled", [["b", 5]]),
+        order("2026-10-05T10:00:00Z", "under_review", [["gone", 3]]),
+        order("2026-09-30T10:00:00Z", "delivered", [["b", 9]]),
+      ],
+      products,
+      period
+    );
+    expect(report.totals).toEqual({ orders: 4, ordered: 7, delivered: 4, restocked: 6 });
+    expect(stockOutflowTable(report).rows).toEqual([
+      ["Article b", "Mode", 3, 3, 6, 2],
+      ["Commandé gone", "Sans catégorie", 3, 0, 0, "Supprimé"],
+      ["Robe", "Mode", 1, 1, 0, 8],
+    ]);
+  });
+
+  it("writes a CSV that Excel opens with its accents, numbers as numbers", () => {
+    const csv = toCsv(stockStateTable(buildStockStateReport([product("x", { name: 'Pagne "wax"; 6 yards' })], null), false, false));
+    expect(csv.startsWith("﻿Article;Catégorie;Stock;Seuil;Statut;Prix de vente;Valeur (vente);Publié\r\n")).toBe(true);
+    expect(csv).toContain('"Pagne ""wax""; 6 yards";Mode;10;2;En stock;1000;10000;Oui\r\n');
+  });
+});

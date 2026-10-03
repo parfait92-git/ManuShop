@@ -62,6 +62,7 @@ const dashboardDir = join(__dirname, "..");
 const pages = [
   ...readdirSync(dashboardDir).filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx")),
   join("themes", "ThemesPageContent.tsx"),
+  join("reports", "StockReportsPageContent.tsx"),
 ];
 
 describe("dashboard pages", () => {

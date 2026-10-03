@@ -16,6 +16,7 @@ import {
   History,
   MessageSquareText,
   Palette,
+  FileBarChart,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -64,6 +65,12 @@ const MAIN_ITEMS: NavItem[] = [
 
 const CONFIG_ITEMS: NavItem[] = [
   { href: "/dashboard/stats", label: "Statistiques", icon: BarChart3, adminOnly: true },
+  {
+    href: "/dashboard/rapports",
+    label: "Rapports de stock",
+    icon: FileBarChart,
+    dataTour: "nav-reports",
+  },
   { href: "/dashboard/shops", label: "Mes boutiques", icon: Building2, adminOnly: true },
   {
     href: "/dashboard/shop",
