@@ -14,6 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { CoachMark } from "@/components/ui/CoachMark";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ProductList } from "@/components/dashboard/ProductList";
+import { computeDashboardMetrics } from "@/lib/dashboardMetrics";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Category } from "@/models/category/Category";
 import type { Order } from "@/models/order/Order";
@@ -21,15 +22,6 @@ import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
 import { orderService } from "@/services/OrderService";
 import { productService } from "@/services/ProductService";
-
-function isThisMonth(order: Order): boolean {
-  const now = new Date();
-  const date = order.createdAt.toDate();
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth()
-  );
-}
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -99,13 +91,13 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
     };
   }, [shopId]);
 
-  const ordersThisMonth = orders?.filter(isThisMonth) ?? [];
-  const revenueThisMonth = ordersThisMonth
-    .filter((o) => o.status === "delivered")
-    .reduce((sum, o) => sum + o.total, 0);
-  const newClientsThisMonth = new Set(
-    ordersThisMonth.map((o) => o.clientId).filter(Boolean)
-  ).size;
+  // Mêmes chiffres que la vue tablette et ordinateur
+  // (`dashboardMetrics.ts`) : mois à l'heure du Cameroun, commandes
+  // annulées exclues, nouveaux clients = première commande ce mois-ci.
+  const metrics = orders ? computeDashboardMetrics(orders, products ?? []) : null;
+  const revenueThisMonth = metrics?.revenue.value ?? 0;
+  const newClientsThisMonth = metrics?.newClients.value ?? 0;
+  const ordersThisMonthCount = metrics?.orders.value ?? 0;
   const recentOrders = orders?.slice(0, 5) ?? [];
 
   const firstName = profile?.displayName.split(" ")[0] ?? "";
@@ -173,7 +165,7 @@ export function DashboardHomeContent({ shopId }: { shopId: string }) {
         <StatCard
           icon={ShoppingBag}
           label="Commandes du mois"
-          value={orders ? String(ordersThisMonth.length) : "…"}
+          value={orders ? String(ordersThisMonthCount) : "…"}
         />
       </div>
 

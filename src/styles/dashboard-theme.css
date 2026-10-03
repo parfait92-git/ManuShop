@@ -1,0 +1,199 @@
+/*
+ * Thèmes de l'accueil du tableau de bord (refonte du 2026-10-03).
+ *
+ * SEUL endroit où vivent les couleurs du tableau de bord : les composants
+ * (`src/components/dashboard/overview/`) n'utilisent que ces variables,
+ * directement (`var(--chart-1)` dans Recharts) ou par les utilitaires
+ * Tailwind déclarés plus bas (`bg-dash-card`, `text-dash-muted`…).
+ *
+ * Un thème = un bloc `[data-dashboard-theme="<id>"]` qui redéfinit TOUTES
+ * les variables ci-dessous. Le conteneur `DashboardOverview` porte
+ * l'attribut ; un thème vendu à un commerçant pourra aussi être injecté en
+ * variables (`style`) sur ce même conteneur, sans toucher aux composants.
+ *
+ * Valeurs de texte en couleurs pleines (#rrggbb) : le test de contraste
+ * (`dashboardTheme.test.ts`) les lit dans ce fichier et vérifie chaque
+ * thème — texte ≥ 4,5:1, axes, icônes et graphiques ≥ 3:1.
+ */
+
+/*
+ * Habillage du reste du site d'une boutique (vitrine et espace de
+ * gestion) : `[data-shop-theme="<id>"]`, posé par `StorefrontThemeScope`
+ * et la mise en page du tableau de bord. Un thème y redéfinit les
+ * variables shadcn (`--primary`, `--background`, `--radius`…). Le thème
+ * par défaut n'en redéfinit aucune : c'est l'apparence actuelle du site.
+ */
+[data-shop-theme="default"] {
+}
+
+/* ——— Thème par défaut : bleu nuit, cartes en dégradé, accents bleus ——— */
+[data-dashboard-theme="default"] {
+  color-scheme: dark;
+
+  /* Fond */
+  --dashboard-bg: #0b1437;
+  --dashboard-bg-glow: rgba(0, 117, 255, 0.28);
+
+  /* Cartes */
+  --dashboard-card-bg: #111c44;
+  --dashboard-card-gradient-start: #131f4f;
+  --dashboard-card-gradient-end: #0c1538;
+  --dashboard-card-border: rgba(255, 255, 255, 0.08);
+  --dashboard-card-radius: 20px;
+  --dashboard-card-shadow: 0 20px 45px -25px rgba(0, 0, 0, 0.6);
+
+  /* Textes */
+  --dashboard-text: #ffffff;
+  --dashboard-text-muted: #a0aec0;
+  --dashboard-text-subtle: #8a96b8;
+
+  /* Accent */
+  --dashboard-accent: #3b8bff;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #0075ff;
+  --dashboard-icon-fg: #ffffff;
+
+  /* Variations des indicateurs */
+  --kpi-positive: #2fd68f;
+  --kpi-negative: #ff6b6b;
+  --kpi-neutral: #a0aec0;
+
+  /* Graphiques */
+  --chart-1: #2f8cff;
+  --chart-2: #2cd9ff;
+  --chart-gradient-start: #0075ff;
+  --chart-gradient-start-opacity: 0.55;
+  --chart-gradient-end: #0b1437;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #e9edf7;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: #a0aec0;
+  --chart-tooltip-bg: #1a2560;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(255, 255, 255, 0.12);
+
+  /* Jauge */
+  --gauge-track: #26306a;
+  --gauge-fill: #2cd9ff;
+  --gauge-fill-end: #0075ff;
+
+  /* Tableau */
+  --dashboard-table-header: #a0aec0;
+  --dashboard-table-row-border: rgba(255, 255, 255, 0.08);
+  --dashboard-table-row-hover: rgba(255, 255, 255, 0.04);
+
+  /* Statuts de commande (texte sur fond teinté) */
+  --status-pending: #fbbf24;
+  --status-pending-bg: rgba(251, 191, 36, 0.14);
+  --status-progress: #7cb5ff;
+  --status-progress-bg: rgba(59, 139, 255, 0.16);
+  --status-success: #2fd68f;
+  --status-success-bg: rgba(47, 214, 143, 0.14);
+  --status-warning: #fdba74;
+  --status-warning-bg: rgba(253, 186, 116, 0.14);
+  --status-danger: #ff8a8a;
+  --status-danger-bg: rgba(255, 107, 107, 0.14);
+  --status-muted: #a0aec0;
+  --status-muted-bg: rgba(160, 174, 192, 0.14);
+
+  /* Carte de bienvenue */
+  --dashboard-welcome-gradient-start: #13207a;
+  --dashboard-welcome-gradient-end: #3a1c8f;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #d4dcf5;
+}
+
+/* ——— Thème clair : non proposé aux commerçants pour l'instant. Il sert à
+ * vérifier qu'un thème clair reste lisible avec ces mêmes composants
+ * (test de contraste), et de modèle aux thèmes à venir. ——— */
+[data-dashboard-theme="light"] {
+  color-scheme: light;
+
+  --dashboard-bg: #f4f7fe;
+  --dashboard-bg-glow: rgba(37, 99, 235, 0.1);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-gradient-start: #ffffff;
+  --dashboard-card-gradient-end: #f7f9ff;
+  --dashboard-card-border: rgba(27, 37, 89, 0.08);
+  --dashboard-card-radius: 20px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(27, 37, 89, 0.35);
+
+  --dashboard-text: #1b2559;
+  --dashboard-text-muted: #4a5578;
+  --dashboard-text-subtle: #5b6585;
+
+  --dashboard-accent: #1d4ed8;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #2563eb;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #4a5578;
+
+  --chart-1: #2563eb;
+  --chart-2: #0e7490;
+  --chart-gradient-start: #2563eb;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #ffffff;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #2563eb;
+  --chart-grid: rgba(27, 37, 89, 0.08);
+  --chart-axis: #4a5578;
+  --chart-tooltip-bg: #1b2559;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(27, 37, 89, 0.2);
+
+  --gauge-track: #e2e8f0;
+  --gauge-fill: #0e7490;
+  --gauge-fill-end: #2563eb;
+
+  --dashboard-table-header: #4a5578;
+  --dashboard-table-row-border: rgba(27, 37, 89, 0.08);
+  --dashboard-table-row-hover: rgba(27, 37, 89, 0.03);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.14);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #4a5578;
+  --status-muted-bg: rgba(74, 85, 120, 0.1);
+
+  --dashboard-welcome-gradient-start: #1e3a8a;
+  --dashboard-welcome-gradient-end: #4338ca;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #dbe4ff;
+}
+
+/* Utilitaires Tailwind (`bg-dash-card`, `text-dash-muted`…) adossés aux
+ * variables : `inline` les fait pointer sur la variable elle-même, donc
+ * sur la valeur du thème du conteneur le plus proche. */
+@theme inline {
+  --color-dash-bg: var(--dashboard-bg);
+  --color-dash-card: var(--dashboard-card-bg);
+  --color-dash-border: var(--dashboard-card-border);
+  --color-dash-text: var(--dashboard-text);
+  --color-dash-muted: var(--dashboard-text-muted);
+  --color-dash-subtle: var(--dashboard-text-subtle);
+  --color-dash-accent: var(--dashboard-accent);
+  --color-dash-accent-foreground: var(--dashboard-accent-foreground);
+  --color-dash-icon-bg: var(--dashboard-icon-bg);
+  --color-dash-icon-fg: var(--dashboard-icon-fg);
+  --color-dash-positive: var(--kpi-positive);
+  --color-dash-negative: var(--kpi-negative);
+  --color-dash-neutral: var(--kpi-neutral);
+  --color-dash-row-border: var(--dashboard-table-row-border);
+  --color-dash-row-hover: var(--dashboard-table-row-hover);
+  --color-dash-table-header: var(--dashboard-table-header);
+  --color-dash-welcome-text: var(--dashboard-welcome-text);
+  --color-dash-welcome-muted: var(--dashboard-welcome-muted);
+  --radius-dash: var(--dashboard-card-radius);
+  --shadow-dash: var(--dashboard-card-shadow);
+}
