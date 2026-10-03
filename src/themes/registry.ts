@@ -100,6 +100,27 @@ export const THEMES: ThemeDefinition[] = [
     siteTheme: "verre-alu",
     invoiceColor: "#0E6F8A",
   },
+  // Thèmes dorés (2026-10-03).
+  {
+    id: "or-lumiere",
+    name: "Or Lumière",
+    description:
+      "Doré et clair : fonds ivoire et crème, or antique et bronze, pour une boutique raffinée et lumineuse.",
+    highlights: ["Lumineux et raffiné", "Ivoire et or antique", "Idéal bijoux, mode, décoration"],
+    dashboardTheme: "or-lumiere",
+    siteTheme: "or-lumiere",
+    invoiceColor: "#7A5D0F",
+  },
+  {
+    id: "or-noir",
+    name: "Or Noir",
+    description:
+      "Doré et sombre : noir profond, or vif et champagne, pour une boutique de prestige au caractère affirmé.",
+    highlights: ["Luxe et prestige", "Noir profond et or vif", "Idéal parfums, montres, haute couture"],
+    dashboardTheme: "or-noir",
+    siteTheme: "or-noir",
+    invoiceColor: "#7A5D0F",
+  },
 ];
 
 /** Thème connu, ou celui par défaut (id absent, retiré du catalogue…). */

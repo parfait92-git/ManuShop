@@ -2228,3 +2228,20 @@ Demande de l'utilisateur : le tableau de bord du thème « ManuShop Nuit » ress
 **Vérification réelle sur émulateurs** : « ManuShop Nuit » donne `data-dashboard-theme="manushop"` (clair) ; « Néon Océan » donne `default` (bleu nuit). Tous les contrastes passent.
 
 Vérifié : lint, `tsc`, 1 935 tests, build. Rien de commité.
+
+### 2026-10-03 — Deux thèmes dorés premium
+
+Demande de l'utilisateur : deux nouveaux thèmes premium, l'un doré et clair, l'autre doré et sombre.
+
+**Fait** (premium par défaut, comme tout nouveau thème) :
+
+| Thème | Ambiance | Facture |
+|---|---|---|
+| « Or Lumière » (`or-lumiere`) | fonds ivoire et crème, or antique et bronze, menu actif et boutons dorés, bannière bronze | `#7A5D0F` |
+| « Or Noir » (`or-noir`) | noir profond, or vif pour les accents et le menu actif (texte sombre dessus), textes champagne, rouge éclairci pour rester lisible sur noir | `#7A5D0F` |
+
+Générés depuis le script de palettes. Tous les contrastes passent du premier coup (1 050 vérifications de thèmes au total).
+
+**Vérification réelle sur émulateurs** : tableau de bord et vitrine des deux thèmes capturés, espace de gestion dans le bon thème, aucune erreur.
+
+Vérifié : lint, `tsc`, 2 155 tests, build. Rien de commité.
