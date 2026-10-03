@@ -89,7 +89,7 @@ export default function Home() {
             eyebrow="Promotion de lancement"
             title="Votre première vitrine digitale commence ici."
             description="Profitez de l'offre spéciale réservée aux commerçants et démarrez avec tous les outils essentiels."
-            targetDate="2026-09-16T06:00:00+01:00"
+            targetDate="2026-10-30T23:59:59+01:00"
           />
 
           <SiteFooter>
