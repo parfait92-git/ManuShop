@@ -25,6 +25,13 @@ jest.mock("../../../../server/invoices/loadInvoiceLogo", () => ({
   loadInvoiceLogo: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock("../../../../server/seo/publicData", () => ({
+  getPublicSiteUrl: () => Promise.resolve("https://www.manushop.cm"),
+}));
+
+const qrToBufferMock = jest.fn().mockResolvedValue(Buffer.from("png"));
+jest.mock("qrcode", () => ({ toBuffer: (...args: unknown[]) => qrToBufferMock(...args) }));
+
 const renderToBufferMock = jest.fn();
 jest.mock("@react-pdf/renderer", () => ({
   renderToBuffer: (...args: unknown[]) => renderToBufferMock(...args),
@@ -78,6 +85,23 @@ describe("GET /api/factures/[orderId]", () => {
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="facture-F-00012.pdf"');
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(ensureInvoiceMock).toHaveBeenCalledWith(expect.anything(), "o1");
+  });
+
+  it("prints a QR code leading to the verification page, on the official domain", async () => {
+    mockOrder();
+    ensureInvoiceMock.mockResolvedValue({ ...INVOICE, shopId: "shop-1", verificationCode: "7K4PQ9X2MB" });
+
+    await GET(request(), params);
+
+    expect(qrToBufferMock.mock.calls[0][0]).toBe(
+      "https://www.manushop.cm/boutique/shop-1/verifier/7K4PQ9X2MB"
+    );
+    const element = renderToBufferMock.mock.calls[0][0];
+    expect(element.props.verification).toEqual({
+      qr: Buffer.from("png"),
+      code: "MS-7K4PQ-9X2MB",
+      host: "www.manushop.cm",
+    });
   });
 
   it("lets a seller of the order's shop download it", async () => {

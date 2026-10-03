@@ -24,8 +24,7 @@ import type { Metadata } from "next";
 import { platformJsonLd } from "@/lib/platformSeo";
 import { serializeJsonLd } from "@/lib/seo";
 import { isLaunchPromoVisible } from "@/lib/launchPromo";
-import { getSiteUrl } from "@/lib/siteUrl";
-import { getLaunchPromo } from "@/server/seo/publicData";
+import { getLaunchPromo, getPublicSiteUrl } from "@/server/seo/publicData";
 
 /** Titre, description et mots clés : ceux de la mise en page racine
  * (`platformSeo.ts`) ; ici, l'adresse canonique de l'accueil. */
@@ -40,14 +39,14 @@ export const revalidate = 300;
 
 
 export default async function Home() {
-  const promo = await getLaunchPromo();
+  const [promo, siteUrl] = await Promise.all([getLaunchPromo(), getPublicSiteUrl()]);
   return (
     <>
       <PageTour tourId="home" />
       <div className="relative flex min-h-screen flex-1 flex-col overflow-hidden bg-slate-950">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(platformJsonLd(getSiteUrl())) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(platformJsonLd(siteUrl)) }}
         />
         <PageBackground />
         <SiteHeader />

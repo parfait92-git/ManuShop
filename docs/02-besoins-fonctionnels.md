@@ -75,6 +75,7 @@
 | BF-27 | Envoi WhatsApp | Envoyer la facture directement via WhatsApp Business — **Non fait** (annoncé dans « Bientôt sur ManuShop »). |
 | BF-28 | Numérotation | Numérotation automatique et séquentielle des factures — **Fait le 2026-10-03** : numéro continu par boutique (« F-00012 »), pris à un compteur (`invoiceCounters/{shopId}`) dans la même transaction que l'écriture de la facture : ni doublon ni trou, même avec deux livraisons simultanées. |
 | BF-29 | Facture personnalisée | Logo, nom boutique, coordonnées sur chaque facture — **Fait le 2026-10-03**, sur le modèle fourni par l'utilisateur : logo de la boutique (son initiale s'il est absent ou illisible), nom de la boutique comme vendeur, adresse, téléphone, e-mail public. Nouvelle section « Facturation » des Paramètres : couleur de la boutique (palette ou choix libre), taux de TVA (0 par défaut, « TVA non applicable » ; les prix restent TTC, le HT et la TVA en sont déduits), NIU et RCCM facultatifs. |
+| BF-29b | Facture infalsifiable | Signature numérique et QR code de vérification sur chaque facture. **Fait le 2026-10-03** (demande de l'utilisateur) : facture et historique de la commande signés (Ed25519) et chaînés ; le QR code et le code `MS-XXXXX-XXXXX` ouvrent `/boutique/[shopId]/verifier/[code]`, avec sceau « Facture authentique » ou « non conforme », montants officiels et chronologie des étapes ; domaine des liens réglable par le Super Admin. |
 
 ---
 

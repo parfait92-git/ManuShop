@@ -1,6 +1,6 @@
 import "server-only";
 
-import { FieldValue, type DocumentData, type Firestore } from "firebase-admin/firestore";
+import { Timestamp, type DocumentData, type Firestore } from "firebase-admin/firestore";
 
 import { buildRates, displayCurrency, shopCurrency } from "@/lib/currency";
 import {
@@ -9,6 +9,13 @@ import {
   resolveVatRate,
 } from "@/lib/invoice";
 import { NotFoundError, ValidationError } from "@/server/errors";
+import { appendHistoryEvent, nextHistoryEvent } from "@/server/integrity/orderHistory";
+import {
+  canonicalJson,
+  generateVerificationCode,
+  getSigningKeys,
+  signText,
+} from "@/server/integrity/signing";
 
 export const INVOICES_COLLECTION = "invoices";
 /** Compteur de numérotation, un document par boutique — jamais lu ni
@@ -26,6 +33,25 @@ export function isInvoicedStatus(status: string): boolean {
 
 const optional = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim() ? value.trim() : undefined;
+
+/**
+ * Texte signé d'une facture (2026-10-03) : tout son contenu, en JSON
+ * canonique, sauf la signature elle-même et l'horodatage Firestore
+ * (remplacé par `issuedAtMs`, un nombre exact). Changer un seul chiffre,
+ * un article ou le code de vérification invalide la signature.
+ */
+export function invoiceSignedText(invoice: DocumentData): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { signature, keyId, issuedAt, ...content } = invoice;
+  return canonicalJson({ v: 1, ...content });
+}
+
+/** Ajoute à une facture son code de vérification et sa signature. */
+function sealInvoice(invoice: DocumentData): DocumentData {
+  const sealed = { ...invoice, verificationCode: invoice.verificationCode ?? generateVerificationCode() };
+  const signed = signText(invoiceSignedText(sealed));
+  return signed ? { ...sealed, signature: signed.signature, keyId: signed.keyId } : sealed;
+}
 
 /**
  * Émet la facture d'une commande livrée, si elle ne l'est pas déjà, et
@@ -47,7 +73,20 @@ export async function ensureInvoice(
 
   return db.runTransaction(async (transaction) => {
     const existing = await transaction.get(invoiceRef);
-    if (existing.exists) return existing.data()!;
+    if (existing.exists) {
+      const current = existing.data()!;
+      if (current.verificationCode && (current.signature || !getSigningKeys())) return current;
+      // Facture émise avant la signature numérique, ou avant que la clé ne
+      // soit configurée : scellée maintenant, même numéro et même contenu.
+      const sealed = sealInvoice({
+        ...current,
+        issuedAtMs: current.issuedAtMs ?? current.issuedAt.toMillis(),
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { issuedAt, ...update } = sealed;
+      transaction.update(invoiceRef, update);
+      return sealed;
+    }
 
     const orderSnapshot = await transaction.get(db.collection("orders").doc(orderId));
     if (!orderSnapshot.exists) throw new NotFoundError("Commande introuvable.");
@@ -70,13 +109,15 @@ export async function ensureInvoice(
     const rates = buildRates(configSnapshot.data()?.usdToXafRate);
     const currency = displayCurrency(shopCurrency(shop as { currency?: string }), rates);
 
-    const invoice = {
+    const issuedAt = Timestamp.now();
+    const invoice = sealInvoice({
       orderId,
       shopId: order.shopId,
       ...(order.clientId ? { clientId: order.clientId } : {}),
       sequence,
       number: formatInvoiceNumber(sequence),
-      issuedAt: FieldValue.serverTimestamp(),
+      issuedAt,
+      issuedAtMs: issuedAt.toMillis(),
       seller: {
         name: optional(shop.name) ?? "Boutique",
         address: optional(shop.address) ?? "",
@@ -100,12 +141,18 @@ export async function ensureInvoice(
       currency,
       rateToXaf: rates[currency]!,
       color: resolveInvoiceColor(shop.themeColor),
-    };
+    });
 
     transaction.set(counterRef, { last: sequence }, { merge: true });
     transaction.set(invoiceRef, invoice);
-    // `issuedAt` vaut ici le marqueur d'horodatage serveur : l'appelant qui
-    // affiche la facture tout de suite utilise la date du moment.
-    return { ...invoice, issuedAt: new Date() };
+    // L'émission entre dans l'historique signé de la commande.
+    const head = appendHistoryEvent(
+      db,
+      transaction,
+      orderId,
+      nextHistoryEvent(orderId, order, { type: "invoice", number: invoice.number }, issuedAt.toDate())
+    );
+    transaction.update(orderSnapshot.ref, head);
+    return invoice;
   });
 }

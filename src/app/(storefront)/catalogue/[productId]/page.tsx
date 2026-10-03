@@ -8,8 +8,7 @@ import {
   productMetadata,
   serializeJsonLd,
 } from "@/lib/seo";
-import { getSiteUrl } from "@/lib/siteUrl";
-import { getPublicProduct, getPublicRates } from "@/server/seo/publicData";
+import { getPublicProduct, getPublicRates, getPublicSiteUrl } from "@/server/seo/publicData";
 
 /**
  * Fiche publique d'un article. Composant serveur pour le référencement
@@ -33,6 +32,7 @@ export default async function ProductDetailPage({
   const { productId } = await params;
   const found = await getPublicProduct(productId);
   const rates = found ? await getPublicRates() : null;
+  const siteUrl = await getPublicSiteUrl();
 
   return (
     <>
@@ -40,7 +40,7 @@ export default async function ProductDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: serializeJsonLd(productJsonLd(found.product, found.shop, getSiteUrl(), rates)),
+            __html: serializeJsonLd(productJsonLd(found.product, found.shop, siteUrl, rates)),
           }}
         />
       )}

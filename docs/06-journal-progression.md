@@ -1841,3 +1841,65 @@ Vérifié : lint, `tsc`, 960 tests, build.
 **À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`).
 
 Rien de commité.
+
+### 2026-10-03 — Factures signées, QR code de vérification, domaine réglable
+
+Demande de l'utilisateur : protéger les factures et les commerçants contre les copies. Il veut sécuriser chaque étape de la commande jusqu'à la livraison ou au retour, et ajouter un QR code « vérifier la signature numérique » qui ouvre, à l'adresse de la boutique, la chronologie de la commande avec un logo certifié. Proposition acceptée : **signer** plutôt que chiffrer, car une facture n'a rien à cacher mais doit être infalsifiable. La preuve repose sur la page servie par le domaine officiel, pas sur le logo, qu'un faussaire peut copier. Le Super Admin peut régler le futur domaine (aujourd'hui https://manu-shop.vercel.app).
+
+**Fait** :
+- **Signature** (`src/server/integrity/signing.ts`) :
+  - Ed25519, clé privée côté serveur (`INVOICE_SIGNING_KEY`, documentée dans `.env.example`) ;
+  - JSON canonique (clés triées), donc la même donnée donne toujours la même signature ;
+  - sans clé, rien ne bloque, mais rien n'est signé.
+- **Historique chaîné** (`orders/{id}/history`, `orderHistory.ts`) :
+  - chaque étape (création, chaque statut, émission de la facture) contient l'empreinte SHA-256 de la précédente et est signée ;
+  - la tête de chaîne est gardée sur la commande, donc la suppression d'une dernière étape se voit aussi ;
+  - étapes écrites dans le même lot ou la même transaction que le changement qu'elles enregistrent, avec `create` (deux mises à jour simultanées ne peuvent pas fourcher la chaîne) ;
+  - lecture et écriture fermées au navigateur dans `firestore.rules`.
+- **Facture signée** (`ensureInvoice`) :
+  - la signature couvre tout son contenu ;
+  - code de vérification aléatoire de 50 bits, imprimé `MS-XXXXX-XXXXX`, sans lettres ambiguës, tolérant aux erreurs de saisie (O lu 0, I et L lus 1) ;
+  - une facture émise avant ce changement est scellée au premier téléchargement, avec le même numéro et le même contenu.
+- **PDF** : au pied de chaque page, « Vérifiez la signature numérique », le QR code, le code et l'adresse `…/verifier`. Le QR code est calculé au téléchargement, donc toujours sur le domaine en vigueur.
+- **Page de vérification** `/boutique/[shopId]/verifier/[code]` (et `/verifier` pour saisir le code à la main) :
+  - logo et nom de la boutique ;
+  - sceau « Facture authentique », « enregistrée, non signée » ou « non conforme » ;
+  - avertissement : la vérification ne vaut que sur le domaine officiel ;
+  - montants officiels à comparer avec le papier ;
+  - chronologie, où les étapes signées et les étapes reconstituées (anciennes commandes) se distinguent ;
+  - client réduit à ses initiales : ni téléphone, ni adresse, ni motifs ;
+  - un code présenté sous une autre boutique est refusé ;
+  - non indexée (`robots.txt`, `noindex`), toujours relue au moment de la visite.
+- **Domaine réglable** (`PlatformConfiguration.siteUrl`, carte « Domaine du site » de Super Admin → Réglages) :
+  - avant d'enregistrer, le serveur vérifie que l'adresse répond comme ManuShop (`/api/site-check`) ; une adresse vide revient à celle du déploiement ;
+  - la valeur sert au QR code, au plan du site, à `robots.txt`, à la base des métadonnées et aux données structurées.
+
+**Tests** :
+- nouveaux : `signing`, `orderHistory` (étape modifiée, antidatée, supprimée, signature copiée, autre commande), `verifyInvoice` (authentique, montant modifié, étape manquante, retour, ancienne commande, confidentialité), `siteUrl` ;
+- complétés : `configurationActions` (domaine), `issueInvoice`, `orderActions`, route des factures (adresse du QR code).
+
+Vérifié : lint, `tsc`, 993 tests, build.
+
+**Vérification réelle sur émulateurs, avec une vraie clé** :
+1. Une commande passée par le client puis livrée par le commerçant donne un PDF dont le QR code, relu par un décodeur, ouvre une page « Facture authentique » avec ses 5 étapes signées.
+2. Sur un téléphone de 320 px avec la police à 150 % : aucun débordement, et le nom du client n'apparaît pas.
+3. L'ancienne facture est scellée sans changer de numéro ; sa chronologie est reconstituée et signalée.
+4. Modifications faites directement dans la base :
+   - le total passé de 15 000 à 1 500 donne « non conforme », et le total rétabli redonne « authentique » ;
+   - une étape antidatée de 3 jours donne « non conforme ».
+5. Un code inconnu, ou un code présenté sous une autre boutique, est refusé.
+6. Le Super Admin voit un domaine inexistant refusé, puis le domaine de test accepté ; `robots.txt` le reprend.
+
+**Corrigé en testant** : à 320 px, « authentique » débordait du sceau ; l'avertissement affichait « https:// » même pour une adresse http.
+
+**Limites, dites à l'utilisateur** :
+- ce n'est pas une signature PDF reconnue par Adobe Reader, qui exigerait un certificat payant d'une autorité de certification ;
+- la protection suppose que le client ouvre la page sur le domaine officiel, ce que la page rappelle.
+
+**À faire par l'utilisateur** :
+1. Générer la clé (commande dans `.env.example`) et l'ajouter dans les variables d'environnement Vercel (Production), puis redéployer.
+2. La sauvegarder hors de Vercel.
+3. Déployer les règles Firestore.
+4. Après l'achat d'un domaine, l'ajouter dans Vercel (Settings → Domains), puis l'enregistrer dans Super Admin → Réglages.
+
+Rien de commité.

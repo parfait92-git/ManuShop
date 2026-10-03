@@ -8,6 +8,7 @@ import type { OrderStatus } from "@/models/order/OrderStatus";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
 import { effectivePrice, type PromoFields } from "@/lib/promo";
+import { appendHistoryEvent, nextHistoryEvent, type HistoryHead } from "@/server/integrity/orderHistory";
 import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
 
@@ -151,6 +152,9 @@ export async function createOrderAction(
     const discount = input.discount ?? 0;
     total = input.manual ? input.total : Math.max(subtotal - discount, 0);
 
+    // Premier maillon de l'historique signé de la commande (2026-10-03).
+    const created = nextHistoryEvent(orderRef.id, {}, { type: "status", status: "under_review" }, now);
+
     transaction.set(orderRef, {
       shopId: input.shopId,
       ...(clientId ? { clientId } : {}),
@@ -163,9 +167,12 @@ export async function createOrderAction(
       total,
       status: "under_review" satisfies OrderStatus,
       notes: input.notes ?? "",
+      historySeq: created.seq,
+      historyHash: created.hash,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+    appendHistoryEvent(db, transaction, orderRef.id, created);
 
     // À part de la commande, que le client peut lire (il y verrait la marge
     // du commerçant) — lisible par le seul gérant (firestore.rules).
@@ -238,7 +245,7 @@ export async function updateOrderStatusAction(
     clientId?: string;
     status: OrderStatus;
     items: { productId: string; quantity: number }[];
-  };
+  } & HistoryHead;
 
   const callerSnapshot = await db.collection(USERS_COLLECTION).doc(caller.uid).get();
   const callerData = callerSnapshot.data();
@@ -274,7 +281,16 @@ export async function updateOrderStatusAction(
 
   const needsRestock = RESTOCK_STATUSES.includes(input.status);
   const batch = db.batch();
+  // Maillon suivant de l'historique signé, dans le même lot que le statut :
+  // l'un n'existe jamais sans l'autre.
+  const head = appendHistoryEvent(
+    db,
+    batch,
+    orderId,
+    nextHistoryEvent(orderId, order, { type: "status", status: input.status })
+  );
   batch.update(orderRef, {
+    ...head,
     status: input.status,
     ...(input.status === "cancelled" ? { cancelReason: input.reason } : {}),
     ...(input.status === "returned" || input.status === "defective"

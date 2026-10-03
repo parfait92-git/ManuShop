@@ -1,12 +1,20 @@
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
+import QRCode from "qrcode";
 import { createElement, type ReactElement } from "react";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { verifyIdToken } from "@/lib/verifyIdToken";
 import { NotFoundError, ValidationError } from "@/server/errors";
-import { InvoiceDocument, type InvoiceDocumentData } from "@/server/invoices/InvoiceDocument";
+import { shopPath } from "@/lib/seo";
+import { formatVerificationCode } from "@/server/integrity/signing";
+import {
+  InvoiceDocument,
+  type InvoiceDocumentData,
+  type InvoiceVerificationBlock,
+} from "@/server/invoices/InvoiceDocument";
 import { ensureInvoice, isInvoicedStatus } from "@/server/invoices/issueInvoice";
 import { loadInvoiceLogo } from "@/server/invoices/loadInvoiceLogo";
+import { getPublicSiteUrl } from "@/server/seo/publicData";
 
 export const runtime = "nodejs";
 
@@ -23,6 +31,23 @@ function error(message: string, status: number) {
  * demande à partir de la facture figée à l'émission (`invoices`), il n'est
  * pas stocké.
  */
+/**
+ * QR code de la facture (2026-10-03) : il mène à la page de vérification,
+ * à l'adresse de la boutique, sur le domaine officiel en vigueur (réglé par
+ * le Super Admin). Calculé à chaque téléchargement : un changement de
+ * domaine s'applique aux factures téléchargées ensuite.
+ */
+async function verificationBlock(
+  shopId: string,
+  code: string | undefined
+): Promise<InvoiceVerificationBlock | null> {
+  if (!code) return null;
+  const site = await getPublicSiteUrl();
+  const url = `${site}${shopPath(shopId)}/verifier/${code}`;
+  const qr = await QRCode.toBuffer(url, { type: "png", errorCorrectionLevel: "M", margin: 0, scale: 8 });
+  return { qr, code: formatVerificationCode(code), host: new URL(site).host };
+}
+
 export async function GET(
   request: Request,
   ctx: { params: Promise<{ orderId: string }> }
@@ -72,11 +97,14 @@ export async function GET(
     rateToXaf: invoice.rateToXaf,
     color: invoice.color,
   };
-  const logo = await loadInvoiceLogo(invoice.seller.logo);
+  const [logo, verification] = await Promise.all([
+    loadInvoiceLogo(invoice.seller.logo),
+    verificationBlock(invoice.shopId ?? order.shopId, invoice.verificationCode),
+  ]);
   // `InvoiceDocument` renvoie un <Document> : le type attendu par
   // `renderToBuffer` ne le voit pas à travers le composant.
   const pdf = await renderToBuffer(
-    createElement(InvoiceDocument, { invoice: data, logo }) as unknown as ReactElement<DocumentProps>
+    createElement(InvoiceDocument, { invoice: data, logo, verification }) as unknown as ReactElement<DocumentProps>
   );
 
   return new Response(new Uint8Array(pdf), {

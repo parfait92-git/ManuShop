@@ -6,14 +6,21 @@ import { TourProvider } from "@/components/onboarding/TourProvider";
 import { CurrencyProvider } from "@/components/providers/CurrencyProvider";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { PLATFORM_DESCRIPTION, PLATFORM_KEYWORDS, PLATFORM_TITLE } from "@/lib/platformSeo";
-import { getSiteUrl } from "@/lib/siteUrl";
+import { getPublicSiteUrl } from "@/server/seo/publicData";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
-export const metadata: Metadata = {
-  // Base des liens absolus (aperçus de partage, canonique) des pages qui
-  // déclarent des chemins relatifs — boutiques et articles notamment.
-  metadataBase: new URL(getSiteUrl()),
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    // Base des liens absolus (aperçus de partage, canonique) des pages qui
+    // déclarent des chemins relatifs — boutiques et articles notamment.
+    // Domaine réglé par le Super Admin, sinon celui du déploiement.
+    metadataBase: new URL(await getPublicSiteUrl()),
+    ...BASE_METADATA,
+  };
+}
+
+const BASE_METADATA: Metadata = {
   title: {
     default: PLATFORM_TITLE,
     // Pages de la plateforme ("Connexion | ManuShop"). Les boutiques et

@@ -527,6 +527,11 @@ export const TOURS = {
         "Affichez ou non le catalogue de démonstration sur le Marché, pour toute la plateforme.",
     },
     {
+      target: "settings-site-url",
+      content:
+        "Le domaine du site. Après l'achat d'un domaine et son ajout dans Vercel, enregistrez-le ici : QR codes des factures, plan du site et liens de partage l'utiliseront.",
+    },
+    {
       target: "settings-launch-promo",
       content:
         "La promotion de la page d'accueil : textes, date de fin, et interrupteur pour l'afficher ou la masquer.",

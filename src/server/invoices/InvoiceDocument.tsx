@@ -39,6 +39,16 @@ export interface InvoiceDocumentData {
  * de la boutique le remplace. */
 export type InvoiceLogo = { data: Buffer; format: "png" | "jpg" } | null;
 
+/** Bloc de vérification (2026-10-03) : QR code menant à la page de
+ * vérification, et code à saisir à la main. */
+export interface InvoiceVerificationBlock {
+  qr: Buffer;
+  /** « MS-7K4PQ-9X2MB » */
+  code: string;
+  /** Domaine officiel, ex. « manu-shop.vercel.app ». */
+  host: string;
+}
+
 const GREY = "#6B7280";
 const TEXT = "#1F2937";
 const RULE = "#E5E7EB";
@@ -46,7 +56,7 @@ const RULE = "#E5E7EB";
 const styles = StyleSheet.create({
   // Marge basse : la place du pied de page (positionné en absolu, il ne
   // compte pas dans la mise en page des lignes).
-  page: { paddingTop: 36, paddingBottom: 120, paddingHorizontal: 40, fontSize: 9, color: TEXT, fontFamily: "Helvetica" },
+  page: { paddingTop: 36, paddingBottom: 150, paddingHorizontal: 40, fontSize: 9, color: TEXT, fontFamily: "Helvetica" },
   headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 },
   title: { fontSize: 34, fontFamily: "Helvetica-Bold" },
   logo: { width: 64, height: 64, objectFit: "contain" },
@@ -73,7 +83,12 @@ const styles = StyleSheet.create({
   totalValue: { fontFamily: "Helvetica-Bold", textAlign: "right" },
   // Pied de page : deux blocs positionnés chacun en absolu, à hauteur
   // fixe, pour qu'ils tombent au même endroit sur chaque page.
-  footerColumns: { position: "absolute", left: 40, right: 40, bottom: 34, height: 62, flexDirection: "row", paddingTop: 8, borderTopWidth: 1, borderTopColor: "#9CA3AF" },
+  footerColumns: { position: "absolute", left: 40, right: 40, bottom: 32, height: 104, flexDirection: "row", paddingTop: 8, borderTopWidth: 1, borderTopColor: "#9CA3AF" },
+  verify: { width: 112, alignItems: "center" },
+  verifyCaption: { fontFamily: "Helvetica-Bold", fontSize: 6.5, textAlign: "center", marginBottom: 3 },
+  verifyQr: { width: 58, height: 58 },
+  verifyCode: { fontFamily: "Courier-Bold", fontSize: 7, marginTop: 3 },
+  verifyHost: { fontSize: 5.5, color: GREY, marginTop: 1, textAlign: "center" },
   footerColumn: { flex: 1, paddingRight: 10 },
   footerTitle: { fontFamily: "Helvetica-Bold", fontSize: 7.5, marginBottom: 2 },
   footerText: { fontSize: 7.5, color: "#4B5563", marginBottom: 1.5 },
@@ -127,7 +142,15 @@ function Party({ label, name, lines }: { label: string; name: string; lines: str
  * la dernière page, sans jamais être coupés eux non plus. Le pied de page
  * (coordonnées, numéro de page, signature ManuShop) est sur chaque page.
  */
-export function InvoiceDocument({ invoice, logo }: { invoice: InvoiceDocumentData; logo: InvoiceLogo }) {
+export function InvoiceDocument({
+  invoice,
+  logo,
+  verification = null,
+}: {
+  invoice: InvoiceDocumentData;
+  logo: InvoiceLogo;
+  verification?: InvoiceVerificationBlock | null;
+}) {
   const withVat = invoice.vatRate > 0;
   const { lines, totals } = computeInvoice(invoice.items, invoice.vatRate, invoice);
   const money = (amount: number) => formatInvoiceMoney(amount, invoice.currency, invoice.rateToXaf);
@@ -309,6 +332,17 @@ export function InvoiceDocument({ invoice, logo }: { invoice: InvoiceDocumentDat
               render={({ pageNumber, totalPages }) => `Page ${pageNumber} sur ${totalPages}`}
             />
           </View>
+          {verification && (
+            <View style={styles.verify}>
+              <Text style={[styles.verifyCaption, { color: invoice.color }]}>
+                Vérifiez la signature numérique
+              </Text>
+              {/* eslint-disable-next-line jsx-a11y/alt-text -- Image PDF, pas une balise <img>. */}
+              <Image src={{ data: verification.qr, format: "png" }} style={styles.verifyQr} />
+              <Text style={styles.verifyCode}>{verification.code}</Text>
+              <Text style={styles.verifyHost}>ou sur {verification.host}/verifier</Text>
+            </View>
+          )}
         </View>
         <View style={[styles.band, { backgroundColor: invoice.color }]} fixed>
           <Text style={styles.bandText}>Facture émise avec ManuShop</Text>

@@ -12,9 +12,11 @@ jest.mock("firebase-admin/firestore", () => ({
 const batchUpdateMock = jest.fn();
 const batchSetMock = jest.fn();
 const batchCommitMock = jest.fn();
+const batchCreateMock = jest.fn();
 const batchMock = jest.fn(() => ({
   update: batchUpdateMock,
   set: batchSetMock,
+  create: batchCreateMock,
   commit: batchCommitMock,
 }));
 
@@ -28,12 +30,14 @@ const transactionGetMock = jest.fn();
 const productCostGetMock = jest.fn();
 const transactionSetMock = jest.fn();
 const transactionUpdateMock = jest.fn();
+const transactionCreateMock = jest.fn();
 const runTransactionMock = jest.fn(
   async (
     updateFunction: (transaction: {
       get: typeof transactionGetMock;
       set: typeof transactionSetMock;
       update: typeof transactionUpdateMock;
+      create: typeof transactionCreateMock;
     }) => Promise<void>
   ) => {
     await updateFunction({
@@ -43,6 +47,7 @@ const runTransactionMock = jest.fn(
           : transactionGetMock(ref)) as typeof transactionGetMock,
       set: transactionSetMock,
       update: transactionUpdateMock,
+      create: transactionCreateMock,
     });
   }
 );
@@ -54,6 +59,10 @@ const orderGetMock = jest.fn();
 const orderDocMock = jest.fn((id?: string) => ({
   id: id ?? "order-new",
   get: orderGetMock,
+  // Historique signé (`orders/{id}/history/{seq}`).
+  collection: (name: string) => ({
+    doc: (eventId: string) => ({ __ref: `orders/${id ?? "order-new"}/${name}/${eventId}` }),
+  }),
 }));
 
 const productDocMock = jest.fn((id: string) => ({ __ref: `products/${id}` }));
@@ -115,6 +124,34 @@ describe("createOrderAction", () => {
       data: () => ({ shopId: "shop-1", stock: 100, price: 5000 }),
     });
     productCostGetMock.mockResolvedValue({ data: () => undefined });
+  });
+
+  // Historique signé (2026-10-03) : premier maillon écrit avec la commande.
+  it("starts the order's chained history with its creation", async () => {
+    await createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou Ba",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: [{ productId: "p1", name: "Wax", quantity: 1, unitPrice: 5000 }],
+      subtotal: 5000,
+      total: 5000,
+    });
+
+    const [ref, event] = transactionCreateMock.mock.calls[0];
+    expect(ref).toEqual({ __ref: "orders/order-new/history/000001" });
+    expect(event).toEqual(
+      expect.objectContaining({
+        seq: 1,
+        fact: { type: "status", status: "under_review" },
+        prevHash: "0".repeat(64),
+        hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      })
+    );
+    expect(transactionSetMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "order-new" }),
+      expect.objectContaining({ historySeq: 1, historyHash: event.hash })
+    );
   });
 
   it("freezes each item's purchase price in a private orderCosts document — never on the order the client can read", async () => {
@@ -421,6 +458,27 @@ describe("updateOrderStatusAction", () => {
       expect.objectContaining({ status: "ready_for_delivery" })
     );
     expect(batchUpdateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("chains each status change to the previous step of the order's history", async () => {
+    mockOrder({ historySeq: 2, historyHash: "a".repeat(64) });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "admin", shopId: "shop-1" }) });
+
+    await updateOrderStatusAction("token", "order-1", { status: "ready_for_delivery" });
+
+    const [ref, event] = batchCreateMock.mock.calls[0];
+    expect(ref).toEqual({ __ref: "orders/order-1/history/000003" });
+    expect(event).toEqual(
+      expect.objectContaining({
+        seq: 3,
+        fact: { type: "status", status: "ready_for_delivery" },
+        prevHash: "a".repeat(64),
+      })
+    );
+    expect(batchUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "order-1" }),
+      expect.objectContaining({ historySeq: 3, historyHash: event.hash })
+    );
   });
 
   it("rejects a status advance from someone who isn't the shop's merchant", async () => {

@@ -111,6 +111,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Historique signé des commandes (2026-10-03) : chaque étape chaînée à
+    // la précédente et signée par le serveur (src/server/integrity/).
+    // Écrit et lu par le serveur seulement ; la page publique de
+    // vérification en montre ce qui peut l'être.
+    match /orders/{orderId}/history/{eventId} {
+      allow read, write: if false;
+    }
+
     // Compteurs de numérotation des factures : serveur seulement.
     match /invoiceCounters/{shopId} {
       allow read, write: if false;
