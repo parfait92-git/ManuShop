@@ -1,4 +1,5 @@
 import type { ReviewReply } from "@/models/review/OrderFeedback";
+import { formatDateTime } from "@/lib/dateTime";
 
 /** « Réponse du vendeur » sous un avis (fiche produit, écran d'avis du
  * client, écran « Avis clients » du commerçant). */
@@ -11,7 +12,7 @@ export function SellerReply({ reply }: { reply: ReviewReply }) {
         {date && (
           <span className="font-normal text-muted-foreground">
             {" "}
-            · {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+            · {formatDateTime(date)}
           </span>
         )}
       </p>

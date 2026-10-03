@@ -1,6 +1,7 @@
 import {
   EUR_TO_XAF,
   buildRates,
+  DEFAULT_USD_TO_XAF,
   convertFromXaf,
   displayCurrency,
   formatMoney,
@@ -8,7 +9,9 @@ import {
 } from "@/lib/currency";
 
 const withUsd = buildRates(600);
-const withoutUsd = buildRates(undefined);
+// Taux du dollar absent (cas que `buildRates` n'émet plus, mais que
+// `displayCurrency` sait toujours gérer).
+const withoutUsd = { XAF: 1, EUR: EUR_TO_XAF, USD: undefined };
 /** Espaces insécables d'Intl ramenées à des espaces simples. */
 const plain = (text: string) => text.replace(/[  ]/g, " ");
 
@@ -36,6 +39,14 @@ describe("currency", () => {
     expect(shopCurrency({ currency: "EUR" })).toBe("EUR");
     expect(shopCurrency({ currency: "GBP" })).toBe("XAF");
     expect(shopCurrency(null)).toBe("XAF");
-    expect(buildRates(0).USD).toBeUndefined();
+    // Aucun taux enregistré par le Super Admin : taux indicatif par défaut.
+    expect(buildRates(0).USD).toBe(DEFAULT_USD_TO_XAF);
+    expect(buildRates(undefined).USD).toBe(600);
+    expect(buildRates(610).USD).toBe(610);
+  });
+
+  it("shows dollar prices at the default rate until the Super Admin sets one", () => {
+    expect(displayCurrency("USD", buildRates(undefined))).toBe("USD");
+    expect(plain(formatMoney(6000, "USD", buildRates(undefined), "en-US"))).toBe("$10.00");
   });
 });

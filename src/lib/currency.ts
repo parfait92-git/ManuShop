@@ -7,8 +7,10 @@
  * - les **clients** voient prix, panier et totaux **convertis** dans la
  *   devise choisie par la boutique (`Shop.currency`) ;
  * - taux : parité officielle fixe pour l'euro, taux du dollar saisi par le
- *   Super Admin (`PlatformConfiguration.usdToXafRate`). Aucun service de
- *   change externe.
+ *   Super Admin (`PlatformConfiguration.usdToXafRate`) — et, tant qu'il n'en
+ *   a saisi aucun, un taux indicatif par défaut (2026-10-03 : sans lui, une
+ *   boutique en dollars s'affichait en FCFA). Aucun service de change
+ *   externe.
  */
 
 export const CURRENCIES = ["XAF", "EUR", "USD"] as const;
@@ -23,11 +25,15 @@ export const EUR_TO_XAF = 655.957;
 /** Combien de FCFA vaut une unité de chaque devise. */
 export type CurrencyRates = Record<CurrencyCode, number | undefined>;
 
+/** Taux indicatif du dollar (1 $ = 600 FCFA), appliqué tant que le Super
+ * Admin n'a pas enregistré le sien dans Réglages. */
+export const DEFAULT_USD_TO_XAF = 600;
+
 export function buildRates(usdToXafRate: number | undefined): CurrencyRates {
   return {
     XAF: 1,
     EUR: EUR_TO_XAF,
-    USD: usdToXafRate && usdToXafRate > 0 ? usdToXafRate : undefined,
+    USD: usdToXafRate && usdToXafRate > 0 ? usdToXafRate : DEFAULT_USD_TO_XAF,
   };
 }
 

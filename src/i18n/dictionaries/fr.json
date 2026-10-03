@@ -16,11 +16,12 @@
     "description": "Taux utilisés pour afficher les prix des boutiques qui ont choisi une autre devise que le FCFA. Les prix restent enregistrés en FCFA.",
     "eurFixed": "Euro : parité fixe officielle, 1 € = {rate} FCFA.",
     "usdLabel": "1 dollar US vaut (en FCFA)",
-    "usdHelp": "Le dollar n'a pas de parité fixe avec le FCFA : mettez ce taux à jour régulièrement. Sans taux, les boutiques en dollars affichent leurs prix en FCFA.",
+    "usdHelp": "Le dollar n'a pas de parité fixe avec le FCFA : mettez ce taux à jour régulièrement. Tant qu'aucun taux n'est enregistré, le taux indicatif de 600 FCFA s'applique.",
     "save": "Enregistrer le taux",
     "saved": "Taux du dollar enregistré.",
     "invalid": "Indiquez un taux entre 50 et 5 000 FCFA.",
-    "error": "Le taux n'a pas pu être enregistré. Réessayez."
+    "error": "Le taux n'a pas pu être enregistré. Réessayez.",
+    "usdDefault": "Taux en vigueur : 1 $ = {rate} FCFA (taux indicatif par défaut, aucun taux enregistré)."
   },
   "cart": {
     "otherShopConfirm": "Votre panier contient des articles d'une autre boutique. Une commande ne peut concerner qu'une seule boutique : vider le panier pour ajouter cet article ?"

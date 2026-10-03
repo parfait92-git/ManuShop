@@ -17,6 +17,7 @@ import { hasInvoice } from "@/services/InvoiceService";
 import { orderService } from "@/services/OrderService";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
+import { formatDateTime } from "@/lib/dateTime";
 
 /** BF-75 : suivi de commande côté client — jusque-là explicitement bloqué
  * ("aucune commande n'est jamais écrite dans Firestore"), débloqué par le
@@ -33,18 +34,13 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reasonTarget, setReasonTarget] = useState<ReasonTarget | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    orderService.listByClient(clientId).then((data) => {
-      if (!active) return;
-      setOrders(
-        [...data].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
-      );
-    });
-    return () => {
-      active = false;
-    };
-  }, [clientId]);
+  // En direct : un statut changé par la boutique (prête, en livraison,
+  // livrée…) s'affiche aussitôt, sans recharger — dans le navigateur comme
+  // dans l'application installée (2026-10-03).
+  useEffect(
+    () => orderService.watchByClient(clientId, setOrders, () => setOrders((current) => current ?? [])),
+    [clientId]
+  );
 
   async function handleCancelConfirm(reason: string) {
     if (!reasonTarget) return;
@@ -104,11 +100,7 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
                   {ORDER_STATUS_LABEL[order.status]}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {order.createdAt.toDate().toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
+                  {formatDateTime(order.createdAt.toDate())}
                 </span>
               </div>
               <p className="text-sm">

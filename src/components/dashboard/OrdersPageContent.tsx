@@ -27,6 +27,7 @@ import type { Product } from "@/models/product/Product";
 import { activityLogService } from "@/services/ActivityLogService";
 import { orderService } from "@/services/OrderService";
 import { productService } from "@/services/ProductService";
+import { formatDateTime } from "@/lib/dateTime";
 
 const FILTERABLE_STATUSES = Object.keys(ORDER_STATUS_LABEL) as OrderStatus[];
 
@@ -356,10 +357,7 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
                       {order.total.toLocaleString("fr-FR")} FCFA
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-shell-subtle">
-                      {order.createdAt.toDate().toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                      })}
+                      {formatDateTime(order.createdAt.toDate())}
                     </td>
                     <td className="px-4 py-3">
                       <span

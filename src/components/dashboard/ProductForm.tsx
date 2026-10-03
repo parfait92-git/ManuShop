@@ -24,7 +24,7 @@ import {
   loadProductDraft,
   saveProductDraft,
 } from "@/lib/productDraft";
-import { isPromoExpired } from "@/lib/promo";
+import { isPromoExpired, promoEndsAt } from "@/lib/promo";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { costService } from "@/services/CostService";
@@ -33,6 +33,7 @@ import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
 import { useI18n } from "@/i18n/I18nProvider";
 import { BASE_CURRENCY } from "@/lib/currency";
+import { formatDateTime } from "@/lib/dateTime";
 
 function toDateInputValue(timestamp?: Timestamp): string {
   if (!timestamp) return "";
@@ -452,11 +453,8 @@ export function ProductForm({
         {isPromo && product && isPromoExpired(product) && (
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
             Cette promotion est terminée depuis le{" "}
-            {product.promoEnd!.toDate().toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              timeZone: "UTC",
-            })}{" "}
+            {/* Dernière minute de la journée de fin, heure du Cameroun. */}
+            {formatDateTime(new Date(promoEndsAt(product.promoEnd!).getTime() - 60_000), "long")}{" "}
             : vos clients voient de nouveau le prix normal. Choisissez une
             nouvelle date de fin pour la relancer, ou décochez la case.
           </p>

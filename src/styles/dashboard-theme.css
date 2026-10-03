@@ -835,6 +835,325 @@
   --dashboard-welcome-muted: #cfe3ea;
 }
 
+/* ——— Tableau de bord de « ManuShop Nuit » (2026-10-03, demande de
+ * l'utilisateur) : clair, aux couleurs de base du thème — gris ardoise et
+ * accents cyan, comme ses menus. Le bleu nuit reste celui de « Néon Océan ». ——— */
+[data-dashboard-theme="manushop"] {
+  color-scheme: light;
+
+  --dashboard-bg: #f8fafc;
+  --dashboard-bg-glow: rgba(8, 145, 178, 0.10);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-gradient-start: #ffffff;
+  --dashboard-card-gradient-end: #f8fafc;
+  --dashboard-card-border: rgba(15, 23, 42, 0.08);
+  --dashboard-card-radius: 20px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.25);
+
+  --dashboard-text: #020617;
+  --dashboard-text-muted: #475569;
+  --dashboard-text-subtle: #5f6e82;
+
+  --dashboard-accent: #0e7490;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #0e7490;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #475569;
+
+  --chart-1: #0e7490;
+  --chart-2: #64748b;
+  --chart-gradient-start: #06b6d4;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #ffffff;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #0e7490;
+  --chart-grid: rgba(15, 23, 42, 0.08);
+  --chart-axis: #475569;
+  --chart-tooltip-bg: #0f172a;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(15, 23, 42, 0.08);
+
+  --gauge-track: #e2e8f0;
+  --gauge-fill: #0891b2;
+  --gauge-fill-end: #0e7490;
+
+  --dashboard-table-header: #475569;
+  --dashboard-table-row-border: rgba(15, 23, 42, 0.08);
+  --dashboard-table-row-hover: rgba(15, 23, 42, 0.03);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #475569;
+  --status-muted-bg: rgba(15, 23, 42, 0.03);
+
+  --dashboard-welcome-gradient-start: #0f172a;
+  --dashboard-welcome-gradient-end: #164e63;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #cbd5e1;
+}
+
+/* Thèmes dorés (2026-10-03). */
+
+/* ——— « Or Lumière » (2026-10-03) : doré et clair — ivoire, crème et or antique, une élégance lumineuse ——— */
+[data-shop-theme="or-lumiere"],
+:root[data-shop-theme="or-lumiere"] {
+  --background: #fffcf5;
+  --foreground: #2b2210;
+  --card: #ffffff;
+  --card-foreground: #2b2210;
+  --popover: #ffffff;
+  --popover-foreground: #2b2210;
+  --primary: #7a5d0f;
+  --primary-foreground: #ffffff;
+  --secondary: #f6efdc;
+  --secondary-foreground: #2b2210;
+  --muted: #f6efdc;
+  --muted-foreground: #5e5232;
+  --accent: #f8ecc8;
+  --accent-foreground: #2b2210;
+  --destructive: #b91c1c;
+  --border: #eadfbf;
+  --input: #eadfbf;
+  --ring: #7a5d0f;
+  --radius: 0.75rem;
+
+  --shell-bg: #faf6ea;
+  --shell-surface: #fffdf8;
+  --shell-border: #eadfbf;
+  --shell-hover: #f3ead2;
+  --shell-text: #2b2210;
+  --shell-text-muted: #5e5232;
+  --shell-text-subtle: #5e5232;
+  --shell-nav-active-bg: #7a5d0f;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #2b2210;
+  --shell-brand-icon: #f2d27a;
+  --shell-brand-accent: #7a5d0f;
+  --shell-badge-bg: #7a5d0f;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #f8ecc8;
+  --shell-avatar-text: #7a5d0f;
+  --shell-promo-bg: #f8ecc8;
+  --shell-promo-title: #2b2210;
+  --shell-promo-text: #5e5232;
+  --shell-overlay: rgba(43, 34, 16, 0.45);
+  --shell-border-strong: #8f8466;
+  --shell-faint: #e6dcc0;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #7a5d0f;
+  --shell-accent-soft: #fbf3dc;
+  --shell-accent-fill: #e8c45a;
+  --shell-accent-fill-hover: #f0d47e;
+  --shell-accent-fill-text: #2b2210;
+  --tour-primary: #7a5d0f;
+  --tour-primary-text: #ffffff;
+}
+
+[data-dashboard-theme="or-lumiere"] {
+  color-scheme: light;
+
+  --dashboard-bg: #faf6ea;
+  --dashboard-bg-glow: rgba(201, 160, 51, 0.16);
+
+  --dashboard-card-bg: #fffdf8;
+  --dashboard-card-gradient-start: #fffdf8;
+  --dashboard-card-gradient-end: #fbf5e6;
+  --dashboard-card-border: rgba(43, 34, 16, 0.08);
+  --dashboard-card-radius: 20px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(43, 34, 16, 0.3);
+
+  --dashboard-text: #2b2210;
+  --dashboard-text-muted: #5e5232;
+  --dashboard-text-subtle: #66593a;
+
+  --dashboard-accent: #7a5d0f;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #a37c14;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #5e5232;
+
+  --chart-1: #a37c14;
+  --chart-2: #5e5232;
+  --chart-gradient-start: #d9b44a;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #fffdf8;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #8a6a12;
+  --chart-grid: rgba(43, 34, 16, 0.08);
+  --chart-axis: #5e5232;
+  --chart-tooltip-bg: #2b2210;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(43, 34, 16, 0.08);
+
+  --gauge-track: #efe5c8;
+  --gauge-fill: #a37c14;
+  --gauge-fill-end: #7a5d0f;
+
+  --dashboard-table-header: #5e5232;
+  --dashboard-table-row-border: rgba(43, 34, 16, 0.08);
+  --dashboard-table-row-hover: rgba(201, 160, 51, 0.07);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #5e5232;
+  --status-muted-bg: rgba(201, 160, 51, 0.07);
+
+  --dashboard-welcome-gradient-start: #6b5210;
+  --dashboard-welcome-gradient-end: #3a2c0c;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #f3e3b0;
+}
+
+/* ——— « Or Noir » (2026-10-03) : doré et sombre — noir profond, or vif et champagne, le luxe en majesté ——— */
+[data-shop-theme="or-noir"],
+:root[data-shop-theme="or-noir"] {
+  color-scheme: dark;
+
+  --background: #0e0d0a;
+  --foreground: #f5ecd7;
+  --card: #17150f;
+  --card-foreground: #f5ecd7;
+  --popover: #17150f;
+  --popover-foreground: #f5ecd7;
+  --primary: #d4af37;
+  --primary-foreground: #1a1508;
+  --secondary: #1f1c14;
+  --secondary-foreground: #f5ecd7;
+  --muted: #1f1c14;
+  --muted-foreground: #b8ab88;
+  --accent: #2a2517;
+  --accent-foreground: #f5ecd7;
+  --destructive: #f87171;
+  --border: #3a3423;
+  --input: #3a3423;
+  --ring: #d4af37;
+  --radius: 0.5rem;
+
+  --shell-bg: #0e0d0a;
+  --shell-surface: #15130e;
+  --shell-border: #3a3423;
+  --shell-hover: #1f1c14;
+  --shell-text: #f5ecd7;
+  --shell-text-muted: #b8ab88;
+  --shell-text-subtle: #b8ab88;
+  --shell-nav-active-bg: #d4af37;
+  --shell-nav-active-text: #1a1508;
+  --shell-brand-bg: #2a2517;
+  --shell-brand-icon: #e6c766;
+  --shell-brand-accent: #d4af37;
+  --shell-badge-bg: #d4af37;
+  --shell-badge-text: #1a1508;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #2a2517;
+  --shell-avatar-text: #e6c766;
+  --shell-promo-bg: #2a2517;
+  --shell-promo-title: #f5ecd7;
+  --shell-promo-text: #b8ab88;
+  --shell-overlay: rgba(0, 0, 0, 0.6);
+  --shell-border-strong: #7a6c48;
+  --shell-faint: #3a3423;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #e6c766;
+  --shell-accent-soft: #231f14;
+  --shell-accent-fill: #d4af37;
+  --shell-accent-fill-hover: #e6c766;
+  --shell-accent-fill-text: #1a1508;
+  --tour-primary: #d4af37;
+  --tour-primary-text: #1a1508;
+}
+
+[data-dashboard-theme="or-noir"] {
+  color-scheme: dark;
+
+  --dashboard-bg: #0e0d0a;
+  --dashboard-bg-glow: rgba(212, 175, 55, 0.14);
+
+  --dashboard-card-bg: #17150f;
+  --dashboard-card-gradient-start: #1d1a12;
+  --dashboard-card-gradient-end: #12100b;
+  --dashboard-card-border: rgba(255, 255, 255, 0.08);
+  --dashboard-card-radius: 16px;
+  --dashboard-card-shadow: 0 20px 45px -25px rgba(0, 0, 0, 0.7);
+
+  --dashboard-text: #f5ecd7;
+  --dashboard-text-muted: #b8ab88;
+  --dashboard-text-subtle: #a89c7a;
+
+  --dashboard-accent: #d4af37;
+  --dashboard-accent-foreground: #1a1508;
+  --dashboard-icon-bg: #7a5d0f;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #4ade80;
+  --kpi-negative: #f87171;
+  --kpi-neutral: #b8ab88;
+
+  --chart-1: #d4af37;
+  --chart-2: #b8ab88;
+  --chart-gradient-start: #d4af37;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #0e0d0a;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #e6c766;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: #b8ab88;
+  --chart-tooltip-bg: #2a2517;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(255, 255, 255, 0.08);
+
+  --gauge-track: #2a2517;
+  --gauge-fill: #e6c766;
+  --gauge-fill-end: #b8901f;
+
+  --dashboard-table-header: #b8ab88;
+  --dashboard-table-row-border: rgba(255, 255, 255, 0.08);
+  --dashboard-table-row-hover: rgba(255, 255, 255, 0.04);
+
+  --status-pending: #fbbf24;
+  --status-pending-bg: rgba(251, 191, 36, 0.14);
+  --status-progress: #7cb5ff;
+  --status-progress-bg: rgba(59, 139, 255, 0.16);
+  --status-success: #4ade80;
+  --status-success-bg: rgba(74, 222, 128, 0.14);
+  --status-warning: #fdba74;
+  --status-warning-bg: rgba(253, 186, 116, 0.14);
+  --status-danger: #ff8a8a;
+  --status-danger-bg: rgba(255, 107, 107, 0.14);
+  --status-muted: #b8ab88;
+  --status-muted-bg: rgba(255, 255, 255, 0.04);
+
+  --dashboard-welcome-gradient-start: #3a2f12;
+  --dashboard-welcome-gradient-end: #1f1a0c;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #e8d9a8;
+}
+
 /* ——— Thème clair : non proposé aux commerçants pour l'instant. Il sert à
  * vérifier qu'un thème clair reste lisible avec ces mêmes composants
  * (test de contraste), et de modèle aux thèmes à venir. ——— */

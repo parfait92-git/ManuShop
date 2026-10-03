@@ -43,5 +43,5 @@ describe("GuidedTour", () => {
     await user.click(await screen.findByRole("button", { name: "Passer" }));
 
     expect(onFinish).toHaveBeenCalled();
-  }, 15000); // repositionnement asynchrone (floating-ui) plus lent sous la suite complète en parallèle
+  }, 30000); // repositionnement asynchrone (floating-ui) plus lent sous la suite complète en parallèle : plus de 15 s observées quand la machine est chargée (2026-10-03)
 });

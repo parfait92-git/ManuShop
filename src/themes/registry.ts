@@ -33,9 +33,9 @@ export const THEMES: ThemeDefinition[] = [
     id: DEFAULT_THEME_ID,
     name: "ManuShop Nuit",
     description:
-      "Le thème d'origine : vitrine claire et sobre, tableau de bord bleu nuit aux cartes en dégradé et accents bleus.",
-    highlights: ["Vitrine claire et lisible", "Tableau de bord sombre", "Graphiques en dégradé bleu"],
-    dashboardTheme: "default",
+      "Le thème d'origine : vitrine claire et sobre, tableau de bord clair aux cartes blanches, gris ardoise et accents cyan.",
+    highlights: ["Vitrine claire et lisible", "Tableau de bord clair", "Accents cyan"],
+    dashboardTheme: "manushop",
     siteTheme: "default",
     invoiceColor: "#3B5BA5",
   },
@@ -99,6 +99,27 @@ export const THEMES: ThemeDefinition[] = [
     dashboardTheme: "verre-alu",
     siteTheme: "verre-alu",
     invoiceColor: "#0E6F8A",
+  },
+  // Thèmes dorés (2026-10-03).
+  {
+    id: "or-lumiere",
+    name: "Or Lumière",
+    description:
+      "Doré et clair : fonds ivoire et crème, or antique et bronze, pour une boutique raffinée et lumineuse.",
+    highlights: ["Lumineux et raffiné", "Ivoire et or antique", "Idéal bijoux, mode, décoration"],
+    dashboardTheme: "or-lumiere",
+    siteTheme: "or-lumiere",
+    invoiceColor: "#7A5D0F",
+  },
+  {
+    id: "or-noir",
+    name: "Or Noir",
+    description:
+      "Doré et sombre : noir profond, or vif et champagne, pour une boutique de prestige au caractère affirmé.",
+    highlights: ["Luxe et prestige", "Noir profond et or vif", "Idéal parfums, montres, haute couture"],
+    dashboardTheme: "or-noir",
+    siteTheme: "or-noir",
+    invoiceColor: "#7A5D0F",
   },
 ];
 

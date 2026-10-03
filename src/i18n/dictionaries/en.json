@@ -16,11 +16,12 @@
     "description": "Rates used to display the prices of shops that chose a currency other than the CFA franc. Prices are still stored in CFA francs.",
     "eurFixed": "Euro: official fixed parity, €1 = {rate} CFA francs.",
     "usdLabel": "1 US dollar is worth (in CFA francs)",
-    "usdHelp": "The US dollar has no fixed parity with the CFA franc: update this rate regularly. Without a rate, shops in dollars show their prices in CFA francs.",
+    "usdHelp": "The US dollar has no fixed parity with the CFA franc: update this rate regularly. Until a rate is saved, the indicative rate of 600 CFA francs applies.",
     "save": "Save the rate",
     "saved": "US dollar rate saved.",
     "invalid": "Enter a rate between 50 and 5,000 CFA francs.",
-    "error": "The rate couldn't be saved. Please try again."
+    "error": "The rate couldn't be saved. Please try again.",
+    "usdDefault": "Rate in effect: $1 = {rate} CFA francs (default indicative rate, none saved yet)."
   },
   "cart": {
     "otherShopConfirm": "Your cart contains items from another shop. An order can only involve one shop: empty the cart to add this item?"

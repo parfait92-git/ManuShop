@@ -15,4 +15,7 @@ export interface IOrderRepository {
   getById(id: string): Promise<Order | null>;
   listByShop(shopId: string): Promise<Order[]>;
   listByClient(clientId: string): Promise<Order[]>;
+  /** Commandes du client, suivies en direct (statut mis à jour par la
+   * boutique). Renvoie de quoi arrêter l'écoute. */
+  watchByClient(clientId: string, onChange: (orders: Order[]) => void, onError?: () => void): () => void;
 }

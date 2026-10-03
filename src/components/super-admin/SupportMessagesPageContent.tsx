@@ -8,15 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { SupportMessage } from "@/models/support/SupportMessage";
 import { supportMessageService } from "@/services/SupportMessageService";
+import { formatDateTime } from "@/lib/dateTime";
 
 function formatDate(value: SupportMessage["createdAt"]) {
-  return value.toDate().toLocaleString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(value.toDate());
 }
 
 function ReplyForm({

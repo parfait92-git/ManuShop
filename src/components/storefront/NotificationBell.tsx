@@ -8,11 +8,12 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { AppNotification } from "@/models/notification/Notification";
 import { notificationService } from "@/services/NotificationService";
+import { formatDateTime } from "@/lib/dateTime";
 
 function formatDate(notification: AppNotification): string {
   const date = notification.createdAt?.toDate?.();
   return date
-    ? date.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
+    ? formatDateTime(date)
     : "";
 }
 

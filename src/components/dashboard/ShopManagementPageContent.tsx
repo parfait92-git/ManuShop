@@ -12,6 +12,7 @@ import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
 import type { Shop } from "@/models/shop/Shop";
 import { authService } from "@/services/AuthService";
 import { shopService } from "@/services/ShopService";
+import { formatDateTime } from "@/lib/dateTime";
 
 type ShopStatus = "published" | "expired" | "draft";
 
@@ -130,13 +131,7 @@ export function ShopManagementPageContent() {
               {shop.subscriptionExpiresAt && (
                 <p className="text-xs text-shell-subtle">
                   Expire le{" "}
-                  {shop.subscriptionExpiresAt
-                    .toDate()
-                    .toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                  {formatDateTime(shop.subscriptionExpiresAt.toDate(), "long")}
                 </p>
               )}
               <div className="mt-auto flex flex-col gap-2">

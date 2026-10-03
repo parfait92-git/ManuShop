@@ -56,7 +56,7 @@ describe("ThemesPageContent", () => {
     render(<ThemesPageContent shopId="shop-1" />);
 
     await user.click(screen.getByRole("button", { name: "Voir l'aperçu" }));
-    expect(screen.getByTestId("preview")).toHaveTextContent("aperçu default");
+    expect(screen.getByTestId("preview")).toHaveTextContent("aperçu manushop");
     expect(screen.getByRole("button", { name: "Thème actuel" })).toBeDisabled();
   });
 

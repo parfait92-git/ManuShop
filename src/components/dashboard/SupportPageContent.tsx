@@ -11,15 +11,10 @@ import { usePremiumAccess } from "@/hooks/usePremiumCatalog";
 import { useSupportMessagesForShop } from "@/hooks/useSupportMessagesForShop";
 import type { SupportMessage } from "@/models/support/SupportMessage";
 import { supportMessageService } from "@/services/SupportMessageService";
+import { formatDateTime } from "@/lib/dateTime";
 
 function formatDate(message: SupportMessage["createdAt"]) {
-  return message.toDate().toLocaleString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(message.toDate());
 }
 
 function MessageCard({ message }: { message: SupportMessage }) {

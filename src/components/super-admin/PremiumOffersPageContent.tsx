@@ -17,6 +17,7 @@ import {
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
 import type { PremiumRequestDto } from "@/server/actions/premiumActions";
 import { premiumService } from "@/services/PremiumService";
+import { formatDateTime } from "@/lib/dateTime";
 
 const ITEMS = listPremiumItems();
 
@@ -40,7 +41,7 @@ function RequestsSection({
   const pending = requests.filter((r) => r.status === "pending");
   const history = requests.filter((r) => r.status !== "pending").slice(0, 10);
   const date = (iso: string) =>
-    new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+    formatDateTime(new Date(iso));
 
   return (
     <section

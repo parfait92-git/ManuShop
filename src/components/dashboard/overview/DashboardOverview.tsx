@@ -19,6 +19,7 @@ import { useCurrentShop } from "@/hooks/useCurrentShop";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
 import { cn } from "cn";
+import { THEMES } from "@/themes/registry";
 
 /**
  * Accueil du tableau de bord sur tablette et ordinateur (refonte du
@@ -32,7 +33,7 @@ import { cn } from "cn";
  */
 export function DashboardOverview({
   shopId,
-  theme = "default",
+  theme = THEMES[0].dashboardTheme,
   layout = DEFAULT_DASHBOARD_LAYOUT,
 }: {
   shopId: string;

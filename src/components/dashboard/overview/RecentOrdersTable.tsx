@@ -4,6 +4,7 @@ import { DashboardCard, DashboardEmpty } from "@/components/dashboard/overview/D
 import { ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Order } from "@/models/order/Order";
 import type { OrderStatus } from "@/models/order/OrderStatus";
+import { formatDateTime } from "@/lib/dateTime";
 
 /** Ton de chaque statut : variables `--status-*` du thème. */
 const STATUS_TONE: Record<OrderStatus, string> = {
@@ -16,14 +17,7 @@ const STATUS_TONE: Record<OrderStatus, string> = {
   cancelled: "text-[var(--status-muted)] bg-[var(--status-muted-bg)]",
 };
 
-const dateLabel = (order: Order) =>
-  order.createdAt.toDate().toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Africa/Douala",
-  });
+const dateLabel = (order: Order) => formatDateTime(order.createdAt.toDate());
 
 export function RecentOrdersTable({
   orders,

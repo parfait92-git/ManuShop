@@ -17,11 +17,12 @@ import {
   type ShopOrderFeedback,
 } from "@/services/FeedbackService";
 import { orderService } from "@/services/OrderService";
+import { formatDateTime } from "@/lib/dateTime";
 
 function formatDate(value: { toDate?: () => Date } | undefined): string {
   const date = value?.toDate?.();
   return date
-    ? date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
+    ? formatDateTime(date)
     : "";
 }
 

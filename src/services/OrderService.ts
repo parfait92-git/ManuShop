@@ -28,6 +28,16 @@ export class OrderService {
     return this.orders.listByClient(clientId);
   }
 
+  /** « Mes commandes » en direct : un changement de statut par la boutique
+   * s'affiche sans recharger la page (2026-10-03). Plus récentes d'abord. */
+  watchByClient(clientId: string, onChange: (orders: Order[]) => void, onError?: () => void): () => void {
+    return this.orders.watchByClient(
+      clientId,
+      (orders) => onChange([...orders].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())),
+      onError
+    );
+  }
+
   /** BF-19 (commande client) et BF-21 (commande manuelle, `input.manual`) —
    * passe par la Server Action pour que la création de la commande et le
    * décrément de stock restent atomiques (voir `orderActions.ts`). */

@@ -29,6 +29,7 @@ import {
 import { uploadAvatar } from "@/lib/upload";
 import type { User } from "@/models/user/User";
 import { authService } from "@/services/AuthService";
+import { formatDateTime } from "@/lib/dateTime";
 
 const ROLE_LABELS: Record<User["role"], string> = {
   admin: "Gérant(e) de boutique",
@@ -61,6 +62,7 @@ export function AccountSettingsForm() {
       ? {
           displayName: profile.displayName,
           phone: profile.phone ?? "",
+          deliveryAddress: profile.deliveryAddress ?? "",
           photoURL: profile.photoURL ?? "",
           notifyByEmail: profile.notifyByEmail ?? true,
         }
@@ -218,6 +220,24 @@ export function AccountSettingsForm() {
             )}
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="deliveryAddress"
+              help="Proposée automatiquement à chaque commande, pour ne pas la ressaisir : quartier, ville et un point de repère. Enregistrée à votre première commande si vous ne l'avez pas encore indiquée."
+            >
+              Adresse de livraison
+            </Label>
+            <Input
+              id="deliveryAddress"
+              placeholder="Quartier, ville, point de repère..."
+              aria-invalid={!!errors.deliveryAddress}
+              {...register("deliveryAddress")}
+            />
+            {errors.deliveryAddress && (
+              <p className="text-sm text-destructive">{errors.deliveryAddress.message}</p>
+            )}
+          </div>
+
           <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
             <div>
               <p className="flex items-center gap-1.5 text-sm font-medium">
@@ -271,11 +291,7 @@ export function AccountSettingsForm() {
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Membre depuis</span>
             <span className="font-medium">
-              {profile.createdAt.toDate().toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {formatDateTime(profile.createdAt.toDate(), "long")}
             </span>
           </div>
         </div>
