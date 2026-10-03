@@ -29,7 +29,6 @@ export function WelcomeCard({
       weekday: "long",
       day: "numeric",
       month: "long",
-      timeZone: "Africa/Douala",
     })
   );
 

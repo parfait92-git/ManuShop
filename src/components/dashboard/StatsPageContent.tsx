@@ -212,7 +212,7 @@ export function StatsPageContent({ shopId }: { shopId: string }) {
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="stats-from"
-                help="Premier jour inclus dans le calcul (heure du Cameroun)."
+                help="Premier jour inclus dans le calcul (à votre heure locale)."
               >
                 Du
               </Label>

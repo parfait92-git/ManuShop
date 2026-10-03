@@ -37,7 +37,7 @@
     "titleHelp": "La phrase principale de l'offre, en gros caractères.",
     "descriptionLabel": "Description",
     "descriptionHelp": "Ce que gagne le commerçant qui en profite, en une ou deux phrases.",
-    "endsAt": "Fin de l'offre (heure du Cameroun)",
+    "endsAt": "Fin de l'offre (votre heure locale)",
     "endsAtHelp": "Le compte à rebours s'arrête à cette date et cette heure, et la promotion disparaît de l'accueil.",
     "statusActive": "En cours jusqu'au {date}.",
     "statusEnded": "Terminée : elle n'est plus affichée sur l'accueil.",

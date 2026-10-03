@@ -7,15 +7,13 @@
  * - le chiffre d'affaires ne compte que les commandes **livrées** (argent
  *   réellement encaissé, paiement à la livraison) ;
  * - une vente est datée par la création de sa commande ;
- * - jours et mois à l'heure du Cameroun (UTC+1).
+ * - jours et mois à l'heure locale de l'utilisateur (son appareil).
  */
 
 import { startOfShopDay, startOfShopMonth } from "@/lib/profitReport";
 import type { Order } from "@/models/order/Order";
 import type { Product } from "@/models/product/Product";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const SHOP_UTC_OFFSET_MS = 60 * 60 * 1000;
 
 /** Commandes qui n'ont jamais abouti : exclues des comptes de commandes. */
 const NOT_COUNTED = new Set<Order["status"]>(["cancelled"]);
@@ -24,12 +22,9 @@ const TO_PROCESS = new Set<Order["status"]>(["under_review", "ready_for_delivery
 
 const orderMs = (order: Order) => order.createdAt.toMillis();
 
-/** Début du mois suivant (ou précédent, `delta` négatif), au Cameroun. */
+/** Début du mois suivant (ou précédent, `delta` négatif), heure locale. */
 function shiftMonth(monthStart: Date, delta: number): Date {
-  const local = new Date(monthStart.getTime() + SHOP_UTC_OFFSET_MS);
-  return new Date(
-    Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + delta, 1) - SHOP_UTC_OFFSET_MS
-  );
+  return new Date(monthStart.getFullYear(), monthStart.getMonth() + delta, 1);
 }
 
 function inRange(order: Order, from: Date, to: Date): boolean {
@@ -155,8 +150,9 @@ export function computeDashboardMetrics(
   const today = startOfShopDay(now).getTime();
   const daily: DayPoint[] = [];
   for (let i = days - 1; i >= 0; i -= 1) {
-    const from = new Date(today - i * DAY_MS);
-    const to = new Date(from.getTime() + DAY_MS);
+    const base = new Date(today);
+    const from = new Date(base.getFullYear(), base.getMonth(), base.getDate() - i);
+    const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1);
     daily.push({ dayStart: from.getTime(), orders: countOf(orders.filter((o) => inRange(o, from, to))) });
   }
 

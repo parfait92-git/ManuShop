@@ -45,10 +45,10 @@ describe("promotion de l'accueil", () => {
     expect(validateLaunchPromo({ ...past, enabled: false }, NOW)).toEqual({});
   });
 
-  it("reads and writes the end date in Cameroon time, whatever the device's time zone", () => {
+  it("reads and writes the end date in the device time zone (Cameroon in tests)", () => {
     expect(toShopDateTimeInput("2026-10-30T23:59:59+01:00")).toBe("2026-10-30T23:59");
     expect(toShopDateTimeInput("2026-10-30T22:59:59Z")).toBe("2026-10-30T23:59");
-    expect(fromShopDateTimeInput("2026-10-30T23:59")).toBe("2026-10-30T23:59:59+01:00");
+    expect(fromShopDateTimeInput("2026-10-30T23:59")).toBe("2026-10-30T22:59:59.000Z");
     expect(fromShopDateTimeInput("")).toBe("");
   });
 });

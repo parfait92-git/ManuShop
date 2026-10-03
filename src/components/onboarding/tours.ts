@@ -283,6 +283,22 @@ export const TOURS = {
       content: "Appliquez-le : votre vitrine et votre espace de gestion changent aussitôt.",
     },
   ],
+  "dashboard-reports": [
+    {
+      target: "reports-kind",
+      content:
+        "Choisissez le rapport : l'état de votre stock à cette heure, ou ses sorties (commandé, livré, remis en stock) sur une période.",
+    },
+    {
+      target: "reports-preview",
+      content: "L'aperçu du rapport et ses totaux, avant de le télécharger.",
+      placement: "top",
+    },
+    {
+      target: "reports-download",
+      content: "PDF pour l'imprimer ou l'envoyer, CSV pour l'ouvrir dans Excel ou un tableur.",
+    },
+  ],
   "dashboard-support": [
     {
       target: "support-form",

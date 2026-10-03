@@ -88,21 +88,22 @@ export function validateLaunchPromo(
   return errors;
 }
 
-/** Cameroun : UTC+1 toute l'année — l'heure saisie est celle du Cameroun,
- * quel que soit le fuseau de l'appareil du Super Admin. */
-const SHOP_OFFSET = "+01:00";
-const SHOP_OFFSET_MS = 60 * 60 * 1000;
+const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Date ISO → valeur d'un champ `datetime-local` ("2026-10-30T23:59"),
- * heure du Cameroun. */
+ * dans le fuseau horaire de l'appareil du Super Admin (2026-10-03). */
 export function toShopDateTimeInput(iso: string): string {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return "";
-  return new Date(ms + SHOP_OFFSET_MS).toISOString().slice(0, 16);
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** Champ `datetime-local` (heure du Cameroun) → date ISO. La minute saisie
- * est incluse jusqu'à sa dernière seconde. */
+/** Champ `datetime-local` (heure de l'appareil) → date ISO, un instant
+ * précis : l'offre finit au même moment pour tous les visiteurs. La minute
+ * saisie est incluse jusqu'à sa dernière seconde. */
 export function fromShopDateTimeInput(value: string): string {
-  return value ? `${value}:59${SHOP_OFFSET}` : "";
+  if (!value) return "";
+  const ms = new Date(`${value}:59`).getTime();
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : "";
 }

@@ -15,7 +15,7 @@ import { AXIS_TICK, TOOLTIP_STYLE, useSvgId } from "@/components/dashboard/overv
 import type { MonthPoint } from "@/lib/dashboardMetrics";
 
 const monthLabel = (ms: number) =>
-  new Date(ms).toLocaleDateString("fr-FR", { month: "short", timeZone: "Africa/Douala" }).replace(".", "");
+  new Date(ms).toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
 
 /** Ventes par mois sur 12 mois : encaissé (livré) et commandé. */
 export function SalesAreaChart({

@@ -43,6 +43,22 @@ describe("CategoryService", () => {
     expect(result).toEqual([category]);
   });
 
+  // Vitrine (2026-10-03) : ni les catégories masquées, ni celles à la
+  // corbeille.
+  it("lists only the categories shown to customers", async () => {
+    const base = { shopId: "shop-1", createdAt: {} as Timestamp };
+    categories.listByShop.mockResolvedValue([
+      { ...base, id: "c1", name: "Mode", isActive: true },
+      { ...base, id: "c2", name: "Masquée", isActive: false },
+      { ...base, id: "c3", name: "Ancienne", isActive: true, deletedAt: {} as Timestamp },
+      { ...base, id: "c4", name: "Sans réglage" },
+    ]);
+
+    const result = await service.listVisible("shop-1");
+
+    expect(result.map((c) => c.name)).toEqual(["Mode", "Sans réglage"]);
+  });
+
   it("creates a category with trimmed name/description", async () => {
     await service.createCategory("shop-1", {
       name: "  Mode  ",

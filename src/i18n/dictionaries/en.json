@@ -37,7 +37,7 @@
     "titleHelp": "The main sentence of the offer, in large type.",
     "descriptionLabel": "Description",
     "descriptionHelp": "What merchants gain by taking the offer, in one or two sentences.",
-    "endsAt": "Offer end (Cameroon time)",
+    "endsAt": "Offer end (your local time)",
     "endsAtHelp": "The countdown stops at this date and time, and the promotion disappears from the homepage.",
     "statusActive": "Running until {date}.",
     "statusEnded": "Ended: it is no longer shown on the homepage.",

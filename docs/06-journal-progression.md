@@ -2270,3 +2270,68 @@ Signalé par l'utilisateur : seul l'euro était pris en compte ; ajouter le doll
 - facture : « 3 octobre 2026 à 22:39 ».
 
 Vérifié : lint, `tsc`, 2 157 tests, build. Rien de commité.
+
+### 2026-10-03 — Rapports de stock en PDF et en CSV
+
+Demande de l'utilisateur : permettre au commerçant de générer des rapports sur la gestion de son stock, en PDF ou en CSV ; la conception m'a été laissée.
+
+**Fait** :
+- **Page « Rapports de stock »** (`/dashboard/rapports`, menu Configuration, gérant et vendeur).
+- **Deux rapports** (`lib/stockReport.ts`, fonctions pures) :
+  - **État du stock**, à l'heure de génération : article, catégorie, stock, seuil, statut (rupture, faible, en stock, en tête ce qui demande une action), prix de vente, valeur au prix de vente, publié. Pour le gérant seulement, prix d'achat et valeur au prix d'achat : les vendeurs ne les lisent pas, comme le veulent déjà les règles de `productCosts`. Totaux : produits, unités, ruptures et stocks faibles, valeurs, nombre de produits sans prix d'achat ;
+  - **Sorties de stock**, sur une période (semaine, mois, année ou dates choisies) : quantités commandées (hors annulées), livrées (y compris retournées ou défectueuses ensuite) et remises en stock (annulées, retournées, défectueuses), avec le stock actuel. Commandes datées par leur création, à l'heure de l'utilisateur, comme la page Statistiques.
+- **Aperçu à l'écran** : totaux et 25 premières lignes ; les fichiers contiennent tout.
+- **PDF** produit dans le navigateur (`@react-pdf/renderer`, chargé seulement au clic) :
+  - titre, nom de la boutique, période ou heure de génération ;
+  - tableau à la couleur de la boutique (celle de ses factures), en-tête répété sur chaque page, totaux en fin de rapport ;
+  - pied de page « Généré le … · Rapport émis avec ManuShop » et numéro de page ;
+  - format paysage au-delà de 8 colonnes.
+- **CSV** pour Excel et les tableurs français : séparateur « ; », marque BOM (accents corrects), montants en nombres bruts.
+- **Fichiers nommés** par rapport, date locale et boutique, ex. `sorties-de-stock-2026-10-01-au-2026-10-03-chez-awa.pdf`.
+- Aides « ? », visite guidée ; le test « aucune couleur en dur » couvre la page.
+
+**Vérification réelle sur émulateurs** (40 produits, 30 commandes, thème « Or Lumière ») :
+- gérant : 10 colonnes ; PDF de l'état du stock sur 3 pages, en paysage, aux couleurs dorées ; CSV correct ; PDF des sorties ;
+- vendeur : 8 colonnes, sans prix d'achat ;
+- 360 px : aucun débordement ;
+- aucune erreur.
+
+**Corrigé en testant** :
+- colonnes du PDF trop serrées (« 2Rupture », « 0 FCFAOui ») : espacement des cellules et largeurs selon le contenu ;
+- date du nom de fichier en UTC (« 2026-09-30 » pour une période commençant le 1er octobre) : date locale.
+
+**Tests** : calculs des deux rapports (tri, valeurs, totaux, sans coût pour un vendeur, période, produit supprimé), CSV (BOM, séparateur, guillemets, nombres bruts), page (colonnes du gérant, du vendeur, téléchargements, nom de fichier, couleur, période personnalisée).
+
+Vérifié : lint, `tsc`, tests, build. Rien de commité.
+
+### 2026-10-03 — Heure de l'utilisateur ; catégories non publiées masquées
+
+Demande de l'utilisateur : le fuseau horaire doit dépendre de l'endroit où se trouve la personne qui utilise la plateforme, et non du Cameroun ; les catégories non publiées ne doivent plus apparaître sur la vitrine.
+
+**Fuseau horaire** — tout suit désormais l'heure de l'appareil :
+- dates et heures affichées (commandes, graphiques, carte d'accueil, rapports, Super Admin) : plus de `timeZone: "Africa/Douala"` imposé ;
+- périodes des statistiques, du tableau de bord et des rapports (jour, semaine, mois, année, dates choisies) : calculées sur le calendrier local (`profitReport.ts`, `dashboardMetrics.ts`) ;
+- fin de la promotion de l'accueil (Super Admin) : saisie à l'heure de l'appareil, enregistrée comme un instant précis (UTC), donc la même pour tous les visiteurs ;
+- facture PDF : le navigateur envoie son fuseau (`?tz=`), validé par le serveur ; à défaut, heure du Cameroun (le serveur tourne en UTC) ;
+- page publique de vérification : rendue par le serveur à l'heure du Cameroun, puis réaffichée à l'heure du lecteur (`LocalDateTime`) ;
+- textes d'aide « heure du Cameroun » remplacés par « votre heure locale ».
+
+**Gardé volontairement à l'heure du Cameroun** : la fin des promotions produit (`lib/promo.ts`). C'est une règle de prix : elle doit finir au même instant pour tous les clients, quel que soit leur pays.
+
+**Tests** : Jest tourne avec `TZ=Africa/Douala` (`jest.config.mjs`), pour des résultats identiques sur toute machine.
+
+**Catégories** : la vitrine n'affiche plus que les catégories actives (`CategoryService.listVisible`), sans les supprimées.
+
+**Vérification réelle sur émulateurs** :
+- une commande du 1er octobre à 23 h 30 UTC s'affiche « 1 oct. 2026 à 19:30 » à New York et « 2 oct. 2026 à 00:30 » à Douala ;
+- vitrine : la catégorie non publiée n'apparaît plus, la catégorie active oui.
+
+Vérifié : lint, `tsc`, 2 168 tests, build. Rien de commité.
+
+### 2026-10-03 — Bilan de l'avancement ; documents de suivi remis à jour
+
+Demande de l'utilisateur : recenser ce qui est fait et ce qui reste. Constat : `02-besoins-fonctionnels.md` et `05-plan-de-travail.md` marquaient encore « non commencé » des fonctions livrées (publication, annuaire, page boutique, Super Admin, rapport de stock, exports, facturation…).
+
+Fait : statuts corrigés dans les deux documents ; nouveau Module 27 (BF-148 thèmes, BF-149 offres premium, BF-150 heure de l'utilisateur) ; section « État au 2026-10-03 » dans le plan de travail, avec la liste ordonnée de ce qui reste.
+
+Prochaine étape, validée par l'utilisateur : Module 3 — Stock (historique, réapprovisionnement, variantes).

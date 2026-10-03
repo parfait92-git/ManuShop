@@ -1,5 +1,11 @@
 import nextJest from "next/jest.js";
 
+// Dates et heures suivent le fuseau de l'appareil de l'utilisateur
+// (2026-10-03). Les tests fixent ce fuseau pour donner le même résultat sur
+// toute machine : celui d'un utilisateur au Cameroun (UTC+1). Les
+// processus de test héritent de cette variable.
+process.env.TZ = "Africa/Douala";
+
 const createJestConfig = nextJest({
   dir: "./",
 });

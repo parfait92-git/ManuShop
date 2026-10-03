@@ -1,3 +1,4 @@
+import { deviceTimeZone } from "@/lib/dateTime";
 import { auth } from "@/lib/firebase";
 
 /** Statuts d'une commande qui a été livrée, donc facturée (même liste que
@@ -22,7 +23,10 @@ export class InvoiceService {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error("Vous devez être connecté.");
 
-    const response = await fetch(`/api/factures/${encodeURIComponent(orderId)}`, {
+    // Date d'émission imprimée dans le fuseau horaire de l'utilisateur.
+    const tz = deviceTimeZone();
+    const query = tz ? `?tz=${encodeURIComponent(tz)}` : "";
+    const response = await fetch(`/api/factures/${encodeURIComponent(orderId)}${query}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) {

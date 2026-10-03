@@ -7,7 +7,7 @@ import { AXIS_TICK, TOOLTIP_STYLE } from "@/components/dashboard/overview/chartT
 import type { DayPoint } from "@/lib/dashboardMetrics";
 
 const dayLabel = (ms: number) =>
-  new Date(ms).toLocaleDateString("fr-FR", { weekday: "short", timeZone: "Africa/Douala" }).replace(".", "");
+  new Date(ms).toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
 
 /** Commandes reçues chaque jour, sur les 7 derniers jours. */
 export function OrdersBarChart({ daily }: { daily: DayPoint[] }) {

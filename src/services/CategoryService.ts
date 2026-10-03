@@ -21,6 +21,14 @@ export class CategoryService {
     return this.categories.listByShop(shopId);
   }
 
+  /** Catégories que voient les clients sur la vitrine (2026-10-03) :
+   * affichées par le commerçant (« Masquée » exclue) et pas à la
+   * corbeille. */
+  async listVisible(shopId: string): Promise<Category[]> {
+    const categories = await this.categories.listByShop(shopId);
+    return categories.filter((category) => !category.deletedAt && category.isActive !== false);
+  }
+
   /** Catégories non mises à la corbeille (BF-99). */
   async listActive(shopId: string): Promise<Category[]> {
     const categories = await this.categories.listByShop(shopId);

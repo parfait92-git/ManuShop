@@ -19,51 +19,43 @@ import type { ProductCost } from "@/models/product/ProductCost";
  *   la ligne compte dans le chiffre d'affaires mais pas dans le gain.
  */
 
-/** Cameroun : UTC+1 toute l'année (pas d'heure d'été) — mêmes bornes de
- * jour, semaine et mois quel que soit le fuseau de l'appareil. */
-const SHOP_UTC_OFFSET_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
+/* Bornes de jour, semaine, mois et année dans le fuseau horaire de
+ * l'appareil de l'utilisateur (2026-10-03, demande de l'utilisateur :
+ * « le fuseau dépend d'où se trouve celui qui utilise la plateforme »).
+ * Construites par composantes locales, donc justes aussi les jours de
+ * changement d'heure. Les noms gardent « Shop » pour ne pas tout
+ * renommer : il s'agit de l'heure locale de l'utilisateur. */
 
-/** Date « au Cameroun » : ses composantes UTC donnent l'heure locale. */
-function toShopTime(date: Date): Date {
-  return new Date(date.getTime() + SHOP_UTC_OFFSET_MS);
-}
-
-function fromShopTime(shifted: Date): Date {
-  return new Date(shifted.getTime() - SHOP_UTC_OFFSET_MS);
-}
-
-/** Début (inclus) du jour, au Cameroun. */
+/** Début (inclus) du jour, heure locale. */
 export function startOfShopDay(date: Date): Date {
-  const local = toShopTime(date);
-  return fromShopTime(
-    new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()))
-  );
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-/** Début (inclus) de la semaine, lundi, au Cameroun. */
+/** Début (inclus) de la semaine, lundi, heure locale. */
 export function startOfShopWeek(date: Date): Date {
-  const day = startOfShopDay(date);
-  const weekday = (toShopTime(day).getUTCDay() + 6) % 7; // lundi = 0
-  return new Date(day.getTime() - weekday * DAY_MS);
+  const weekday = (date.getDay() + 6) % 7; // lundi = 0
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - weekday);
 }
 
-/** Début (inclus) du mois, au Cameroun. */
+/** Début (inclus) du mois, heure locale. */
 export function startOfShopMonth(date: Date): Date {
-  const local = toShopTime(date);
-  return fromShopTime(new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1)));
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-/** Début (inclus) de l'année, au Cameroun. */
+/** Début (inclus) de l'année, heure locale. */
 export function startOfShopYear(date: Date): Date {
-  const local = toShopTime(date);
-  return fromShopTime(new Date(Date.UTC(local.getUTCFullYear(), 0, 1)));
+  return new Date(date.getFullYear(), 0, 1);
 }
 
-/** "2026-10-02" (champ date) → début de ce jour au Cameroun. */
+/** "2026-10-02" (champ date) → début de ce jour, heure locale. */
 export function shopDayFromInput(value: string): Date {
   const [year, month, day] = value.split("-").map(Number);
-  return fromShopTime(new Date(Date.UTC(year, month - 1, day)));
+  return new Date(year, month - 1, day);
+}
+
+/** Lendemain (même heure locale), pour une borne de fin exclue. */
+function nextDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 }
 
 export type PeriodPreset = "week" | "month" | "year" | "custom";
@@ -75,7 +67,7 @@ export interface Period {
 }
 
 export function presetPeriod(preset: Exclude<PeriodPreset, "custom">, now: Date = new Date()): Period {
-  const to = new Date(startOfShopDay(now).getTime() + DAY_MS);
+  const to = nextDay(startOfShopDay(now));
   const from =
     preset === "week"
       ? startOfShopWeek(now)
@@ -89,7 +81,7 @@ export function presetPeriod(preset: Exclude<PeriodPreset, "custom">, now: Date 
 export function customPeriod(fromInput: string, toInput: string): Period {
   return {
     from: shopDayFromInput(fromInput),
-    to: new Date(shopDayFromInput(toInput).getTime() + DAY_MS),
+    to: nextDay(shopDayFromInput(toInput)),
   };
 }
 
@@ -189,12 +181,10 @@ function group(
 const WEEK_LABEL = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
-  timeZone: "UTC",
 });
 const MONTH_LABEL = new Intl.DateTimeFormat("fr-FR", {
   month: "long",
   year: "numeric",
-  timeZone: "UTC",
 });
 
 export function computeProfitReport({
@@ -259,12 +249,12 @@ export function computeProfitReport({
     byWeek: group(
       lines,
       (l) => startOfShopWeek(l.date).toISOString(),
-      (l) => `Semaine du ${WEEK_LABEL.format(toShopTime(startOfShopWeek(l.date)))}`
+      (l) => `Semaine du ${WEEK_LABEL.format(startOfShopWeek(l.date))}`
     ).sort(chronological),
     byMonth: group(
       lines,
       (l) => startOfShopMonth(l.date).toISOString(),
-      (l) => MONTH_LABEL.format(toShopTime(startOfShopMonth(l.date)))
+      (l) => MONTH_LABEL.format(startOfShopMonth(l.date))
     ).sort(chronological),
   };
 }
