@@ -3,7 +3,8 @@
  * l'émission (serveur), le PDF et le formulaire des Paramètres.
  *
  * Choix de l'utilisateur :
- * - couleur de la facture choisie par le commerçant (`Shop.themeColor`) ;
+ * - couleur de la facture : celle du thème de la boutique, sauf couleur
+ *   choisie par le commerçant (`Shop.themeColor`) ;
  * - TVA réglée par boutique (`Shop.vatRate`, 0 par défaut). Les prix payés
  *   par les clients sont **TTC** : le HT et la TVA en sont déduits, jamais
  *   ajoutés par-dessus ;
@@ -17,7 +18,10 @@ export const DEFAULT_INVOICE_COLOR = "#3B5BA5";
 
 /** Couleurs proposées dans les Paramètres (en plus du choix libre). */
 export const INVOICE_COLOR_PRESETS = [
-  { value: "#3B5BA5", label: "Bleu" },
+  // Pas exactement `DEFAULT_INVOICE_COLOR` : ce bleu-là signifie « suivre
+  // le thème » (voir `customInvoiceColor`) ; celui-ci, à l'œil identique,
+  // est un vrai choix du commerçant.
+  { value: "#3D5DA8", label: "Bleu" },
   { value: "#0E7490", label: "Bleu canard" },
   { value: "#047857", label: "Vert" },
   { value: "#B45309", label: "Ocre" },
@@ -37,9 +41,25 @@ export function isHexColor(value: unknown): value is string {
   return typeof value === "string" && HEX_COLOR.test(value);
 }
 
-/** Couleur utilisable, ou celle par défaut. */
-export function resolveInvoiceColor(value: unknown): string {
-  return isHexColor(value) ? value.toUpperCase() : DEFAULT_INVOICE_COLOR;
+/**
+ * Couleur choisie par le commerçant, ou `null` s'il suit le thème. Le bleu
+ * par défaut compte comme « suivre le thème » : c'est la valeur que le
+ * formulaire enregistrait pour tous avant l'arrivée des thèmes
+ * (2026-10-03), et c'est aussi la couleur du thème par défaut.
+ */
+export function customInvoiceColor(value: unknown): string | null {
+  if (!isHexColor(value)) return null;
+  const color = value.toUpperCase();
+  return color === DEFAULT_INVOICE_COLOR ? null : color;
+}
+
+/** Couleur de la facture : celle du commerçant, sinon celle du thème de
+ * la boutique, sinon le bleu par défaut. */
+export function resolveInvoiceColor(shopColor: unknown, themeColor?: unknown): string {
+  return (
+    customInvoiceColor(shopColor) ??
+    (isHexColor(themeColor) ? themeColor.toUpperCase() : DEFAULT_INVOICE_COLOR)
+  );
 }
 
 /** Taux de TVA utilisable (0 à 100 %, deux décimales), 0 sinon. */

@@ -8,7 +8,9 @@ import {
   resolveInvoiceColor,
   resolveVatRate,
 } from "@/lib/invoice";
+import { ACTIVE_THEME_DOC } from "@/models/theme/ShopTheme";
 import { NotFoundError, ValidationError } from "@/server/errors";
+import { resolveTheme } from "@/themes/registry";
 import { appendHistoryEvent, nextHistoryEvent } from "@/server/integrity/orderHistory";
 import {
   canonicalJson,
@@ -96,11 +98,15 @@ export async function ensureInvoice(
     }
 
     const counterRef = db.collection(INVOICE_COUNTERS_COLLECTION).doc(order.shopId);
-    const [shopSnapshot, counterSnapshot, configSnapshot] = await Promise.all([
-      transaction.get(db.collection("shops").doc(order.shopId)),
+    const shopRef = db.collection("shops").doc(order.shopId);
+    const [shopSnapshot, counterSnapshot, configSnapshot, themeSnapshot] = await Promise.all([
+      transaction.get(shopRef),
       transaction.get(counterRef),
       transaction.get(db.collection("configuration").doc("general")),
+      transaction.get(shopRef.collection("themes").doc(ACTIVE_THEME_DOC)),
     ]);
+    // Couleur du thème appliqué à la boutique, figée avec la facture.
+    const theme = resolveTheme(themeSnapshot.data()?.themeId);
     const shop = shopSnapshot.data() ?? {};
     const sequence = ((counterSnapshot.data()?.last as number | undefined) ?? 0) + 1;
 
@@ -140,7 +146,7 @@ export async function ensureInvoice(
       vatRate: resolveVatRate(shop.vatRate),
       currency,
       rateToXaf: rates[currency]!,
-      color: resolveInvoiceColor(shop.themeColor),
+      color: resolveInvoiceColor(shop.themeColor, theme.invoiceColor),
     });
 
     transaction.set(counterRef, { last: sequence }, { merge: true });

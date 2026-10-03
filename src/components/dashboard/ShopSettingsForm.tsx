@@ -47,8 +47,9 @@ import { shopService } from "@/services/ShopService";
 import { useCurrencyRates } from "@/components/providers/CurrencyContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { BASE_CURRENCY, CURRENCIES, shopCurrency } from "@/lib/currency";
-import { resolveInvoiceColor, resolveVatRate } from "@/lib/invoice";
+import { customInvoiceColor, resolveVatRate } from "@/lib/invoice";
 import { ShopInvoiceSettings } from "@/components/dashboard/ShopInvoiceSettings";
+import { useShopTheme } from "@/hooks/useShopTheme";
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -88,7 +89,7 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
     clientContactMethods: shop.clientContactMethods ?? [],
     publicContactEmail: shop.publicContactEmail ?? "",
     isPublished: shop.isPublished ?? false,
-    themeColor: resolveInvoiceColor(shop.themeColor),
+    themeColor: customInvoiceColor(shop.themeColor) ?? "",
     vatRate: resolveVatRate(shop.vatRate),
     taxId: shop.taxId ?? "",
     tradeRegister: shop.tradeRegister ?? "",
@@ -173,6 +174,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const urgentPhone = useWatch({ control, name: "urgentPhone" });
   const isPublished = useWatch({ control, name: "isPublished" });
   const themeColor = useWatch({ control, name: "themeColor" });
+  const { theme: appliedTheme } = useShopTheme(shopId);
   const facebookUrl = useWatch({ control, name: "facebookUrl" });
   const instagramUrl = useWatch({ control, name: "instagramUrl" });
   const clientContactMethods = useWatch({
@@ -453,6 +455,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             }
             register={register}
             errors={errors}
+            themeName={appliedTheme.name}
+            themeInvoiceColor={appliedTheme.invoiceColor}
           />
 
           <section data-tour="shop-multichannel" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">

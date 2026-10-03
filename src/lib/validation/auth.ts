@@ -156,7 +156,8 @@ export const ShopSettingsSchema = z.object({
   // Visibilité (BF-88)
   isPublished: z.boolean(),
   // Facturation (BF-29, 2026-10-03)
-  themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, {
+  // Vide : la facture suit la couleur du thème de la boutique.
+  themeColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, {
     error: "Choisissez une couleur.",
   }),
   vatRate: z

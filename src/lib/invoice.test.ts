@@ -1,6 +1,8 @@
 import {
   computeInvoice,
+  customInvoiceColor,
   DEFAULT_INVOICE_COLOR,
+  INVOICE_COLOR_PRESETS,
   formatInvoiceMoney,
   formatInvoiceNumber,
   formatVatRate,
@@ -16,11 +18,27 @@ describe("invoice", () => {
     expect(formatInvoiceNumber(123456)).toBe("F-123456");
   });
 
-  it("falls back to the default colour and a 0 % rate on bad values", () => {
-    expect(resolveInvoiceColor("#047857")).toBe("#047857");
+  it("uses the merchant's colour, else the theme's, else the default blue", () => {
+    expect(resolveInvoiceColor("#047857", "#B4451F")).toBe("#047857");
     expect(resolveInvoiceColor("#abcdef")).toBe("#ABCDEF");
-    expect(resolveInvoiceColor("red")).toBe(DEFAULT_INVOICE_COLOR);
+    // Pas de choix (absent, vide, invalide) : couleur du thème.
+    expect(resolveInvoiceColor(undefined, "#B4451F")).toBe("#B4451F");
+    expect(resolveInvoiceColor("", "#b4451f")).toBe("#B4451F");
+    expect(resolveInvoiceColor("red", "#B4451F")).toBe("#B4451F");
+    // Le bleu par défaut, enregistré pour tous avant les thèmes, suit le thème.
+    expect(resolveInvoiceColor(DEFAULT_INVOICE_COLOR, "#B4451F")).toBe("#B4451F");
+    expect(customInvoiceColor(DEFAULT_INVOICE_COLOR)).toBeNull();
+    // Sans thème connu : bleu par défaut.
     expect(resolveInvoiceColor(undefined)).toBe(DEFAULT_INVOICE_COLOR);
+  });
+
+  it("offers presets that are real choices, never the follow-the-theme blue", () => {
+    for (const preset of INVOICE_COLOR_PRESETS) {
+      expect(customInvoiceColor(preset.value)).toBe(preset.value.toUpperCase());
+    }
+  });
+
+  it("falls back to a 0 % rate on bad values", () => {
     expect(resolveVatRate(19.25)).toBe(19.25);
     expect(resolveVatRate(-1)).toBe(0);
     expect(resolveVatRate(150)).toBe(0);

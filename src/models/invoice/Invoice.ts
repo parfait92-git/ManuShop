@@ -44,6 +44,7 @@ export interface Invoice {
   /** Devise d'affichage de la boutique, et sa valeur en FCFA, à l'émission. */
   currency: CurrencyCode;
   rateToXaf: number;
-  /** Couleur de la facture (`Shop.themeColor`), « #RRGGBB ». */
+  /** Couleur de la facture, « #RRGGBB » : celle choisie par le commerçant
+   * (`Shop.themeColor`), sinon celle du thème de la boutique à l'émission. */
   color: string;
 }

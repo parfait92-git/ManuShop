@@ -20,6 +20,10 @@ export interface ThemeDefinition {
   dashboardTheme: string;
   /** Thème de la vitrine et de l'espace de gestion (`data-shop-theme`). */
   siteTheme: string;
+  /** Couleur des factures de la boutique (titre, en-tête du tableau,
+   * total, bandeau), sauf couleur choisie par le commerçant dans
+   * Paramètres → Facturation. Texte blanc dessus : contraste vérifié. */
+  invoiceColor: string;
 }
 
 export const DEFAULT_THEME_ID = "default";
@@ -33,6 +37,7 @@ export const THEMES: ThemeDefinition[] = [
     highlights: ["Vitrine claire et lisible", "Tableau de bord sombre", "Graphiques en dégradé bleu"],
     dashboardTheme: "default",
     siteTheme: "default",
+    invoiceColor: "#3B5BA5",
   },
   {
     id: "wax-soleil",
@@ -42,6 +47,7 @@ export const THEMES: ThemeDefinition[] = [
     highlights: ["Vitrine crème et terracotta", "Tableau de bord clair", "Idéal mode, beauté, artisanat"],
     dashboardTheme: "wax-soleil",
     siteTheme: "wax-soleil",
+    invoiceColor: "#B4451F",
   },
 ];
 

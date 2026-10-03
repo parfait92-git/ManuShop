@@ -180,6 +180,29 @@ describe("ensureInvoice", () => {
     );
   });
 
+  // Le thème choisi s'applique aussi à la facture (2026-10-03).
+  it("takes the colour of the shop's theme when the merchant hasn't chosen one", async () => {
+    const { db, writes } = fakeDb({
+      "orders/o1": ORDER,
+      "shops/shop-1": { ...SHOP, themeColor: "" },
+      "shops/shop-1/themes/active": { themeId: "wax-soleil" },
+      "configuration/general": {},
+    });
+    await ensureInvoice(db, "o1");
+    expect(writes["invoices/o1"]).toEqual(expect.objectContaining({ color: "#B4451F" }));
+  });
+
+  it("keeps the merchant's own colour over the theme's", async () => {
+    const { db, writes } = fakeDb({
+      "orders/o1": ORDER,
+      "shops/shop-1": SHOP,
+      "shops/shop-1/themes/active": { themeId: "wax-soleil" },
+      "configuration/general": {},
+    });
+    await ensureInvoice(db, "o1");
+    expect(writes["invoices/o1"]).toEqual(expect.objectContaining({ color: "#047857" }));
+  });
+
   it("returns an invoice already issued as is, without renumbering", async () => {
     const existing = { number: "F-00003", sequence: 3, verificationCode: "7K4PQ9X2MB", signature: "sig", keyId: "k" };
     const { db, writes } = fakeDb({ "invoices/o1": existing, "orders/o1": ORDER });

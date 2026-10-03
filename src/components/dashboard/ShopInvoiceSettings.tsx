@@ -23,13 +23,20 @@ export function ShopInvoiceSettings({
   onColorChange,
   register,
   errors,
+  themeName,
+  themeInvoiceColor,
 }: {
+  /** Couleur choisie, ou "" pour suivre le thème. */
   color: string;
+  /** Thème appliqué à la boutique, et sa couleur de facture. */
+  themeName: string;
+  themeInvoiceColor: string;
   onColorChange: (color: string) => void;
   register: UseFormRegister<ShopSettingsInput>;
   errors: FieldErrors<ShopSettingsInput>;
 }) {
   const current = isHexColor(color) ? color.toUpperCase() : "";
+  const followsTheme = current === "";
 
   return (
     <section
@@ -52,11 +59,28 @@ export function ShopInvoiceSettings({
       <div className="flex flex-col gap-2">
         <Label
           htmlFor="themeColor"
-          help="La couleur de vos factures : titre, en-tête du tableau, total et bandeau du bas. Choisissez celle de votre logo ou de votre enseigne."
+          help="La couleur de vos factures : titre, en-tête du tableau, total et bandeau du bas. Par défaut, celle du thème de votre boutique (elle change si vous changez de thème). Vous pouvez aussi choisir celle de votre logo ou de votre enseigne."
         >
-          Couleur de la boutique
+          Couleur des factures
         </Label>
-        <div role="radiogroup" aria-label="Couleurs proposées" className="flex flex-wrap gap-2">
+        <div role="radiogroup" aria-label="Couleurs proposées" className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={followsTheme}
+            aria-label={`Couleur du thème (${themeName})`}
+            title={`Couleur du thème (${themeName})`}
+            onClick={() => onColorChange("")}
+            className="flex h-9 items-center gap-2 rounded-full border border-border pr-3 pl-1 text-sm ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none aria-checked:ring-2 aria-checked:ring-foreground"
+          >
+            <span
+              className="flex size-7 items-center justify-center rounded-full"
+              style={{ backgroundColor: themeInvoiceColor }}
+            >
+              {followsTheme && <Check className="size-4 text-white" aria-hidden />}
+            </span>
+            Couleur du thème
+          </button>
           {INVOICE_COLOR_PRESETS.map((preset) => (
             <button
               key={preset.value}
@@ -77,12 +101,14 @@ export function ShopInvoiceSettings({
           <input
             id="themeColor"
             type="color"
-            value={current || "#3B5BA5"}
+            value={current || themeInvoiceColor}
             onChange={(event) => onColorChange(event.target.value.toUpperCase())}
             className="h-9 w-14 cursor-pointer rounded-md border border-border bg-background p-1"
           />
           <span className="text-sm text-muted-foreground">
-            Autre couleur : {current || "aucune"}
+            {followsTheme
+              ? `Couleur du thème « ${themeName} » : ${themeInvoiceColor}`
+              : `Couleur choisie : ${current}`}
           </span>
         </div>
         {errors.themeColor && (

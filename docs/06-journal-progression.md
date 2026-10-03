@@ -2065,3 +2065,20 @@ Suite, acceptée par l'utilisateur : les pages de l'espace de gestion gardaient 
 **Vérification réelle sur émulateurs** : deux boutiques, une par thème, et neuf pages de gestion capturées dans chacun (plus l'accueil mobile). En « Wax Soleil », tout est crème et terracotta. Par défaut, apparence d'origine. Aucune erreur.
 
 Vérifié : lint, `tsc`, 1 352 tests, build. Rien de commité.
+
+### 2026-10-03 — La facture suit le thème de la boutique
+
+Demande de l'utilisateur : que le thème choisi s'applique aussi à la facture. La clé `INVOICE_SIGNING_KEY` est déjà configurée en production.
+
+**Fait** :
+- Chaque thème du catalogue déclare une **couleur de facture** : « ManuShop Nuit » `#3B5BA5`, « Wax Soleil » `#B4451F`. Un test vérifie qu'elle reste lisible sous le texte blanc.
+- À l'émission, `ensureInvoice` lit le thème appliqué (`shops/{id}/themes/active`) dans la même transaction. Couleur retenue : celle choisie par le commerçant, sinon celle du thème. Elle est **figée** avec la facture, qui est signée : une facture émise ne change plus de couleur si le thème change ensuite.
+- Paramètres → Facturation : « Couleur des factures », avec le nouveau choix **« Couleur du thème »** sélectionné par défaut (pastille de la couleur du thème en cours), les couleurs proposées et le choix libre.
+- Compatibilité : avant ce changement, le formulaire enregistrait le bleu par défaut pour tous. Ce bleu compte donc comme « suivre le thème » (`customInvoiceColor`). La couleur « Bleu » proposée est un bleu visuellement identique, `#3D5DA8`, pour rester un vrai choix.
+- La page de vérification d'une facture (QR code) s'affiche aussi aux couleurs et au nom de la boutique (`ShopBrandingSetter`).
+
+**Vérification réelle sur émulateurs** : boutique en « Wax Soleil » avec l'ancien bleu enregistré. Facture émise et figée en `#B4451F`, signée ; PDF terracotta (titre, tableau, total, bandeau, légende du QR code). Page de vérification en `wax-soleil`, « Facture authentique ».
+
+**Tests** : choix de la couleur (commerçant, thème, ancien bleu, valeur invalide), couleurs proposées jamais confondues avec « suivre le thème », émission (couleur du thème, couleur du commerçant prioritaire), formulaire (« Couleur du thème » coché par défaut, retour à la couleur du thème), lisibilité de la couleur de chaque thème.
+
+Vérifié : lint, `tsc`, 1 360 tests, build. Rien de commité.

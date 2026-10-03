@@ -91,8 +91,9 @@ export interface Shop {
    * `lib/premiumFeatures.ts`, activées/désactivées exclusivement par le
    * Super Admin (Server Action, voir `platformAdminActions.ts`). */
   premiumFeatures?: string[];
-  /** Couleur de la boutique, « #RRGGBB » — utilisée par ses factures
-   * (2026-10-03). Absente : bleu par défaut (`DEFAULT_INVOICE_COLOR`). */
+  /** Couleur des factures choisie par le commerçant, « #RRGGBB »
+   * (2026-10-03). Absente, vide ou bleu par défaut : couleur du thème de la
+   * boutique (`customInvoiceColor`). */
   themeColor?: string;
   /** Taux de TVA en % (ex. 19.25). Absent ou 0 : boutique non assujettie,
    * facture « TVA non applicable ». Les prix saisis sont TTC. */

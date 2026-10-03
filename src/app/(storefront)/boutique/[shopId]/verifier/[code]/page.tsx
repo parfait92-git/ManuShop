@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ShopBrandingSetter } from "@/components/providers/ShopBrandingSetter";
 import { InvoiceVerificationView } from "@/components/verification/InvoiceVerificationView";
 import { UnknownInvoice } from "@/components/verification/UnknownInvoice";
 import { getAdminDb } from "@/lib/firebaseAdmin";
@@ -33,10 +34,18 @@ export default async function InvoiceVerificationPage({
 
   const [shop, siteUrl] = await Promise.all([getPublicShop(shopId), getPublicSiteUrl()]);
   return (
-    <InvoiceVerificationView
+    <>
+      {/* En-tête et thème de la boutique, comme sur sa vitrine. */}
+      <ShopBrandingSetter
+        shopId={shopId}
+        name={shop?.name ?? verification.sellerName}
+        logo={shop?.logo || undefined}
+      />
+      <InvoiceVerificationView
       verification={verification}
       shop={shop ? { name: shop.name, logo: shop.logo || undefined } : null}
       siteOrigin={siteUrl}
-    />
+      />
+    </>
   );
 }
