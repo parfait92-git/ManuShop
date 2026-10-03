@@ -45,10 +45,10 @@ const order = (overrides: Partial<Order>): Order => ({
 const product = (stock: number) => ({ stock, stockThreshold: 2 }) as Product;
 
 describe("DashboardOverview", () => {
-  it("carries the default theme on its container", () => {
+  it("carries the default theme's dashboard on its container", () => {
     useDashboardDataMock.mockReturnValue({ status: "loading" });
     const { container } = render(<DashboardOverview shopId="shop-1" />);
-    expect(container.firstChild).toHaveAttribute("data-dashboard-theme", "default");
+    expect(container.firstChild).toHaveAttribute("data-dashboard-theme", "manushop");
     expect(screen.getByText("Chargement du tableau de bord...")).toBeInTheDocument();
   });
 

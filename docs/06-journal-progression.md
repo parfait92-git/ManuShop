@@ -2215,3 +2215,16 @@ Signalé par l'utilisateur :
 **Tests** : `OrderService.watchByClient` (tri), « Mes commandes » (statut mis à jour en direct, fin de l'écoute), confirmation de commande (adresse enregistrée si absente, adresse du profil reprise sans rien enregistrer, profil chargé après coup sans écraser la saisie).
 
 Vérifié : lint, `tsc`, 1 865 tests, build. Rien de commité.
+
+### 2026-10-03 — Tableau de bord clair pour « ManuShop Nuit »
+
+Demande de l'utilisateur : le tableau de bord du thème « ManuShop Nuit » ressemblait à celui d'un thème bleu néon ; le rendre clair, aux couleurs de base du thème.
+
+**Fait** :
+- Nouveau tableau de bord `manushop` pour « ManuShop Nuit » : fond gris clair `#F8FAFC` et cartes blanches ; textes gris ardoise ; accent, icônes, courbe « Encaissé », barres et jauge en cyan `#0E7490` ; courbe « Commandé » en ardoise `#64748B` ; bannière de bienvenue sombre, d'ardoise à cyan foncé (`#0F172A` → `#164E63`). Ce sont les couleurs de ses menus.
+- Le tableau de bord bleu nuit (`default`) reste celui de « Néon Océan », qui lui correspond.
+- Description et points forts de « ManuShop Nuit » mis à jour (« Tableau de bord clair », « Accents cyan »). Tableau de bord par défaut de `DashboardOverview` : celui du thème par défaut du catalogue.
+
+**Vérification réelle sur émulateurs** : « ManuShop Nuit » donne `data-dashboard-theme="manushop"` (clair) ; « Néon Océan » donne `default` (bleu nuit). Tous les contrastes passent.
+
+Vérifié : lint, `tsc`, 1 935 tests, build. Rien de commité.

@@ -835,6 +835,75 @@
   --dashboard-welcome-muted: #cfe3ea;
 }
 
+/* ——— Tableau de bord de « ManuShop Nuit » (2026-10-03, demande de
+ * l'utilisateur) : clair, aux couleurs de base du thème — gris ardoise et
+ * accents cyan, comme ses menus. Le bleu nuit reste celui de « Néon Océan ». ——— */
+[data-dashboard-theme="manushop"] {
+  color-scheme: light;
+
+  --dashboard-bg: #f8fafc;
+  --dashboard-bg-glow: rgba(8, 145, 178, 0.10);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-gradient-start: #ffffff;
+  --dashboard-card-gradient-end: #f8fafc;
+  --dashboard-card-border: rgba(15, 23, 42, 0.08);
+  --dashboard-card-radius: 20px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.25);
+
+  --dashboard-text: #020617;
+  --dashboard-text-muted: #475569;
+  --dashboard-text-subtle: #5f6e82;
+
+  --dashboard-accent: #0e7490;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #0e7490;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #475569;
+
+  --chart-1: #0e7490;
+  --chart-2: #64748b;
+  --chart-gradient-start: #06b6d4;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #ffffff;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #0e7490;
+  --chart-grid: rgba(15, 23, 42, 0.08);
+  --chart-axis: #475569;
+  --chart-tooltip-bg: #0f172a;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(15, 23, 42, 0.08);
+
+  --gauge-track: #e2e8f0;
+  --gauge-fill: #0891b2;
+  --gauge-fill-end: #0e7490;
+
+  --dashboard-table-header: #475569;
+  --dashboard-table-row-border: rgba(15, 23, 42, 0.08);
+  --dashboard-table-row-hover: rgba(15, 23, 42, 0.03);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #475569;
+  --status-muted-bg: rgba(15, 23, 42, 0.03);
+
+  --dashboard-welcome-gradient-start: #0f172a;
+  --dashboard-welcome-gradient-end: #164e63;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #cbd5e1;
+}
+
 /* ——— Thème clair : non proposé aux commerçants pour l'instant. Il sert à
  * vérifier qu'un thème clair reste lisible avec ces mêmes composants
  * (test de contraste), et de modèle aux thèmes à venir. ——— */

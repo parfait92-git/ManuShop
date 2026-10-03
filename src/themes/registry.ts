@@ -33,9 +33,9 @@ export const THEMES: ThemeDefinition[] = [
     id: DEFAULT_THEME_ID,
     name: "ManuShop Nuit",
     description:
-      "Le thème d'origine : vitrine claire et sobre, tableau de bord bleu nuit aux cartes en dégradé et accents bleus.",
-    highlights: ["Vitrine claire et lisible", "Tableau de bord sombre", "Graphiques en dégradé bleu"],
-    dashboardTheme: "default",
+      "Le thème d'origine : vitrine claire et sobre, tableau de bord clair aux cartes blanches, gris ardoise et accents cyan.",
+    highlights: ["Vitrine claire et lisible", "Tableau de bord clair", "Accents cyan"],
+    dashboardTheme: "manushop",
     siteTheme: "default",
     invoiceColor: "#3B5BA5",
   },
