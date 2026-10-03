@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  Boxes,
   ImageOff,
   Pencil,
   Plus,
@@ -18,6 +19,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { CoachMark } from "@/components/ui/CoachMark";
+import { StockDialog } from "@/components/dashboard/StockDialog";
 import {
   STICKY_COLUMN_CONTENT,
   ScrollableTable,
@@ -54,6 +56,11 @@ export function ProductList({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [onlyWithoutImage, setOnlyWithoutImage] = useState(false);
+  const [stockProduct, setStockProduct] = useState<Product | null>(null);
+
+  function handleStockChange(productId: string, stock: number) {
+    setProducts((current) => current.map((p) => (p.id === productId ? { ...p, stock } : p)));
+  }
 
   const withoutImageCount = products.filter(
     (p) => !productService.hasImage(p)
@@ -307,6 +314,16 @@ export function ProductList({
                     </td>
                     <td className="px-4 py-3 sm:pr-6">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Gérer le stock de ${product.name}`}
+                          title="Stock : réapprovisionner, corriger, historique"
+                          onClick={() => setStockProduct(product)}
+                          className="text-shell-subtle hover:bg-shell-hover"
+                        >
+                          <Boxes className="size-4" />
+                        </Button>
                         <Link
                           href={`/dashboard/products/${product.id}/edit`}
                           aria-label={`Modifier ${product.name}`}
@@ -333,6 +350,11 @@ export function ProductList({
           </table>
         </ScrollableTable>
       )}
+      <StockDialog
+        product={stockProduct}
+        onClose={() => setStockProduct(null)}
+        onStockChange={handleStockChange}
+      />
     </div>
   );
 }

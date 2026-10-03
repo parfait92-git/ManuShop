@@ -43,7 +43,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
         && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId
         && (resource.data.get('images', []).size() == 0
-          || request.resource.data.get('images', []).size() > 0);
+          || request.resource.data.get('images', []).size() > 0)
+        // Le stock ne change plus depuis le navigateur après la création :
+        // commandes, réapprovisionnements et corrections passent par le
+        // serveur, qui les inscrit dans l'historique (`stockMovements`).
+        && request.resource.data.get('stock', 0) == resource.data.get('stock', 0);
       allow delete: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
         && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
@@ -66,6 +70,16 @@ service cloud.firestore {
 
     // Journal d'activité commerçant (BF-98) — privé à la boutique
     // concernée, jamais public, contrairement à products/categories/shops.
+    // Historique du stock (BF-15, 2026-10-03) : lisible par l'équipe de la
+    // boutique (gérant et vendeurs — aucun prix d'achat n'y figure), écrit
+    // uniquement par le serveur, avec le stock lui-même.
+    match /stockMovements/{movementId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow write: if false;
+    }
+
     match /activityLog/{entryId} {
       allow read: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']

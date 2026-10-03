@@ -192,7 +192,7 @@ Chaque module ci-dessus doit correspondre à une branche `feature/<module>` cré
 - [ ] Identifiants WhatsApp Business (Meta)
 
 **Fonctionnel, ordre proposé** :
-1. [ ] Module 3 — Stock : historique des mouvements, réapprovisionnement, variantes (BF-15→17)
+1. [~] Module 3 — Stock : historique des mouvements et réapprovisionnement faits le 2026-10-03 (BF-15, BF-16) ; variantes à faire (BF-17)
 2. [ ] Notifications push (FCM) : nouvelle commande, stock bas, fin de promotion, message (BF-58→61, BF-116)
 3. [ ] Promotions : date de début, codes promo, promotion flash, historique (BF-30→34)
 4. [ ] Retour demandé par le client (BF-77) ; factures groupées par période (BF-104), aperçu (BF-25), envoi WhatsApp (BF-27)

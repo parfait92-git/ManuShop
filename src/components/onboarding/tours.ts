@@ -114,7 +114,7 @@ export const TOURS = {
     {
       target: "products-actions",
       content:
-        "Modifiez un article, ou envoyez-le à la corbeille — il reste restaurable.",
+        "Gérez le stock d'un article (réapprovisionnement, correction, historique), modifiez-le, ou envoyez-le à la corbeille — il reste restaurable.",
     },
   ],
   "dashboard-product-form": [
@@ -287,7 +287,7 @@ export const TOURS = {
     {
       target: "reports-kind",
       content:
-        "Choisissez le rapport : l'état de votre stock à cette heure, ou ses sorties (commandé, livré, remis en stock) sur une période.",
+        "Choisissez le rapport : l'état de votre stock à cette heure, ses sorties (commandé, livré, remis en stock) ou tous ses mouvements (commandes, réapprovisionnements, corrections) sur une période.",
     },
     {
       target: "reports-preview",
@@ -457,6 +457,21 @@ export const TOURS = {
     {
       target: "manual-order-submit",
       content: "Enregistrez la commande : elle rejoint la liste des commandes.",
+    },
+  ],
+  "dialog-stock": [
+    {
+      target: "stock-tabs",
+      content:
+        "Réapprovisionnez à la réception d'une livraison, corrigez le stock après un inventaire, et retrouvez chaque entrée et sortie dans l'historique.",
+    },
+    {
+      target: "stock-received",
+      content: "Indiquez les unités reçues : elles s'ajoutent au stock actuel.",
+    },
+    {
+      target: "stock-restock-submit",
+      content: "Validez : le stock est mis à jour et le mouvement inscrit dans l'historique.",
     },
   ],
   "dialog-order-reason": [

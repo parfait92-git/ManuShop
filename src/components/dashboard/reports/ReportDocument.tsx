@@ -36,12 +36,20 @@ const styles = StyleSheet.create({
 /** Largeur relative d'une colonne, selon ce qu'elle contient : nom de
  * l'article large, montants moyens, petits nombres et oui/non étroits. */
 function flexOf(header: string, index: number): number {
-  if (index === 0) return 2.4;
-  if (/^(Catégorie)$/.test(header)) return 1.3;
+  if (header === "Article" || (index === 0 && header !== "Date")) return 2.4;
+  if (header === "Commande / note") return 1.9;
+  if (/^(Catégorie|Mouvement|Par|Date)$/.test(header)) return 1.3;
+  if (/^(Variation|Stock après)$/.test(header)) return 0.8;
   if (/Prix|Valeur/.test(header)) return 1.25;
   if (/^(Stock|Seuil|Publié)$/.test(header)) return 0.6;
   if (/^(Statut)$/.test(header)) return 0.85;
   return 1;
+}
+
+/** Paysage quand les colonnes ne tiennent pas en largeur sur un A4 droit
+ * (état du stock du gérant, mouvements de stock). */
+function landscape(headers: string[]): boolean {
+  return headers.reduce((sum, h, i) => sum + flexOf(h, i), 0) > 9;
 }
 
 /** Espace entre deux colonnes : les valeurs ne se touchent jamais. */
@@ -50,7 +58,7 @@ const CELL = { paddingHorizontal: 3 };
 export function ReportDocument({ title, shopName, subtitle, generatedAt, color, table, totals }: ReportDocumentProps) {
   return (
     <Document title={`${title} - ${toPdfText(shopName)}`} author={toPdfText(shopName)} creator="ManuShop" producer="ManuShop" language="fr">
-      <Page size="A4" orientation={table.headers.length > 8 ? "landscape" : "portrait"} style={styles.page}>
+      <Page size="A4" orientation={landscape(table.headers) ? "landscape" : "portrait"} style={styles.page}>
         <View fixed>
           <Text style={[styles.title, { color }]}>{title}</Text>
           <Text style={styles.shop}>{toPdfText(shopName)}</Text>

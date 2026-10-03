@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { ProductImageUploader } from "@/components/dashboard/ProductImageUploader";
+import { StockDialog } from "@/components/dashboard/StockDialog";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useNavigationBlocker } from "@/components/providers/NavigationBlockerProvider";
 import {
@@ -29,6 +30,7 @@ import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { costService } from "@/services/CostService";
 import { productService } from "@/services/ProductService";
+import { stockService } from "@/services/StockService";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -105,6 +107,11 @@ export function ProductForm({
   // 2026-10-02) — un vendeur crée toujours des produits, sans ce champ.
   const { profile } = useAuth();
   const isOwner = profile?.role === "admin";
+
+  // Stock d'un produit existant : lecture seule ici, modifié par la fenêtre
+  // Stock (réapprovisionnement, correction), qui le trace dans l'historique.
+  const [currentStock, setCurrentStock] = useState(product?.stock ?? 0);
+  const [stockOpen, setStockOpen] = useState(false);
 
   // Le prix d'achat vit à part du produit (`productCosts`, privé) : chargé
   // séparément à l'ouverture d'un produit existant.
@@ -210,7 +217,6 @@ export function ProductForm({
           description: data.description,
           price: data.price,
           category: data.category,
-          stock: data.stock,
           stockThreshold: data.stockThreshold,
           images,
           ...promoFields,
@@ -234,6 +240,11 @@ export function ProductForm({
         });
         savedId = created.id;
         clearProductDraft();
+        // Premier maillon de l'historique du stock. Un échec n'empêche pas
+        // la création : le produit est enregistré, seul ce point manque.
+        await stockService.recordInitialStock(created.id).catch((err) => {
+          console.error("ProductForm : stock initial non inscrit dans l'historique", err);
+        });
       }
 
       // En modification, seulement si le champ a été touché : un prix
@@ -390,20 +401,40 @@ export function ProductForm({
       )}
 
       <div data-tour="product-stock" className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="stock" help="La quantité disponible à la vente. Elle diminue à chaque commande ; à 0, le produit apparaît en rupture.">Stock</Label>
-          <Input
-            id="stock"
-            type="number"
-            step="1"
-            min="0"
-            aria-invalid={!!errors.stock}
-            {...register("stock")}
-          />
-          {errors.stock && (
-            <p className="text-sm text-destructive">{errors.stock.message}</p>
-          )}
-        </div>
+        {product ? (
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="stock"
+              help="La quantité disponible à la vente. Elle diminue à chaque commande. Pour la changer, utilisez « Gérer le stock » : chaque réapprovisionnement ou correction est gardé dans l'historique."
+            >
+              Stock
+            </Label>
+            <Input id="stock" value={currentStock} readOnly aria-readonly className="bg-muted" />
+            <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setStockOpen(true)}>
+              Gérer le stock
+            </Button>
+            <StockDialog
+              product={stockOpen ? { ...product, stock: currentStock } : null}
+              onClose={() => setStockOpen(false)}
+              onStockChange={(_, stock) => setCurrentStock(stock)}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="stock" help="La quantité disponible au départ. Elle diminue ensuite à chaque commande ; à 0, le produit apparaît en rupture.">Stock initial</Label>
+            <Input
+              id="stock"
+              type="number"
+              step="1"
+              min="0"
+              aria-invalid={!!errors.stock}
+              {...register("stock")}
+            />
+            {errors.stock && (
+              <p className="text-sm text-destructive">{errors.stock.message}</p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="stockThreshold" help="Quand le stock descend à ce nombre ou en dessous, le produit est signalé « Stock faible » pour vous rappeler de le réapprovisionner.">Seuil d&apos;alerte</Label>

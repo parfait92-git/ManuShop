@@ -1,11 +1,15 @@
 import {
+  buildStockMovementsReport,
   buildStockOutflowReport,
+  stockMovementsTable,
+  stockMovementsTotals,
   buildStockStateReport,
   stockOutflowTable,
   stockStateTable,
   stockStateTotals,
   toCsv,
 } from "./stockReport";
+import type { StockMovement } from "@/models/stock/StockMovement";
 import type { Order } from "@/models/order/Order";
 import type { Product } from "@/models/product/Product";
 
@@ -86,5 +90,46 @@ describe("stockReport", () => {
     const csv = toCsv(stockStateTable(buildStockStateReport([product("x", { name: 'Pagne "wax"; 6 yards' })], null), false, false));
     expect(csv.startsWith("﻿Article;Catégorie;Stock;Seuil;Statut;Prix de vente;Valeur (vente);Publié\r\n")).toBe(true);
     expect(csv).toContain('"Pagne ""wax""; 6 yards";Mode;10;2;En stock;1000;10000;Oui\r\n');
+  });
+});
+
+describe("buildStockMovementsReport", () => {
+  const at = (iso: string) => ({ toMillis: () => Date.parse(iso), toDate: () => new Date(iso) });
+  const period = { from: new Date("2026-10-01T00:00:00Z"), to: new Date("2026-11-01T00:00:00Z") };
+  const m = (id: string, type: string, quantity: number, iso: string) =>
+    ({ id, productName: "Robe", type, quantity, stockAfter: 0, createdAt: at(iso) }) as unknown as StockMovement;
+
+  it("keeps the period's movements oldest first and totals entries, exits, restocks and corrections", () => {
+    const report = buildStockMovementsReport(
+      [
+        m("adj", "adjustment", -2, "2026-10-20T10:00:00Z"),
+        m("init", "initial", 10, "2026-10-01T08:00:00Z"),
+        m("order", "order", -3, "2026-10-05T10:00:00Z"),
+        m("restock", "restock", 6, "2026-10-10T10:00:00Z"),
+        m("cancel", "cancelled", 1, "2026-10-06T10:00:00Z"),
+        m("before", "restock", 50, "2026-09-30T10:00:00Z"),
+        { ...m("pending", "restock", 4, "2026-10-21T10:00:00Z"), createdAt: undefined } as unknown as StockMovement,
+      ],
+      period
+    );
+
+    expect(report.movements.map((x) => x.id)).toEqual(["init", "order", "cancel", "restock", "adj"]);
+    // Le stock de départ n'est ni une entrée ni une sortie.
+    expect(report.totals).toEqual({ movements: 5, unitsIn: 7, unitsOut: 5, restocked: 6, adjusted: -2 });
+    expect(stockMovementsTotals(report)).toContainEqual(["Écart des corrections d'inventaire", "-2"]);
+  });
+
+  it("signs the change for display, keeps raw numbers for the CSV, and names who made it", () => {
+    const report = buildStockMovementsReport(
+      [
+        { ...m("r", "restock", 6, "2026-10-10T10:00:00Z"), actorName: "Awa", note: "Fournisseur" },
+        { ...m("o", "order", -2, "2026-10-11T10:00:00Z"), orderId: "abcdefgh99" },
+      ] as StockMovement[],
+      period
+    );
+
+    expect(stockMovementsTable(report, true).rows[0].slice(1)).toEqual(["Robe", "Réapprovisionnement", "+6", 0, "Awa", "Fournisseur"]);
+    expect(stockMovementsTable(report, false).rows[0][3]).toBe(6);
+    expect(stockMovementsTable(report, true).rows[1].slice(5)).toEqual(["Client", "Commande ABCDEFGH"]);
   });
 });

@@ -65,7 +65,15 @@ const orderDocMock = jest.fn((id?: string) => ({
   }),
 }));
 
-const productDocMock = jest.fn((id: string) => ({ __ref: `products/${id}` }));
+// Lecture d'un produit hors transaction (remise en stock d'une commande,
+// pour l'historique du stock) — non énumérable, pour que les assertions
+// sur `{ __ref }` restent exactes.
+const productGetMock = jest.fn();
+const productDocMock = jest.fn((id: string) => {
+  const ref = { __ref: `products/${id}` };
+  Object.defineProperty(ref, "get", { value: () => productGetMock(id), enumerable: false });
+  return ref;
+});
 
 const shopGetMock = jest.fn();
 const shopDocMock = jest.fn(() => ({ get: shopGetMock }));
@@ -78,6 +86,7 @@ const collectionMock = jest.fn((name: string) => {
   if (name === "orderCosts") return { doc: (id: string) => ({ __ref: `orderCosts/${id}` }) };
   if (name === "shops") return { doc: shopDocMock };
   if (name === "notifications") return { doc: () => ({ __ref: "notifications/new" }) };
+  if (name === "stockMovements") return { doc: () => ({ __ref: "stockMovements/new" }) };
   throw new Error(`Unexpected collection: ${name}`);
 });
 
@@ -294,6 +303,19 @@ describe("createOrderAction", () => {
       { __ref: "products/p1" },
       { stock: { __op: "increment", n: -2 } }
     );
+    // Historique du stock (BF-15) : la sortie et le stock restant.
+    expect(transactionSetMock).toHaveBeenCalledWith(
+      { __ref: "stockMovements/new" },
+      expect.objectContaining({
+        shopId: "shop-1",
+        productId: "p1",
+        type: "order",
+        quantity: -2,
+        stockAfter: 98,
+        orderId: "order-new",
+      })
+    );
+    expect(transactionSetMock.mock.calls.find(([ref]) => ref.__ref === "stockMovements/new")?.[1]).not.toHaveProperty("actorId");
     expect(result).toEqual({ orderId: "order-new" });
     expect(sendOrderNotificationMock).toHaveBeenCalledWith({
       shopWhatsapp: "+237600000001",
@@ -421,6 +443,7 @@ describe("updateOrderStatusAction", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     requireCallerMock.mockResolvedValue({ uid: "merchant-1", email: "m@b.com" });
+    productGetMock.mockResolvedValue({ exists: true, data: () => ({ name: "Wax", stock: 5 }) });
   });
 
   function mockOrder(overrides: Record<string, unknown> = {}) {
@@ -511,6 +534,31 @@ describe("updateOrderStatusAction", () => {
       { __ref: "products/p1" },
       { stock: { __op: "increment", n: 2 } }
     );
+    expect(batchSetMock).toHaveBeenCalledWith(
+      { __ref: "stockMovements/new" },
+      expect.objectContaining({
+        productId: "p1",
+        type: "cancelled",
+        quantity: 2,
+        stockAfter: 7,
+        orderId: "order-1",
+        note: "Changement d'avis",
+        actorId: "client-1",
+      })
+    );
+  });
+
+  it("doesn't restock a product deleted since the order (its update would fail the whole write)", async () => {
+    mockOrder();
+    requireCallerMock.mockResolvedValue({ uid: "client-1", email: "c@b.com" });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "client" }) });
+    productGetMock.mockResolvedValue({ exists: false, data: () => undefined });
+
+    await updateOrderStatusAction("token", "order-1", { status: "cancelled", reason: "x" });
+
+    expect(batchUpdateMock).not.toHaveBeenCalledWith({ __ref: "products/p1" }, expect.anything());
+    expect(batchSetMock).not.toHaveBeenCalledWith({ __ref: "stockMovements/new" }, expect.anything());
+    expect(batchCommitMock).toHaveBeenCalled();
   });
 
   it("rejects cancellation without a reason", async () => {
@@ -619,6 +667,10 @@ describe("updateOrderStatusAction", () => {
     expect(batchUpdateMock).toHaveBeenCalledWith(
       { __ref: "products/p1" },
       { stock: { __op: "increment", n: 2 } }
+    );
+    expect(batchSetMock).toHaveBeenCalledWith(
+      { __ref: "stockMovements/new" },
+      expect.objectContaining({ type: "defective", quantity: 2, stockAfter: 7 })
     );
   });
 

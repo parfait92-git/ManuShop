@@ -1,6 +1,6 @@
 "use client";
 
-import { FileDown, FileSpreadsheet, Loader2, PackageMinus, Warehouse } from "lucide-react";
+import { ArrowLeftRight, FileDown, FileSpreadsheet, Loader2, PackageMinus, Warehouse } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,8 +18,11 @@ import { formatDateTime } from "@/lib/dateTime";
 import { resolveInvoiceColor } from "@/lib/invoice";
 import { customPeriod, presetPeriod, type Period } from "@/lib/profitReport";
 import {
+  buildStockMovementsReport,
   buildStockOutflowReport,
   buildStockStateReport,
+  stockMovementsTable,
+  stockMovementsTotals,
   stockOutflowTable,
   stockOutflowTotals,
   stockStateTable,
@@ -28,11 +31,13 @@ import {
 } from "@/lib/stockReport";
 import type { Order } from "@/models/order/Order";
 import type { Product } from "@/models/product/Product";
+import type { StockMovement } from "@/models/stock/StockMovement";
 import { costService } from "@/services/CostService";
 import { orderService } from "@/services/OrderService";
 import { productService } from "@/services/ProductService";
+import { stockService } from "@/services/StockService";
 
-type ReportKind = "state" | "outflow";
+type ReportKind = "state" | "outflow" | "movements";
 type PeriodChoice = "week" | "month" | "year" | "custom";
 
 const PERIOD_LABEL: Record<PeriodChoice, string> = {
@@ -72,9 +77,12 @@ export function StockReportsPageContent({ shopId }: { shopId: string }) {
   const { shop } = useCurrentShop();
   const { theme } = useShopTheme(shopId);
 
-  const [data, setData] = useState<{ products: Product[]; orders: Order[]; costs: Map<string, number> | null } | null>(
-    null
-  );
+  const [data, setData] = useState<{
+    products: Product[];
+    orders: Order[];
+    costs: Map<string, number> | null;
+    movements: StockMovement[];
+  } | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [kind, setKind] = useState<ReportKind>("state");
   const [periodChoice, setPeriodChoice] = useState<PeriodChoice>("month");
@@ -92,8 +100,9 @@ export function StockReportsPageContent({ shopId }: { shopId: string }) {
             .listProductCosts(shopId)
             .then((list) => new Map(list.map((c) => [c.productId, c.purchasePrice])))
         : Promise.resolve(null),
+      stockService.listShopMovements(shopId),
     ])
-      .then(([products, orders, costs]) => active && setData({ products, orders, costs }))
+      .then(([products, orders, costs, movements]) => active && setData({ products, orders, costs, movements }))
       .catch(() => active && setLoadError(true));
     return () => {
       active = false;
@@ -120,8 +129,18 @@ export function StockReportsPageContent({ shopId }: { shopId: string }) {
       };
     }
     if (!period) return null;
-    const outflow = buildStockOutflowReport(data.orders, data.products, period);
     const last = new Date(period.to.getTime() - 1);
+    if (kind === "movements") {
+      const movements = buildStockMovementsReport(data.movements, period);
+      return {
+        title: "Mouvements de stock",
+        subtitle: `Du ${dayLabel(period.from)} au ${dayLabel(last)}`,
+        table: (display: boolean): ReportTable => stockMovementsTable(movements, display),
+        totals: stockMovementsTotals(movements),
+        file: `mouvements-de-stock-${shopDay(period.from)}-au-${shopDay(last)}`,
+      };
+    }
+    const outflow = buildStockOutflowReport(data.orders, data.products, period);
     return {
       title: "Sorties de stock",
       subtitle: `Du ${dayLabel(period.from)} au ${dayLabel(last)}`,
@@ -183,6 +202,12 @@ export function StockReportsPageContent({ shopId }: { shopId: string }) {
       help: "Sur une période : quantités commandées, livrées et remises en stock (annulations, retours, défauts) pour chaque article.",
       icon: PackageMinus,
     },
+    {
+      id: "movements",
+      label: "Mouvements de stock",
+      help: "Sur une période : chaque entrée et sortie, dans l'ordre (commandes, réapprovisionnements, corrections d'inventaire), avec le stock après et son auteur.",
+      icon: ArrowLeftRight,
+    },
   ];
 
   return (
@@ -190,12 +215,12 @@ export function StockReportsPageContent({ shopId }: { shopId: string }) {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-shell-text">Rapports de stock</h1>
         <p className="mt-1 text-sm text-shell-subtle">
-          Générez l&apos;état de votre stock ou ses sorties sur une période, en PDF pour l&apos;imprimer
+          Générez l&apos;état de votre stock, ses sorties ou ses mouvements sur une période, en PDF pour l&apos;imprimer
           ou le partager, ou en CSV pour l&apos;ouvrir dans un tableur.
         </p>
       </div>
 
-      <div data-tour="reports-kind" role="radiogroup" aria-label="Rapport" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div data-tour="reports-kind" role="radiogroup" aria-label="Rapport" className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {kinds.map(({ id, label, help, icon: Icon }) => (
           <button
             key={id}
@@ -218,10 +243,10 @@ export function StockReportsPageContent({ shopId }: { shopId: string }) {
         ))}
       </div>
 
-      {kind === "outflow" && (
+      {kind !== "state" && (
         <div data-tour="reports-period" className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="report-period" help="Les commandes sont comptées selon leur date de création, à votre heure locale.">
+            <Label htmlFor="report-period" help={kind === "outflow" ? "Les commandes sont comptées selon leur date de création, à votre heure locale." : "Les mouvements sont datés à votre heure locale. L'historique commence le 3 octobre 2026."}>
               Période
             </Label>
             <Select id="report-period" value={periodChoice} onChange={(e) => setPeriodChoice(e.target.value as PeriodChoice)}>

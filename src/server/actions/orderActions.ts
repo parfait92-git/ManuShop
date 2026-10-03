@@ -11,6 +11,7 @@ import { effectivePrice, type PromoFields } from "@/lib/promo";
 import { appendHistoryEvent, nextHistoryEvent, type HistoryHead } from "@/server/integrity/orderHistory";
 import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
+import { queueStockMovement } from "@/server/stock/stockMovements";
 
 const ORDERS_COLLECTION = "orders";
 const PRODUCT_COSTS_COLLECTION = "productCosts";
@@ -65,6 +66,9 @@ export async function createOrderAction(
   const db = getAdminDb();
 
   let clientId: string | undefined = caller.uid;
+  /** Commande manuelle : le membre de l'équipe qui l'enregistre, inscrit
+   * dans l'historique du stock. */
+  let manualActor: { actorId: string; actorName: string } | undefined;
   if (input.manual) {
     const callerSnapshot = await db
       .collection(USERS_COLLECTION)
@@ -79,6 +83,10 @@ export async function createOrderAction(
       throw new ForbiddenError();
     }
     clientId = undefined;
+    manualActor = {
+      actorId: caller.uid,
+      actorName: (callerData.displayName as string | undefined) || (callerData.email as string | undefined) || "Équipe",
+    };
   }
 
   const orderRef = db.collection(ORDERS_COLLECTION).doc();
@@ -187,9 +195,28 @@ export async function createOrderAction(
       createdAt: FieldValue.serverTimestamp(),
     });
 
+    // Historique du stock (BF-15) : une sortie par article, avec le stock
+    // restant. Cumulé si un même produit figure sur deux lignes.
+    const remaining = new Map<string, number>();
     productRefs.forEach((ref, index) => {
+      const item = input.items[index];
       transaction.update(ref, {
-        stock: FieldValue.increment(-input.items[index].quantity),
+        stock: FieldValue.increment(-item.quantity),
+      });
+      const product = productSnapshots[index].data();
+      const before =
+        remaining.get(item.productId) ?? (typeof product?.stock === "number" ? product.stock : 0);
+      const stockAfter = before - item.quantity;
+      remaining.set(item.productId, stockAfter);
+      queueStockMovement(db, transaction, {
+        shopId: input.shopId,
+        productId: item.productId,
+        productName: (product?.name as string | undefined) ?? item.name,
+        type: "order",
+        quantity: -item.quantity,
+        stockAfter,
+        orderId: orderRef.id,
+        ...manualActor,
       });
     });
   });
@@ -280,6 +307,18 @@ export async function updateOrderStatusAction(
   }
 
   const needsRestock = RESTOCK_STATUSES.includes(input.status);
+  // Stock actuel des articles, pour l'historique du stock (BF-15). Lu juste
+  // avant l'écriture (un lot ne lit rien) : le stock affiché « après » peut
+  // différer d'une unité si une commande passe dans l'intervalle — la
+  // variation, elle, est exacte. Un produit supprimé depuis n'est plus
+  // remis en stock (sa mise à jour ferait échouer tout le lot).
+  const restockProducts = needsRestock
+    ? await Promise.all(
+        (order.items ?? []).map((item) =>
+          db.collection(PRODUCTS_COLLECTION).doc(item.productId).get()
+        )
+      )
+    : [];
   const batch = db.batch();
   // Maillon suivant de l'historique signé, dans le même lot que le statut :
   // l'un n'existe jamais sans l'autre.
@@ -301,11 +340,34 @@ export async function updateOrderStatusAction(
   });
 
   if (needsRestock) {
-    for (const item of order.items ?? []) {
+    const running = new Map<string, number>();
+    (order.items ?? []).forEach((item, index) => {
+      const snapshot = restockProducts[index];
+      if (!snapshot?.exists) return;
+      const product = snapshot.data() ?? {};
       batch.update(db.collection(PRODUCTS_COLLECTION).doc(item.productId), {
         stock: FieldValue.increment(item.quantity),
       });
-    }
+      const before =
+        running.get(item.productId) ?? (typeof product.stock === "number" ? product.stock : 0);
+      const stockAfter = before + item.quantity;
+      running.set(item.productId, stockAfter);
+      queueStockMovement(db, batch, {
+        shopId: order.shopId,
+        productId: item.productId,
+        productName: (product.name as string | undefined) ?? (item as { name?: string }).name ?? "",
+        type: input.status as "cancelled" | "returned" | "defective",
+        quantity: item.quantity,
+        stockAfter,
+        orderId,
+        note: input.reason?.trim(),
+        actorId: caller.uid,
+        actorName:
+          (callerData?.displayName as string | undefined) ||
+          (callerData?.email as string | undefined) ||
+          (isMerchant ? "Équipe" : "Client"),
+      });
+    });
   }
 
   // Commande livrée à un client qui a un compte : on l'invite à donner son

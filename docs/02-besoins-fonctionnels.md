@@ -44,8 +44,8 @@
 |---|---|---|
 | BF-13 | Suivi stock | Quantité disponible mise à jour automatiquement à chaque vente |
 | BF-14 | Alerte stock bas | Notification quand le stock passe sous un seuil défini |
-| BF-15 | Historique stock | Journal des entrées et sorties de stock |
-| BF-16 | Réapprovisionnement | Enregistrer une entrée de stock manuellement |
+| BF-15 | Historique stock | Journal des entrées et sorties de stock. **Fait le 2026-10-03** : chaque mouvement (stock initial, commande, annulation, retour, défectueux, réapprovisionnement, correction d'inventaire) est écrit par le serveur dans `stockMovements`, avec la variation, le stock après, l'auteur, la commande et la note. Consultable par produit (fenêtre Stock, depuis la liste des produits ou la fiche) et en rapport « Mouvements de stock » (PDF/CSV). Le stock ne se modifie plus depuis le navigateur après la création (règles Firestore). L'historique commence le 3 octobre 2026. |
+| BF-16 | Réapprovisionnement | Enregistrer une entrée de stock manuellement. **Fait le 2026-10-03** : « Réapprovisionner » (quantité reçue, note fournisseur, nouveau prix d'achat facultatif pour le gérant) et « Corriger l'inventaire » (stock remis au chiffre compté, motif obligatoire), gérant et vendeurs. |
 | BF-17 | Stock par variante | Gérer les variantes (ex: taille d'emballage, parfum d'arôme) |
 
 ---
