@@ -526,6 +526,11 @@ export const TOURS = {
         "Affichez ou non le catalogue de démonstration sur le Marché, pour toute la plateforme.",
     },
     {
+      target: "settings-launch-promo",
+      content:
+        "La promotion de la page d'accueil : textes, date de fin, et interrupteur pour l'afficher ou la masquer.",
+    },
+    {
       target: "settings-rates",
       content:
         "Le taux du dollar, utilisé pour afficher les prix des boutiques en dollars. L'euro a une parité fixe.",

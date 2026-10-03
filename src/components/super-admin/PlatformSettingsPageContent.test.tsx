@@ -1,3 +1,5 @@
+// Carte de la promotion de l'accueil : testée à part (LaunchPromoSettingsCard.test.tsx).
+jest.mock("./LaunchPromoSettingsCard", () => ({ LaunchPromoSettingsCard: () => null }));
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 

@@ -1730,3 +1730,27 @@ Les textes sont regroupés dans `src/components/sections/landingContent.ts` :
 `ComingSoonStrip` annonce la feuille de route **comme telle** : facturation, publication sur les réseaux, Mobile Money, codes promo. `landingContent.test.tsx` refuse ces termes partout ailleurs que dans cette bande, vérifié par mutation. Rendu contrôlé dans Chrome (ordinateur, et 320 px à 150 %) : aucun débordement.
 
 **Signalé** : le compte à rebours de la « Promotion de lancement » (`LaunchPromo`, `targetDate` du 16/09/2026) est échu. Date ou offre à revoir par l'utilisateur.
+
+### 2026-10-02 — Promotion de l'accueil gérée par le Super Admin
+
+Demande de l'utilisateur : rendre la « Promotion de lancement » de l'accueil dynamique et gérable par le Super Admin. Les textes et la date étaient codés en dur, et la date était déjà échue avant d'être repoussée au 30/10.
+
+**Fait** :
+- `PlatformConfiguration.launchPromo` (`configuration/general`, lisible par tous, écrit par le serveur seulement) ;
+- `src/lib/launchPromo.ts`, fonctions pures partagées par le formulaire, l'action et la page :
+  - valeurs par défaut identiques à l'accueil actuel, pour que rien ne change tant que rien n'est enregistré ;
+  - validation des longueurs ; date de fin passée refusée si l'offre est active, acceptée si elle est désactivée (pour la garder en réserve) ;
+  - visibilité = activée **et** pas encore terminée ;
+  - conversion `datetime-local` en ISO en **heure du Cameroun** (UTC+1 fixe), quel que soit l'appareil.
+- `setLaunchPromoAction` (Super Admin seulement, mêmes règles revalidées) puis `revalidatePath("/")` : l'accueil est mis à jour immédiatement.
+- Accueil (`src/app/page.tsx`) asynchrone, lecture via le SDK Admin (`getLaunchPromo`), `revalidate = 300`. En cas d'échec de lecture, la promotion est **masquée** plutôt que remplacée par les valeurs par défaut, pour ne jamais réafficher une offre désactivée. Conséquence : sans clé de service ni émulateur en local, l'accueil local n'affiche pas la promotion (production non concernée).
+- `LaunchPromo` disparaît de lui-même à l'échéance au lieu d'afficher un compte à rebours figé à zéro (page servie depuis le cache, ou échéance atteinte pendant la visite).
+- `LaunchPromoSettingsCard` dans Super Admin → Réglages : interrupteur, statut (en cours jusqu'au… / terminée / désactivée), petit titre, titre, description, fin de l'offre ; aides « ? », textes dans les dictionnaires fr/en, étape de visite guidée.
+
+**Défaut d'accessibilité corrigé en testant** : avec le `Switch` Base UI, `id` (et donc le `<Label>`) vise une case cachée `aria-hidden`. Sans `aria-label`, l'interrupteur visible n'avait aucun nom pour un lecteur d'écran. Testé (`getByRole("switch", { name })`).
+
+**Tests** : `launchPromo.test.ts`, `LaunchPromoSettingsCard.test.tsx` (nouveaux), `configurationActions.test.ts` (+3), `LaunchPromo.test.tsx` (+1), `page.test.tsx` (accueil asynchrone, promotion affichée, désactivée ou illisible). Vérifié : lint, `tsc`, 910 tests, build (`/` en ISR toutes les 5 minutes).
+
+**Vérification réelle sur émulateurs** : le Super Admin modifie titre et date, l'accueil affiche le nouveau titre ; il désactive, la carte affiche « Désactivée » et l'accueil n'affiche plus la promotion. Pendant ce test, l'interrupteur du catalogue de démonstration a été coupé par erreur (mauvais sélecteur du script), puis rétabli, sur l'émulateur seulement.
+
+Rien de commité.

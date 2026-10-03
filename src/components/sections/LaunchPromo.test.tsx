@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { LaunchPromo } from "./LaunchPromo";
 
@@ -34,5 +34,13 @@ describe("LaunchPromo", () => {
 
     expect(screen.getByRole("heading", { name: "Offre" })).toBeInTheDocument();
     expect(screen.queryByText("Promotion de lancement")).not.toBeInTheDocument();
+  });
+
+  it("disappears once the offer has ended instead of showing a countdown stuck at zero", async () => {
+    const { container } = render(
+      <LaunchPromo title="Offre" description="Description de l'offre." targetDate="2020-01-01T00:00:00+01:00" />
+    );
+    await act(async () => {});
+    expect(container).toBeEmptyDOMElement();
   });
 });

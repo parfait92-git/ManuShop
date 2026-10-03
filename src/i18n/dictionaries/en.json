@@ -24,5 +24,25 @@
   },
   "cart": {
     "otherShopConfirm": "Your cart contains items from another shop. An order can only involve one shop: empty the cart to add this item?"
+  },
+  "launchPromoSettings": {
+    "title": "Homepage promotion",
+    "description": "The offer shown with a countdown on the homepage. It disappears by itself on its end date.",
+    "enabled": "Show the promotion",
+    "enabledHelp": "When disabled, the promotion no longer appears on the homepage, even before its end date. Its texts stay saved for later.",
+    "eyebrow": "Small heading",
+    "eyebrowHelp": "Short text above the title, for example \"Launch offer\". Optional.",
+    "titleLabel": "Title",
+    "titleHelp": "The main sentence of the offer, in large type.",
+    "descriptionLabel": "Description",
+    "descriptionHelp": "What merchants gain by taking the offer, in one or two sentences.",
+    "endsAt": "Offer end (Cameroon time)",
+    "endsAtHelp": "The countdown stops at this date and time, and the promotion disappears from the homepage.",
+    "statusActive": "Running until {date}.",
+    "statusEnded": "Ended: it is no longer shown on the homepage.",
+    "statusDisabled": "Disabled: it is not shown on the homepage.",
+    "save": "Save the promotion",
+    "saved": "Promotion saved: the homepage is up to date.",
+    "error": "The promotion couldn't be saved. Please try again."
   }
 }

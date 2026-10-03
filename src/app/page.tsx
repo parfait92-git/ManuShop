@@ -23,7 +23,9 @@ import { PageTour } from "@/components/onboarding/PageTour";
 import type { Metadata } from "next";
 import { platformJsonLd } from "@/lib/platformSeo";
 import { serializeJsonLd } from "@/lib/seo";
+import { isLaunchPromoVisible } from "@/lib/launchPromo";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { getLaunchPromo } from "@/server/seo/publicData";
 
 /** Titre, description et mots clés : ceux de la mise en page racine
  * (`platformSeo.ts`) ; ici, l'adresse canonique de l'accueil. */
@@ -31,8 +33,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+/** La promotion de l'accueil se règle dans Super Admin → Réglages : la page
+ * est régénérée dès l'enregistrement (`setLaunchPromoAction`), et au plus
+ * tard toutes les 5 minutes. */
+export const revalidate = 300;
 
-export default function Home() {
+
+export default async function Home() {
+  const promo = await getLaunchPromo();
   return (
     <>
       <PageTour tourId="home" />
@@ -85,12 +93,14 @@ export default function Home() {
             values={ABOUT_VALUES}
           />
 
-          <LaunchPromo
-            eyebrow="Promotion de lancement"
-            title="Votre première vitrine digitale commence ici."
-            description="Profitez de l'offre spéciale réservée aux commerçants et démarrez avec tous les outils essentiels."
-            targetDate="2026-10-30T23:59:59+01:00"
-          />
+          {promo && isLaunchPromoVisible(promo) && (
+            <LaunchPromo
+              eyebrow={promo.eyebrow || undefined}
+              title={promo.title}
+              description={promo.description}
+              targetDate={promo.endsAt}
+            />
+          )}
 
           <SiteFooter>
             © 2026 ManuShop · Conçu pour les commerçants.

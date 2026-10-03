@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { LaunchPromoSettingsCard } from "@/components/super-admin/LaunchPromoSettingsCard";
 import { useI18n } from "@/i18n/I18nProvider";
 import { EUR_TO_XAF } from "@/lib/currency";
 import { configurationService } from "@/services/ConfigurationService";
@@ -181,6 +182,8 @@ export function PlatformSettingsPageContent() {
           />
         </div>
       )}
+
+      <LaunchPromoSettingsCard />
 
       <ExchangeRatesCard />
     </div>

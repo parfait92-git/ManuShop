@@ -3,8 +3,10 @@ import { configurationRepository } from "@/repositories/ConfigurationRepository"
 import type { IConfigurationRepository } from "@/repositories/interfaces/IConfigurationRepository";
 import {
   setDemoCatalogueEnabledAction,
+  setLaunchPromoAction,
   setUsdToXafRateAction,
 } from "@/server/actions/configurationActions";
+import { resolveLaunchPromo, type LaunchPromoSettings } from "@/lib/launchPromo";
 
 export class ConfigurationService {
   constructor(
@@ -40,6 +42,16 @@ export class ConfigurationService {
 
   async setUsdToXafRate(rate: number): Promise<void> {
     await setUsdToXafRateAction(await this.getCallerIdToken(), rate);
+  }
+
+  /** Promotion de l'accueil telle que réglée (valeurs par défaut sinon). */
+  async getLaunchPromo(): Promise<LaunchPromoSettings> {
+    const config = await this.configuration.getGeneral();
+    return resolveLaunchPromo(config?.launchPromo);
+  }
+
+  async setLaunchPromo(promo: LaunchPromoSettings): Promise<void> {
+    await setLaunchPromoAction(await this.getCallerIdToken(), promo);
   }
 
   private async getCallerIdToken(): Promise<string> {

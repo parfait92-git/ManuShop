@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 
 import { buildRates, type CurrencyRates } from "@/lib/currency";
+import { resolveLaunchPromo, type LaunchPromoSettings } from "@/lib/launchPromo";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
@@ -94,5 +95,19 @@ export async function listPublicCatalogue(): Promise<SitemapData> {
       return { shops, products };
     },
     { shops: [], products: [] }
+  );
+}
+
+/** Promotion de l'accueil. Échec de lecture : `null` (promotion masquée)
+ * plutôt que les valeurs par défaut — ne jamais réafficher une offre que le
+ * Super Admin aurait désactivée. */
+export async function getLaunchPromo(): Promise<LaunchPromoSettings | null> {
+  return safely(
+    "promotion de l'accueil",
+    async () => {
+      const snapshot = await getAdminDb().collection("configuration").doc("general").get();
+      return resolveLaunchPromo(snapshot.data()?.launchPromo);
+    },
+    null
   );
 }
