@@ -99,6 +99,31 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Factures (BF-24→29, 2026-10-03) — figées à l'émission, émises par le
+    // serveur seulement (src/server/invoices/issueInvoice.ts). Lues par le
+    // client de la commande et par l'équipe de la boutique ; le PDF passe
+    // par /api/factures/[orderId], qui revérifie ces mêmes droits.
+    match /invoices/{orderId} {
+      allow read: if request.auth != null
+        && (resource.data.clientId == request.auth.uid
+          || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+            && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId));
+      allow write: if false;
+    }
+
+    // Historique signé des commandes (2026-10-03) : chaque étape chaînée à
+    // la précédente et signée par le serveur (src/server/integrity/).
+    // Écrit et lu par le serveur seulement ; la page publique de
+    // vérification en montre ce qui peut l'être.
+    match /orders/{orderId}/history/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Compteurs de numérotation des factures : serveur seulement.
+    match /invoiceCounters/{shopId} {
+      allow read, write: if false;
+    }
+
     // Notifications dans l'application (2026-10-02) — chacun lit les
     // siennes et peut seulement les marquer comme lues ; créées par le
     // serveur (`src/server/notifications.ts`).
@@ -234,6 +259,14 @@ service cloud.firestore {
     // propriétaire (admin de CETTE boutique, pas n'importe laquelle — trou
     // de sécurité corrigé lors du passage multi-boutique, Module 12) ou par
     // un Super Admin (modération).
+    // Thème appliqué à une boutique (2026-10-03), rangé sous elle :
+    // lisible par tous (la vitrine s'habille avec), écrit seulement par le
+    // serveur (`applyShopThemeAction`, gérant de la boutique).
+    match /shops/{shopId}/themes/{themeDoc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /shops/{shopId} {
       allow read: if true;
       allow create: if request.auth != null

@@ -37,9 +37,9 @@ import type { Order } from "@/models/order/Order";
 import { orderService } from "@/services/OrderService";
 
 const SEGMENT_CLASS: Record<ClientSegment, string> = {
-  new: "bg-cyan-50 text-cyan-700",
+  new: "bg-shell-accent-soft text-shell-accent",
   loyal: "bg-emerald-50 text-emerald-700",
-  inactive: "bg-slate-100 text-slate-600",
+  inactive: "bg-shell-hover text-shell-muted",
 };
 
 const SEGMENT_HELP: Record<ClientSegment, string> = {
@@ -77,7 +77,7 @@ function SegmentBadges({ segments }: { segments: ClientSegment[] }) {
 function ContactButtons({ client }: { client: ClientSummary }) {
   const whatsapp = clientWhatsAppLink(client.phone);
   if (!client.phone) {
-    return <p className="text-sm text-slate-500">Aucun numéro enregistré.</p>;
+    return <p className="text-sm text-shell-subtle">Aucun numéro enregistré.</p>;
   }
   return (
     <div data-tour="client-contact" className="flex flex-wrap gap-2">
@@ -105,14 +105,14 @@ function ContactButtons({ client }: { client: ClientSummary }) {
 
 function OrderHistory({ orders }: { orders: Order[] }) {
   return (
-    <ul data-tour="client-orders" className="flex flex-col divide-y divide-slate-100 rounded-lg border border-slate-200">
+    <ul data-tour="client-orders" className="flex flex-col divide-y divide-shell-border rounded-lg border border-shell-border">
       {orders.map((order) => (
         <li key={order.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-shell-text">
               {order.total.toLocaleString("fr-FR")} FCFA
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-shell-subtle">
               {DATE.format(order.createdAt.toDate())} ·{" "}
               {order.items.reduce((n, item) => n + item.quantity, 0)} article
               {order.items.reduce((n, item) => n + item.quantity, 0) > 1 ? "s" : ""}
@@ -159,32 +159,32 @@ function ClientDialog({
 
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-slate-500">Total dépensé</dt>
-                <dd className="font-semibold text-slate-950">{money(client.totalSpent)}</dd>
+                <dt className="text-shell-subtle">Total dépensé</dt>
+                <dd className="font-semibold text-shell-text">{money(client.totalSpent)}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Commandes</dt>
-                <dd className="font-semibold text-slate-950">
+                <dt className="text-shell-subtle">Commandes</dt>
+                <dd className="font-semibold text-shell-text">
                   {client.ordersCount}{" "}
-                  <span className="font-normal text-slate-500">
+                  <span className="font-normal text-shell-subtle">
                     ({client.deliveredCount} livrée{client.deliveredCount > 1 ? "s" : ""})
                   </span>
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">Téléphone</dt>
-                <dd className="break-words text-slate-900">{client.phone || "—"}</dd>
+                <dt className="text-shell-subtle">Téléphone</dt>
+                <dd className="break-words text-shell-text">{client.phone || "—"}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Adresse</dt>
-                <dd className="break-words text-slate-900">{client.address || "—"}</dd>
+                <dt className="text-shell-subtle">Adresse</dt>
+                <dd className="break-words text-shell-text">{client.address || "—"}</dd>
               </div>
             </dl>
 
             <ContactButtons client={client} />
 
             <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-semibold text-slate-950">Historique des commandes</h3>
+              <h3 className="text-sm font-semibold text-shell-text">Historique des commandes</h3>
               <OrderHistory orders={client.orders} />
             </div>
 
@@ -274,10 +274,10 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-shell-text sm:text-3xl">
             Clients
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-shell-subtle">
             Toutes les personnes qui ont commandé dans votre boutique, en ligne ou en boutique.
           </p>
         </div>
@@ -302,10 +302,10 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
       </div>
 
       {clients.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-16 text-center">
-          <Users aria-hidden className="size-8 text-slate-300" />
-          <p className="font-medium text-slate-900">Pas encore de client</p>
-          <p className="max-w-sm text-sm text-slate-500">
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-shell-border bg-shell-surface px-6 py-16 text-center">
+          <Users aria-hidden className="size-8 text-shell-faint" />
+          <p className="font-medium text-shell-text">Pas encore de client</p>
+          <p className="max-w-sm text-sm text-shell-subtle">
             Vos clients apparaîtront ici dès leur première commande, passée en ligne ou
             enregistrée par vous dans Commandes.
           </p>
@@ -322,8 +322,8 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-sm font-medium",
                     segment === option.id
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      ? "border-shell-active bg-shell-active text-shell-active-text"
+                      : "border-shell-border text-shell-muted hover:bg-shell-hover"
                   )}
                 >
                   {option.label} · {counts[option.id]}
@@ -342,14 +342,14 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
               <div className="relative flex-1">
                 <Search
                   aria-hidden
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-shell-subtle"
                 />
                 <input
                   value={term}
                   onChange={(event) => setTerm(event.target.value)}
                   placeholder="Nom ou numéro de téléphone"
                   aria-label="Rechercher un client"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 text-sm outline-none placeholder:text-slate-400 focus-visible:border-slate-400"
+                  className="h-10 w-full rounded-lg border border-shell-border bg-shell-surface pl-9 text-sm outline-none placeholder:text-shell-subtle focus-visible:border-shell-border-strong"
                 />
               </div>
               <CoachMark label="Aide : recherche de client">
@@ -376,16 +376,16 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
             </div>
           </div>
 
-          <div data-tour="clients-table" className="rounded-xl border border-slate-200 bg-white">
+          <div data-tour="clients-table" className="overflow-hidden rounded-xl border border-shell-border bg-shell-surface">
             {visible.length === 0 ? (
-              <p className="px-6 py-12 text-center text-sm text-slate-500">
+              <p className="px-6 py-12 text-center text-sm text-shell-subtle">
                 Aucun client ne correspond à votre recherche.
               </p>
             ) : (
               <ScrollableTable label="Liste des clients" hintClassName="pt-3">
                 <table className="w-full min-w-160 border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                    <tr className="border-b border-shell-border text-left text-xs font-semibold tracking-wide text-shell-subtle uppercase">
                       <th className="px-3 py-2 sm:px-6">Client</th>
                       <th className="px-4 py-2">Téléphone</th>
                       <th className="px-4 py-2 text-right">Commandes</th>
@@ -401,7 +401,7 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
                       <th className="px-4 py-2 sm:pr-6">Dernière commande</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-shell-border">
                     {visible.map((client) => (
                       <tr key={client.key}>
                         <td className="px-3 py-3 sm:px-6">
@@ -410,23 +410,23 @@ export function ClientsPageContent({ shopId }: { shopId: string }) {
                               type="button"
                               onClick={() => setSelectedKey(client.key)}
                               aria-label={`Voir la fiche de ${client.name}`}
-                              className="text-left font-medium text-cyan-700 hover:underline"
+                              className="text-left font-medium text-shell-accent hover:underline"
                             >
                               {client.name}
                             </button>
                             <SegmentBadges segments={client.segments} />
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-slate-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-shell-muted">
                           {client.phone || "—"}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap text-slate-700">
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-shell-muted">
                           {client.ordersCount}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium whitespace-nowrap text-slate-900">
+                        <td className="px-4 py-3 text-right font-medium whitespace-nowrap text-shell-text">
                           {money(client.totalSpent)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-slate-500 sm:pr-6">
+                        <td className="px-4 py-3 whitespace-nowrap text-shell-subtle sm:pr-6">
                           {DATE.format(client.lastOrderAt)}
                         </td>
                       </tr>

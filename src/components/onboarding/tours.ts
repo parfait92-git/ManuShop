@@ -59,10 +59,30 @@ export const TOURS = {
         "Les avis de vos clients sur leurs livraisons et vos articles. La pastille compte ceux qui attendent votre réponse.",
     },
     {
+      target: "nav-themes",
+      content: "Choisissez l'apparence de votre boutique : vitrine et espace de gestion.",
+      roles: ["admin"],
+    },
+    {
       target: "nav-shop-settings",
       content:
         "Personnalisez votre boutique (logo, contacts, notifications) depuis les Paramètres.",
       roles: ["admin"],
+    },
+    {
+      target: "dashboard-sales-chart",
+      content:
+        "Vos ventes mois par mois : l'encaissé (commandes livrées) et le commandé. Survolez une courbe pour voir le montant exact.",
+    },
+    {
+      target: "dashboard-stock-gauge",
+      content:
+        "La santé de votre stock : la part de vos produits au-dessus du seuil d'alerte, et un raccourci pour réapprovisionner.",
+    },
+    {
+      target: "dashboard-recent-orders",
+      content: "Vos dernières commandes et leur état. « Tout voir » ouvre la liste complète.",
+      placement: "top",
     },
     {
       target: "view-shop",
@@ -240,6 +260,29 @@ export const TOURS = {
       placement: "top",
     },
   ],
+  "dashboard-themes": [
+    {
+      target: "themes-list",
+      content:
+        "Les thèmes disponibles. Celui de votre boutique est coché : il habille votre vitrine et votre espace de gestion.",
+      placement: "top",
+    },
+    {
+      target: "theme-preview-button",
+      content: "Voyez votre tableau de bord dans un thème avant de l'appliquer.",
+    },
+  ],
+  "dialog-theme-preview": [
+    {
+      target: "theme-preview-frame",
+      content: "Votre vrai tableau de bord, avec vos chiffres, dans ce thème.",
+      placement: "top",
+    },
+    {
+      target: "theme-apply",
+      content: "Appliquez-le : votre vitrine et votre espace de gestion changent aussitôt.",
+    },
+  ],
   "dashboard-support": [
     {
       target: "support-form",
@@ -262,6 +305,11 @@ export const TOURS = {
       target: "shop-profile",
       content:
         "Le nom, le logo, l'adresse, la description et les contacts de votre boutique.",
+    },
+    {
+      target: "shop-invoice",
+      content:
+        "Vos factures : couleur, taux de TVA (0 si vous n'y êtes pas assujetti), NIU et RCCM. Chaque commande livrée reçoit sa facture PDF.",
     },
     {
       target: "shop-multichannel",
@@ -520,6 +568,11 @@ export const TOURS = {
       target: "settings-card",
       content:
         "Affichez ou non le catalogue de démonstration sur le Marché, pour toute la plateforme.",
+    },
+    {
+      target: "settings-site-url",
+      content:
+        "Le domaine du site. Après l'achat d'un domaine et son ajout dans Vercel, enregistrez-le ici : QR codes des factures, plan du site et liens de partage l'utiliseront.",
     },
     {
       target: "settings-launch-promo",

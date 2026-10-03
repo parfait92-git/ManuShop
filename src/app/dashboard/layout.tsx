@@ -11,10 +11,15 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { PublicationBanner } from "@/components/dashboard/PublicationBanner";
 import { NavigationBlockerProvider } from "@/components/providers/NavigationBlockerProvider";
+import { useDocumentShopTheme } from "@/hooks/useDocumentShopTheme";
+import { useShopTheme } from "@/hooks/useShopTheme";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Thème de la boutique, sur tout l'espace de gestion (2026-10-03).
+  const { theme } = useShopTheme(profile?.shopId);
+  useDocumentShopTheme(theme.siteTheme);
 
   // ProtectedRoute garantit déjà un profil admin/vendeur à ce stade — mais
   // pas forcément une boutique : un admin obtenu par attribution manuelle ou
@@ -24,7 +29,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-svh bg-slate-50">
+    <div data-shop-theme={theme.siteTheme} className="flex h-svh bg-shell-bg">
       <DashboardNotificationSounds />
       <div className="hidden md:block">
         <DashboardSidebar />
@@ -35,7 +40,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             aria-label="Fermer le menu"
-            className="absolute inset-0 bg-slate-950/40"
+            className="absolute inset-0 bg-shell-overlay"
             onClick={() => setMobileNavOpen(false)}
           />
           <div className="relative flex h-full">
@@ -44,7 +49,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setMobileNavOpen(false)}
               aria-label="Fermer le menu"
-              className="mt-4 ml-2 flex size-8 items-center justify-center rounded-full bg-white text-slate-600 shadow"
+              className="mt-4 ml-2 flex size-8 items-center justify-center rounded-full bg-shell-surface text-shell-muted shadow"
             >
               <X className="size-4" />
             </button>

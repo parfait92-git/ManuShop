@@ -122,13 +122,13 @@ export function ProductList({
   }
 
   return (
-    <div className="flex flex-col gap-5 rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+    <div className="flex flex-col gap-5 rounded-xl border border-shell-border bg-shell-surface p-4 sm:p-6">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">
+          <h2 className="text-lg font-semibold text-shell-text">
             Catalogue produits
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-shell-subtle">
             Gérez vos articles, catégories et niveaux de stock.
           </p>
         </div>
@@ -167,7 +167,7 @@ export function ProductList({
             size="sm"
             onClick={() => setOnlyWithoutImage((current) => !current)}
             aria-pressed={showOnlyWithoutImage}
-            className="h-auto w-fit shrink-0 border-amber-300 bg-white py-1.5 whitespace-normal text-amber-900 hover:bg-amber-100"
+            className="h-auto w-fit shrink-0 border-amber-300 bg-shell-surface py-1.5 whitespace-normal text-amber-900 hover:bg-amber-100"
           >
             {showOnlyWithoutImage
               ? "Afficher tous les produits"
@@ -179,13 +179,13 @@ export function ProductList({
       <div data-tour="products-filters" className="flex flex-col gap-3 sm:flex-row">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-shell-subtle" />
             <input
               value={term}
               onChange={(event) => setTerm(event.target.value)}
               placeholder="Rechercher par nom ou catégorie"
               aria-label="Rechercher un produit"
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 text-sm outline-none placeholder:text-slate-400 focus-visible:border-slate-400"
+              className="h-10 w-full rounded-lg border border-shell-border bg-shell-surface pl-9 text-sm outline-none placeholder:text-shell-subtle focus-visible:border-shell-border-strong"
             />
           </div>
           <CoachMark label="Aide : recherche de produit">
@@ -213,14 +213,14 @@ export function ProductList({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-500">
+        <p className="py-6 text-center text-sm text-shell-subtle">
           Aucun produit trouvé.
         </p>
       ) : (
         <ScrollableTable label="Liste des produits" className="-mx-4 sm:-mx-6">
           <table data-tour="products-table" className="w-full min-w-160 border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
+              <tr className="border-b border-shell-border text-left text-xs font-semibold tracking-wide text-shell-subtle uppercase">
                 <th className="px-3 py-2 sm:px-6">Produit</th>
                 <th className="px-4 py-2">Catégorie</th>
                 <th className="px-4 py-2">Prix</th>
@@ -237,7 +237,7 @@ export function ProductList({
                 <th data-tour="products-actions" className="px-4 py-2 text-right sm:pr-6">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-shell-border">
               {filtered.map((product) => {
                 const status = productService.getStockStatus(product);
                 const hasImage = productService.hasImage(product);
@@ -250,7 +250,7 @@ export function ProductList({
                         <div
                           className={`relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border ${
                             hasImage
-                              ? "border-slate-200 bg-slate-50"
+                              ? "border-shell-border bg-shell-bg"
                               : "border-dashed border-amber-300 bg-amber-50"
                           }`}
                         >
@@ -267,7 +267,7 @@ export function ProductList({
                           )}
                         </div>
                         <div className="flex flex-col items-start gap-0.5">
-                          <span className="font-medium text-slate-900">
+                          <span className="font-medium text-shell-text">
                             {product.name}
                           </span>
                           {!hasImage && (
@@ -282,14 +282,14 @@ export function ProductList({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-slate-600">
+                      <span className="rounded-full bg-shell-hover px-2.5 py-1 text-xs font-medium whitespace-nowrap text-shell-muted">
                         {product.category}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-shell-muted">
                       {product.price.toLocaleString("fr-FR")} FCFA
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{product.stock}</td>
+                    <td className="px-4 py-3 text-shell-muted">{product.stock}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${STOCK_STATUS_CLASS[status]}`}
@@ -310,7 +310,7 @@ export function ProductList({
                         <Link
                           href={`/dashboard/products/${product.id}/edit`}
                           aria-label={`Modifier ${product.name}`}
-                          className="flex size-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                          className="flex size-8 items-center justify-center rounded-lg text-shell-subtle hover:bg-shell-hover"
                         >
                           <Pencil className="size-4" />
                         </Link>

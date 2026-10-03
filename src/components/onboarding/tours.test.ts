@@ -15,11 +15,14 @@ const SOURCE = sourceFiles(join(process.cwd(), "src"))
   .map((path) => readFileSync(path, "utf8"))
   .join("\n");
 
-/** `data-tour="x"` en dur, ou `dataTour: "x"` (items de DashboardSidebar). */
+/** `data-tour="x"` en dur, `dataTour: "x"` (items de DashboardSidebar)
+ * ou `dataTour="x"` (prop transmise à `data-tour`, cartes du tableau de
+ * bord, `InvoiceDownloadButton`). */
 function isTargetDeclared(target: string): boolean {
   return (
     SOURCE.includes(`data-tour="${target}"`) ||
-    SOURCE.includes(`dataTour: "${target}"`)
+    SOURCE.includes(`dataTour: "${target}"`) ||
+    SOURCE.includes(`dataTour="${target}"`)
   );
 }
 

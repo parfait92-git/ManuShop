@@ -5,6 +5,7 @@ import { cache } from "react";
 import { buildRates, type CurrencyRates } from "@/lib/currency";
 import { resolveLaunchPromo, type LaunchPromoSettings } from "@/lib/launchPromo";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { getSiteUrl, normalizeSiteUrl } from "@/lib/siteUrl";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 
@@ -111,3 +112,20 @@ export async function getLaunchPromo(): Promise<LaunchPromoSettings | null> {
     null
   );
 }
+
+/**
+ * Adresse publique du site : celle réglée par le Super Admin (nouveau
+ * domaine), sinon `getSiteUrl()`. Sert aux liens absolus (QR code des
+ * factures, plan du site, données structurées, aperçus de partage).
+ */
+export const getPublicSiteUrl = cache(async (): Promise<string> =>
+  safely(
+    "adresse du site",
+    async () => {
+      const snapshot = await getAdminDb().collection("configuration").doc("general").get();
+      const configured = snapshot.data()?.siteUrl;
+      return (typeof configured === "string" && normalizeSiteUrl(configured)) || getSiteUrl();
+    },
+    getSiteUrl()
+  )
+);

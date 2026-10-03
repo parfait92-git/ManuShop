@@ -1548,3 +1548,9 @@ Tests : `reviewActions.test.ts`, `ReviewDialog.test.tsx` (tous nouveaux) ; `Revi
 
 Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build` (aucune nouvelle route) et `npm run test:coverage` (745 tests, +20, aucune régression). Pas de vérification Playwright (nécessiterait une session client authentifiée avec une vraie commande livrée — hors de portée sûre ici, même arbitrage que §54/§58).
 
+## Thèmes du tableau de bord (2026-10-03)
+
+- Couleurs : `src/styles/dashboard-theme.css`, et nulle part ailleurs. Un thème = un bloc `[data-dashboard-theme="<id>"]` qui redéfinit toutes les variables du thème `default` (le test `dashboardTheme.test.ts` l'exige et vérifie les contrastes). Le conteneur `DashboardOverview` porte l'attribut (`theme`, `"default"` par défaut) ; un thème personnalisé pourra aussi être passé en variables `style` sur ce conteneur.
+- Composants `src/components/dashboard/overview/` : uniquement `var(--…)` ou les utilitaires `dash-*` (test `noHardcodedColors.test.ts`).
+- Disposition : `dashboardLayout.ts` (liste de blocs et largeurs) ; grille par requêtes de conteneur (`@container`).
+- Pour brancher le choix d'un thème plus tard : stocker l'id (ex. `Shop.dashboardTheme`), le passer à `DashboardOverview`, ajouter son bloc CSS. Rien d'autre à modifier.

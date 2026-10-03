@@ -41,6 +41,7 @@ jest.mock("../services/SupportMessageService", () => ({
 const getLaunchPromoMock = jest.fn();
 jest.mock("../server/seo/publicData", () => ({
   getLaunchPromo: () => getLaunchPromoMock(),
+  getPublicSiteUrl: () => Promise.resolve("https://manu-shop.vercel.app"),
 }));
 
 import Home from "./page";

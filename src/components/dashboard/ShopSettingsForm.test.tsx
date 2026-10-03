@@ -33,6 +33,14 @@ if (!Element.prototype.releasePointerCapture) {
 }
 
 jest.mock("../../lib/firebase", () => ({ db: {}, auth: {} }));
+// Thème appliqué à la boutique : « Wax Soleil », pour vérifier que la
+// couleur des factures suit le thème.
+jest.mock("../../hooks/useShopTheme", () => ({
+  useShopTheme: () => ({
+    theme: { id: "wax-soleil", name: "Wax Soleil", invoiceColor: "#B4451F" },
+    loading: false,
+  }),
+}));
 
 jest.mock("../providers/AuthProvider", () => ({
   useAuth: () => ({
@@ -282,6 +290,82 @@ describe("ShopSettingsForm", () => {
         })
       )
     );
+  });
+
+  // Facturation (2026-10-03) : couleur, TVA, NIU et RCCM.
+  it("defaults to the blue colour and no VAT, then saves the invoice settings", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop());
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    // Par défaut, la facture suit la couleur du thème de la boutique.
+    expect(
+      await screen.findByRole("radio", { name: "Couleur du thème (Wax Soleil)" })
+    ).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "Bleu" })).toHaveAttribute("aria-checked", "false");
+    const vat = screen.getByRole("spinbutton", { name: /Taux de TVA/ });
+    expect(vat).toHaveValue(0);
+
+    await user.click(screen.getByRole("radio", { name: "Vert" }));
+    await user.clear(vat);
+    await user.type(vat, "19.25");
+    await user.type(screen.getByRole("textbox", { name: /NIU/ }), "M0123");
+    await user.type(screen.getByRole("textbox", { name: /RCCM/ }), "RC/DLA/2024");
+    await user.click(screen.getByRole("button", { name: /Enregistrer les paramètres/ }));
+
+    await waitFor(() =>
+      expect(shopService.updateProfile).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({
+          themeColor: "#047857",
+          vatRate: 19.25,
+          taxId: "M0123",
+          tradeRegister: "RC/DLA/2024",
+        })
+      )
+    );
+  });
+
+  it("lets the merchant go back to the theme's colour", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop({ themeColor: "#047857" }));
+    mockedShopService.updateProfile.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    expect(await screen.findByRole("radio", { name: "Vert" })).toHaveAttribute("aria-checked", "true");
+    await user.click(screen.getByRole("radio", { name: "Couleur du thème (Wax Soleil)" }));
+    await user.click(screen.getByRole("button", { name: /Enregistrer les paramètres/ }));
+
+    await waitFor(() =>
+      expect(shopService.updateProfile).toHaveBeenCalledWith(
+        "shop-1",
+        expect.objectContaining({ themeColor: "" })
+      )
+    );
+  });
+
+  it("treats the old default blue as following the theme", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop({ themeColor: "#3B5BA5" }));
+    render(<ShopSettingsForm shopId="shop-1" />);
+    expect(
+      await screen.findByRole("radio", { name: "Couleur du thème (Wax Soleil)" })
+    ).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("refuses a VAT rate above 100 %", async () => {
+    mockedShopService.getShop.mockResolvedValue(fakeShop({ vatRate: 19.25 }));
+    const user = userEvent.setup();
+    render(<ShopSettingsForm shopId="shop-1" />);
+
+    const vat = await screen.findByRole("spinbutton", { name: /Taux de TVA/ });
+    expect(vat).toHaveValue(19.25);
+    await user.clear(vat);
+    await user.type(vat, "120");
+    await user.click(screen.getByRole("button", { name: /Enregistrer les paramètres/ }));
+
+    expect(await screen.findByText("Le taux ne peut pas dépasser 100 %.")).toBeInTheDocument();
+    expect(shopService.updateProfile).not.toHaveBeenCalled();
   });
 
   it("rebinds the social network link field to the chosen primary network (BF-128)", async () => {

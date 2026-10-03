@@ -47,6 +47,9 @@ import { shopService } from "@/services/ShopService";
 import { useCurrencyRates } from "@/components/providers/CurrencyContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { BASE_CURRENCY, CURRENCIES, shopCurrency } from "@/lib/currency";
+import { customInvoiceColor, resolveVatRate } from "@/lib/invoice";
+import { ShopInvoiceSettings } from "@/components/dashboard/ShopInvoiceSettings";
+import { useShopTheme } from "@/hooks/useShopTheme";
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -86,6 +89,10 @@ function defaultValuesFrom(shop: Shop): ShopSettingsInput {
     clientContactMethods: shop.clientContactMethods ?? [],
     publicContactEmail: shop.publicContactEmail ?? "",
     isPublished: shop.isPublished ?? false,
+    themeColor: customInvoiceColor(shop.themeColor) ?? "",
+    vatRate: resolveVatRate(shop.vatRate),
+    taxId: shop.taxId ?? "",
+    tradeRegister: shop.tradeRegister ?? "",
   };
 }
 
@@ -93,7 +100,7 @@ function InfoPanel() {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-cyan-300">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-shell-brand text-shell-brand-icon">
           <Settings2 className="size-4.5" />
         </span>
         <div>
@@ -166,6 +173,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const whatsapp = useWatch({ control, name: "whatsapp" });
   const urgentPhone = useWatch({ control, name: "urgentPhone" });
   const isPublished = useWatch({ control, name: "isPublished" });
+  const themeColor = useWatch({ control, name: "themeColor" });
+  const { theme: appliedTheme } = useShopTheme(shopId);
   const facebookUrl = useWatch({ control, name: "facebookUrl" });
   const instagramUrl = useWatch({ control, name: "instagramUrl" });
   const clientContactMethods = useWatch({
@@ -438,6 +447,17 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
             </div>
           </section>
+
+          <ShopInvoiceSettings
+            color={themeColor}
+            onColorChange={(value) =>
+              setValue("themeColor", value, { shouldValidate: true, shouldDirty: true })
+            }
+            register={register}
+            errors={errors}
+            themeName={appliedTheme.name}
+            themeInvoiceColor={appliedTheme.invoiceColor}
+          />
 
           <section data-tour="shop-multichannel" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">

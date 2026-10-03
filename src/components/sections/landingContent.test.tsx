@@ -13,7 +13,12 @@ import {
 
 /** Fonctions pas encore construites : jamais présentées comme disponibles. */
 const NOT_BUILT_YET = [
-  "factur",
+  // Les factures PDF existent (2026-10-03) ; leur envoi par WhatsApp
+  // (BF-27) et les factures groupées par période (BF-104), pas encore.
+  "factures par whatsapp",
+  "factures envoyées",
+  "factures groupées",
+  "facturation automatique",
   "publication",
   "publiez",
   "réseaux sociaux",

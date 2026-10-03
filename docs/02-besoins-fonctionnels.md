@@ -69,12 +69,13 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-24 | Génération facture | Facture automatique à chaque commande confirmée |
-| BF-25 | Aperçu facture | Visualiser la facture avant impression |
-| BF-26 | Téléchargement PDF | Exporter la facture en PDF |
-| BF-27 | Envoi WhatsApp | Envoyer la facture directement via WhatsApp Business |
-| BF-28 | Numérotation | Numérotation automatique et séquentielle des factures |
-| BF-29 | Facture personnalisée | Logo, nom boutique, coordonnées sur chaque facture |
+| BF-24 | Génération facture | Facture automatique à chaque commande confirmée — **Fait le 2026-10-03**, à la **livraison** plutôt qu'à la confirmation (demande de l'utilisateur) : `updateOrderStatusAction` émet la facture (`ensureInvoice`, collection `invoices`, id = commande) dès qu'une commande passe « Livrée ». Tout y est figé à l'émission (vendeur, client, articles, TVA, devise et taux, couleur). Une commande livrée avant cette date, ou dont l'émission a échoué, reçoit sa facture au premier téléchargement. |
+| BF-25 | Aperçu facture | Visualiser la facture avant impression — **Non fait** : la facture se télécharge directement en PDF (BF-26), que le navigateur ou le téléphone ouvre ensuite. |
+| BF-26 | Téléchargement PDF | Exporter la facture en PDF — **Fait le 2026-10-03** : bouton « Facture » dans « Mes commandes » (client) et dans Commandes (gérant et vendeur), sur les commandes livrées, retournées ou défectueuses. Le PDF est produit par le serveur (`/api/factures/[orderId]`, `@react-pdf/renderer`), qui vérifie que l'appelant est le client de la commande ou l'équipe de sa boutique. Une facture longue passe sur plusieurs pages : en-tête et en-tête du tableau répétés à l'identique, totaux sur la dernière page avec au moins une ligne, pied de page et signature « Facture émise avec ManuShop » sur chaque page. |
+| BF-27 | Envoi WhatsApp | Envoyer la facture directement via WhatsApp Business — **Non fait** (annoncé dans « Bientôt sur ManuShop »). |
+| BF-28 | Numérotation | Numérotation automatique et séquentielle des factures — **Fait le 2026-10-03** : numéro continu par boutique (« F-00012 »), pris à un compteur (`invoiceCounters/{shopId}`) dans la même transaction que l'écriture de la facture : ni doublon ni trou, même avec deux livraisons simultanées. |
+| BF-29 | Facture personnalisée | Logo, nom boutique, coordonnées sur chaque facture — **Fait le 2026-10-03**, sur le modèle fourni par l'utilisateur : logo de la boutique (son initiale s'il est absent ou illisible), nom de la boutique comme vendeur, adresse, téléphone, e-mail public. Nouvelle section « Facturation » des Paramètres : couleur de la boutique (palette ou choix libre), taux de TVA (0 par défaut, « TVA non applicable » ; les prix restent TTC, le HT et la TVA en sont déduits), NIU et RCCM facultatifs. |
+| BF-29b | Facture infalsifiable | Signature numérique et QR code de vérification sur chaque facture. **Fait le 2026-10-03** (demande de l'utilisateur) : facture et historique de la commande signés (Ed25519) et chaînés ; le QR code et le code `MS-XXXXX-XXXXX` ouvrent `/boutique/[shopId]/verifier/[code]`, avec sceau « Facture authentique » ou « non conforme », montants officiels et chronologie des étapes ; domaine des liens réglable par le Super Admin. |
 
 ---
 
@@ -257,7 +258,7 @@
 | ID | Besoin | Description |
 |---|---|---|
 | BF-102 | Filtre de ventes par intervalle (premium) | Le tableau de bord filtre les ventes par jour/semaine/année, borné entre la date-heure de création de la boutique (minimum) et la date-heure du jour (maximum). **2026-10-02** : la période personnalisée est accessible à toutes les boutiques sur la page Gains et statistiques (choix de l'utilisateur), sans dépendre de ce privilège premium. |
-| BF-103 | Consultation de facture | Voir la facture d'une commande individuelle (rejoint BF-24/25). |
+| BF-103 | Consultation de facture | Voir la facture d'une commande individuelle (rejoint BF-24/25). — **Fait le 2026-10-03** par le téléchargement PDF (BF-26). |
 | BF-104 | Factures groupées par période | Factures du jour, de la semaine, du mois et de l'année, consultables et imprimables (étend BF-26). |
 
 ### Module 19 — Paramètres Marchand Avancés (Premium)

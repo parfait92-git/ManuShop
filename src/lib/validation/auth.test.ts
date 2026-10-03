@@ -175,10 +175,24 @@ describe("ShopSettingsSchema", () => {
     clientContactMethods: [],
     publicContactEmail: "",
     isPublished: true,
+    themeColor: "#3B5BA5",
+    vatRate: 0,
+    taxId: "",
+    tradeRegister: "",
   };
 
   it("accepts a valid shop settings payload", () => {
     expect(ShopSettingsSchema.safeParse(validShop).success).toBe(true);
+  });
+
+  // Facturation (2026-10-03).
+  it("checks the invoice colour and VAT rate", () => {
+    expect(ShopSettingsSchema.safeParse({ ...validShop, vatRate: 19.25 }).success).toBe(true);
+    expect(ShopSettingsSchema.safeParse({ ...validShop, vatRate: -1 }).success).toBe(false);
+    expect(ShopSettingsSchema.safeParse({ ...validShop, vatRate: 101 }).success).toBe(false);
+    expect(ShopSettingsSchema.safeParse({ ...validShop, vatRate: Number.NaN }).success).toBe(false);
+    expect(ShopSettingsSchema.safeParse({ ...validShop, themeColor: "blue" }).success).toBe(false);
+    expect(ShopSettingsSchema.safeParse({ ...validShop, taxId: "x".repeat(41) }).success).toBe(false);
   });
 
   it("accepts an empty logo and empty contact email", () => {

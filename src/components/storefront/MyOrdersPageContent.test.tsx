@@ -1,3 +1,9 @@
+const downloadInvoiceMock = jest.fn();
+jest.mock("../../services/InvoiceService", () => ({
+  hasInvoice: (status: string) => ["delivered", "returned", "defective"].includes(status),
+  invoiceService: { download: (...args: unknown[]) => downloadInvoiceMock(...args) },
+}));
+
 const listByClientMock = jest.fn();
 const cancelOrderMock = jest.fn();
 jest.mock("../../services/OrderService", () => ({
@@ -122,6 +128,31 @@ describe("MyOrdersPageContent", () => {
       expect(
         screen.queryByRole("link", { name: "Donner mon avis" })
       ).not.toBeInTheDocument();
+    });
+
+    it("downloads the invoice of a delivered order, and only then", async () => {
+      listByClientMock.mockResolvedValue([
+        fakeOrder({ id: "o1", status: "delivered" }),
+        fakeOrder({ id: "o2", status: "delivering" }),
+      ]);
+      downloadInvoiceMock.mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(<MyOrdersPageContent clientId="client-1" />);
+
+      const buttons = await screen.findAllByRole("button", { name: "Télécharger la facture" });
+      expect(buttons).toHaveLength(1);
+      await user.click(buttons[0]);
+      expect(downloadInvoiceMock).toHaveBeenCalledWith("o1");
+    });
+
+    it("tells the client when the invoice can't be downloaded", async () => {
+      listByClientMock.mockResolvedValue([fakeOrder({ status: "returned" })]);
+      downloadInvoiceMock.mockRejectedValue(new Error("Commande introuvable."));
+      const user = userEvent.setup();
+      render(<MyOrdersPageContent clientId="client-1" />);
+
+      await user.click(await screen.findByRole("button", { name: "Télécharger la facture" }));
+      await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith("Commande introuvable."));
     });
 
     it("links a delivered order to its feedback page", async () => {

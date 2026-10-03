@@ -1784,3 +1784,301 @@ Aucun débordement horizontal, aucune erreur dans la console.
 **À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`), qui ajoutent `notifications` et `orderFeedback`. Sans elles, la cloche reste vide et la page d'avis ne trouve pas l'avis de livraison.
 
 Rien de commité.
+
+### 2026-10-03 — Factures PDF des commandes livrées
+
+Demande de l'utilisateur : un service de facturation côté serveur, appelé à chaque livraison, qui permet au client de télécharger sa facture. La facture suit le modèle fourni : logo de la boutique, nom de la boutique comme vendeur, couleur de la boutique, signature ManuShop au pied de chaque page. Si les articles débordent, le tableau continue sur une page suivante identique, et les totaux ne viennent qu'à la fin. Choix de l'utilisateur :
+- couleur choisie dans les Paramètres ;
+- taux de TVA par boutique, 0 par défaut ;
+- téléchargement par le client et par le commerçant ;
+- NIU et RCCM facultatifs.
+
+**Fait** :
+- **Émission** (`src/server/invoices/issueInvoice.ts`, `ensureInvoice`) :
+  - appelée par `updateOrderStatusAction` quand une commande passe « Livrée », après l'écriture du statut ; un échec n'annule pas la livraison ;
+  - transaction : numéro continu par boutique (`F-00012`, compteur `invoiceCounters/{shopId}`), sans doublon ni trou ;
+  - facture figée dans `invoices/{orderId}` : vendeur, client, articles, remise, total, TVA, devise et taux du jour, couleur. Une facture émise ne change plus, même si la boutique modifie ensuite ses paramètres (vérifié : F-00001 reste bleue sans TVA après le passage au vert à 19,25 %) ;
+  - idempotente : une commande livrée avant cette date reçoit sa facture au premier téléchargement.
+- **PDF** (`InvoiceDocument`, `@react-pdf/renderer`, déjà installé et exclu du bundle serveur par Next) :
+  - avec TVA : colonnes Prix unitaire HT, % TVA, Total TVA, Total TTC. Les prix payés sont TTC, le HT et la TVA en sont déduits, et les totaux partent du montant réellement payé ;
+  - sans TVA : tableau simple et « TVA non applicable » ;
+  - plusieurs pages : l'en-tête complet et l'en-tête du tableau se répètent sur chaque page, aucune ligne n'est coupée, et la dernière ligne reste avec les totaux (jamais de totaux sous un tableau vide) ;
+  - pied de page sur chaque page : coordonnées, NIU, RCCM, « Page x sur y », bandeau « Facture émise avec ManuShop » ;
+  - logo téléchargé par le serveur, converti en PNG quand il vient de Cloudinary. S'il est absent, illisible (WebP, SVG) ou injoignable, la facture affiche l'initiale de la boutique ;
+  - les caractères que les polices du PDF ne savent pas dessiner (émojis, autres alphabets) sont retirés plutôt qu'imprimés en signes illisibles.
+- **Route** `GET /api/factures/[orderId]` :
+  - jeton Firebase dans `Authorization` ;
+  - accès réservé au client de la commande et à l'équipe de sa boutique ; pour tout autre appelant, même réponse qu'une commande inexistante ;
+  - commande livrée, retournée ou défectueuse ;
+  - PDF produit à chaque demande, `Cache-Control: private, no-store`.
+- **Interface** :
+  - bouton « Facture » dans « Mes commandes » et dans Commandes ;
+  - section « Facturation » des Paramètres : palette de huit couleurs plus un choix libre, taux de TVA, NIU, RCCM, avec aides « ? » et une étape dans la visite guidée.
+- **Règles Firestore** : `invoices` lisible par le client et l'équipe de la boutique, écriture interdite ; `invoiceCounters` fermé.
+- **Honnêteté de l'accueil et du référencement** : la carte « Commandes en ligne et WhatsApp » mentionne la facture PDF. « Bientôt » annonce maintenant « Factures envoyées par WhatsApp » (BF-27). Les tests interdisent toujours de promettre l'envoi par WhatsApp et les factures groupées (BF-104).
+
+**Tests** :
+- nouveaux : `invoice.test.ts`, `issueInvoice.test.ts`, `loadInvoiceLogo.test.ts`, `route.test.ts` (accès), `InvoiceService.test.ts` ;
+- complétés : `ShopSettingsForm`, `MyOrdersPageContent`, `orderActions`, `auth` (schéma), tests d'honnêteté.
+
+Vérifié : lint, `tsc`, 960 tests, build.
+
+**Vérification réelle sur émulateurs** :
+1. Deux commandes livrées, avec un changement de réglages entre les deux.
+2. Téléchargement par le commerçant (ordinateur) et par le client (320 px, police à 150 %, aucun débordement) ; sans jeton, la route répond 401.
+3. PDF contrôlés en image :
+   - une commande de 2 articles tient sur 1 page ;
+   - une commande de 38 articles en fait 4, avec l'en-tête répété et les totaux en page 4 sous la dernière ligne.
+4. Mêmes PDF servis par le build de production (`next start`).
+
+**Corrigé en testant** :
+- le pied de page n'affichait que le bandeau et le coupait sur la dernière page : ses deux blocs sont maintenant positionnés séparément ;
+- un interligne laissait un blanc entre l'adresse et le téléphone ;
+- les totaux pouvaient se retrouver seuls sous un tableau vide.
+
+**Non fait** : aperçu avant impression (BF-25, le PDF s'ouvre directement), envoi par WhatsApp (BF-27), factures groupées par période (BF-104).
+
+**À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`).
+
+Rien de commité.
+
+### 2026-10-03 — Factures signées, QR code de vérification, domaine réglable
+
+Demande de l'utilisateur : protéger les factures et les commerçants contre les copies. Il veut sécuriser chaque étape de la commande jusqu'à la livraison ou au retour, et ajouter un QR code « vérifier la signature numérique » qui ouvre, à l'adresse de la boutique, la chronologie de la commande avec un logo certifié. Proposition acceptée : **signer** plutôt que chiffrer, car une facture n'a rien à cacher mais doit être infalsifiable. La preuve repose sur la page servie par le domaine officiel, pas sur le logo, qu'un faussaire peut copier. Le Super Admin peut régler le futur domaine (aujourd'hui https://manu-shop.vercel.app).
+
+**Fait** :
+- **Signature** (`src/server/integrity/signing.ts`) :
+  - Ed25519, clé privée côté serveur (`INVOICE_SIGNING_KEY`, documentée dans `.env.example`) ;
+  - JSON canonique (clés triées), donc la même donnée donne toujours la même signature ;
+  - sans clé, rien ne bloque, mais rien n'est signé.
+- **Historique chaîné** (`orders/{id}/history`, `orderHistory.ts`) :
+  - chaque étape (création, chaque statut, émission de la facture) contient l'empreinte SHA-256 de la précédente et est signée ;
+  - la tête de chaîne est gardée sur la commande, donc la suppression d'une dernière étape se voit aussi ;
+  - étapes écrites dans le même lot ou la même transaction que le changement qu'elles enregistrent, avec `create` (deux mises à jour simultanées ne peuvent pas fourcher la chaîne) ;
+  - lecture et écriture fermées au navigateur dans `firestore.rules`.
+- **Facture signée** (`ensureInvoice`) :
+  - la signature couvre tout son contenu ;
+  - code de vérification aléatoire de 50 bits, imprimé `MS-XXXXX-XXXXX`, sans lettres ambiguës, tolérant aux erreurs de saisie (O lu 0, I et L lus 1) ;
+  - une facture émise avant ce changement est scellée au premier téléchargement, avec le même numéro et le même contenu.
+- **PDF** : au pied de chaque page, « Vérifiez la signature numérique », le QR code, le code et l'adresse `…/verifier`. Le QR code est calculé au téléchargement, donc toujours sur le domaine en vigueur.
+- **Page de vérification** `/boutique/[shopId]/verifier/[code]` (et `/verifier` pour saisir le code à la main) :
+  - logo et nom de la boutique ;
+  - sceau « Facture authentique », « enregistrée, non signée » ou « non conforme » ;
+  - avertissement : la vérification ne vaut que sur le domaine officiel ;
+  - montants officiels à comparer avec le papier ;
+  - chronologie, où les étapes signées et les étapes reconstituées (anciennes commandes) se distinguent ;
+  - client réduit à ses initiales : ni téléphone, ni adresse, ni motifs ;
+  - un code présenté sous une autre boutique est refusé ;
+  - non indexée (`robots.txt`, `noindex`), toujours relue au moment de la visite.
+- **Domaine réglable** (`PlatformConfiguration.siteUrl`, carte « Domaine du site » de Super Admin → Réglages) :
+  - avant d'enregistrer, le serveur vérifie que l'adresse répond comme ManuShop (`/api/site-check`) ; une adresse vide revient à celle du déploiement ;
+  - la valeur sert au QR code, au plan du site, à `robots.txt`, à la base des métadonnées et aux données structurées.
+
+**Tests** :
+- nouveaux : `signing`, `orderHistory` (étape modifiée, antidatée, supprimée, signature copiée, autre commande), `verifyInvoice` (authentique, montant modifié, étape manquante, retour, ancienne commande, confidentialité), `siteUrl` ;
+- complétés : `configurationActions` (domaine), `issueInvoice`, `orderActions`, route des factures (adresse du QR code).
+
+Vérifié : lint, `tsc`, 993 tests, build.
+
+**Vérification réelle sur émulateurs, avec une vraie clé** :
+1. Une commande passée par le client puis livrée par le commerçant donne un PDF dont le QR code, relu par un décodeur, ouvre une page « Facture authentique » avec ses 5 étapes signées.
+2. Sur un téléphone de 320 px avec la police à 150 % : aucun débordement, et le nom du client n'apparaît pas.
+3. L'ancienne facture est scellée sans changer de numéro ; sa chronologie est reconstituée et signalée.
+4. Modifications faites directement dans la base :
+   - le total passé de 15 000 à 1 500 donne « non conforme », et le total rétabli redonne « authentique » ;
+   - une étape antidatée de 3 jours donne « non conforme ».
+5. Un code inconnu, ou un code présenté sous une autre boutique, est refusé.
+6. Le Super Admin voit un domaine inexistant refusé, puis le domaine de test accepté ; `robots.txt` le reprend.
+
+**Corrigé en testant** : à 320 px, « authentique » débordait du sceau ; l'avertissement affichait « https:// » même pour une adresse http.
+
+**Limites, dites à l'utilisateur** :
+- ce n'est pas une signature PDF reconnue par Adobe Reader, qui exigerait un certificat payant d'une autorité de certification ;
+- la protection suppose que le client ouvre la page sur le domaine officiel, ce que la page rappelle.
+
+**À faire par l'utilisateur** :
+1. Générer la clé (commande dans `.env.example`) et l'ajouter dans les variables d'environnement Vercel (Production), puis redéployer.
+2. La sauvegarder hors de Vercel.
+3. Déployer les règles Firestore.
+4. Après l'achat d'un domaine, l'ajouter dans Vercel (Settings → Domains), puis l'enregistrer dans Super Admin → Réglages.
+
+Rien de commité.
+
+### 2026-10-03 — Refonte de l'accueil du tableau de bord, prête pour les thèmes
+
+Demande de l'utilisateur : refondre `/dashboard` sur le modèle fourni (sombre, cartes en dégradé bleu nuit, accents bleus), sur tablette et ordinateur seulement. Ce style doit être le **thème par défaut** d'une architecture de thèmes, les thèmes devant plus tard être vendus aux commerçants (« la plateforme doit être dynamique comme un CMS »). Le sélecteur de thème n'est pas construit. Les choix de conception lui ont été laissés ; le module Commandes existant déjà, toutes les données sont réelles.
+
+**Fait** :
+- **Chargement selon l'écran** :
+  - `useMediaQuery` (`useSyncExternalStore`) ;
+  - `DashboardOverview` chargé par `next/dynamic` (`ssr: false`) à partir de 768 px ; en dessous, la vue actuelle ;
+  - tant que la taille d'écran n'est pas connue, une place réservée, sans chargement inutile ;
+  - vérifié dans le build : Recharts (installé, v3) est dans un morceau séparé, absent de la page ; à 390 px, aucun script Recharts n'est téléchargé.
+- **Thèmes** (`src/styles/dashboard-theme.css`, seul fichier de couleurs) :
+  - thème `default` (bleu nuit) et thème `light`, ce dernier non proposé : il sert de modèle et au test de contraste ;
+  - un thème = un bloc `[data-dashboard-theme]`, ou des variables injectées sur le conteneur ;
+  - variables sémantiques : fond, cartes et dégradés, textes, accent, variations (`--kpi-*`), graphiques (`--chart-*` jusqu'aux arrêts de dégradé et à leur opacité), jauge, tableau, statuts (`--status-*`), bannière ;
+  - utilitaires Tailwind adossés (`bg-dash-card`, `text-dash-muted`…) ; Recharts reçoit `var(--…)` dans `fill`, `stroke` et `stopColor` ;
+  - `--chart-1/2` ne sont redéfinies qu'à l'intérieur du conteneur, donc shadcn n'est pas touché ailleurs.
+- **Disposition pilotée par une configuration** (`dashboardLayout.ts`) : une liste de blocs avec leur largeur. Réordonner ou masquer un bloc pour un thème ou une boutique se fera là. La grille suit la place **réellement disponible** (requêtes de conteneur Tailwind), pas la largeur de l'écran : menu latéral et police agrandie compris.
+- **Blocs** :
+  - 4 indicateurs comparés au mois précédent : ventes encaissées, commandes, nouveaux clients, produits actifs avec le nombre en alerte. « nouveau » ou « — » quand la comparaison est impossible, jamais de pourcentage inventé ;
+  - bannière de bienvenue : prénom, boutique, date, « X commandes à traiter » (lien vers Commandes), lien vers la vitrine, logo ;
+  - jauge de santé du stock : en stock, faible, rupture, et « Réapprovisionner N articles » ;
+  - courbe des ventes sur 12 mois (encaissé et commandé), infobulles dans la devise de la boutique ;
+  - barres fines des commandes des 7 derniers jours ;
+  - tableau des 6 dernières commandes ;
+  - un état vide honnête pour chaque bloc.
+- **Calculs** (`lib/dashboardMetrics.ts`, purs et testés) : mêmes règles que la page Statistiques (livrées seulement pour l'encaissé, datées par la création, heure du Cameroun, annulées exclues des comptes).
+- **Visite guidée** : trois étapes de plus sur ordinateur (courbe, jauge, dernières commandes), retirées d'elles-mêmes sur mobile.
+
+**Incohérence corrigée** : la vue mobile calculait autrement (mois à l'heure de l'appareil, annulées comptées, « nouveaux clients » = clients du mois). Sur les mêmes données, elle affichait 10 commandes et 10 nouveaux clients, contre 8 et 0 dans la nouvelle vue. Elle utilise maintenant le même calcul ; son apparence est inchangée.
+
+**Tests** :
+- nouveaux : contraste WCAG des deux thèmes (texte ≥ 4,5:1, graphiques et icônes ≥ 3:1, 140 vérifications) ; aucune couleur en dur dans les composants (hexadécimal, `rgb()`, classes de palette Tailwind) ; `dashboardMetrics` ; `DashboardOverview` (thème porté par le conteneur, chiffres réels, états vides, erreur) ; page (mobile ou graphique, `ssr: false`, attente de la taille) ;
+- `tours.test.ts` accepte maintenant la prop `dataTour="…"`.
+
+Vérifié : lint, `tsc`, 1 163 tests, build.
+
+**Vérification réelle sur émulateurs** (263 commandes sur 11 mois) : 1 440, 1 024 et 768 px, et 768 px avec la police à 150 %. Aucun débordement, aucune erreur dans la console, 2 graphiques dessinés, infobulle correcte, thème clair lisible.
+
+**Corrigé en testant** :
+- grille écrasée sur tablette à cause du menu latéral : passage aux requêtes de conteneur ;
+- jauge de taille fixe qui débordait avec la police à 150 % ;
+- cadre de « commandes à traiter » invisible en thème clair ;
+- seuils de colonnes trop prudents.
+
+Rien de commité.
+
+### 2026-10-03 — Page Thèmes et thème appliqué par boutique
+
+Demande de l'utilisateur :
+- une page qui liste les thèmes ; un thème appliqué habille tout le site de la boutique (vitrine et espace de gestion) ;
+- le thème appliqué rangé dans `shops/{idBoutique}/themes/`, pour qu'il disparaisse avec la boutique ;
+- pour l'instant, seul le thème par défaut, listé et coché ;
+- avant d'appliquer un thème, un aperçu du tableau de bord.
+
+La conception a été laissée à mon choix.
+
+**Fait** :
+- **Catalogue** `src/themes/registry.ts` : un seul thème, « ManuShop Nuit » (`default`). Chaque thème déclare son thème de tableau de bord (`data-dashboard-theme`) et son thème de site (`data-shop-theme`). Ajouter un thème = une entrée et ses blocs CSS ; un test vérifie que chaque thème du catalogue a ses blocs.
+- **Stockage** `shops/{shopId}/themes/active` = `{ themeId, appliedAt, appliedBy }`. Document absent ou thème inconnu : thème par défaut.
+  - Règle : lecture publique (la vitrine s'habille avec), écriture serveur seulement ;
+  - `applyShopThemeAction` : gérant seulement (comme les Paramètres), thème obligatoirement connu.
+- **Application** : `useShopTheme` suit le thème en direct (`onSnapshot`). `data-shop-theme` est posé sur toute la mise en page du tableau de bord et, par `StorefrontThemeScope`, sur la vitrine de la boutique affichée. L'accueil du tableau de bord reçoit son `dashboardTheme`. Le thème par défaut ne redéfinit rien côté site : apparence inchangée.
+- **Page `/dashboard/themes`** (menu Configuration, gérant seulement) :
+  - cartes des thèmes, chacune avec une miniature schématique aux couleurs du thème (formes seulement, aucun chiffre qui pourrait passer pour une donnée), sa description et le badge « Appliqué », dans un groupe de boutons radio accessible ;
+  - « Aperçu » : sur tablette et ordinateur, le **vrai** tableau de bord avec les vrais chiffres, réduit à la taille de la fenêtre et inerte. Sur mobile, la miniature, pour ne pas y charger les graphiques ;
+  - « Appliquer ce thème », désactivé pour le thème en place (« Thème actuel ») ;
+  - aide « ? », visite de page, visite de la fenêtre, étape dans la visite d'accueil (gérant).
+- **Suppression d'une boutique** (rien ne supprime de boutique aujourd'hui) : Firestore ne supprime **pas** les sous-collections d'un document supprimé. Démonstration sur l'émulateur : après `delete()` de la boutique, son thème restait ; après `recursiveDelete`, il disparaît. Le code de suppression à venir devra utiliser `deleteShopDocumentTree` (`src/server/shops/deleteShopData.ts`), prêt à l'emploi.
+
+**Tests** :
+- nouveaux : catalogue (et présence des blocs CSS), `applyShopThemeAction` (chemin `shops/{id}/themes/active`, gérant seulement, thème inconnu refusé), `useShopTheme` (direct, retour au thème par défaut, désabonnement), `StorefrontThemeScope`, `ThemesPageContent` (coché par défaut, aperçu, application) ;
+- le test « aucune couleur en dur » couvre aussi les miniatures.
+
+Vérifié : lint, `tsc`, 1 181 tests, build.
+
+**Vérification réelle sur émulateurs** :
+- gérant sur ordinateur : 1 thème, coché, aperçu avec 2 graphiques réels, « Thème actuel » désactivé, attribut posé sur l'espace de gestion ;
+- mobile (360 px, police à 150 %) : miniature, aucun script de graphiques, pas de débordement ;
+- vendeur : pas de lien dans le menu, page refusée (403) ;
+- vitrine `/boutique/shop-test` : `data-shop-theme="default"`.
+
+**Corrigé en testant** : miniature tronquée sur mobile avec la police agrandie ; texte de l'aperçu inexact sur mobile.
+
+**À faire par l'utilisateur** : déployer les règles Firestore.
+
+Rien de commité (la refonte de l'accueil non plus).
+
+### 2026-10-03 — Thème de test « Wax Soleil »
+
+Proposé à l'utilisateur pour éprouver l'architecture des thèmes, puis accepté : un thème clair et chaleureux, à l'opposé du thème par défaut (crème, terracotta, ocre, émeraude, coins arrondis), pensé pour la mode, la beauté et l'artisanat.
+
+**Fait** :
+- Entrée `wax-soleil` dans le catalogue ; dans `dashboard-theme.css`, un bloc `[data-dashboard-theme="wax-soleil"]` (toutes les variables du tableau de bord) et un bloc `[data-shop-theme="wax-soleil"]` (variables du système de style : fond, texte, primaire, bordures, rayon…).
+- `StorefrontThemeScope` peint maintenant le fond et le texte de la vitrine avec `bg-background text-foreground`, pour qu'un thème qui change le fond habille toute la vitrine.
+- Le test de contraste couvre désormais **tous** les thèmes du catalogue, et aussi l'habillage du site (texte et fond, primaire, texte atténué…).
+
+**Défaut trouvé par le test** : le texte secondaire de la bannière était trop pâle sur l'ocre (4,2:1). Fin du dégradé assombrie.
+
+**Vérification réelle sur émulateurs** : thème appliqué depuis la page Thèmes ; Firestore `shops/shop-test/themes/active` = `{ themeId: "wax-soleil", appliedBy, appliedAt }`. L'espace de gestion et l'accueil passent à `wax-soleil`, la vitrine aussi (fond crème calculé `rgb(255, 251, 245)`). Rien ne déborde sur mobile, aucune erreur.
+
+**Constat, comme annoncé à l'utilisateur** :
+- l'accueil du tableau de bord suit entièrement ;
+- la vitrine suit ;
+- sur les autres pages de gestion, boutons, interrupteurs et rayons suivent, mais la barre latérale, la barre du haut, le fond gris et les bulles des visites guidées (couleur fixée dans `GuidedTour`) restent gris et cyan : leurs couleurs sont en dur ;
+- les fenêtres (dialogues), rendues hors du conteneur du thème, gardent aussi les couleurs d'origine.
+
+Prochaine étape proposée : convertir ces éléments en variables.
+
+Vérifié : lint, `tsc`, 1 264 tests, build. Rien de commité.
+
+### 2026-10-03 — Cadre de l'espace de gestion, fenêtres et visites guidées habillés par le thème
+
+Suite du test de « Wax Soleil », accepté par l'utilisateur : la barre latérale, la barre du haut, le fond, les fenêtres et les bulles des visites guidées gardaient les couleurs d'origine.
+
+**Fait** :
+- **Variables du cadre** `--shell-*` (fond, surface, bordure, survol, textes, menu actif, marque, pastilles, alerte, avatar, carte « boutique active », voile) et `--tour-*`, définies par chaque thème. Le thème par défaut les pose aussi sur `:root`, car les visites guidées existent hors des boutiques. Utilitaires `bg-shell-*`, `text-shell-*`.
+- `DashboardSidebar`, `DashboardTopbar` et la mise en page du tableau de bord : plus aucune couleur en dur (couvert par le test « aucune couleur en dur »).
+- `useDocumentShopTheme` reporte le thème de la boutique sur `<html>` tant que son site est affiché. Fenêtres, menus et bulles, rendus directement dans `<body>`, suivent ainsi le thème. Les blocs de thème ciblent aussi `:root[data-shop-theme=…]` : sur `<html>`, ils doivent l'emporter sur le `:root` de `globals.css`, déclaré après.
+- `GuidedTour` lit `--tour-primary` en valeur calculée : react-joyride a besoin d'une couleur hexadécimale. Mise à jour par `MutationObserver` quand le thème change.
+- Bannière « boutique non publiée » : laissée en jaune dans tous les thèmes, un avertissement devant rester reconnaissable.
+
+**Accessibilité, thème par défaut** : le test de contraste du cadre a relevé trois couleurs d'origine insuffisantes, légèrement foncées :
+- libellés « MENU PRINCIPAL » et « Espace gérant » : de 2,6:1 à 5,2:1 ;
+- pastille du nombre d'avis : de 2,4:1 à 5,4:1 ;
+- bouton des visites guidées : de 3,7:1 à 5,4:1.
+
+**Corrigé en testant** : en « Wax Soleil », les fenêtres restaient blanches (priorité CSS de `:root`, voir plus haut). Elles sont maintenant crème.
+
+**Vérification réelle sur émulateurs** : deux boutiques, l'une en « Wax Soleil », l'autre en thème par défaut.
+- Wax : menu actif, bouton de visite et fenêtre aux couleurs du thème (`rgb(180, 69, 31)`, fond `rgb(255, 251, 245)`).
+- Par défaut : apparence d'origine (à part les trois corrections de contraste).
+
+**Tests** : contraste du cadre pour chaque thème ; chaque thème doit définir tout le cadre ; `useDocumentShopTheme`. Les 12 paires « habillage du site » du thème par défaut sont ignorées : il garde les couleurs de `globals.css`, qui ne sont pas dans le fichier de thème.
+
+**À noter** :
+- `GuidedTour.test.tsx` et `ShopSettingsForm.test.tsx` dépassent leur délai quand la machine est chargée (navigateur et éditeur ouverts, charge 8,4). Ils passent seuls, et toute la suite passe avec moins de tests en parallèle (`--maxWorkers=2`). Leur durée est la même avant et après ce changement.
+- Il reste environ 200 couleurs en dur dans les pages de gestion elles-mêmes (Produits, Commandes, Statistiques…) : elles restent grises et cyan dans un autre thème. La vitrine n'en a plus qu'une.
+
+Vérifié : lint, `tsc`, 1 304 tests, build. Rien de commité.
+
+### 2026-10-03 — Pages de gestion habillées par le thème
+
+Suite, acceptée par l'utilisateur : les pages de l'espace de gestion gardaient environ 200 couleurs en dur (gris et cyan).
+
+**Fait** :
+- **Neutres** (gris ardoise) remplacés par les variables du cadre (`text-shell-text`, `text-shell-muted`, `text-shell-subtle`, `bg-shell-surface`, `bg-shell-bg`, `bg-shell-hover`, `border-shell-border`…). Dans le thème par défaut, elles reprennent le même gris : l'apparence ne change pas.
+- **Cyan** remplacé par l'accent du thème (`--shell-accent`, `--shell-accent-soft`, `--shell-accent-fill`).
+- Segments et boutons noirs sélectionnés : couleur du menu actif. Cartes sombres (« Conseil du jour », pastille « À retenir ») : couleur de la marque.
+- **Couleurs d'état** (vert « en stock », rouge « rupture », jaune « avertissement », bleu « en livraison »…) : gardées, identiques dans tous les thèmes.
+- Nouvelles variables, chacune vérifiée en contraste pour chaque thème : bordure appuyée, icône pâle, texte sur la marque, accent (texte, fond léger, remplissage et son texte).
+- `ScrollableTable` : colonne fixe et ombre de défilement aux couleurs du thème.
+- **Garde-fou** : un test interdit les gris et le cyan en dur dans toutes les pages de gestion. Seule exception documentée : la coche blanche posée sur les pastilles de couleur des factures.
+- Douze fichiers convertis : Clients, Statistiques, Produits, accueil mobile, Mes boutiques, Commandes, Journal, Corbeille, Paramètres, Catégories…
+
+**Corrigé en testant** :
+- dans les tableaux à colonne fixe (Clients, Commandes), les cellules fixes, carrées et opaques, débordaient des coins arrondis de la carte. Le défaut existait déjà dans le thème par défaut, invisible blanc sur blanc. Les conteneurs rognent maintenant les coins ;
+- deux teintes ajustées au contraste : bordure appuyée par défaut, fond d'accent de « Wax Soleil ».
+
+**Vérification réelle sur émulateurs** : deux boutiques, une par thème, et neuf pages de gestion capturées dans chacun (plus l'accueil mobile). En « Wax Soleil », tout est crème et terracotta. Par défaut, apparence d'origine. Aucune erreur.
+
+Vérifié : lint, `tsc`, 1 352 tests, build. Rien de commité.
+
+### 2026-10-03 — La facture suit le thème de la boutique
+
+Demande de l'utilisateur : que le thème choisi s'applique aussi à la facture. La clé `INVOICE_SIGNING_KEY` est déjà configurée en production.
+
+**Fait** :
+- Chaque thème du catalogue déclare une **couleur de facture** : « ManuShop Nuit » `#3B5BA5`, « Wax Soleil » `#B4451F`. Un test vérifie qu'elle reste lisible sous le texte blanc.
+- À l'émission, `ensureInvoice` lit le thème appliqué (`shops/{id}/themes/active`) dans la même transaction. Couleur retenue : celle choisie par le commerçant, sinon celle du thème. Elle est **figée** avec la facture, qui est signée : une facture émise ne change plus de couleur si le thème change ensuite.
+- Paramètres → Facturation : « Couleur des factures », avec le nouveau choix **« Couleur du thème »** sélectionné par défaut (pastille de la couleur du thème en cours), les couleurs proposées et le choix libre.
+- Compatibilité : avant ce changement, le formulaire enregistrait le bleu par défaut pour tous. Ce bleu compte donc comme « suivre le thème » (`customInvoiceColor`). La couleur « Bleu » proposée est un bleu visuellement identique, `#3D5DA8`, pour rester un vrai choix.
+- La page de vérification d'une facture (QR code) s'affiche aussi aux couleurs et au nom de la boutique (`ShopBrandingSetter`).
+
+**Vérification réelle sur émulateurs** : boutique en « Wax Soleil » avec l'ancien bleu enregistré. Facture émise et figée en `#B4451F`, signée ; PDF terracotta (titre, tableau, total, bandeau, légende du QR code). Page de vérification en `wax-soleil`, « Facture authentique ».
+
+**Tests** : choix de la couleur (commerçant, thème, ancien bleu, valeur invalide), couleurs proposées jamais confondues avec « suivre le thème », émission (couleur du thème, couleur du commerçant prioritaire), formulaire (« Couleur du thème » coché par défaut, retour à la couleur du thème), lisibilité de la couleur de chaque thème.
+
+Vérifié : lint, `tsc`, 1 360 tests, build. Rien de commité.

@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 
 import { ShopStorefrontPage } from "@/components/storefront/ShopStorefrontPage";
 import { hiddenPageMetadata, serializeJsonLd, shopJsonLd, shopMetadata } from "@/lib/seo";
-import { getSiteUrl } from "@/lib/siteUrl";
-import { getPublicShop } from "@/server/seo/publicData";
+import { getPublicShop, getPublicSiteUrl } from "@/server/seo/publicData";
 
 /**
  * Vitrine publique d'une boutique. Composant serveur pour le référencement
@@ -22,13 +21,14 @@ export async function generateMetadata({
 export default async function ShopPage({ params }: PageProps<"/boutique/[shopId]">) {
   const { shopId } = await params;
   const shop = await getPublicShop(shopId);
+  const siteUrl = await getPublicSiteUrl();
 
   return (
     <>
       {shop && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(shopJsonLd(shop, getSiteUrl())) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(shopJsonLd(shop, siteUrl)) }}
         />
       )}
       <ShopStorefrontPage shopId={shopId} />

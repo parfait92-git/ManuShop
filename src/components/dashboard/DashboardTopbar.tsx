@@ -32,7 +32,7 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   }
 
   return (
-    <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-4 sm:gap-4 sm:px-6">
+    <header className="flex items-center justify-between gap-2 border-b border-shell-border bg-shell-surface px-4 py-4 sm:gap-4 sm:px-6">
       {/* Petits écrans et police agrandie : le nom se tronque, les boutons
       de droite gardent leur taille (audit à 320 px / 150 %, voir
       06-journal-progression.md). */}
@@ -41,13 +41,13 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
           type="button"
           onClick={onMenuClick}
           aria-label="Ouvrir le menu"
-          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 md:hidden"
+          className="rounded-lg p-1.5 text-shell-muted hover:bg-shell-hover md:hidden"
         >
           <Menu className="size-5" />
         </button>
         <div className="min-w-0">
-          <p className="truncate text-xs text-slate-400">Espace gérant</p>
-          <p className="truncate text-sm font-semibold text-slate-950 sm:text-base">
+          <p className="truncate text-xs text-shell-subtle">Espace gérant</p>
+          <p className="truncate text-sm font-semibold text-shell-text sm:text-base">
             {shopName ?? "Ma boutique"}
           </p>
         </div>
@@ -62,11 +62,11 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
               ? `${newOrdersCount} nouvelle${newOrdersCount > 1 ? "s" : ""} commande${newOrdersCount > 1 ? "s" : ""} à traiter`
               : "Aucune nouvelle commande"
           }
-          className="relative flex size-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+          className="relative flex size-9 items-center justify-center rounded-full border border-shell-border text-shell-muted hover:bg-shell-hover"
         >
           <Bell className="size-4" />
           {newOrdersCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-shell-alert text-[10px] font-medium text-shell-alert-text">
               {newOrdersCount > 9 ? "9+" : newOrdersCount}
             </span>
           )}
@@ -77,7 +77,7 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
-              className="flex items-center gap-2 rounded-full py-1 pr-1 pl-1 hover:bg-slate-100"
+              className="flex items-center gap-2 rounded-full py-1 pr-1 pl-1 hover:bg-shell-hover"
             >
               {profile.photoURL ? (
                 <Image
@@ -88,19 +88,19 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                   className="size-8 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex size-8 items-center justify-center rounded-full bg-cyan-100 text-xs font-semibold text-cyan-700">
+                <span className="flex size-8 items-center justify-center rounded-full bg-shell-avatar text-xs font-semibold text-shell-avatar-text">
                   {profile.displayName.charAt(0).toUpperCase()}
                 </span>
               )}
               <span className="hidden text-left sm:block">
-                <span className="block text-sm font-medium text-slate-950">
+                <span className="block text-sm font-medium text-shell-text">
                   {profile.displayName}
                 </span>
-                <span className="block text-xs text-slate-400">
+                <span className="block text-xs text-shell-subtle">
                   {ROLE_LABELS[profile.role]}
                 </span>
               </span>
-              <ChevronDown className="hidden size-3.5 text-slate-400 sm:block" />
+              <ChevronDown className="hidden size-3.5 text-shell-subtle sm:block" />
             </button>
 
             {menuOpen && (
@@ -112,7 +112,7 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                   className="fixed inset-0 z-10 cursor-default"
                   onClick={() => setMenuOpen(false)}
                 />
-                <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-shell-border bg-shell-surface py-1 shadow-lg">
                   {/* Compte à la fois Super Admin (`platformAdmins`) et
                   gérant d'une boutique (`role: "admin"`) : `isSuperAdmin`
                   ne se déduit jamais de `profile.role` (voir
@@ -123,7 +123,7 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                     <Link
                       href="/super-admin"
                       onClick={() => setMenuOpen(false)}
-                      className="block px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                      className="block px-3 py-2 text-sm text-shell-muted hover:bg-shell-hover"
                     >
                       Super Admin
                     </Link>
@@ -131,14 +131,14 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                   <Link
                     href="/mon-compte"
                     onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                    className="block px-3 py-2 text-sm text-shell-muted hover:bg-shell-hover"
                   >
                     Paramètres du compte
                   </Link>
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
+                    className="w-full px-3 py-2 text-left text-sm text-shell-muted hover:bg-shell-hover"
                   >
                     Déconnexion
                   </button>

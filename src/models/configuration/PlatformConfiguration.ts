@@ -29,4 +29,12 @@ export interface PlatformConfiguration {
    * `src/lib/launchPromo.ts`.
    */
   launchPromo?: LaunchPromoSettings;
+  /**
+   * Adresse publique du site, réglée par le Super Admin quand la plateforme
+   * passe sur son propre domaine (2026-10-03), ex. « https://www.manushop.cm ».
+   * Prend le pas sur `getSiteUrl()` (variable d'environnement ou domaine
+   * Vercel) partout : QR codes des factures, plan du site, liens de
+   * partage. Absente : `getSiteUrl()`.
+   */
+  siteUrl?: string;
 }

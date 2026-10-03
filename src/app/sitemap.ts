@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { productPath, shopPath } from "@/lib/seo";
-import { getSiteUrl } from "@/lib/siteUrl";
-import { listPublicCatalogue } from "@/server/seo/publicData";
+import { getPublicSiteUrl, listPublicCatalogue } from "@/server/seo/publicData";
 
 /** Régénéré au plus toutes les heures : une boutique publiée ou un article
  * ajouté y apparaît sans redéploiement. */
@@ -13,8 +12,7 @@ export const revalidate = 3600;
  * publiées et leurs articles visibles (jamais les espaces privés).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = getSiteUrl();
-  const { shops, products } = await listPublicCatalogue();
+  const [site, { shops, products }] = await Promise.all([getPublicSiteUrl(), listPublicCatalogue()]);
   const date = (value: { toDate(): Date } | undefined) => value?.toDate();
 
   return [

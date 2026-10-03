@@ -155,6 +155,17 @@ export const ShopSettingsSchema = z.object({
     .or(z.literal("")),
   // Visibilité (BF-88)
   isPublished: z.boolean(),
+  // Facturation (BF-29, 2026-10-03)
+  // Vide : la facture suit la couleur du thème de la boutique.
+  themeColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, {
+    error: "Choisissez une couleur.",
+  }),
+  vatRate: z
+    .number({ error: "Indiquez un taux, ou 0 si vous n'êtes pas assujetti à la TVA." })
+    .min(0, { error: "Le taux ne peut pas être négatif." })
+    .max(100, { error: "Le taux ne peut pas dépasser 100 %." }),
+  taxId: z.string().trim().max(40, { error: "40 caractères au maximum." }),
+  tradeRegister: z.string().trim().max(40, { error: "40 caractères au maximum." }),
 });
 
 export type ShopSettingsInput = z.infer<typeof ShopSettingsSchema>;

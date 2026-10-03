@@ -1,3 +1,9 @@
+const downloadInvoiceMock = jest.fn();
+jest.mock("../../services/InvoiceService", () => ({
+  hasInvoice: (status: string) => ["delivered", "returned", "defective"].includes(status),
+  invoiceService: { download: (...args: unknown[]) => downloadInvoiceMock(...args) },
+}));
+
 jest.mock("../providers/AuthProvider", () => ({
   useAuth: () => ({
     profile: { id: "uid-1", displayName: "Ada Diallo", role: "admin" },

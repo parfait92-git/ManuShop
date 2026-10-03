@@ -2,6 +2,8 @@ import { auth } from "@/lib/firebase";
 import { configurationRepository } from "@/repositories/ConfigurationRepository";
 import type { IConfigurationRepository } from "@/repositories/interfaces/IConfigurationRepository";
 import {
+  getSiteUrlSettingsAction,
+  setSiteUrlAction,
   setDemoCatalogueEnabledAction,
   setLaunchPromoAction,
   setUsdToXafRateAction,
@@ -52,6 +54,18 @@ export class ConfigurationService {
 
   async setLaunchPromo(promo: LaunchPromoSettings): Promise<void> {
     await setLaunchPromoAction(await this.getCallerIdToken(), promo);
+  }
+
+  /** Domaine de la plateforme : réglé par le Super Admin, et celui du
+   * déploiement utilisé à défaut. */
+  async getSiteUrlSettings(): Promise<{ configured: string | null; fallback: string }> {
+    return getSiteUrlSettingsAction(await this.getCallerIdToken());
+  }
+
+  /** Enregistre le domaine (vérifié côté serveur), ou revient au domaine
+   * du déploiement si `url` est vide. Renvoie l'adresse enregistrée. */
+  async setSiteUrl(url: string): Promise<string | null> {
+    return setSiteUrlAction(await this.getCallerIdToken(), url);
   }
 
   private async getCallerIdToken(): Promise<string> {
