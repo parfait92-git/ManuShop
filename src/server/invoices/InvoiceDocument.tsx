@@ -10,6 +10,7 @@ import {
   toPdfText,
   type InvoiceItemInput,
 } from "@/lib/invoice";
+import { formatDateTime } from "@/lib/dateTime";
 
 /** Données d'une facture prêtes à imprimer (voir `Invoice`, dates déjà
  * converties). */
@@ -155,12 +156,7 @@ export function InvoiceDocument({
   const { lines, totals } = computeInvoice(invoice.items, invoice.vatRate, invoice);
   const money = (amount: number) => formatInvoiceMoney(amount, invoice.currency, invoice.rateToXaf);
   const cols = columns(withVat);
-  const issued = invoice.issuedAt.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Africa/Douala",
-  });
+  const issued = formatDateTime(invoice.issuedAt, "long");
   const sellerName = toPdfText(invoice.seller.name) || "Boutique";
 
   const cell = (line: (typeof lines)[number], key: string) => {

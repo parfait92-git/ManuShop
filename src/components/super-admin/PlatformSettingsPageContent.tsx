@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { LaunchPromoSettingsCard } from "@/components/super-admin/LaunchPromoSettingsCard";
 import { SiteUrlSettingsCard } from "@/components/super-admin/SiteUrlSettingsCard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { EUR_TO_XAF } from "@/lib/currency";
+import { DEFAULT_USD_TO_XAF, EUR_TO_XAF } from "@/lib/currency";
 import { configurationService } from "@/services/ConfigurationService";
 
 /** Mêmes bornes que `setUsdToXafRateAction`, vérifiées ici pour un
@@ -25,6 +25,8 @@ const MAX_USD_RATE = 5000;
 function ExchangeRatesCard() {
   const { t, intlLocale } = useI18n();
   const [value, setValue] = useState("");
+  /** Taux enregistré par le Super Admin ; `null` : taux indicatif en vigueur. */
+  const [savedRate, setSavedRate] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +35,10 @@ function ExchangeRatesCard() {
     configurationService
       .getUsdToXafRate()
       .then((rate) => {
-        if (active && rate) setValue(String(rate));
+        if (active && rate) {
+          setValue(String(rate));
+          setSavedRate(rate);
+        }
       })
       .catch(() => {});
     return () => {
@@ -52,6 +57,7 @@ function ExchangeRatesCard() {
     setSaving(true);
     try {
       await configurationService.setUsdToXafRate(rate);
+      setSavedRate(rate);
       toast.success(t("platformRates.saved"));
     } catch {
       setError(t("platformRates.error"));
@@ -93,6 +99,11 @@ function ExchangeRatesCard() {
           </Button>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {!savedRate && (
+          <p className="text-sm text-muted-foreground">
+            {t("platformRates.usdDefault", { rate: DEFAULT_USD_TO_XAF.toLocaleString(intlLocale) })}
+          </p>
+        )}
       </div>
     </form>
   );

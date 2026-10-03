@@ -10,6 +10,7 @@ import type {
 } from "@/models/activity/ActivityLogEntry";
 import type { OrderStatus } from "@/models/order/OrderStatus";
 import { activityLogService } from "@/services/ActivityLogService";
+import { formatDateTime } from "@/lib/dateTime";
 
 const ACTION_ICON: Record<ActivityLogEntry["targetType"], typeof Package> = {
   product: Package,
@@ -112,13 +113,7 @@ export function ActivityLogPageContent({ shopId }: { shopId: string }) {
                     <p className="text-sm text-shell-muted">{describe(entry)}</p>
                     <p className="text-xs text-shell-subtle">
                       {entry.actorName} ·{" "}
-                      {entry.createdAt.toDate().toLocaleString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateTime(entry.createdAt.toDate())}
                     </p>
                   </div>
                 </li>

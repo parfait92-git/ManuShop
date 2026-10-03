@@ -16,6 +16,7 @@ import type { Review } from "@/models/review/Review";
 import { feedbackService } from "@/services/FeedbackService";
 import { orderService } from "@/services/OrderService";
 import { reviewService } from "@/services/ReviewService";
+import { formatDateTime } from "@/lib/dateTime";
 
 /** Une étape : la livraison, puis chaque article de la commande. */
 type Step = { kind: "delivery" } | { kind: "item"; productId: string; name: string };
@@ -296,11 +297,7 @@ export function OrderFeedbackPageContent({
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Donner mon avis</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Commande du{" "}
-          {order.createdAt.toDate().toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}{" "}
+          {formatDateTime(order.createdAt.toDate(), "long")}{" "}
           · {doneCount} avis sur {steps.length}
         </p>
       </div>

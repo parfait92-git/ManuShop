@@ -159,7 +159,7 @@ describe("ensureInvoice", () => {
     expect(invoice.signature).toBeUndefined();
   });
 
-  it("starts at 1, and stays in FCFA with the default colour and no VAT when unset", async () => {
+  it("starts at 1, with the default dollar rate, colour and no VAT when unset", async () => {
     const { db, writes } = fakeDb({
       "orders/o1": ORDER,
       "shops/shop-1": { name: "Chez Awa", currency: "USD" },
@@ -172,9 +172,9 @@ describe("ensureInvoice", () => {
       expect.objectContaining({
         number: "F-00001",
         vatRate: 0,
-        // Taux du dollar pas encore saisi : FCFA plutôt qu'un montant faux.
-        currency: "XAF",
-        rateToXaf: 1,
+        // Taux du dollar pas encore saisi : taux indicatif par défaut.
+        currency: "USD",
+        rateToXaf: 600,
         color: "#3B5BA5",
       })
     );

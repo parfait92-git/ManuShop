@@ -29,6 +29,7 @@ import {
 import { uploadAvatar } from "@/lib/upload";
 import type { User } from "@/models/user/User";
 import { authService } from "@/services/AuthService";
+import { formatDateTime } from "@/lib/dateTime";
 
 const ROLE_LABELS: Record<User["role"], string> = {
   admin: "Gérant(e) de boutique",
@@ -290,11 +291,7 @@ export function AccountSettingsForm() {
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Membre depuis</span>
             <span className="font-medium">
-              {profile.createdAt.toDate().toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {formatDateTime(profile.createdAt.toDate(), "long")}
             </span>
           </div>
         </div>

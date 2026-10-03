@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { activityLogService } from "@/services/ActivityLogService";
 import { categoryTrashService, productTrashService } from "@/services/TrashService";
+import { formatDateTime } from "@/lib/dateTime";
 
 interface TrashRow {
   id: string;
@@ -181,11 +182,7 @@ export function TrashPageContent({ shopId }: { shopId: string }) {
               >
                 <p className="text-sm text-shell-muted">
                   {row.typeLabel} · {row.name} ·{" "}
-                  {row.deletedAt.toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
+                  {formatDateTime(row.deletedAt)}
                 </p>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button

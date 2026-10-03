@@ -17,6 +17,7 @@ import { hasInvoice } from "@/services/InvoiceService";
 import { orderService } from "@/services/OrderService";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
+import { formatDateTime } from "@/lib/dateTime";
 
 /** BF-75 : suivi de commande côté client — jusque-là explicitement bloqué
  * ("aucune commande n'est jamais écrite dans Firestore"), débloqué par le
@@ -99,11 +100,7 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
                   {ORDER_STATUS_LABEL[order.status]}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {order.createdAt.toDate().toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
+                  {formatDateTime(order.createdAt.toDate())}
                 </span>
               </div>
               <p className="text-sm">

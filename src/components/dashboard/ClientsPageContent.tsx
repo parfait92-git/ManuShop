@@ -35,6 +35,7 @@ import {
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Order } from "@/models/order/Order";
 import { orderService } from "@/services/OrderService";
+import { formatDateTime } from "@/lib/dateTime";
 
 const SEGMENT_CLASS: Record<ClientSegment, string> = {
   new: "bg-shell-accent-soft text-shell-accent",
@@ -50,7 +51,7 @@ const SEGMENT_HELP: Record<ClientSegment, string> = {
 
 type SegmentFilter = "all" | ClientSegment;
 
-const DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+const DATE = { format: (date: Date) => formatDateTime(date) };
 
 function money(amount: number): string {
   return `${amount.toLocaleString("fr-FR")} FCFA`;

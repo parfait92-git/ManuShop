@@ -2245,3 +2245,28 @@ Générés depuis le script de palettes. Tous les contrastes passent du premier 
 **Vérification réelle sur émulateurs** : tableau de bord et vitrine des deux thèmes capturés, espace de gestion dans le bon thème, aucune erreur.
 
 Vérifié : lint, `tsc`, 2 155 tests, build. Rien de commité.
+
+### 2026-10-03 — Dollar US utilisable sans réglage ; l'heure sur toutes les dates
+
+Signalé par l'utilisateur : seul l'euro était pris en compte ; ajouter le dollar US et l'heure sur toutes les dates.
+
+**Cause** : le dollar existait déjà, mais n'était utilisé qu'une fois son taux enregistré par le Super Admin. Sans taux, une boutique en dollars affichait ses prix en FCFA ; l'euro, à parité fixe, fonctionnait d'office.
+
+**Fait** :
+- **Dollar** : taux indicatif par défaut `DEFAULT_USD_TO_XAF` = 600 FCFA, appliqué tant que le Super Admin n'a pas enregistré le sien. Réglages → Taux de change l'indique (« Taux en vigueur : 1 $ = 600 FCFA (taux indicatif par défaut) ») et l'aide est mise à jour (fr et en). Vaut partout : vitrine, panier, commandes, factures (devise et taux figés à l'émission).
+- **Dates avec l'heure** : `formatDateTime` (`lib/dateTime.ts`), « 3 oct. 2026 à 21:40 » ou « 3 octobre 2026 à 21:40 », à l'heure du Cameroun. Date et heure sont formatées à part, car le séparateur d'`Intl` varie selon le moteur (« , » ou « à »). Utilisé sur :
+  - Mes commandes, Commandes, dernières commandes du tableau de bord ;
+  - Clients (dernière commande, client depuis), Avis clients et réponse du vendeur ;
+  - écran d'avis du client, notifications, Corbeille, Journal ;
+  - messages du Super Admin et du commerçant, demandes d'achat premium ;
+  - expiration d'abonnement, « Membre depuis », fin de promotion (dernière minute de la journée de fin) ;
+  - date de la facture PDF.
+- Restent sans heure, volontairement : la date du jour dans les bannières de bienvenue (c'est un titre, pas un événement) et les libellés des axes des graphiques (jours, mois).
+- `GuidedTour.test.tsx` : délai porté à 30 s. Le test dépassait 15 s dans la suite complète quand la machine était chargée ; seul, il prend 9 s.
+
+**Vérification réelle sur émulateurs** (boutique en USD, aucun taux enregistré) :
+- article à 60 000 FCFA affiché « 100,00 $US » sur la fiche, dans « Mes commandes » et sur la facture (devise USD) ;
+- « Mes commandes » : « 3 oct. 2026 à 21:40 » ;
+- facture : « 3 octobre 2026 à 22:39 ».
+
+Vérifié : lint, `tsc`, 2 157 tests, build. Rien de commité.
