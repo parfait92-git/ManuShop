@@ -1,3 +1,4 @@
+jest.mock("../providers/ShopBrandingSetter", () => ({ ShopBrandingSetter: () => null }));
 // Rafraîchissement des prix du panier (testé dans useCartPriceSync.test.ts) :
 // il lit les produits via le SDK Firebase, hors sujet ici.
 jest.mock("../../hooks/useCartPriceSync", () => ({ useCartPriceSync: () => [] }));

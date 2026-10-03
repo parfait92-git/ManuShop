@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Settings, ShieldCheck, Store, Tag, Users } from "lucide-react";
+import { Crown, Mail, Settings, ShieldCheck, Store, Tag, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +17,7 @@ const MAIN_ITEMS: NavItem[] = [
   { href: "/super-admin", label: "Comptes", icon: Users },
   { href: "/super-admin/commercants", label: "Commerçants", icon: Store },
   { href: "/super-admin/tags", label: "Tags de catégorie", icon: Tag },
+  { href: "/super-admin/offres-premium", label: "Offres premium", icon: Crown },
   { href: "/super-admin/messages", label: "Messages", icon: Mail },
   { href: "/super-admin/reglages", label: "Réglages", icon: Settings },
 ];

@@ -4,7 +4,7 @@ import { ChevronDown, ShoppingBag, Store, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
@@ -180,6 +180,29 @@ function AccountMenu() {
 export function StorefrontHeader() {
   const pathname = usePathname();
   const [cartOpen, setCartOpen] = useState(false);
+  const cartRef = useRef<HTMLDivElement>(null);
+
+  // Le panneau du panier se ferme d'un clic (ou d'un toucher) en dehors,
+  // avec Échap, et en changeant de page — plus besoin de revenir sur le
+  // bouton (signalé par l'utilisateur, 2026-10-03).
+  useEffect(() => {
+    if (!cartOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (!cartRef.current?.contains(event.target as Node)) setCartOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setCartOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [cartOpen]);
+  useEffect(() => {
+    queueMicrotask(() => setCartOpen(false));
+  }, [pathname]);
   const itemCount = useCartItemCount();
   const { branding } = useShopBranding();
 
@@ -245,7 +268,7 @@ export function StorefrontHeader() {
           <TourReplayButton className="border-border text-muted-foreground hover:bg-muted hover:text-foreground" />
           <NotificationBell />
           <AccountMenu />
-          <div className="relative">
+          <div ref={cartRef} className="relative">
             <button
               data-tour="storefront-cart"
               type="button"

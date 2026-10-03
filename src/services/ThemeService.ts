@@ -1,6 +1,7 @@
 import { doc, onSnapshot } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
+import { toShopPremiumState, type ShopPremiumState } from "@/lib/premiumCatalog";
 import { ACTIVE_THEME_DOC } from "@/models/theme/ShopTheme";
 import { applyShopThemeAction } from "@/server/actions/themeActions";
 import { DEFAULT_THEME_ID } from "@/themes/registry";
@@ -14,6 +15,17 @@ export class ThemeService {
       doc(db, "shops", shopId, "themes", ACTIVE_THEME_DOC),
       (snapshot) => onChange((snapshot.data()?.themeId as string | undefined) ?? DEFAULT_THEME_ID),
       () => onChange(DEFAULT_THEME_ID)
+    );
+  }
+
+  /** Ce qui ouvre l'accès premium de la boutique (privilèges,
+   * abonnement), suivi en direct : un achat validé ou un abonnement
+   * changé s'applique aussitôt. */
+  watchShopPremium(shopId: string, onChange: (state: ShopPremiumState) => void): () => void {
+    return onSnapshot(
+      doc(db, "shops", shopId),
+      (snapshot) => onChange(toShopPremiumState(snapshot.data() ?? {})),
+      () => onChange({})
     );
   }
 

@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { MarketCataloguePageContent } from "@/components/storefront/MarketCataloguePageContent";
 import { PageTour } from "@/components/onboarding/PageTour";
+import { useClearShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 
 /**
@@ -17,6 +18,8 @@ import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
  * `MarketCataloguePageContent` utiliserait pour se retrouver vide).
  */
 export default function CataloguePage() {
+  // Marché de la plateforme : on quitte le site d'une boutique.
+  useClearShopBranding();
   const demoAvailable = useDemoCatalogueAvailable();
   const router = useRouter();
 

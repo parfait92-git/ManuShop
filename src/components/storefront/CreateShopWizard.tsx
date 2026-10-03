@@ -21,6 +21,8 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { DialogTour } from "@/components/onboarding/DialogTour";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
+import { usePremiumCatalog } from "@/hooks/usePremiumCatalog";
+import { listPremiumItems } from "@/lib/premiumCatalog";
 import {
   CreateShopWizardSchema,
   type CreateShopWizardInput,
@@ -87,6 +89,8 @@ export function CreateShopWizard({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const premiumCatalog = usePremiumCatalog();
+  const premiumItems = listPremiumItems();
   const router = useRouter();
   const { refreshProfile } = useAuth();
   const [step, setStep] = useState<StepIndex>(0);
@@ -357,6 +361,11 @@ export function CreateShopWizard({
               <div data-tour="wizard-plans" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SUBSCRIPTION_PLANS.map((plan) => {
                   const selected = subscriptionPlan === plan.id;
+                  // Prix et articles premium inclus réglés par le Super
+                  // Admin (Offres premium) ; prix d'origine en attendant.
+                  const settings = premiumCatalog?.plans[plan.id];
+                  const price = settings?.priceFcfa ?? plan.priceFcfa;
+                  const included = premiumItems.filter((item) => settings?.includes.includes(item.key));
                   return (
                     <button
                       key={plan.id}
@@ -376,11 +385,16 @@ export function CreateShopWizard({
                       )}
                       <span className="text-sm font-medium">{plan.label}</span>
                       <span className="text-lg font-bold">
-                        {plan.priceFcfa.toLocaleString("fr-FR")} FCFA
+                        {price.toLocaleString("fr-FR")} FCFA
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {plan.description}
                       </span>
+                      {included.length > 0 && (
+                        <span className="text-xs text-primary">
+                          Inclut : {included.map((item) => item.label).join(", ")}
+                        </span>
+                      )}
                     </button>
                   );
                 })}

@@ -132,7 +132,9 @@ const SITE_THEMES = [...new Set(THEMES.map((t) => t.siteTheme))];
 
 describe.each(SITE_THEMES)("habillage du site « %s »", (themeId) => {
   const vars = themeVariables(themeId, "data-shop-theme");
-  const shellKeys = Object.keys(themeVariables("default", "data-shop-theme")).sort();
+  const shellKeys = Object.keys(themeVariables("default", "data-shop-theme"))
+    .filter((k) => /^--(shell|tour)-/.test(k))
+    .sort();
 
   it("defines the whole management frame", () => {
     expect(Object.keys(vars).filter((k) => /^--(shell|tour)-/.test(k)).sort()).toEqual(shellKeys);

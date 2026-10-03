@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCurrentShop } from "@/hooks/useCurrentShop";
+import { usePremiumAccess } from "@/hooks/usePremiumCatalog";
 import { useSupportMessagesForShop } from "@/hooks/useSupportMessagesForShop";
 import type { SupportMessage } from "@/models/support/SupportMessage";
 import { supportMessageService } from "@/services/SupportMessageService";
@@ -69,7 +70,8 @@ export function SupportPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const enabled = shop?.premiumFeatures?.includes("contactForm") ?? false;
+  const hasAccess = usePremiumAccess(shop);
+  const enabled = hasAccess("contactForm");
   const messages = useSupportMessagesForShop(enabled ? shop?.id : undefined);
 
   async function handleSubmit(event: React.FormEvent) {

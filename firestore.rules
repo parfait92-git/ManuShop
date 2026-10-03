@@ -119,6 +119,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Demandes d'achat d'articles premium (2026-10-03) : le gérant suit
+    // celles de sa boutique ; création et décision par le serveur
+    // (src/server/actions/premiumActions.ts).
+    match /premiumRequests/{requestId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow write: if false;
+    }
+
     // Compteurs de numérotation des factures : serveur seulement.
     match /invoiceCounters/{shopId} {
       allow read, write: if false;

@@ -4,6 +4,8 @@ import { FieldValue } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import type { PremiumFeatureKey } from "@/lib/premiumFeatures";
+import { isPremiumItemKey } from "@/lib/premiumCatalog";
+import { ValidationError } from "@/server/errors";
 import { requireSuperAdmin } from "@/server/auth/requireSuperAdmin";
 import type { User } from "@/models/user/User";
 
@@ -133,10 +135,11 @@ export async function listMerchantsAction(
 export async function setShopPremiumFeatureAction(
   idToken: string,
   shopId: string,
-  feature: PremiumFeatureKey,
+  feature: PremiumFeatureKey | string,
   enabled: boolean
 ): Promise<void> {
   await requireSuperAdmin(idToken);
+  if (!isPremiumItemKey(feature)) throw new ValidationError("Article premium inconnu.");
   await getAdminDb()
     .collection(SHOPS_COLLECTION)
     .doc(shopId)
