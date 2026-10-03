@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CoachMark } from "@/components/ui/CoachMark";
 import { useCartShop } from "@/hooks/useCartShop";
+import { ShopBrandingSetter } from "@/components/providers/ShopBrandingSetter";
 import { useMoney } from "@/hooks/useMoney";
 import { shopCurrency } from "@/lib/currency";
 import { cartTotal, useCartStore } from "@/store/cartStore";
@@ -115,6 +116,8 @@ export function PaymentMethodPageContent() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
+      {/* Aux couleurs de la boutique du panier. */}
+      {shop && <ShopBrandingSetter shopId={shop.id} name={shop.name} logo={shop.logo || undefined} />}
       <div>
         <h1 className="text-3xl font-bold hyphens-auto break-words sm:text-4xl">Confirmer ma commande</h1>
         <p className="mt-1 text-muted-foreground">

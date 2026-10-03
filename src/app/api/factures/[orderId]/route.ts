@@ -5,7 +5,10 @@ import { createElement, type ReactElement } from "react";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { verifyIdToken } from "@/lib/verifyIdToken";
 import { NotFoundError, ValidationError } from "@/server/errors";
+import { resolveInvoiceColor } from "@/lib/invoice";
 import { shopPath } from "@/lib/seo";
+import { ACTIVE_THEME_DOC } from "@/models/theme/ShopTheme";
+import { resolveTheme } from "@/themes/registry";
 import { formatVerificationCode } from "@/server/integrity/signing";
 import {
   InvoiceDocument,
@@ -46,6 +49,31 @@ async function verificationBlock(
   const url = `${site}${shopPath(shopId)}/verifier/${code}`;
   const qr = await QRCode.toBuffer(url, { type: "png", errorCorrectionLevel: "M", margin: 0, scale: 8 });
   return { qr, code: formatVerificationCode(code), host: new URL(site).host };
+}
+
+/**
+ * Couleur de la facture au moment du téléchargement (2026-10-03, demande
+ * de l'utilisateur) : celle choisie par le commerçant, sinon celle du thème
+ * appliqué **aujourd'hui** — un changement de thème se voit aussitôt, même
+ * sur une facture déjà émise. La couleur n'est que de la présentation : le
+ * contenu signé de la facture (montants, articles, numéro…) ne change pas,
+ * et sa signature reste valable.
+ */
+async function currentInvoiceColor(
+  db: ReturnType<typeof getAdminDb>,
+  shopId: string,
+  issuedColor: string
+): Promise<string> {
+  try {
+    const shopRef = db.collection("shops").doc(shopId);
+    const [shop, active] = await Promise.all([
+      shopRef.get(),
+      shopRef.collection("themes").doc(ACTIVE_THEME_DOC).get(),
+    ]);
+    return resolveInvoiceColor(shop.data()?.themeColor, resolveTheme(active.data()?.themeId).invoiceColor);
+  } catch {
+    return issuedColor;
+  }
 }
 
 export async function GET(
@@ -95,7 +123,7 @@ export async function GET(
     vatRate: invoice.vatRate,
     currency: invoice.currency,
     rateToXaf: invoice.rateToXaf,
-    color: invoice.color,
+    color: await currentInvoiceColor(db, invoice.shopId ?? order.shopId, invoice.color),
   };
   const [logo, verification] = await Promise.all([
     loadInvoiceLogo(invoice.seller.logo),

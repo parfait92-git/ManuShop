@@ -6,10 +6,15 @@ jest.mock("../../../../lib/verifyIdToken", () => ({
 
 const orderGetMock = jest.fn();
 const userGetMock = jest.fn();
+const shopGetMock = jest.fn().mockResolvedValue({ data: () => undefined });
+const themeGetMock = jest.fn().mockResolvedValue({ data: () => undefined });
 jest.mock("../../../../lib/firebaseAdmin", () => ({
   getAdminDb: () => ({
     collection: (name: string) => ({
-      doc: () => ({ get: name === "orders" ? orderGetMock : userGetMock }),
+      doc: () => ({
+        get: name === "orders" ? orderGetMock : name === "shops" ? shopGetMock : userGetMock,
+        collection: () => ({ doc: () => ({ get: themeGetMock }) }),
+      }),
     }),
   }),
 }));
@@ -128,5 +133,28 @@ describe("GET /api/factures/[orderId]", () => {
     expect(await response.json()).toEqual({
       error: "La facture est disponible une fois la commande livrée.",
     });
+  });
+
+  // Couleur au moment du téléchargement (2026-10-03).
+  it("draws the invoice in the colour of the shop's current theme", async () => {
+    mockOrder();
+    ensureInvoiceMock.mockResolvedValue({ ...INVOICE, shopId: "shop-1", color: "#3B5BA5" });
+    shopGetMock.mockResolvedValueOnce({ data: () => ({ themeColor: "" }) });
+    themeGetMock.mockResolvedValueOnce({ data: () => ({ themeId: "wax-soleil" }) });
+
+    await GET(request(), params);
+
+    expect(renderToBufferMock.mock.calls[0][0].props.invoice.color).toBe("#B4451F");
+  });
+
+  it("keeps the merchant's own invoice colour", async () => {
+    mockOrder();
+    ensureInvoiceMock.mockResolvedValue({ ...INVOICE, shopId: "shop-1" });
+    shopGetMock.mockResolvedValueOnce({ data: () => ({ themeColor: "#047857" }) });
+    themeGetMock.mockResolvedValueOnce({ data: () => ({ themeId: "wax-soleil" }) });
+
+    await GET(request(), params);
+
+    expect(renderToBufferMock.mock.calls[0][0].props.invoice.color).toBe("#047857");
   });
 });

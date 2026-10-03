@@ -1,16 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 export interface ShopBranding {
   shopId: string;
   name: string;
   logo?: string;
   /** BF-106 : liens renseignés pour un réseau donné, uniquement si le
-   * privilège premium `socialFooterLinks` est actif pour la boutique —
-   * `undefined`/absent sinon (pas de case à cocher séparée : la présence du
-   * lien suffit à l'activer, demande explicite de l'utilisateur). Consommé
-   * par `StorefrontFooter`. */
+   * privilège premium `socialFooterLinks` est accessible à la boutique —
+   * `undefined`/absent sinon. Consommé par `StorefrontFooter`. */
   socialLinks?: Partial<Record<"whatsapp" | "facebook" | "instagram" | "tiktok", string>>;
 }
 
@@ -23,19 +21,54 @@ const ShopBrandingContext = createContext<ShopBrandingContextValue | undefined>(
   undefined
 );
 
+/** Boutique visitée, gardée le temps de la session du navigateur. */
+const STORAGE_KEY = "manushop:current-shop";
+
+function readStored(): ShopBranding | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const value = raw ? (JSON.parse(raw) as ShopBranding) : null;
+    return value && typeof value.shopId === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Permet à une page storefront profonde (ex. `/boutique/[shopId]`) de
- * personnaliser la marque affichée par `StorefrontHeader` — rendu par le
- * layout partagé, donc un ancêtre de la page, pas un parent direct qui
- * pourrait recevoir une prop normalement. Un contexte est le seul moyen
- * propre de faire remonter cette info sans restructurer le layout.
+ * Boutique dont on parcourt le site (en-tête, pied de page, thème) — les
+ * pages de la vitrine sont des descendantes de la mise en page qui
+ * l'affiche, d'où un contexte.
+ *
+ * Elle est **gardée** d'une page à l'autre (2026-10-03, signalé par
+ * l'utilisateur) : la fiche d'un article, le panier, le paiement, « Mes
+ * commandes » restent aux couleurs de la boutique visitée. Seules les
+ * pages de la plateforme (Marché, annuaire) reviennent à ManuShop
+ * (`useClearShopBranding`). Mémorisée pour la session : un rechargement
+ * de page la conserve.
  */
 export function ShopBrandingProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [branding, setBranding] = useState<ShopBranding | null>(null);
+  const [branding, setState] = useState<ShopBranding | null>(null);
+
+  // Après le premier rendu (le serveur ne connaît pas la session).
+  useEffect(() => {
+    const stored = readStored();
+    if (stored) queueMicrotask(() => setState((current) => current ?? stored));
+  }, []);
+
+  const setBranding = useCallback((value: ShopBranding | null) => {
+    setState(value);
+    try {
+      if (value) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      else sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Stockage indisponible (navigation privée) : la boutique reste
+      // connue pour cette page seulement.
+    }
+  }, []);
 
   return (
     <ShopBrandingContext.Provider value={{ branding, setBranding }}>
@@ -52,4 +85,13 @@ export function useShopBranding(): ShopBrandingContextValue {
     );
   }
   return context;
+}
+
+/** Pages de la plateforme (Marché, annuaire des boutiques) : on quitte le
+ * site d'une boutique, retour à l'apparence ManuShop. */
+export function useClearShopBranding(): void {
+  const { setBranding } = useShopBranding();
+  useEffect(() => {
+    setBranding(null);
+  }, [setBranding]);
 }

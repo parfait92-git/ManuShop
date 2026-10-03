@@ -1,38 +1,55 @@
-import { renderHook } from "@testing-library/react";
-import { act } from "react";
+import { act, render, screen } from "@testing-library/react";
 
-import {
-  ShopBrandingProvider,
-  useShopBranding,
-} from "./ShopBrandingProvider";
+import { ShopBrandingProvider, useClearShopBranding, useShopBranding } from "./ShopBrandingProvider";
 
-describe("useShopBranding", () => {
-  it("throws when used outside of a ShopBrandingProvider", () => {
-    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => renderHook(() => useShopBranding())).toThrow(
-      "useShopBranding doit être utilisé à l'intérieur d'un ShopBrandingProvider."
+function Show() {
+  const { branding, setBranding } = useShopBranding();
+  return (
+    <>
+      <p>{branding?.name ?? "ManuShop"}</p>
+      <button type="button" onClick={() => setBranding({ shopId: "shop-1", name: "Chez Awa" })}>
+        visiter
+      </button>
+    </>
+  );
+}
+
+function Market() {
+  useClearShopBranding();
+  return null;
+}
+
+describe("ShopBrandingProvider", () => {
+  beforeEach(() => sessionStorage.clear());
+
+  it("keeps the visited shop across pages and reloads, for the session", async () => {
+    const first = render(
+      <ShopBrandingProvider>
+        <Show />
+      </ShopBrandingProvider>
     );
-    spy.mockRestore();
+    act(() => screen.getByRole("button", { name: "visiter" }).click());
+    expect(screen.getByText("Chez Awa")).toBeInTheDocument();
+    first.unmount();
+
+    // Nouvelle page (ou rechargement) : la boutique est toujours connue.
+    render(
+      <ShopBrandingProvider>
+        <Show />
+      </ShopBrandingProvider>
+    );
+    expect(await screen.findByText("Chez Awa")).toBeInTheDocument();
   });
 
-  it("starts with no branding and lets a descendant set/clear it", () => {
-    const { result } = renderHook(() => useShopBranding(), {
-      wrapper: ShopBrandingProvider,
-    });
-
-    expect(result.current.branding).toBeNull();
-
-    act(() => {
-      result.current.setBranding({ shopId: "shop-1", name: "Ma Boutique" });
-    });
-    expect(result.current.branding).toEqual({
-      shopId: "shop-1",
-      name: "Ma Boutique",
-    });
-
-    act(() => {
-      result.current.setBranding(null);
-    });
-    expect(result.current.branding).toBeNull();
+  it("goes back to ManuShop on the platform's pages", async () => {
+    sessionStorage.setItem("manushop:current-shop", JSON.stringify({ shopId: "shop-1", name: "Chez Awa" }));
+    render(
+      <ShopBrandingProvider>
+        <Show />
+        <Market />
+      </ShopBrandingProvider>
+    );
+    expect(await screen.findByText("ManuShop")).toBeInTheDocument();
+    expect(sessionStorage.getItem("manushop:current-shop")).toBeNull();
   });
 });

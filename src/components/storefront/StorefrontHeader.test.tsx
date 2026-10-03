@@ -225,4 +225,26 @@ describe("StorefrontHeader", () => {
     expect(logoutMock).toHaveBeenCalled();
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/"));
   });
+
+  // Signalé par l'utilisateur (2026-10-03) : le panier ne se fermait
+  // qu'en revenant sur son bouton.
+  it("closes the cart panel on a click outside, and with Escape", () => {
+    useAuthMock.mockReturnValue({ firebaseUser: null, profile: null, isSuperAdmin: false });
+    useShopBrandingMock.mockReturnValue({ branding: null });
+    useCartItemCountMock.mockReturnValue(1);
+    render(<StorefrontHeader />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Voir le panier" }));
+    expect(screen.getByTestId("cart-panel")).toBeInTheDocument();
+    // Un clic dans le panneau ne le ferme pas.
+    fireEvent.pointerDown(screen.getByTestId("cart-panel"));
+    expect(screen.getByTestId("cart-panel")).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByTestId("cart-panel")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Voir le panier" }));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByTestId("cart-panel")).not.toBeInTheDocument();
+  });
 });

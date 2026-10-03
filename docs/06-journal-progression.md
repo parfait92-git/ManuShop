@@ -2099,3 +2099,77 @@ Demande de l'utilisateur, avec capture et modèle :
 **Vérification réelle sur émulateurs** : boutique en « Néon Océan ». Tableau de bord pleine page, lien vers `/boutique/shop-oc`, page Produits et vitrine entièrement sombres, aucune erreur.
 
 Vérifié : lint, `tsc`, tests (`ThemesPageContent` adapté à trois thèmes). Rien de commité.
+
+### 2026-10-03 — Offres premium : thèmes vendus à l'unité, prix et contenu des abonnements
+
+Demande de l'utilisateur :
+- une icône premium sur « Néon Océan » et sur tous les thèmes à venir, les deux premiers restant gratuits ;
+- le Super Admin décide de ce qui est premium et du prix de chaque article ;
+- pour chaque formule d'abonnement, le Super Admin coche les services premium inclus ;
+- but : vendre les thèmes à l'unité.
+
+Choix de l'utilisateur :
+- achat par demande, le Super Admin validant après avoir encaissé (pas encore de paiement en ligne) ;
+- achat définitif ;
+- retour au thème gratuit en cas de perte d'accès ;
+- prix des formules réglables au même endroit.
+
+**Fait** :
+- **Catalogue** (`lib/premiumCatalog.ts`, fonctions pures) :
+  - articles premium = les 5 fonctionnalités existantes + tous les thèmes (`theme:<id>`) ;
+  - par défaut, « ManuShop Nuit » et « Wax Soleil » gratuits, tout le reste premium, sans prix (donc impossible à acheter tant que le Super Admin n'en a pas fixé) ;
+  - formules : prix d'origine et aucune inclusion ;
+  - réglages dans `configuration/premium`, complétés des valeurs par défaut : un nouveau thème du catalogue y apparaît, premium, sans rien à faire.
+- **Accès** (`premiumAccess`) : gratuit ; possédé (`Shop.premiumFeatures`, acheté ou accordé) ; ou inclus dans la formule d'un abonnement **en cours**. Utilisé partout : application d'un thème (revérifiée par le serveur), contact avancé, réseaux en pied de page, formulaire « Nous contacter » (serveur compris).
+- **Super Admin → « Offres premium »** : demandes d'achat (« Paiement reçu, valider » ou « Refuser », historique) ; articles premium (interrupteur et prix) ; formules (prix et cases des articles inclus) ; aides et visite guidée. La fiche Commerçants permet aussi d'accorder un thème premium à la main.
+- **Demandes d'achat** (`premiumRequests`) : créées par le serveur pour le gérant (article premium, au prix fixé, pas déjà accessible ni déjà demandé). À la validation, l'article est ajouté définitivement à la boutique, dans le même lot que la décision. Règle Firestore : le gérant lit celles de sa boutique ; écriture serveur seulement.
+- **Page Thèmes du gérant** :
+  - badge doré « Premium », le même dans tous les thèmes (`--premium-badge-*`) ;
+  - statut : prix, « Inclus dans votre abonnement », « Acquis », « Demande d'achat en attente » ;
+  - « Acheter ce thème (X FCFA) » à la place d'« Appliquer », aperçu toujours possible ;
+  - déblocage en direct après validation.
+- **Perte d'accès** : `useShopTheme` retombe sur « ManuShop Nuit » partout (vitrine, gestion) et la page Thèmes l'explique.
+- **Assistant de création de boutique** : prix des formules réglés par le Super Admin, et « Inclut : … ».
+
+**Vérification réelle sur émulateurs** :
+1. Le Super Admin voit « Néon Océan » premium et « Wax Soleil » gratuit, puis fixe le prix à 5 000 FCFA.
+2. Le gérant voit le badge et le prix, et envoie sa demande, qui passe en attente.
+3. Le Super Admin valide.
+4. Le thème passe à « Acquis » en direct et le gérant l'applique.
+5. Après retrait manuel de l'accès, la vitrine repasse en thème par défaut.
+
+**Tests** : catalogue (valeurs par défaut, nettoyage, validation, accès gratuit, possédé, abonnement en cours ou terminé), actions (demande, refus des cas invalides, réservé au gérant, validation définitive, refus, double décision, enregistrement validé), `useShopTheme` (retour au thème gratuit), page Thèmes (badge, achat impossible sans prix, demande en attente, thème acquis, avertissement). Remplaçant de test partagé : `src/hooks/__mocks__/usePremiumCatalog.ts`.
+
+**Limites** :
+- l'encaissement se fait hors de l'application tant que le paiement Mobile Money n'existe pas ;
+- l'abonnement lui-même n'a pas encore de renouvellement en ligne ;
+- la miniature de « Néon Océan » ressemble à celle de « ManuShop Nuit », puisqu'ils partagent le même tableau de bord.
+
+**À faire par l'utilisateur** : déployer les règles Firestore (`premiumRequests`).
+
+Vérifié : lint, `tsc`, tests, build. Rien de commité.
+
+### 2026-10-03 — Le thème suit tout le site de la boutique ; fermeture du panier
+
+Signalé par l'utilisateur : le thème ne s'appliquait pas tout de suite sur la facture, la page des commandes, la fiche d'un article et la confirmation de commande ; le panneau du panier ne se fermait qu'en revenant sur son bouton, même en cliquant dans le vide.
+
+**Cause** : la vitrine ne connaissait la boutique (et donc son thème) que sur sa page d'accueil, et l'oubliait en la quittant. La couleur de la facture était figée à l'émission.
+
+**Fait** :
+- **Boutique courante** (`ShopBrandingProvider`) : gardée d'une page à l'autre et pour la session du navigateur (`sessionStorage`, rechargement compris).
+  - La fixent : la page d'accueil de la boutique, la fiche d'un article (sa boutique), la confirmation de commande (boutique du panier), la vérification d'une facture (`ShopBrandingSetter`).
+  - « Mes commandes », « Mes favoris » et « Mon compte » la gardent.
+  - Seules les pages de la plateforme (Marché `/catalogue`, annuaire `/boutiques`) la retirent (`useClearShopBranding`).
+  - L'en-tête affiche le nom de la boutique sur toutes ces pages.
+- **Facture** : dessinée à la couleur **en vigueur au téléchargement** (couleur choisie par le commerçant, sinon thème appliqué aujourd'hui). La couleur n'est que de la présentation : le contenu signé de la facture ne change pas, la signature reste valable, et la couleur enregistrée à l'émission sert de repli. Revient sur la décision du jour précédent (couleur figée), à la demande de l'utilisateur.
+- **Panier** : se ferme d'un clic ou d'un toucher en dehors, avec Échap, et en changeant de page ; un clic dans le panneau ne le ferme pas.
+
+**Vérification réelle sur émulateurs** (boutique en « Wax Soleil », client connecté) :
+- accueil de la boutique, fiche de l'article, confirmation de commande et « Mes commandes » en `wax-soleil` ; Marché en `default` ;
+- panier ouvert puis fermé par un clic dans le vide ;
+- facture émise en bleu, téléchargée en terracotta ;
+- aucune erreur.
+
+**Tests** : `ShopBrandingProvider` (boutique gardée d'une page et d'un rechargement à l'autre, retirée par le Marché), en-tête (fermeture du panier en dehors et avec Échap, pas dans le panneau), route des factures (couleur du thème en cours, couleur du commerçant prioritaire).
+
+Vérifié : lint, `tsc`, tests, build. Rien de commité (les offres premium non plus).
