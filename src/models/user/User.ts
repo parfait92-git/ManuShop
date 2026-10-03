@@ -14,6 +14,10 @@ export interface User {
   shopId?: string;
   displayName: string;
   phone?: string;
+  /** Adresse de livraison du client (2026-10-03) : proposée à chaque
+   * commande, enregistrée à la première commande si absente, modifiable
+   * dans « Mon compte ». */
+  deliveryAddress?: string;
   photoURL?: string;
   // Comment ce compte a obtenu pour la première fois le droit de gérer des
   // boutiques — "manual" (attribution par le Super Admin, BF-68) ou

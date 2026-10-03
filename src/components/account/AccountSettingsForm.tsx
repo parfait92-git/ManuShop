@@ -61,6 +61,7 @@ export function AccountSettingsForm() {
       ? {
           displayName: profile.displayName,
           phone: profile.phone ?? "",
+          deliveryAddress: profile.deliveryAddress ?? "",
           photoURL: profile.photoURL ?? "",
           notifyByEmail: profile.notifyByEmail ?? true,
         }
@@ -215,6 +216,24 @@ export function AccountSettingsForm() {
             />
             {errors.phone && (
               <p className="text-sm text-destructive">{errors.phone.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="deliveryAddress"
+              help="Proposée automatiquement à chaque commande, pour ne pas la ressaisir : quartier, ville et un point de repère. Enregistrée à votre première commande si vous ne l'avez pas encore indiquée."
+            >
+              Adresse de livraison
+            </Label>
+            <Input
+              id="deliveryAddress"
+              placeholder="Quartier, ville, point de repère..."
+              aria-invalid={!!errors.deliveryAddress}
+              {...register("deliveryAddress")}
+            />
+            {errors.deliveryAddress && (
+              <p className="text-sm text-destructive">{errors.deliveryAddress.message}</p>
             )}
           </div>
 

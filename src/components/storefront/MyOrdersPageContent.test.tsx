@@ -5,10 +5,19 @@ jest.mock("../../services/InvoiceService", () => ({
 }));
 
 const listByClientMock = jest.fn();
+const unsubscribeMock = jest.fn();
+let pushOrders: (orders: unknown[]) => void = () => {};
 const cancelOrderMock = jest.fn();
 jest.mock("../../services/OrderService", () => ({
   orderService: {
     listByClient: (...args: unknown[]) => listByClientMock(...args),
+    // Écoute en direct : chaque test fournit la liste par `listByClientMock`
+    // et peut en pousser une nouvelle par `pushOrders`.
+    watchByClient: (clientId: string, onChange: (orders: unknown[]) => void) => {
+      pushOrders = onChange;
+      Promise.resolve(listByClientMock(clientId)).then((list) => list && onChange(list));
+      return unsubscribeMock;
+    },
     cancelOrder: (...args: unknown[]) => cancelOrderMock(...args),
   },
 }));
@@ -37,7 +46,7 @@ jest.mock("sonner", () => ({
   },
 }));
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { MyOrdersPageContent } from "@/components/storefront/MyOrdersPageContent";
@@ -163,5 +172,19 @@ describe("MyOrdersPageContent", () => {
         await screen.findByRole("link", { name: "Donner mon avis" })
       ).toHaveAttribute("href", "/mes-commandes/o1/avis");
     });
+  });
+
+  // Signalé par l'utilisateur (2026-10-03) : il fallait recharger la page
+  // pour voir le nouveau statut.
+  it("shows a status change made by the shop without reloading", async () => {
+    listByClientMock.mockResolvedValue([fakeOrder({ status: "under_review" })]);
+    const { unmount } = render(<MyOrdersPageContent clientId="client-1" />);
+    expect(await screen.findByText("En cours d'analyse")).toBeInTheDocument();
+
+    act(() => pushOrders([fakeOrder({ status: "delivering" })]));
+    expect(screen.getByText("Livraison en cours")).toBeInTheDocument();
+
+    unmount();
+    expect(unsubscribeMock).toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 import type { Order } from "@/models/order/Order";
@@ -18,6 +18,14 @@ export class OrderRepository implements IOrderRepository {
       query(collection(db, ORDERS_COLLECTION), where("shopId", "==", shopId))
     );
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+  }
+
+  watchByClient(clientId: string, onChange: (orders: Order[]) => void, onError?: () => void): () => void {
+    return onSnapshot(
+      query(collection(db, ORDERS_COLLECTION), where("clientId", "==", clientId)),
+      (snapshot) => onChange(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order)),
+      () => onError?.()
+    );
   }
 
   async listByClient(clientId: string): Promise<Order[]> {

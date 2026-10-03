@@ -26,10 +26,21 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
-let mockProfile: { displayName?: string; phone?: string } | null = {
+let mockProfile: {
+  id?: string;
+  displayName?: string;
+  phone?: string;
+  deliveryAddress?: string;
+} | null = {
+  id: "client-1",
   displayName: "Fatou Ba",
   phone: "+237600000000",
 };
+
+const updateProfileMock = jest.fn().mockResolvedValue(undefined);
+jest.mock("../../services/AuthService", () => ({
+  authService: { updateProfile: (...args: unknown[]) => updateProfileMock(...args) },
+}));
 jest.mock("../providers/AuthProvider", () => ({
   useAuth: () => ({ profile: mockProfile }),
 }));
@@ -57,7 +68,7 @@ import { PaymentMethodPageContent } from "@/components/storefront/PaymentMethodP
 describe("PaymentMethodPageContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockProfile = { displayName: "Fatou Ba", phone: "+237600000000" };
+    mockProfile = { id: "client-1", displayName: "Fatou Ba", phone: "+237600000000" };
     mockShop = { id: "shop-1" };
   });
 
@@ -128,6 +139,37 @@ describe("PaymentMethodPageContent", () => {
     expect(clearMock).toHaveBeenCalled();
     expect(toastSuccessMock).toHaveBeenCalled();
     expect(pushMock).toHaveBeenCalledWith("/mes-commandes");
+    // Adresse absente du profil : mémorisée pour la prochaine commande.
+    expect(updateProfileMock).toHaveBeenCalledWith("client-1", { deliveryAddress: "Akwa, Douala" });
+  });
+
+  // Coordonnées reprises du profil (2026-10-03).
+  it("fills in the saved delivery address and saves nothing new", async () => {
+    mockProfile = { id: "client-1", displayName: "Fatou Ba", phone: "+237600000000", deliveryAddress: "Bastos, Yaoundé" };
+    createOrderMock.mockResolvedValue({ orderId: "order-1" });
+    const user = userEvent.setup();
+    render(<PaymentMethodPageContent />);
+
+    expect(screen.getByLabelText("Adresse de livraison")).toHaveValue("Bastos, Yaoundé");
+    await user.click(screen.getByRole("button", { name: /Confirmer ma commande/ }));
+
+    await waitFor(() =>
+      expect(createOrderMock).toHaveBeenCalledWith(expect.objectContaining({ clientAddress: "Bastos, Yaoundé" }))
+    );
+    expect(updateProfileMock).not.toHaveBeenCalled();
+  });
+
+  it("fills in the profile once it has loaded, without erasing what was typed", async () => {
+    mockProfile = null;
+    const user = userEvent.setup();
+    const { rerender } = render(<PaymentMethodPageContent />);
+    await user.type(screen.getByLabelText("Nom"), "Fatou B.");
+
+    mockProfile = { id: "client-1", displayName: "Fatou Ba", phone: "+237600000000", deliveryAddress: "Akwa" };
+    rerender(<PaymentMethodPageContent />);
+
+    await waitFor(() => expect(screen.getByLabelText("Adresse de livraison")).toHaveValue("Akwa"));
+    expect(screen.getByLabelText("Nom")).toHaveValue("Fatou B.");
   });
 
   it("surfaces the real error message when the server rejects for insufficient stock", async () => {

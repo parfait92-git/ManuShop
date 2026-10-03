@@ -19,8 +19,25 @@ describe("OrderService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    orders = { getById: jest.fn(), listByShop: jest.fn(), listByClient: jest.fn() };
+    orders = { getById: jest.fn(), listByShop: jest.fn(), listByClient: jest.fn(), watchByClient: jest.fn() };
     service = new OrderService(orders);
+  });
+
+  it("watches the client's orders live, most recent first", () => {
+    const stop = jest.fn();
+    let push: (list: unknown[]) => void = () => {};
+    orders.watchByClient.mockImplementation((_id, cb) => {
+      push = cb as (list: unknown[]) => void;
+      return stop;
+    });
+    const onChange = jest.fn();
+    const ts = (ms: number) => ({ toMillis: () => ms });
+
+    expect(service.watchByClient("client-1", onChange)).toBe(stop);
+    push([{ id: "old", createdAt: ts(1) }, { id: "new", createdAt: ts(2) }]);
+
+    expect(orders.watchByClient).toHaveBeenCalledWith("client-1", expect.any(Function), undefined);
+    expect(onChange.mock.calls[0][0].map((o: { id: string }) => o.id)).toEqual(["new", "old"]);
   });
 
   it("getOrder delegates to the repository", async () => {

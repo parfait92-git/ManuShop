@@ -177,6 +177,12 @@ export const AccountSettingsSchema = z.object({
   // Optionnel : un compte créé par email/Google/Facebook n'a pas forcément
   // de téléphone renseigné.
   phone: z.string().trim().optional(),
+  // Adresse de livraison proposée à chaque commande (2026-10-03).
+  deliveryAddress: z
+    .string()
+    .trim()
+    .max(200, { error: "200 caractères au maximum." })
+    .optional(),
   photoURL: z
     .union([z.url({ error: "L'URL de la photo n'est pas valide." }), z.literal("")])
     .optional(),

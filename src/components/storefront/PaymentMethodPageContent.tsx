@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { authService } from "@/services/AuthService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,7 +54,19 @@ export function PaymentMethodPageContent() {
   const [fieldValue, setFieldValue] = useState("");
   const [clientName, setClientName] = useState(profile?.displayName ?? "");
   const [clientPhone, setClientPhone] = useState(profile?.phone ?? "");
-  const [clientAddress, setClientAddress] = useState("");
+  const [clientAddress, setClientAddress] = useState(profile?.deliveryAddress ?? "");
+
+  // Coordonnées reprises du profil du client (2026-10-03) — y compris
+  // quand il se charge après l'ouverture de la page. Un champ déjà saisi
+  // n'est jamais écrasé.
+  useEffect(() => {
+    if (!profile) return;
+    queueMicrotask(() => {
+      setClientName((current) => current || profile.displayName || "");
+      setClientPhone((current) => current || profile.phone || "");
+      setClientAddress((current) => current || profile.deliveryAddress || "");
+    });
+  }, [profile]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +97,18 @@ export function PaymentMethodPageContent() {
         notes: `Méthode choisie : ${METHOD_LABEL[method]} (paiement à la livraison, aucune intégration réelle).`,
       });
       clear();
+      // Téléphone et adresse mémorisés dans le profil s'ils n'y étaient pas
+      // encore : proposés d'office à la prochaine commande. Sans incidence
+      // sur la commande en cas d'échec.
+      if (profile) {
+        const missing = {
+          ...(!profile.phone ? { phone: clientPhone.trim() } : {}),
+          ...(!profile.deliveryAddress ? { deliveryAddress: clientAddress.trim() } : {}),
+        };
+        if (Object.keys(missing).length > 0) {
+          authService.updateProfile(profile.id, missing).catch(() => {});
+        }
+      }
       toast.success("Commande enregistrée ! Le commerçant va la préparer.");
       router.push("/mes-commandes");
     } catch (error) {

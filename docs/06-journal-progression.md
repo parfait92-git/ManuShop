@@ -2192,3 +2192,26 @@ Blocs CSS générés depuis une palette par thème (environ 120 variables chacun
 **Vérification réelle sur émulateurs** : page Thèmes (7 thèmes, badge Premium, « Acquis » pour ceux accordés). Pour chacun des quatre thèmes : tableau de bord et vitrine capturés, espace de gestion en `data-shop-theme` correct, aucune erreur.
 
 Vérifié : lint, `tsc`, 1 861 tests, build. Rien de commité.
+
+### 2026-10-03 — Statut des commandes en direct ; coordonnées du client mémorisées
+
+Signalé par l'utilisateur :
+- le statut des commandes ne se mettait pas à jour en direct chez le client (il fallait recharger, y compris dans l'application installée) ;
+- il fallait ressaisir ses coordonnées à chaque commande, alors qu'elles pouvaient être reprises du profil, ou y être enregistrées la première fois.
+
+**Fait** :
+- **« Mes commandes » en direct** : `OrderRepository.watchByClient` (`onSnapshot`, filtre `clientId`, déjà autorisé par les règles, sans index composite) et `OrderService.watchByClient`, triées par date. Un changement de statut par la boutique s'affiche aussitôt (mesuré : environ 0,5 s) ; l'écoute s'arrête en quittant la page. Le même code sert l'application installée.
+- **Adresse de livraison dans le profil** (`User.deliveryAddress`) : nouveau champ de « Mon compte » (aide « ? », 200 caractères au maximum).
+- **Confirmation de commande** :
+  - nom, téléphone et adresse repris du profil, y compris quand il se charge après l'ouverture de la page (avant, les champs restaient vides) ; un champ déjà saisi n'est jamais écrasé ;
+  - après une commande réussie, le téléphone et l'adresse **absents** du profil y sont enregistrés, et proposés la fois suivante. Un échec de cet enregistrement n'empêche pas la commande. Une adresse existante n'est pas écrasée : elle se modifie dans « Mon compte ».
+
+**Vérification réelle sur émulateurs** (client sans téléphone ni adresse) :
+- 1re commande : seul le nom est pré-rempli ; le client saisit téléphone et adresse ;
+- 2e commande : téléphone et adresse pré-remplis ;
+- le client garde « Mes commandes » ouverte pendant que le commerçant passe la commande à « Prêt pour la livraison » : statut mis à jour sans recharger ;
+- aucune erreur.
+
+**Tests** : `OrderService.watchByClient` (tri), « Mes commandes » (statut mis à jour en direct, fin de l'écoute), confirmation de commande (adresse enregistrée si absente, adresse du profil reprise sans rien enregistrer, profil chargé après coup sans écraser la saisie).
+
+Vérifié : lint, `tsc`, 1 865 tests, build. Rien de commité.

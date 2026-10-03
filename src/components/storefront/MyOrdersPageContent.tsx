@@ -33,18 +33,13 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reasonTarget, setReasonTarget] = useState<ReasonTarget | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    orderService.listByClient(clientId).then((data) => {
-      if (!active) return;
-      setOrders(
-        [...data].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
-      );
-    });
-    return () => {
-      active = false;
-    };
-  }, [clientId]);
+  // En direct : un statut changé par la boutique (prête, en livraison,
+  // livrée…) s'affiche aussitôt, sans recharger — dans le navigateur comme
+  // dans l'application installée (2026-10-03).
+  useEffect(
+    () => orderService.watchByClient(clientId, setOrders, () => setOrders((current) => current ?? [])),
+    [clientId]
+  );
 
   async function handleCancelConfirm(reason: string) {
     if (!reasonTarget) return;
