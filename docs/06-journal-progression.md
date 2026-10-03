@@ -2327,3 +2327,11 @@ Demande de l'utilisateur : le fuseau horaire doit dépendre de l'endroit où se 
 - vitrine : la catégorie non publiée n'apparaît plus, la catégorie active oui.
 
 Vérifié : lint, `tsc`, 2 168 tests, build. Rien de commité.
+
+### 2026-10-03 — Bilan de l'avancement ; documents de suivi remis à jour
+
+Demande de l'utilisateur : recenser ce qui est fait et ce qui reste. Constat : `02-besoins-fonctionnels.md` et `05-plan-de-travail.md` marquaient encore « non commencé » des fonctions livrées (publication, annuaire, page boutique, Super Admin, rapport de stock, exports, facturation…).
+
+Fait : statuts corrigés dans les deux documents ; nouveau Module 27 (BF-148 thèmes, BF-149 offres premium, BF-150 heure de l'utilisateur) ; section « État au 2026-10-03 » dans le plan de travail, avec la liste ordonnée de ce qui reste.
+
+Prochaine étape, validée par l'utilisateur : Module 3 — Stock (historique, réapprovisionnement, variantes).
