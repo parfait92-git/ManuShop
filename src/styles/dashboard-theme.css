@@ -103,6 +103,98 @@
   --dashboard-welcome-muted: #d4dcf5;
 }
 
+/* ——— « Wax Soleil » (2026-10-03) : clair et chaleureux, inspiré du pagne
+ * wax et des marchés — crème, terracotta, ocre, émeraude. ——— */
+[data-shop-theme="wax-soleil"] {
+  /* Variables du système de style (shadcn), pour la vitrine et l'espace
+   * de gestion. */
+  --background: #fffbf5;
+  --foreground: #2a1608;
+  --card: #ffffff;
+  --card-foreground: #2a1608;
+  --popover: #ffffff;
+  --popover-foreground: #2a1608;
+  --primary: #b4451f;
+  --primary-foreground: #ffffff;
+  --secondary: #f7eadb;
+  --secondary-foreground: #3b1f0e;
+  --muted: #f7eadb;
+  --muted-foreground: #6b4a33;
+  --accent: #fbe3cf;
+  --accent-foreground: #3b1f0e;
+  --destructive: #b91c1c;
+  --border: #ead7c2;
+  --input: #ead7c2;
+  --ring: #c2410c;
+  --radius: 0.9rem;
+}
+
+[data-dashboard-theme="wax-soleil"] {
+  color-scheme: light;
+
+  --dashboard-bg: #fbf5ec;
+  --dashboard-bg-glow: rgba(234, 88, 12, 0.14);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-gradient-start: #ffffff;
+  --dashboard-card-gradient-end: #fff8ee;
+  --dashboard-card-border: rgba(124, 45, 18, 0.1);
+  --dashboard-card-radius: 24px;
+  --dashboard-card-shadow: 0 18px 40px -28px rgba(124, 45, 18, 0.35);
+
+  --dashboard-text: #3b1f0e;
+  --dashboard-text-muted: #6b4a33;
+  --dashboard-text-subtle: #7a5a42;
+
+  --dashboard-accent: #b4451f;
+  --dashboard-accent-foreground: #ffffff;
+  --dashboard-icon-bg: #c2410c;
+  --dashboard-icon-fg: #ffffff;
+
+  --kpi-positive: #047857;
+  --kpi-negative: #b91c1c;
+  --kpi-neutral: #6b4a33;
+
+  --chart-1: #c2410c;
+  --chart-2: #0f766e;
+  --chart-gradient-start: #ea580c;
+  --chart-gradient-start-opacity: 0.35;
+  --chart-gradient-end: #ffffff;
+  --chart-gradient-end-opacity: 0;
+  --chart-bar: #b45309;
+  --chart-grid: rgba(124, 45, 18, 0.1);
+  --chart-axis: #6b4a33;
+  --chart-tooltip-bg: #3b1f0e;
+  --chart-tooltip-text: #ffffff;
+  --chart-tooltip-border: rgba(124, 45, 18, 0.2);
+
+  --gauge-track: #f3e3cf;
+  --gauge-fill: #ea580c;
+  --gauge-fill-end: #b45309;
+
+  --dashboard-table-header: #6b4a33;
+  --dashboard-table-row-border: rgba(124, 45, 18, 0.08);
+  --dashboard-table-row-hover: rgba(234, 88, 12, 0.05);
+
+  --status-pending: #92400e;
+  --status-pending-bg: rgba(245, 158, 11, 0.15);
+  --status-progress: #1d4ed8;
+  --status-progress-bg: rgba(37, 99, 235, 0.1);
+  --status-success: #047857;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning: #9a3412;
+  --status-warning-bg: rgba(249, 115, 22, 0.12);
+  --status-danger: #b91c1c;
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-muted: #6b4a33;
+  --status-muted-bg: rgba(107, 74, 51, 0.1);
+
+  --dashboard-welcome-gradient-start: #9a3412;
+  --dashboard-welcome-gradient-end: #a1460a;
+  --dashboard-welcome-text: #ffffff;
+  --dashboard-welcome-muted: #fde7d3;
+}
+
 /* ——— Thème clair : non proposé aux commerçants pour l'instant. Il sert à
  * vérifier qu'un thème clair reste lisible avec ces mêmes composants
  * (test de contraste), et de modèle aux thèmes à venir. ——— */

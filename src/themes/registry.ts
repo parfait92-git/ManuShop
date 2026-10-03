@@ -34,6 +34,15 @@ export const THEMES: ThemeDefinition[] = [
     dashboardTheme: "default",
     siteTheme: "default",
   },
+  {
+    id: "wax-soleil",
+    name: "Wax Soleil",
+    description:
+      "Clair et chaleureux, inspiré du pagne wax et des marchés : crème, terracotta, ocre et émeraude, coins arrondis.",
+    highlights: ["Vitrine crème et terracotta", "Tableau de bord clair", "Idéal mode, beauté, artisanat"],
+    dashboardTheme: "wax-soleil",
+    siteTheme: "wax-soleil",
+  },
 ];
 
 /** Thème connu, ou celui par défaut (id absent, retiré du catalogue…). */

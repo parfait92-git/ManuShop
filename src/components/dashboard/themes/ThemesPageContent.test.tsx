@@ -25,14 +25,14 @@ import { THEMES } from "@/themes/registry";
 describe("ThemesPageContent", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("lists the default theme, checked as applied", () => {
+  it("lists every theme, the applied one checked", () => {
     useShopThemeMock.mockReturnValue({ theme: THEMES[0], loading: false });
     render(<ThemesPageContent shopId="shop-1" />);
 
-    const radios = screen.getAllByRole("radio");
-    expect(radios).toHaveLength(1);
+    expect(screen.getAllByRole("radio")).toHaveLength(THEMES.length);
     expect(screen.getByRole("radio", { name: "ManuShop Nuit" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByText("Appliqué")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Wax Soleil" })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getAllByText("Appliqué")).toHaveLength(1);
     expect(useShopThemeMock).toHaveBeenCalledWith("shop-1");
   });
 
@@ -47,17 +47,16 @@ describe("ThemesPageContent", () => {
   });
 
   it("applies another theme from its preview", async () => {
-    // Un autre thème appliqué : le thème par défaut redevient proposable.
-    useShopThemeMock.mockReturnValue({ theme: { ...THEMES[0], id: "autre" }, loading: false });
+    useShopThemeMock.mockReturnValue({ theme: THEMES[0], loading: false });
     applyThemeMock.mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<ThemesPageContent shopId="shop-1" />);
 
-    expect(screen.getByRole("radio", { name: "ManuShop Nuit" })).toHaveAttribute("aria-checked", "false");
     await user.click(screen.getByRole("button", { name: "Aperçu et appliquer" }));
+    expect(screen.getByTestId("preview")).toHaveTextContent("aperçu wax-soleil");
     await user.click(screen.getByRole("button", { name: "Appliquer ce thème" }));
 
-    expect(applyThemeMock).toHaveBeenCalledWith("default");
-    expect(toastSuccess).toHaveBeenCalledWith("Thème « ManuShop Nuit » appliqué à votre boutique.");
+    expect(applyThemeMock).toHaveBeenCalledWith("wax-soleil");
+    expect(toastSuccess).toHaveBeenCalledWith("Thème « Wax Soleil » appliqué à votre boutique.");
   });
 });

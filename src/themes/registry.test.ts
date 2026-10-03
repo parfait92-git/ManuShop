@@ -6,8 +6,9 @@ import { DEFAULT_THEME_ID, isKnownTheme, resolveTheme, THEMES } from "./registry
 const css = readFileSync(join(process.cwd(), "src/styles/dashboard-theme.css"), "utf8");
 
 describe("theme registry", () => {
-  it("offers only the default theme for now", () => {
-    expect(THEMES.map((t) => t.id)).toEqual([DEFAULT_THEME_ID]);
+  it("puts the default theme first, and gives each theme a unique id", () => {
+    expect(THEMES[0].id).toBe(DEFAULT_THEME_ID);
+    expect(new Set(THEMES.map((t) => t.id)).size).toBe(THEMES.length);
   });
 
   it("falls back to the default theme for an unknown or missing id", () => {

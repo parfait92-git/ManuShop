@@ -13,7 +13,9 @@ export function StorefrontThemeScope({ children }: { children: React.ReactNode }
   const { branding } = useShopBranding();
   const { theme } = useShopTheme(branding?.shopId);
   return (
-    <div data-shop-theme={theme.siteTheme} className="flex min-h-svh flex-col">
+    // Fond et texte repris des variables du thème : un thème qui change
+    // `--background` habille ainsi toute la vitrine.
+    <div data-shop-theme={theme.siteTheme} className="flex min-h-svh flex-col bg-background text-foreground">
       {children}
     </div>
   );

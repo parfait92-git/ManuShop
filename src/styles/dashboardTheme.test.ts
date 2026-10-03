@@ -1,10 +1,12 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-/** Variables d'un bloc `[data-dashboard-theme="<id>"]` du fichier de thème. */
-function themeVariables(themeId: string): Record<string, string> {
+import { THEMES } from "@/themes/registry";
+
+/** Variables d'un bloc `[<attribut>="<id>"]` du fichier de thème. */
+function themeVariables(themeId: string, attribute = "data-dashboard-theme"): Record<string, string> {
   const css = readFileSync(join(__dirname, "dashboard-theme.css"), "utf8");
-  const start = css.indexOf(`[data-dashboard-theme="${themeId}"] {`);
+  const start = css.indexOf(`[${attribute}="${themeId}"] {`);
   if (start === -1) throw new Error(`Thème ${themeId} introuvable`);
   const block = css.slice(start, css.indexOf("\n}", start));
   return Object.fromEntries(
@@ -64,7 +66,10 @@ PAIRS.push(
   ["--dashboard-welcome-muted", "--dashboard-welcome-gradient-end", 4.5]
 );
 
-describe.each(["default", "light"])("thème de tableau de bord « %s »", (themeId) => {
+// Tous les thèmes du catalogue, plus le thème clair de contrôle.
+const DASHBOARD_THEMES = [...new Set([...THEMES.map((t) => t.dashboardTheme), "light"])];
+
+describe.each(DASHBOARD_THEMES)("thème de tableau de bord « %s »", (themeId) => {
   const vars = themeVariables(themeId);
 
   it("defines every variable of the default theme", () => {
@@ -72,6 +77,38 @@ describe.each(["default", "light"])("thème de tableau de bord « %s »", (theme
   });
 
   it.each(PAIRS)("%s on %s reaches %s:1", (fg, bg, min) => {
+    expect(vars[fg]).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(vars[bg]).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(contrast(vars[fg], vars[bg])).toBeGreaterThanOrEqual(min);
+  });
+});
+
+/** Habillage du site (vitrine, espace de gestion) : couleurs du système
+ * de style redéfinies par un thème. Le thème par défaut n'en redéfinit
+ * aucune (apparence d'origine) ; les autres doivent rester lisibles. */
+const SITE_PAIRS: [string, string, number][] = [
+  ["--foreground", "--background", 4.5],
+  ["--card-foreground", "--card", 4.5],
+  ["--popover-foreground", "--popover", 4.5],
+  ["--primary-foreground", "--primary", 4.5],
+  ["--primary", "--background", 4.5],
+  ["--primary", "--card", 4.5],
+  ["--secondary-foreground", "--secondary", 4.5],
+  ["--muted-foreground", "--background", 4.5],
+  ["--muted-foreground", "--muted", 4.5],
+  ["--accent-foreground", "--accent", 4.5],
+  ["--destructive", "--background", 4.5],
+  ["--ring", "--background", 3],
+];
+
+const SITE_THEMES = [...new Set(THEMES.map((t) => t.siteTheme))].filter(
+  (id) => Object.keys(themeVariables(id, "data-shop-theme")).length > 0
+);
+
+describe.each(SITE_THEMES)("habillage du site « %s »", (themeId) => {
+  const vars = themeVariables(themeId, "data-shop-theme");
+
+  it.each(SITE_PAIRS)("%s on %s reaches %s:1", (fg, bg, min) => {
     expect(vars[fg]).toMatch(/^#[0-9a-f]{6}$/i);
     expect(vars[bg]).toMatch(/^#[0-9a-f]{6}$/i);
     expect(contrast(vars[fg], vars[bg])).toBeGreaterThanOrEqual(min);

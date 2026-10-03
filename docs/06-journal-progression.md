@@ -1990,3 +1990,26 @@ Vérifié : lint, `tsc`, 1 181 tests, build.
 **À faire par l'utilisateur** : déployer les règles Firestore.
 
 Rien de commité (la refonte de l'accueil non plus).
+
+### 2026-10-03 — Thème de test « Wax Soleil »
+
+Proposé à l'utilisateur pour éprouver l'architecture des thèmes, puis accepté : un thème clair et chaleureux, à l'opposé du thème par défaut (crème, terracotta, ocre, émeraude, coins arrondis), pensé pour la mode, la beauté et l'artisanat.
+
+**Fait** :
+- Entrée `wax-soleil` dans le catalogue ; dans `dashboard-theme.css`, un bloc `[data-dashboard-theme="wax-soleil"]` (toutes les variables du tableau de bord) et un bloc `[data-shop-theme="wax-soleil"]` (variables du système de style : fond, texte, primaire, bordures, rayon…).
+- `StorefrontThemeScope` peint maintenant le fond et le texte de la vitrine avec `bg-background text-foreground`, pour qu'un thème qui change le fond habille toute la vitrine.
+- Le test de contraste couvre désormais **tous** les thèmes du catalogue, et aussi l'habillage du site (texte et fond, primaire, texte atténué…).
+
+**Défaut trouvé par le test** : le texte secondaire de la bannière était trop pâle sur l'ocre (4,2:1). Fin du dégradé assombrie.
+
+**Vérification réelle sur émulateurs** : thème appliqué depuis la page Thèmes ; Firestore `shops/shop-test/themes/active` = `{ themeId: "wax-soleil", appliedBy, appliedAt }`. L'espace de gestion et l'accueil passent à `wax-soleil`, la vitrine aussi (fond crème calculé `rgb(255, 251, 245)`). Rien ne déborde sur mobile, aucune erreur.
+
+**Constat, comme annoncé à l'utilisateur** :
+- l'accueil du tableau de bord suit entièrement ;
+- la vitrine suit ;
+- sur les autres pages de gestion, boutons, interrupteurs et rayons suivent, mais la barre latérale, la barre du haut, le fond gris et les bulles des visites guidées (couleur fixée dans `GuidedTour`) restent gris et cyan : leurs couleurs sont en dur ;
+- les fenêtres (dialogues), rendues hors du conteneur du thème, gardent aussi les couleurs d'origine.
+
+Prochaine étape proposée : convertir ces éléments en variables.
+
+Vérifié : lint, `tsc`, 1 264 tests, build. Rien de commité.
