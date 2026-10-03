@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
+import { SellerReply } from "@/components/storefront/SellerReply";
 import {
   CLIENT_CONTACT_METHOD_LABELS,
   buildClientContactLink,
@@ -341,7 +342,9 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                 <ul className="mt-3 flex flex-col gap-2">
                   {reviews.map((review) => (
                     <li key={review.id} className="text-sm text-muted-foreground">
-                      « {review.comment} »
+                      <p className="break-words">« {review.comment} »</p>
+                      {/* Réponse publique de la boutique (2026-10-02). */}
+                      {review.reply && <SellerReply reply={review.reply} />}
                     </li>
                   ))}
                 </ul>

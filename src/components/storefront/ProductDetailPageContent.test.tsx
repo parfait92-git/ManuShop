@@ -155,6 +155,23 @@ describe("ProductDetailPageContent", () => {
     expect(screen.getByText("4.5 (1 avis)")).toBeInTheDocument();
   });
 
+  it("shows the shop's public reply under a review", async () => {
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    reviewServiceMock.listByProduct.mockResolvedValue([
+      fakeReview({
+        reply: {
+          text: "Merci pour votre confiance !",
+          authorName: "Awa",
+          repliedAt: { toDate: () => new Date("2026-10-02T00:00:00Z") } as never,
+        },
+      }),
+    ]);
+    render(<ProductDetailPageContent productId="p1" />);
+
+    expect(await screen.findByText("Merci pour votre confiance !")).toBeInTheDocument();
+    expect(screen.getByText("Réponse du vendeur")).toBeInTheDocument();
+  });
+
   it("still renders the product when the reviews fetch fails (rules not deployed, network...)", async () => {
     productServiceMock.getProduct.mockResolvedValue(fakeProduct());
     reviewServiceMock.listByProduct.mockRejectedValue(

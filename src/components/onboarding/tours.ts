@@ -54,6 +54,11 @@ export const TOURS = {
       content: "Suivez et mettez à jour le statut de vos commandes.",
     },
     {
+      target: "nav-feedback",
+      content:
+        "Les avis de vos clients sur leurs livraisons et vos articles. La pastille compte ceux qui attendent votre réponse.",
+    },
+    {
       target: "nav-shop-settings",
       content:
         "Personnalisez votre boutique (logo, contacts, notifications) depuis les Paramètres.",
@@ -222,6 +227,19 @@ export const TOURS = {
         "L'historique des actions faites sur votre boutique, avec qui les a faites et quand.",
     },
   ],
+  "dashboard-feedback": [
+    {
+      target: "feedback-filter",
+      content:
+        "Par défaut, seuls les avis qui attendent votre réponse sont affichés. Choisissez « Tous les avis » pour tout revoir.",
+    },
+    {
+      target: "feedback-list",
+      content:
+        "Les avis de vos commandes livrées : la livraison (privé, lu par vous seul) et chaque article (publié sur sa fiche). Répondez à chacun : le client est notifié.",
+      placement: "top",
+    },
+  ],
   "dashboard-support": [
     {
       target: "support-form",
@@ -385,28 +403,6 @@ export const TOURS = {
     {
       target: "reason-confirm",
       content: "Confirmez pour mettre à jour la commande.",
-    },
-  ],
-  "dialog-review": [
-    {
-      target: "review-product",
-      content: "Choisissez l'article concerné par votre avis.",
-    },
-    {
-      target: "review-rating",
-      content: "Donnez une note en étoiles — facultatif.",
-    },
-    {
-      target: "review-comment",
-      content: "Racontez votre expérience : ce commentaire est obligatoire.",
-    },
-    {
-      target: "review-defective",
-      content: "L'article est arrivé abîmé ou ne fonctionne pas ? Cochez cette case.",
-    },
-    {
-      target: "review-submit",
-      content: "Envoyez votre avis : il apparaîtra sur la fiche de l'article.",
     },
   ],
   "dialog-contact": [
@@ -656,8 +652,33 @@ export const TOURS = {
     {
       target: "my-orders-list",
       content:
-        "Suivez vos commandes. Une fois livrée, vous pouvez laisser un avis au vendeur.",
+        "Suivez vos commandes. Une fois livrée, donnez votre avis sur la livraison et sur chaque article.",
       placement: "top",
+    },
+  ],
+  "storefront-order-feedback": [
+    {
+      target: "feedback-steps",
+      content:
+        "Les étapes de votre avis : la livraison, puis chaque article. Touchez une étape pour y revenir.",
+    },
+    {
+      target: "feedback-step",
+      content:
+        "L'étape en cours. L'avis sur la livraison reste privé ; celui sur un article est publié sur sa fiche.",
+    },
+    {
+      target: "feedback-rating",
+      content: "Donnez une note en étoiles — facultatif.",
+    },
+    {
+      target: "feedback-comment",
+      content: "Racontez votre expérience : ce commentaire est obligatoire.",
+    },
+    {
+      target: "feedback-submit",
+      content:
+        "Envoyez : l'avis est enregistré tout de suite et vous passez à l'étape suivante. « Passer » la saute.",
     },
   ],
   "storefront-favorites": [

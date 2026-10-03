@@ -7,12 +7,23 @@ import type { IReviewRepository } from "@/repositories/interfaces/IReviewReposit
 const REVIEWS_COLLECTION = "reviews";
 
 export class ReviewRepository implements IReviewRepository {
-  async listByProduct(productId: string): Promise<Review[]> {
+  listByProduct(productId: string): Promise<Review[]> {
+    return this.listWhere("productId", productId);
+  }
+
+  listByOrder(orderId: string): Promise<Review[]> {
+    return this.listWhere("orderId", orderId);
+  }
+
+  listByShop(shopId: string): Promise<Review[]> {
+    return this.listWhere("shopId", shopId);
+  }
+
+  // Une seule égalité, pas de `orderBy` : aucun index composite (tri fait
+  // par l'appelant, même convention que `SupportMessageRepository`).
+  private async listWhere(field: string, value: string): Promise<Review[]> {
     const snapshot = await getDocs(
-      query(
-        collection(db, REVIEWS_COLLECTION),
-        where("productId", "==", productId)
-      )
+      query(collection(db, REVIEWS_COLLECTION), where(field, "==", value))
     );
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Review);
   }

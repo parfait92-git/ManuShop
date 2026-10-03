@@ -1754,3 +1754,33 @@ Demande de l'utilisateur : rendre la « Promotion de lancement » de l'accueil d
 **Vérification réelle sur émulateurs** : le Super Admin modifie titre et date, l'accueil affiche le nouveau titre ; il désactive, la carte affiche « Désactivée » et l'accueil n'affiche plus la promotion. Pendant ce test, l'interrupteur du catalogue de démonstration a été coupé par erreur (mauvais sélecteur du script), puis rétabli, sur l'émulateur seulement.
 
 Rien de commité.
+
+### 2026-10-02 — Avis après livraison : notification, avis étape par étape, réponse du commerçant
+
+Demande de l'utilisateur : à la livraison, le système demande au client son avis sur la livraison et sur ses articles, article par article, depuis une interface dédiée ; le commerçant reçoit ces avis et peut y répondre. Choix de l'utilisateur : notification **dans l'application** (aucun service externe), avis sur la livraison **privé**, réponses aux avis d'articles **publiques**.
+
+**Fait** :
+- **Notifications** (`notifications`, modèle `AppNotification`) : écrites par le serveur seulement (`src/server/notifications.ts`), dans le même lot que l'écriture qui les motive. Le destinataire les lit et peut seulement les marquer lues (`firestore.rules`). Deux types :
+  - `review_request`, envoyée quand une commande d'un client avec compte passe « Livrée » (`updateOrderStatusAction`, pas de doublon) ;
+  - `review_reply`, envoyée quand le commerçant répond.
+- **Cloche** de la vitrine (`NotificationBell`, `useNotifications` en temps réel, sans index composite) : pastille des non lues ; un clic marque comme lu et ouvre la page de l'avis. Désormais visible aussi sur mobile, pour les comptes connectés seulement.
+- **Page d'avis du client**, `/mes-commandes/[orderId]/avis` (remplace `ReviewDialog`, supprimé avec sa visite) : la livraison, puis chaque article, avec note facultative, commentaire, « défectueux » pour un article, et « Passer ». Chaque étape est enregistrée dès l'envoi ; la page reprend à la première étape non faite ; une étape faite s'affiche en lecture seule avec la réponse de la boutique. Aides « ? » et visite guidée.
+- **Avis sur la livraison** (`orderFeedback/{orderId}`, `submitDeliveryFeedbackAction`) : revérifie le client, la commande livrée, et n'accepte qu'un avis par commande (`create`). Lisible par le client et l'équipe de la boutique.
+- **« Avis clients »** (`/dashboard/avis`) : avis regroupés par commande, filtre « Sans réponse », réponse à chaque avis (`replyToFeedbackAction`, équipe de la boutique seulement, réponse modifiable), pastille dans le menu, visite guidée.
+- **Fiche produit** : « Réponse du vendeur » sous l'avis.
+- **En-tête de la vitrine** : à 320 px avec la police à 150 %, les cinq boutons ne tiennent plus sur une ligne. Ils passent à la ligne au lieu de chevaucher le logo, qui chevauchait déjà légèrement le bouton d'aide avant ce changement.
+
+**Tests** : `feedbackActions.test.ts`, `FeedbackService.test.ts`, `OrderFeedbackPageContent.test.tsx`, `FeedbackPageContent.test.tsx`, `NotificationBell.test.tsx` (nouveaux) ; `orderActions.test.ts` (+2), `ProductDetailPageContent.test.tsx` (+1), `MyOrdersPageContent.test.tsx` (lien au lieu de la fenêtre). Vérifié : lint, `tsc`, 932 tests, build.
+
+**Vérification réelle sur émulateurs, avec les nouvelles règles** :
+1. Le commerçant marque une commande « Livrée ».
+2. Le client (320 px, police à 150 %) voit « 1 non lue », ouvre la notification et arrive sur la page d'avis. Il note la livraison et le premier article, et passe le second.
+3. Le commerçant voit les deux avis (pastille « 2 ») et répond aux deux.
+4. Le client reçoit deux notifications et lit la réponse privée.
+5. Un visiteur anonyme voit la réponse publique sur la fiche produit, mais pas la réponse privée.
+
+Aucun débordement horizontal, aucune erreur dans la console.
+
+**À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`), qui ajoutent `notifications` et `orderFeedback`. Sans elles, la cloche reste vide et la page d'avis ne trouve pas l'avis de livraison.
+
+Rien de commité.

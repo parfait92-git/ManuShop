@@ -17,6 +17,10 @@ jest.mock("./CartPanel", () => ({
   CartPanel: () => <div data-testid="cart-panel" />,
 }));
 
+jest.mock("./NotificationBell", () => ({
+  NotificationBell: () => <div data-testid="notification-bell" />,
+}));
+
 jest.mock("./CreateShopWizard", () => ({
   CreateShopWizard: ({ open }: { open: boolean }) =>
     open ? <div data-testid="create-shop-wizard" /> : null,

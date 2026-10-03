@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronDown, ShoppingBag, Store, User } from "lucide-react";
+import { ChevronDown, ShoppingBag, Store, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { CartPanel } from "@/components/storefront/CartPanel";
 import { CreateShopWizard } from "@/components/storefront/CreateShopWizard";
+import { NotificationBell } from "@/components/storefront/NotificationBell";
 import { TourReplayButton } from "@/components/onboarding/TourReplayButton";
 import { authService } from "@/services/AuthService";
 import { useCartItemCount } from "@/store/cartStore";
@@ -185,12 +186,14 @@ export function StorefrontHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background">
       {/* Petits écrans et police agrandie : marges réduites, logo qui se
-      tronque plutôt que de pousser les boutons hors de l'écran. */}
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+      tronque plutôt que de pousser les boutons hors de l'écran ; si même
+      les boutons ne tiennent plus (320 px, police à 150 %), ils passent à
+      la ligne au lieu de chevaucher le logo. */}
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3 sm:flex-nowrap sm:px-6">
         {branding ? (
           <Link
             href={`/boutique/${branding.shopId}`}
-            className="flex min-w-0 items-center gap-2 font-semibold"
+            className="flex min-w-0 flex-[1_1_4rem] items-center gap-2 font-semibold"
           >
             {branding.logo ? (
               <Image
@@ -212,7 +215,7 @@ export function StorefrontHeader() {
             <span className="truncate">{branding.name}</span>
           </Link>
         ) : (
-          <Link href="/" className="flex min-w-0 items-center gap-2 font-semibold">
+          <Link href="/" className="flex min-w-0 flex-[1_1_4rem] items-center gap-2 font-semibold">
             <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Store className="size-4 text-primary" />
             </span>
@@ -238,17 +241,9 @@ export function StorefrontHeader() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:shrink-0 sm:flex-nowrap sm:gap-2">
           <TourReplayButton className="border-border text-muted-foreground hover:bg-muted hover:text-foreground" />
-          {/* Masquée sur mobile : aucune action n'y est encore branchée,
-          et la place manque à côté du compte et du panier. */}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="hidden size-9 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground sm:flex"
-          >
-            <Bell className="size-4" />
-          </button>
+          <NotificationBell />
           <AccountMenu />
           <div className="relative">
             <button

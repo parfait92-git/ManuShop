@@ -1,6 +1,7 @@
 "use client";
 
 import { PackageSearch } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -8,16 +9,10 @@ import {
   OrderReasonDialog,
   type ReasonTarget,
 } from "@/components/dashboard/OrderReasonDialog";
-import {
-  ReviewDialog,
-  type ReviewSubmission,
-  type ReviewTarget,
-} from "@/components/storefront/ReviewDialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL } from "@/lib/orderStatus";
 import type { Order } from "@/models/order/Order";
 import { orderService } from "@/services/OrderService";
-import { reviewService } from "@/services/ReviewService";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
 
@@ -35,15 +30,6 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reasonTarget, setReasonTarget] = useState<ReasonTarget | null>(null);
-  const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
-  // BF-76 : un avis par commande suffit pour ce premier tour — masque le
-  // bouton une fois envoyé plutôt que de suivre l'état par article. Un
-  // second envoi (article différent de la même commande) resterait
-  // possible en rouvrant le dialogue depuis la console, mais l'UI ne le
-  // propose plus volontairement.
-  const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(
-    new Set()
-  );
 
   useEffect(() => {
     let active = true;
@@ -79,23 +65,6 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
       toast.error("Échec de l'annulation. Réessayez.");
     } finally {
       setBusyId(null);
-    }
-  }
-
-  async function handleSubmitReview(submission: ReviewSubmission) {
-    if (!reviewTarget) return;
-    const { orderId } = reviewTarget;
-    setReviewTarget(null);
-    try {
-      await reviewService.submitReview({ orderId, ...submission });
-      setReviewedOrderIds((current) => new Set(current).add(orderId));
-      toast.success("Merci pour votre avis !");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Échec de l'envoi. Réessayez."
-      );
     }
   }
 
@@ -143,7 +112,7 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
               <p className="text-sm">
                 {order.items.map((item) => `${item.name} ×${item.quantity}`).join(", ")}
               </p>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium">
                   <OrderAmount amountXaf={order.total} shopId={order.shopId} />
                 </span>
@@ -159,22 +128,16 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
                     Annuler
                   </Button>
                 )}
-                {order.status === "delivered" &&
-                  (reviewedOrderIds.has(order.id) ? (
-                    <span className="text-sm text-muted-foreground">
-                      Merci pour votre avis !
-                    </span>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setReviewTarget({ orderId: order.id, items: order.items })
-                      }
-                    >
-                      Laisser un avis
-                    </Button>
-                  ))}
+                {/* Avis étape par étape (livraison, puis chaque article),
+                sur sa propre page — la même que la notification ouvre. */}
+                {order.status === "delivered" && (
+                  <Link
+                    href={`/mes-commandes/${order.id}/avis`}
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
+                    Donner mon avis
+                  </Link>
+                )}
               </div>
               {order.cancelReason && (
                 <p className="text-xs text-muted-foreground">
@@ -193,12 +156,6 @@ export function MyOrdersPageContent({ clientId }: { clientId: string }) {
         onConfirm={handleCancelConfirm}
       />
 
-      <ReviewDialog
-        key={reviewTarget?.orderId}
-        target={reviewTarget}
-        onCancel={() => setReviewTarget(null)}
-        onSubmit={handleSubmitReview}
-      />
     </div>
   );
 }

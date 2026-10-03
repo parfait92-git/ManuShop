@@ -14,12 +14,14 @@ import {
   Building2,
   Trash2,
   History,
+  MessageSquareText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useNavigationBlocker } from "@/components/providers/NavigationBlockerProvider";
+import { useUnrepliedFeedbackCount } from "@/hooks/useUnrepliedFeedbackCount";
 import { cn } from "cn";
 
 interface NavItem {
@@ -48,6 +50,12 @@ const MAIN_ITEMS: NavItem[] = [
     dataTour: "nav-orders",
   },
   { href: "/dashboard/clients", label: "Clients", icon: Users },
+  {
+    href: "/dashboard/avis",
+    label: "Avis clients",
+    icon: MessageSquareText,
+    dataTour: "nav-feedback",
+  },
   { href: "/dashboard/trash", label: "Corbeille", icon: Trash2 },
   { href: "/dashboard/activity", label: "Journal d'activité", icon: History },
   { href: "/dashboard/support", label: "Contacter le Super Admin", icon: Mail },
@@ -66,7 +74,16 @@ const CONFIG_ITEMS: NavItem[] = [
   { href: "/dashboard/team", label: "Équipe", icon: UserCog, adminOnly: true },
 ];
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({
+  item,
+  active,
+  badge = 0,
+}: {
+  item: NavItem;
+  active: boolean;
+  /** Pastille de compteur (ex. avis sans réponse), masquée à 0. */
+  badge?: number;
+}) {
   const Icon = item.icon;
   const { isDirty, blockNavigation } = useNavigationBlocker();
 
@@ -87,7 +104,15 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       )}
     >
       <Icon className="size-4.5 shrink-0" />
-      {item.label}
+      <span className="min-w-0 flex-1">{item.label}</span>
+      {badge > 0 && (
+        <span
+          aria-label={`${badge} sans réponse`}
+          className="rounded-full bg-cyan-500 px-1.5 py-0.5 text-[0.65rem] font-semibold text-white"
+        >
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -96,6 +121,7 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { profile } = useAuth();
   const isAdmin = profile?.role === "admin";
+  const unrepliedFeedback = useUnrepliedFeedbackCount(profile?.shopId);
 
   return (
     <div
@@ -120,7 +146,12 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
             Menu principal
           </span>
           {MAIN_ITEMS.map((item) => (
-            <NavLink key={item.href} item={item} active={pathname === item.href} />
+            <NavLink
+              key={item.href}
+              item={item}
+              active={pathname === item.href}
+              badge={item.href === "/dashboard/avis" ? unrepliedFeedback : 0}
+            />
           ))}
         </div>
 

@@ -1,5 +1,7 @@
 import type { Timestamp } from "firebase/firestore";
 
+import type { ReviewReply } from "./OrderFeedback";
+
 /**
  * Avis client sur un produit (Module 13/14, BF-72/76). Écriture via
  * `reviewService.submitReview()` → `submitReviewAction` (Server Action,
@@ -18,5 +20,8 @@ export interface Review {
   // Motif transmis au vendeur quand le client signale une commande
   // défectueuse plutôt qu'un avis ordinaire (BF-76).
   reason?: "defective" | "other";
+  /** Réponse du commerçant — **publique** (choix de l'utilisateur),
+   * affichée sous l'avis sur la fiche produit (« Réponse du vendeur »). */
+  reply?: ReviewReply;
   createdAt: Timestamp;
 }

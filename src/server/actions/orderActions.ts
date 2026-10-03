@@ -8,6 +8,7 @@ import type { OrderStatus } from "@/models/order/OrderStatus";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
 import { effectivePrice, type PromoFields } from "@/lib/promo";
+import { queueNotification } from "@/server/notifications";
 
 const ORDERS_COLLECTION = "orders";
 const PRODUCT_COSTS_COLLECTION = "productCosts";
@@ -288,6 +289,22 @@ export async function updateOrderStatusAction(
         stock: FieldValue.increment(item.quantity),
       });
     }
+  }
+
+  // Commande livrée à un client qui a un compte : on l'invite à donner son
+  // avis (livraison, puis chaque article). Dans le même lot que le
+  // changement de statut. Pas de doublon si la commande était déjà livrée ;
+  // une commande manuelle (sans compte) n'a personne à notifier.
+  if (input.status === "delivered" && order.status !== "delivered" && order.clientId) {
+    const shopSnapshot = await db.collection(SHOPS_COLLECTION).doc(order.shopId).get();
+    const shopName = (shopSnapshot.data()?.name as string | undefined) ?? "la boutique";
+    queueNotification(db, batch, {
+      userId: order.clientId,
+      type: "review_request",
+      orderId,
+      shopId: order.shopId,
+      message: `${shopName} : votre commande est livrée. Comment s'est passée la livraison, et que pensez-vous de vos articles ?`,
+    });
   }
 
   await batch.commit();
