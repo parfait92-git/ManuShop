@@ -164,7 +164,28 @@ export const TOURS = {
       placement: "top",
     },
   ],
-  "dashboard-stats": [
+  "dashboard-clients": [
+    {
+      target: "clients-segments",
+      content:
+        "Repérez d'un coup d'œil vos nouveaux clients, vos fidèles et ceux qui ne commandent plus — un clic filtre la liste.",
+    },
+    {
+      target: "clients-search",
+      content: "Retrouvez un client par son nom ou son numéro, et triez la liste.",
+    },
+    {
+      target: "clients-table",
+      content:
+        "Chaque client avec ses commandes et ce qu'il a dépensé. Cliquez sur un nom pour ouvrir sa fiche.",
+      placement: "top",
+    },
+    {
+      target: "clients-export",
+      content: "Téléchargez la liste dans un fichier Excel.",
+    },
+  ],
+    "dashboard-stats": [
     {
       target: "stats-period",
       content:
@@ -326,7 +347,18 @@ export const TOURS = {
       content: "Confirmez pour créer votre boutique.",
     },
   ],
-  "dialog-manual-order": [
+  "dialog-client": [
+    {
+      target: "client-contact",
+      content: "Appelez ce client ou écrivez-lui directement sur WhatsApp.",
+    },
+    {
+      target: "client-orders",
+      content: "Toutes ses commandes, de la plus récente à la plus ancienne, avec leur statut.",
+      placement: "top",
+    },
+  ],
+    "dialog-manual-order": [
     {
       target: "manual-order-client",
       content:

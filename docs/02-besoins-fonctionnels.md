@@ -233,6 +233,7 @@
 | BF-92 | Gestion du stock | Suivi du stock comme dans une boutique physique — rejoint le Module 3 (BF-13→17), toujours non commencé. |
 | BF-93 | Fin d'abonnement, accès restreint | Une boutique dont l'abonnement a expiré reste consultable (commandes, stock) mais ne peut plus rien publier de nouveau ; les menus nécessitant un abonnement actif disparaissent de son espace admin. Révise BF-70 : la restriction s'applique désormais **par boutique**, pas en rétrogradant tout le compte. |
 | BF-94 | Toute publication est premium | La visibilité publique (boutique comme produits) nécessite un abonnement actif sur la boutique concernée. |
+| BF-144 | Fichier clients du commerçant | Page `/dashboard/clients` (gérant et vendeurs) : liste des clients reconstituée à partir des commandes de la boutique (les comptes clients ne lui sont pas lisibles) — même client regroupé par téléphone, sinon par compte, sinon par nom ; nombre de commandes, total dépensé (commandes livrées), dernière commande ; repères Nouveau / Fidèle / Inactif servant de filtres ; recherche par nom ou numéro, tri, export CSV ; fiche client avec appel, WhatsApp et historique des commandes. **Fait le 2026-10-02.** |
 
 ### Module 17 — Statuts de Commande, Retours & Corbeille
 

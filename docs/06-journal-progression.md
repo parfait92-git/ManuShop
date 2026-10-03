@@ -1547,3 +1547,35 @@ Un prix d'achat modifié plus tard ne réécrit donc pas les gains passés. **R�
 - Règles, interrogées avec de vrais jetons : `productCosts` gérant 200, vendeur/client/anonyme 403 ; `orderCosts` gérant 200, vendeur/client 403 ; écritures refusées au vendeur et au gérant sur `orderCosts`. Aucun coût dans la commande lue par le client, ni dans le produit public.
 
 Rien de commité.
+
+### 2026-10-02 — Règles `productCosts`/`orderCosts` déployées
+
+Déployées par l'utilisateur (`npx firebase-tools deploy --only firestore:rules`) : le prix d'achat et la page Gains et statistiques sont opérationnels en production.
+
+### 2026-10-02 — Page Clients (`/dashboard/clients`, BF-144)
+
+Demande de l'utilisateur : implémenter la page Clients, jusque-là « bientôt disponible ». Aucun besoin détaillé dans le cahier des charges : conception partie des données réellement disponibles.
+
+**Source** : les commandes de la boutique. Les comptes clients (`users`) ne sont pas lisibles par le commerçant (règles), et une commande manuelle n'a pas de compte.
+
+**`src/lib/clientDirectory.ts`** (calcul pur) :
+- Regroupement d'un même client : par **téléphone normalisé** d'abord (chiffres seuls), seul identifiant commun à une commande en ligne et à une commande saisie en boutique ; sinon par compte ; sinon par nom.
+- Agrégats : nombre de commandes ; total dépensé sur les commandes **livrées** seulement, comme les gains ; dates de première et dernière commande.
+- Repères : Nouveau (1ʳᵉ commande il y a moins de 30 j), Fidèle (au moins 3 livrées), Inactif (rien depuis au moins 90 j).
+- Tri, recherche par nom ou par chiffres du numéro, lien WhatsApp.
+- Export CSV avec point-virgule et BOM UTF-8, ce qu'Excel en français ouvre directement, accents compris.
+
+**`ClientsPageContent`** :
+- Pastilles de repères qui servent aussi de filtres, avec leur nombre.
+- Recherche, tri et export, chacun avec son aide « ? ».
+- Tableau défilant (`ScrollableTable`, nom du client fixé à gauche) et état vide explicatif.
+- Fiche client en fenêtre : coordonnées, boutons Appeler (`tel:`) et WhatsApp, historique complet des commandes avec leur statut.
+- Visites guidées `dashboard-clients` et `dialog-client`. Accès gérant et vendeurs : pas de donnée de coût sur cette page.
+
+**Tests** : `clientDirectory.test.ts` (8), `ClientsPageContent.test.tsx` (3). Vérifié : lint, `tsc`, 866 tests.
+
+**Vérification réelle sur les émulateurs** (Chrome, ordinateur, et 320 px avec police à 150 %) : une cliente qui avait commandé en ligne et en boutique avec un numéro écrit autrement apparaît comme un seul client (3 commandes, 30 000 FCFA livrés). Repères, fiche, historique et liens d'appel et WhatsApp sont corrects, sans aucun débordement de page.
+
+**Note d'environnement** : l'utilisateur avait son propre `next dev` sur le port 3000, et Next 16 refuse un second serveur de dev dans le même dossier. Le serveur de test a donc tourné sur une copie du projet dans le dossier temporaire, avec `--webpack` (Turbopack refuse un `node_modules` relié par lien symbolique hors du projet). Le serveur de l'utilisateur n'a pas été touché.
+
+Rien de commité.
