@@ -563,6 +563,27 @@ export const TOURS = {
       content: "Répondez directement : le commerçant voit la réponse dans son espace.",
     },
   ],
+  "super-admin-premium": [
+    {
+      target: "premium-requests",
+      content:
+        "Les demandes d'achat des commerçants. Validez-en une après avoir reçu le paiement : l'article est alors acquis définitivement par la boutique.",
+    },
+    {
+      target: "premium-items",
+      content: "Ce qui est premium (fonctionnalités et thèmes) et son prix à l'unité.",
+      placement: "top",
+    },
+    {
+      target: "premium-plans",
+      content: "Le prix de chaque formule d'abonnement et les articles premium qu'elle inclut.",
+      placement: "top",
+    },
+    {
+      target: "premium-save",
+      content: "Enregistrez : les commerçants voient aussitôt les nouveaux prix et inclusions.",
+    },
+  ],
   "super-admin-settings": [
     {
       target: "settings-card",

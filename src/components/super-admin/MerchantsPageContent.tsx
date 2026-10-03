@@ -6,11 +6,8 @@ import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
 import { CoachMark } from "@/components/ui/CoachMark";
-import {
-  PREMIUM_FEATURES,
-  PREMIUM_FEATURE_KEYS,
-  type PremiumFeatureKey,
-} from "@/lib/premiumFeatures";
+import { listPremiumItems } from "@/lib/premiumCatalog";
+import { type PremiumFeatureKey } from "@/lib/premiumFeatures";
 import type { MerchantDto, MerchantShopDto } from "@/server/actions/platformAdminActions";
 import { platformAdminService } from "@/services/PlatformAdminService";
 
@@ -34,7 +31,7 @@ function ShopPremiumFeatures({
   onToggle,
 }: {
   shop: MerchantShopDto;
-  onToggle: (shopId: string, feature: PremiumFeatureKey, enabled: boolean) => void;
+  onToggle: (shopId: string, feature: string, enabled: boolean) => void;
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
@@ -47,20 +44,22 @@ function ShopPremiumFeatures({
         </span>
       </div>
       <ul data-tour="merchants-features" className="flex flex-col gap-2">
-        {PREMIUM_FEATURE_KEYS.map((key) => {
+        {listPremiumItems().map(({ key, label, kind }) => {
           const enabled = shop.premiumFeatures.includes(key);
           return (
             <li key={key} className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                {PREMIUM_FEATURES[key]}
-                <CoachMark label={`Aide : ${PREMIUM_FEATURES[key]}`}>
-                  {PREMIUM_FEATURE_HELP[key]}
+                {label}
+                <CoachMark label={`Aide : ${label}`}>
+                  {kind === "theme"
+                    ? "Accorde ce thème à la boutique, comme s'il avait été acheté. Inutile pour un thème gratuit ou déjà inclus dans son abonnement."
+                    : PREMIUM_FEATURE_HELP[key as PremiumFeatureKey]}
                 </CoachMark>
               </span>
               <Switch
                 checked={enabled}
                 onCheckedChange={(checked) => onToggle(shop.id, key, checked)}
-                aria-label={`${enabled ? "Désactiver" : "Activer"} ${PREMIUM_FEATURES[key]} pour ${shop.name}`}
+                aria-label={`${enabled ? "Désactiver" : "Activer"} ${label} pour ${shop.name}`}
               />
             </li>
           );
@@ -75,7 +74,7 @@ function MerchantRow({
   onToggleFeature,
 }: {
   merchant: MerchantDto;
-  onToggleFeature: (shopId: string, feature: PremiumFeatureKey, enabled: boolean) => void;
+  onToggleFeature: (shopId: string, feature: string, enabled: boolean) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -151,7 +150,7 @@ export function MerchantsPageContent() {
 
   async function handleToggleFeature(
     shopId: string,
-    feature: PremiumFeatureKey,
+    feature: string,
     enabled: boolean
   ) {
     setMerchants((current) =>

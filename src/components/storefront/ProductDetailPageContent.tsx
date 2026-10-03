@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { usePremiumAccess } from "@/hooks/usePremiumCatalog";
+import { ShopBrandingSetter } from "@/components/providers/ShopBrandingSetter";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
 import { SellerReply } from "@/components/storefront/SellerReply";
@@ -54,6 +56,7 @@ const STOCK_CLASS: Record<StockStatus, string> = {
 export function ProductDetailPageContent({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [shop, setShop] = useState<Shop | null>(null);
+  const hasAccess = usePremiumAccess(shop);
   const money = useMoney(shopCurrency(shop));
   const [reviews, setReviews] = useState<Review[]>([]);
   const addItem = useAddToCart();
@@ -133,7 +136,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
   // simple lien "Voir sur {réseau}" de BF-128 plutôt que de s'y ajouter —
   // éviter deux façons redondantes d'afficher le même réseau social.
   const contactLinks =
-    shop && shop.premiumFeatures?.includes("advancedContact")
+    shop && hasAccess("advancedContact")
       ? (shop.clientContactMethods ?? [])
           .map((method) => ({
             method,
@@ -146,6 +149,9 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
       : [];
 
   return (
+    <>
+      {/* Aux couleurs de la boutique de l'article. */}
+      {shop && <ShopBrandingSetter shopId={shop.id} name={shop.name} logo={shop.logo || undefined} />}
     <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
       <Link
         href="/catalogue"
@@ -354,5 +360,6 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

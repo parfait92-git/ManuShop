@@ -50,6 +50,7 @@ import { BASE_CURRENCY, CURRENCIES, shopCurrency } from "@/lib/currency";
 import { customInvoiceColor, resolveVatRate } from "@/lib/invoice";
 import { ShopInvoiceSettings } from "@/components/dashboard/ShopInvoiceSettings";
 import { useShopTheme } from "@/hooks/useShopTheme";
+import { usePremiumAccess } from "@/hooks/usePremiumCatalog";
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -134,6 +135,7 @@ function InfoPanel() {
 export function ShopSettingsForm({ shopId }: { shopId: string }) {
   const { profile } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
+  const hasAccess = usePremiumAccess(shop);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -539,7 +541,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
             </div>
 
-            {!shop.premiumFeatures?.includes("advancedContact") ? (
+            {!hasAccess("advancedContact") ? (
               <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-4 py-8 text-center">
                 <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <Lock className="size-4.5" />

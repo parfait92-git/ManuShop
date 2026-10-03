@@ -76,7 +76,7 @@ export class PlatformAdminService {
   /** BF-119 : privilège premium par boutique, indépendant de l'abonnement. */
   async setShopPremiumFeature(
     shopId: string,
-    feature: PremiumFeatureKey,
+    feature: PremiumFeatureKey | string,
     enabled: boolean
   ): Promise<void> {
     await setShopPremiumFeatureAction(

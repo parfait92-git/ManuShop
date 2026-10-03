@@ -1,5 +1,7 @@
 "use client";
 
+import { usePremiumAccess } from "@/hooks/usePremiumCatalog";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -13,8 +15,8 @@ import { shopService } from "@/services/ShopService";
 /** BF-106 : un réseau n'apparaît dans `socialLinks` que si son lien est
  * renseigné ET que la boutique a le privilège premium `socialFooterLinks` —
  * `undefined` sinon, pour que `StorefrontFooter` n'affiche rien du tout. */
-function socialLinksFor(shop: Shop) {
-  if (!shop.premiumFeatures?.includes("socialFooterLinks")) return undefined;
+function socialLinksFor(shop: Shop, allowed: boolean) {
+  if (!allowed) return undefined;
   const entries = Object.entries(SOCIAL_NETWORK_URL_FIELD)
     .map(([network, field]) => [network, shop[field]] as const)
     .filter(([, url]) => !!url && url.trim());
@@ -36,6 +38,9 @@ function socialLinksFor(shop: Shop) {
 export function ShopStorefrontPage({ shopId }: { shopId: string }) {
   const [shop, setShop] = useState<Shop | null | undefined>(undefined);
   const { setBranding } = useShopBranding();
+  // Privilège possédé, ou inclus dans l'abonnement de la boutique.
+  const hasAccess = usePremiumAccess(shop);
+  const socialAllowed = hasAccess("socialFooterLinks");
 
   useEffect(() => {
     let active = true;
@@ -49,20 +54,19 @@ export function ShopStorefrontPage({ shopId }: { shopId: string }) {
   }, [shopId]);
 
   // Affiché par `StorefrontHeader` (logo/nom de LA boutique plutôt que la
-  // marque générique ManuShop) tant que cette page reste montée — nettoyé
-  // au démontage pour ne pas laisser la marque d'une boutique "coller" sur
-  // une autre page storefront après navigation.
+  // marque générique ManuShop). Gardée en quittant la page : la fiche d'un
+  // article, le panier ou le paiement restent aux couleurs de la boutique
+  // (seules les pages du Marché la retirent, `useClearShopBranding`).
   useEffect(() => {
     if (shop) {
       setBranding({
         shopId: shop.id,
         name: shop.name,
         logo: shop.logo,
-        socialLinks: socialLinksFor(shop),
+        socialLinks: socialLinksFor(shop, socialAllowed),
       });
     }
-    return () => setBranding(null);
-  }, [shop, setBranding]);
+  }, [shop, socialAllowed, setBranding]);
 
   if (shop === undefined) {
     return (

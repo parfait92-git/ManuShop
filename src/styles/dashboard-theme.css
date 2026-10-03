@@ -66,6 +66,10 @@
   --shell-accent-fill-text: #020617;
   --tour-primary: #0e7490;
   --tour-primary-text: #ffffff;
+  /* Badge « Premium » : le même doré dans tous les thèmes (un thème ne
+   * le redéfinit pas), pour rester reconnaissable partout. */
+  --premium-badge-bg: #fbbf24;
+  --premium-badge-text: #451a03;
 }
 
 /* ——— Thème par défaut : bleu nuit, cartes en dégradé, accents bleus ——— */
@@ -449,6 +453,8 @@
   --color-shell-promo-title: var(--shell-promo-title);
   --color-shell-promo-text: var(--shell-promo-text);
   --color-shell-overlay: var(--shell-overlay);
+  --color-premium-badge: var(--premium-badge-bg);
+  --color-premium-badge-text: var(--premium-badge-text);
   --color-shell-border-strong: var(--shell-border-strong);
   --color-shell-faint: var(--shell-faint);
   --color-shell-brand-text: var(--shell-brand-text);

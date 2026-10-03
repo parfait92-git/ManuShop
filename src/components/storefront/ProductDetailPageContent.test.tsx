@@ -1,3 +1,5 @@
+jest.mock("../providers/ShopBrandingSetter", () => ({ ShopBrandingSetter: () => null }));
+jest.mock("../../hooks/usePremiumCatalog");
 jest.mock("../../services/ProductService", () => ({
   productService: {
     getProduct: jest.fn(),

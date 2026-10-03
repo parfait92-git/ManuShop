@@ -6,6 +6,8 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 import { ACTIVE_THEME_DOC } from "@/models/theme/ShopTheme";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, ValidationError } from "@/server/errors";
+import { hasPremiumAccess, themeItemKey, toShopPremiumState } from "@/lib/premiumCatalog";
+import { readPremiumCatalog } from "@/server/premium/readCatalog";
 import { isKnownTheme } from "@/themes/registry";
 
 /**
@@ -20,6 +22,15 @@ export async function applyShopThemeAction(idToken: string, themeId: string): Pr
   const user = (await db.collection("users").doc(caller.uid).get()).data();
   if (!user || user.role !== "admin" || !user.shopId) throw new ForbiddenError();
   if (!isKnownTheme(themeId)) throw new ValidationError("Ce thème n'existe pas.");
+
+  // Thème premium : acheté, accordé ou inclus dans l'abonnement en cours.
+  const [shopSnapshot, catalog] = await Promise.all([
+    db.collection("shops").doc(user.shopId).get(),
+    readPremiumCatalog(db),
+  ]);
+  if (!hasPremiumAccess(themeItemKey(themeId), toShopPremiumState(shopSnapshot.data() ?? {}), catalog)) {
+    throw new ForbiddenError("Ce thème est premium : achetez-le pour l'appliquer.");
+  }
 
   await db
     .collection("shops")

@@ -23,7 +23,7 @@ const files = DIRS.flatMap((dir) =>
   readdirSync(dir)
     .filter((f) => /\.tsx?$/.test(f) && !f.endsWith(".test.ts") && !f.endsWith(".test.tsx"))
     .map((f) => join(dir, f))
-);
+).filter((f) => !f.endsWith("ThemesPageContent.tsx"));
 // Cadre de l'espace de gestion, habillé par le thème de la boutique.
 files.push(
   join(__dirname, "..", "DashboardSidebar.tsx"),
@@ -59,7 +59,10 @@ const NEUTRAL_OR_BRAND =
 const ALLOWED: Record<string, RegExp> = { "ShopInvoiceSettings.tsx": /text-white/g };
 
 const dashboardDir = join(__dirname, "..");
-const pages = readdirSync(dashboardDir).filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"));
+const pages = [
+  ...readdirSync(dashboardDir).filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx")),
+  join("themes", "ThemesPageContent.tsx"),
+];
 
 describe("dashboard pages", () => {
   it.each(pages)("%s takes neutrals and accent from the theme", (file) => {

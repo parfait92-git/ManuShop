@@ -1,5 +1,8 @@
 "use server";
 
+import { hasPremiumAccess, toShopPremiumState } from "@/lib/premiumCatalog";
+import { readPremiumCatalog } from "@/server/premium/readCatalog";
+
 import { FieldValue } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
@@ -55,8 +58,8 @@ export async function sendSupportMessageAction(
 
   const shopSnapshot = await db.collection(SHOPS_COLLECTION).doc(shopId).get();
   const shopData = shopSnapshot.data();
-  const premiumFeatures = (shopData?.premiumFeatures as string[] | undefined) ?? [];
-  if (!shopData || !premiumFeatures.includes("contactForm")) {
+  const catalog = await readPremiumCatalog(db);
+  if (!shopData || !hasPremiumAccess("contactForm", toShopPremiumState(shopData), catalog)) {
     throw new ForbiddenError(
       "Le formulaire de contact n'est pas activé pour votre boutique."
     );

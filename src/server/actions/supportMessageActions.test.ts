@@ -39,6 +39,10 @@ const collectionMock = jest.fn((name: string) => {
       where: whereMock,
     };
   }
+  // Offres premium : réglages par défaut (rien d'enregistré).
+  if (name === "configuration") {
+    return { doc: () => ({ get: async () => ({ data: () => undefined }) }) };
+  }
   throw new Error(`Unexpected collection: ${name}`);
 });
 
