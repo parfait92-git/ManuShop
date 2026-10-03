@@ -1,16 +1,12 @@
 // La visite guidée (BF-134) charge le SDK Firebase via useAuth — hors sujet ici.
-jest.mock("../../../../components/onboarding/PageTour", () => ({ PageTour: () => null }));
-
-jest.mock("next/navigation", () => ({
-  useParams: () => ({ shopId: "shop-1" }),
-}));
+jest.mock("../onboarding/PageTour", () => ({ PageTour: () => null }));
 
 const getShopMock = jest.fn();
-jest.mock("../../../../services/ShopService", () => ({
+jest.mock("../../services/ShopService", () => ({
   shopService: { getShop: (...args: unknown[]) => getShopMock(...args) },
 }));
 
-jest.mock("../../../../components/storefront/CataloguePageContent", () => ({
+jest.mock("./CataloguePageContent", () => ({
   CataloguePageContent: ({ shopId }: { shopId: string }) => (
     <div data-testid="catalogue-content">{shopId}</div>
   ),
@@ -21,8 +17,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import {
   ShopBrandingProvider,
   useShopBranding,
-} from "../../../../components/providers/ShopBrandingProvider";
-import ShopStorefrontPage from "./page";
+} from "../providers/ShopBrandingProvider";
+import { ShopStorefrontPage } from "./ShopStorefrontPage";
 
 function BrandingSpy({ onBranding }: { onBranding: (b: unknown) => void }) {
   const { branding } = useShopBranding();
@@ -33,7 +29,7 @@ function BrandingSpy({ onBranding }: { onBranding: (b: unknown) => void }) {
 function renderPage() {
   return render(
     <ShopBrandingProvider>
-      <ShopStorefrontPage />
+      <ShopStorefrontPage shopId="shop-1" />
     </ShopBrandingProvider>
   );
 }
@@ -96,7 +92,7 @@ describe("ShopStorefrontPage", () => {
       let captured: unknown;
       render(
         <ShopBrandingProvider>
-          <ShopStorefrontPage />
+          <ShopStorefrontPage shopId="shop-1" />
           <BrandingSpy onBranding={(b) => (captured = b)} />
         </ShopBrandingProvider>
       );
@@ -122,7 +118,7 @@ describe("ShopStorefrontPage", () => {
       let captured: unknown;
       render(
         <ShopBrandingProvider>
-          <ShopStorefrontPage />
+          <ShopStorefrontPage shopId="shop-1" />
           <BrandingSpy onBranding={(b) => (captured = b)} />
         </ShopBrandingProvider>
       );
@@ -149,7 +145,7 @@ describe("ShopStorefrontPage", () => {
       let captured: unknown;
       render(
         <ShopBrandingProvider>
-          <ShopStorefrontPage />
+          <ShopStorefrontPage shopId="shop-1" />
           <BrandingSpy onBranding={(b) => (captured = b)} />
         </ShopBrandingProvider>
       );

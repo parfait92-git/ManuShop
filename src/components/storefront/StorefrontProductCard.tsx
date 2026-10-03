@@ -14,6 +14,7 @@ import { effectivePrice } from "@/lib/promo";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
+import { productImageAlt } from "@/lib/seo";
 
 export function StorefrontProductCard({
   product,
@@ -51,7 +52,7 @@ export function StorefrontProductCard({
           {product.images[0] && (
             <Image
               src={product.images[0]}
-              alt={product.name}
+              alt={productImageAlt(product, { shopName: shop?.name })}
               fill
               sizes="(min-width: 768px) 33vw, 100vw"
               className="object-cover transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110"

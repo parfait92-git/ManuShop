@@ -1625,3 +1625,162 @@ Demande de l'utilisateur : appliquer la devise configurée par la boutique à to
 Piège de test : `platformAdmins` est indexé par **email**, pas par uid.
 
 Rien de commité.
+
+### 2026-10-02 — Téléphone en deux blocs (indicatif | numéro) + débordements réels à 320 px / police à 150 %
+
+Demande de l'utilisateur : composer les champs téléphone en deux blocs séparés, l'indicatif du pays puis le numéro.
+
+**Téléphone** (`ui/phone-input.tsx`, 8 écrans concernés) :
+- Le second bloc affichait le numéro au **format international, indicatif compris** (`international` de `react-phone-number-input`). L'indicatif apparaissait donc deux fois, et remplacer le contenu du champ (tout sélectionner, coller) supprimait l'indicatif : un « 690000000 » devenait `+690000000`, invalide. Constaté pendant les tests sur émulateurs des jours précédents.
+- Désormais `international={false}` : premier bloc = indicatif, second = numéro national seul (« 6 90 00 00 00 ») ; la valeur émise reste E.164 (`+237690000000`).
+- Exemple de saisie propre au pays choisi, `inputMode="tel"`, `autoComplete="tel-national"`.
+- Sur petit écran ou avec une police agrandie, les deux blocs passent l'un sous l'autre (`flex-wrap`, numéro `min-w-40`). Avant, le sélecteur à largeur fixe écrasait le numéro à quelques pixels.
+- 3 tests, dont 2 vérifiés par mutation : ils échouent avec l'ancien comportement.
+
+**Correction de l'entrée « Tableaux défilables… » du 2026-10-02** : elle affirmait « aucun débordement de page à 150 % de police ». **C'était faux.** Deux biais de mesure le masquaient :
+1. Le script injectait la police via `document.documentElement.appendChild`, avant que l'élément existe. Il plantait (erreurs `appendChild` attribuées à tort au script seul) et la police n'était **pas** agrandie.
+2. Dans l'espace gérant, c'est la colonne principale qui défile (`overflow-y-auto`, donc aussi `overflow-x: auto`), pas la page : ses débordements étaient invisibles pour `documentElement.scrollWidth`, et le filtre ignorait tout ce qui était dans une zone défilante.
+
+**Nouvel audit, police vraiment à 150 % à 320 px** (injection via `document.head`, mesure de la colonne du tableau de bord, seuls les vrais tableaux exclus). Résultat : 77 px de débordement sur **toutes** les pages gérant et Super Admin, plus des débordements dans la vitrine et sur les pages publiques. Sur ces dernières, le contenu était même **coupé** (pages en `overflow-hidden`) : le bouton du menu mobile de l'accueil devenait inaccessible. Corrigé :
+- Barres du haut (gérant, Super Admin), accueil (`SiteHeader.module.scss`), auth (`(auth)/layout.tsx`) : textes tronquables (`min-w-0`, `minmax(0, auto)`), groupes de boutons en `shrink-0`, espacements resserrés. « Retour à l'accueil » réduit à sa flèche sous `sm`, avec `aria-label`.
+- Boutons à long libellé autorisés à passer à la ligne (« Confirmer ma commande · montant », « Voir les produits concernés ») : le `Button` du projet est en `whitespace-nowrap`.
+- Lignes de catégorie et ligne « Trier par » en `flex-wrap`. Titres de section des paramètres réductibles avec césure. Titres `text-4xl` de la vitrine passés en `text-3xl sm:text-4xl` avec césure. `Label` avec aide en `flex-wrap`.
+- Accueil : grilles en `minmax(0, 1fr)` (promotion, sélection de produits), compte à rebours de la promotion en `flex-wrap`, texte des cartes produit réductible.
+
+Résultat sur émulateurs, police vraiment à 150 % à 320 px : 0 débordement sur les 13 pages gérant, les 5 pages Super Admin, 7 pages vitrine et les 4 pages publiques. Seul le fond décoratif (`aria-hidden`) dépasse, et il est coupé volontairement.
+
+Vérifié : lint, `tsc`, 881 tests, build. Le `next dev` de l'utilisateur (:3000) n'a pas été touché (serveur de test sur une copie isolée). Rien de commité.
+
+### 2026-10-02 — Référencement des boutiques et des articles (BF-147)
+
+Demande de l'utilisateur : des descriptions sur les images d'articles (`alt`) et la description de chaque boutique dans l'en-tête de la page, pour le référencement ; choix de la méthode laissé à Claude.
+
+**Constat** : les pages boutique (`/boutique/[shopId]`) et article (`/catalogue/[productId]`) étaient entièrement `"use client"`. Un moteur de recherche recevait une page sans titre ni description propres, avec seulement le titre générique du site.
+
+**Méthode retenue** (guides Next de cette version : `generate-metadata.md`, `json-ld.md`, `sitemap.md`, `robots.md`) :
+- **Rendu serveur.** Les deux pages deviennent des composants serveur : `generateMetadata` (titre, description, canonique, Open Graph/Twitter avec logo ou photos) et JSON-LD schema.org (`Store` ; `Product` avec offre au prix réellement affiché, promo comprise, dans la devise de la boutique, et disponibilité). L'interactivité reste dans les composants existants (`ShopStorefrontPage`, extrait tel quel de l'ancienne page ; `ProductDetailPageContent`).
+- **Lecture des données.** `src/server/seo/publicData.ts` utilise le SDK Admin, comme les actions serveur, et seulement pour les données publiques : boutique publiée, article visible d'une boutique publiée. `cache` de React évite une double lecture entre métadonnées et page. Un échec de lecture garde des métadonnées génériques, sans jamais casser la page.
+- **Fonctions pures** (`src/lib/seo.ts`) :
+  - description de repli quand la boutique ou l'article n'en a pas, construite à partir du nom, du secteur, de la ville ou de la catégorie ;
+  - troncature à 160 caractères ;
+  - `alt` des photos : nom, catégorie, boutique, « photo n sur N » ;
+  - neutralisation de `<` dans le JSON-LD (un nom saisi par un commerçant ne peut pas injecter de HTML).
+- **Pages générales.** Mise en page racine : `metadataBase` (`src/lib/siteUrl.ts` : `NEXT_PUBLIC_APP_URL`, sinon `VERCEL_PROJECT_PRODUCTION_URL`, sinon localhost), modèle de titre « %s | ManuShop », Open Graph par défaut. Titres et descriptions du Marché et de l'annuaire via des `layout.tsx`, puisque ces pages sont côté navigateur. Le titre du Marché redéclare le modèle, faute de quoi les fiches article en dessous perdaient leur « | ManuShop ».
+- **Plan du site.** `sitemap.ts` (boutiques publiées et articles visibles, `revalidate` d'une heure) et `robots.ts` (dashboard, super-admin, compte, commandes, favoris, paiement, API exclus).
+- **Pages cachées.** Boutique non publiée et article masqué en `noindex, nofollow`, sans URL canonique héritée.
+- **Textes alternatifs** des cartes produit, de la galerie de la fiche (miniatures comprises, `alt` vide jusque-là), des cartes de l'accueil, et des logos de boutique (« Logo de … »).
+
+**Tests** : `seo.test.ts` (10). Le test de la page boutique est déplacé vers `ShopStorefrontPage.test.tsx`. Vérifié : lint, `tsc`, 891 tests, build.
+
+**Vérification réelle** : HTML brut récupéré comme un robot d'indexation, sur les émulateurs.
+- Titre « Chez Awa — boutique en ligne | ManuShop » et description de la boutique ; canonique absolue ; logo en `og:image` ; JSON-LD `Store`.
+- Article : photos en `og:image` ; JSON-LD à 12,20 € (8 000 FCFA promo, boutique en euros) ; `<b>` dans le nom bien neutralisé.
+- Boutique non publiée et article masqué en `noindex`, absents du plan du site.
+- `robots.txt` correct, et vitrine toujours fonctionnelle dans Chrome.
+
+**En production** :
+- `FIREBASE_SERVICE_ACCOUNT_KEY_BASE64` (déjà requis par les actions serveur) doit être présent sur Vercel, sinon les métadonnées restent génériques.
+- Renseigner `NEXT_PUBLIC_APP_URL` avec le domaine définitif quand il existera.
+- Soumettre `https://<domaine>/sitemap.xml` dans Google Search Console.
+
+Le plan du site lit toute la collection `products` : suffisant à l'échelle actuelle, à paginer plus tard.
+
+Rien de commité.
+
+**Complément, même jour : boutique présentée comme le site du commerçant.** Précision de l'utilisateur : la plateforme vit des abonnements de commerçants qui considèrent leur boutique comme **leur propre site**. Sur les pages d'une boutique et de ses articles, plus aucune trace de ManuShop :
+- titre `absolute` (« Chez Awa — Mode », « Pagne wax — Chez Awa », sans « | ManuShop ») ;
+- `applicationName` et `og:site_name` = nom de la boutique ;
+- icônes (`icon`, `apple`) = logo de la boutique ;
+- descriptions de repli sans « sur ManuShop ».
+
+`favicon.ico` et `apple-icon.png` sont déplacés de `src/app/` vers `public/` et déclarés dans les métadonnées racine. En fichiers `app/`, Next les ajoute à **toutes** les pages sans qu'une page puisse les retirer, et l'icône ManuShop coexistait avec le logo de la boutique.
+
+Vérifié sur le HTML brut (émulateurs) : aucune occurrence de « ManuShop » dans le `<head>` des pages boutique et article ; icônes = logo de la boutique uniquement ; pages plateforme inchangées. 891 tests, build.
+
+**Limite côté Google** (documentation Google Search Central, à revérifier si le sujet est approfondi) : le **nom de site** et l'**icône** affichés dans les résultats de recherche sont déterminés par domaine ou sous-domaine, pas par chemin. Tant qu'une boutique vit sous `manu-shop…/boutique/xxx`, Google peut afficher le nom et l'icône du domaine ManuShop, malgré les métadonnées de la page (titre, description et données structurées, eux, sont bien ceux de la boutique). Pour une identité complète dans Google : un sous-domaine par boutique (`chezawa.manushop.cm`) ou un nom de domaine propre au commerçant, candidat naturel à une offre d'abonnement. Proposé à l'utilisateur, non construit.
+
+**Complément, même jour : référencement de la plateforme ManuShop elle-même.** Demande de l'utilisateur : une description de ce que fait ManuShop, avec des mots clés pour se positionner face aux sites qui proposent le même service.
+
+`src/lib/platformSeo.ts` regroupe :
+- titres de moins de 60 caractères et descriptions de moins de 160 pour l'accueil, le Marché, l'annuaire et l'inscription ;
+- mots clés de la niche : boutique en ligne Cameroun, vendre sur WhatsApp, gestion de stock, commerce en ligne Douala/Yaoundé, marketplace Cameroun… ;
+- JSON-LD de l'accueil (`Organization` + `WebSite` avec `SearchAction` vers `/catalogue?q=`, que le Marché sait lire).
+
+**Règle tenue et testée** : ne citer que ce qui existe. L'ancienne description du site annonçait « facturation » et « publication multicanal (WhatsApp, Facebook, Instagram, TikTok) », non construites (BF-24→29, BF-41→45), et le paiement Mobile Money n'est qu'un écran (BF-78). `platformSeo.test.ts` refuse ces termes dans les textes de la plateforme.
+
+Autres changements :
+- Pages connexion et mot de passe oublié en `noindex, follow`.
+- Leurs titres « … — ManuShop » donnaient « … — ManuShop | ManuShop » avec le modèle racine : corrigé.
+- Les pages boutique ont leurs propres `keywords` (nom, secteur, ville) au lieu d'hériter de ceux de la plateforme.
+
+Vérifié sur le HTML brut (émulateurs) et par 896 tests et le build.
+
+**Signalé, non modifié** : la page d'accueil *visible* (`src/app/page.tsx`, `features`) présente toujours des cartes « Facturation automatique » et « Publication multicanal ». Le texte visible pèse davantage que les métadonnées pour Google, et promet aux futurs abonnés des fonctions absentes. Décision laissée à l'utilisateur (feuille de route assumée ou à reformuler).
+
+**Complément, même jour : page d'accueil honnête.** Sur recommandation acceptée par l'utilisateur, la page d'accueil ne présente plus comme disponibles des fonctions qui n'existent pas. Elle annonçait :
+- « Facturation automatique » et « Publication multicanal » (Facebook, Instagram, TikTok) ;
+- « variantes », « codes promo et ventes flash » ;
+- un catalogue « consultable hors ligne » (BF-40 n'est que partiel) ;
+- le « paiement mobile ».
+
+Les textes sont regroupés dans `src/components/sections/landingContent.ts` :
+- six cartes, toutes vraies : votre boutique votre site, commandes en ligne et WhatsApp, catalogue et stock, promotions à fin automatique, vos gains en clair (avec le fichier clients), sur votre téléphone (PWA, devises, aide) ;
+- bannière d'en-tête et section « À propos » reformulées avec les mots clés du référencement.
+
+`ComingSoonStrip` annonce la feuille de route **comme telle** : facturation, publication sur les réseaux, Mobile Money, codes promo. `landingContent.test.tsx` refuse ces termes partout ailleurs que dans cette bande, vérifié par mutation. Rendu contrôlé dans Chrome (ordinateur, et 320 px à 150 %) : aucun débordement.
+
+**Signalé** : le compte à rebours de la « Promotion de lancement » (`LaunchPromo`, `targetDate` du 16/09/2026) est échu. Date ou offre à revoir par l'utilisateur.
+
+### 2026-10-02 — Promotion de l'accueil gérée par le Super Admin
+
+Demande de l'utilisateur : rendre la « Promotion de lancement » de l'accueil dynamique et gérable par le Super Admin. Les textes et la date étaient codés en dur, et la date était déjà échue avant d'être repoussée au 30/10.
+
+**Fait** :
+- `PlatformConfiguration.launchPromo` (`configuration/general`, lisible par tous, écrit par le serveur seulement) ;
+- `src/lib/launchPromo.ts`, fonctions pures partagées par le formulaire, l'action et la page :
+  - valeurs par défaut identiques à l'accueil actuel, pour que rien ne change tant que rien n'est enregistré ;
+  - validation des longueurs ; date de fin passée refusée si l'offre est active, acceptée si elle est désactivée (pour la garder en réserve) ;
+  - visibilité = activée **et** pas encore terminée ;
+  - conversion `datetime-local` en ISO en **heure du Cameroun** (UTC+1 fixe), quel que soit l'appareil.
+- `setLaunchPromoAction` (Super Admin seulement, mêmes règles revalidées) puis `revalidatePath("/")` : l'accueil est mis à jour immédiatement.
+- Accueil (`src/app/page.tsx`) asynchrone, lecture via le SDK Admin (`getLaunchPromo`), `revalidate = 300`. En cas d'échec de lecture, la promotion est **masquée** plutôt que remplacée par les valeurs par défaut, pour ne jamais réafficher une offre désactivée. Conséquence : sans clé de service ni émulateur en local, l'accueil local n'affiche pas la promotion (production non concernée).
+- `LaunchPromo` disparaît de lui-même à l'échéance au lieu d'afficher un compte à rebours figé à zéro (page servie depuis le cache, ou échéance atteinte pendant la visite).
+- `LaunchPromoSettingsCard` dans Super Admin → Réglages : interrupteur, statut (en cours jusqu'au… / terminée / désactivée), petit titre, titre, description, fin de l'offre ; aides « ? », textes dans les dictionnaires fr/en, étape de visite guidée.
+
+**Défaut d'accessibilité corrigé en testant** : avec le `Switch` Base UI, `id` (et donc le `<Label>`) vise une case cachée `aria-hidden`. Sans `aria-label`, l'interrupteur visible n'avait aucun nom pour un lecteur d'écran. Testé (`getByRole("switch", { name })`).
+
+**Tests** : `launchPromo.test.ts`, `LaunchPromoSettingsCard.test.tsx` (nouveaux), `configurationActions.test.ts` (+3), `LaunchPromo.test.tsx` (+1), `page.test.tsx` (accueil asynchrone, promotion affichée, désactivée ou illisible). Vérifié : lint, `tsc`, 910 tests, build (`/` en ISR toutes les 5 minutes).
+
+**Vérification réelle sur émulateurs** : le Super Admin modifie titre et date, l'accueil affiche le nouveau titre ; il désactive, la carte affiche « Désactivée » et l'accueil n'affiche plus la promotion. Pendant ce test, l'interrupteur du catalogue de démonstration a été coupé par erreur (mauvais sélecteur du script), puis rétabli, sur l'émulateur seulement.
+
+Rien de commité.
+
+### 2026-10-02 — Avis après livraison : notification, avis étape par étape, réponse du commerçant
+
+Demande de l'utilisateur : à la livraison, le système demande au client son avis sur la livraison et sur ses articles, article par article, depuis une interface dédiée ; le commerçant reçoit ces avis et peut y répondre. Choix de l'utilisateur : notification **dans l'application** (aucun service externe), avis sur la livraison **privé**, réponses aux avis d'articles **publiques**.
+
+**Fait** :
+- **Notifications** (`notifications`, modèle `AppNotification`) : écrites par le serveur seulement (`src/server/notifications.ts`), dans le même lot que l'écriture qui les motive. Le destinataire les lit et peut seulement les marquer lues (`firestore.rules`). Deux types :
+  - `review_request`, envoyée quand une commande d'un client avec compte passe « Livrée » (`updateOrderStatusAction`, pas de doublon) ;
+  - `review_reply`, envoyée quand le commerçant répond.
+- **Cloche** de la vitrine (`NotificationBell`, `useNotifications` en temps réel, sans index composite) : pastille des non lues ; un clic marque comme lu et ouvre la page de l'avis. Désormais visible aussi sur mobile, pour les comptes connectés seulement.
+- **Page d'avis du client**, `/mes-commandes/[orderId]/avis` (remplace `ReviewDialog`, supprimé avec sa visite) : la livraison, puis chaque article, avec note facultative, commentaire, « défectueux » pour un article, et « Passer ». Chaque étape est enregistrée dès l'envoi ; la page reprend à la première étape non faite ; une étape faite s'affiche en lecture seule avec la réponse de la boutique. Aides « ? » et visite guidée.
+- **Avis sur la livraison** (`orderFeedback/{orderId}`, `submitDeliveryFeedbackAction`) : revérifie le client, la commande livrée, et n'accepte qu'un avis par commande (`create`). Lisible par le client et l'équipe de la boutique.
+- **« Avis clients »** (`/dashboard/avis`) : avis regroupés par commande, filtre « Sans réponse », réponse à chaque avis (`replyToFeedbackAction`, équipe de la boutique seulement, réponse modifiable), pastille dans le menu, visite guidée.
+- **Fiche produit** : « Réponse du vendeur » sous l'avis.
+- **En-tête de la vitrine** : à 320 px avec la police à 150 %, les cinq boutons ne tiennent plus sur une ligne. Ils passent à la ligne au lieu de chevaucher le logo, qui chevauchait déjà légèrement le bouton d'aide avant ce changement.
+
+**Tests** : `feedbackActions.test.ts`, `FeedbackService.test.ts`, `OrderFeedbackPageContent.test.tsx`, `FeedbackPageContent.test.tsx`, `NotificationBell.test.tsx` (nouveaux) ; `orderActions.test.ts` (+2), `ProductDetailPageContent.test.tsx` (+1), `MyOrdersPageContent.test.tsx` (lien au lieu de la fenêtre). Vérifié : lint, `tsc`, 932 tests, build.
+
+**Vérification réelle sur émulateurs, avec les nouvelles règles** :
+1. Le commerçant marque une commande « Livrée ».
+2. Le client (320 px, police à 150 %) voit « 1 non lue », ouvre la notification et arrive sur la page d'avis. Il note la livraison et le premier article, et passe le second.
+3. Le commerçant voit les deux avis (pastille « 2 ») et répond aux deux.
+4. Le client reçoit deux notifications et lit la réponse privée.
+5. Un visiteur anonyme voit la réponse publique sur la fiche produit, mais pas la réponse privée.
+
+Aucun débordement horizontal, aucune erreur dans la console.
+
+**À faire par l'utilisateur** : déployer les règles (`npx firebase-tools deploy --only firestore:rules`), qui ajoutent `notifications` et `orderFeedback`. Sans elles, la cloche reste vide et la page d'avis ne trouve pas l'avis de livraison.
+
+Rien de commité.

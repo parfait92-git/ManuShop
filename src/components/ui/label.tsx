@@ -47,7 +47,7 @@ function Label({
   // Le "?" est posé à côté du <label>, jamais dedans : un bouton dans un
   // <label> est invalide, et un clic dessus activerait aussi le champ.
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {label}
       <CoachMark label={`Aide : ${textOf(children) || "ce champ"}`}>{help}</CoachMark>
     </div>

@@ -246,8 +246,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Eye className="size-4.5" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold">Visibilité</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold hyphens-auto break-words">Visibilité</h2>
                 <p className="text-sm text-muted-foreground">
                   Contrôlez si vos clients peuvent voir votre boutique (BF-88).
                 </p>
@@ -394,8 +394,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Globe className="size-4.5" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold">Régionalisation</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold hyphens-auto break-words">Régionalisation</h2>
                 <p className="text-sm text-muted-foreground">
                   Ces choix déterminent la langue et l&apos;affichage des
                   montants dans votre boutique.
@@ -444,8 +444,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <MessageCircle className="size-4.5" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold">Publication multicanale</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold hyphens-auto break-words">Publication multicanale</h2>
                 <p className="text-sm text-muted-foreground">
                   Le réseau choisi définit le format d&apos;image conseillé
                   pour vos articles.
@@ -510,8 +510,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Mail className="size-4.5" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold">Moyens de contact client</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold hyphens-auto break-words">Moyens de contact client</h2>
                 <p className="text-sm text-muted-foreground">
                   Choisissez comment vos clients peuvent vous contacter,
                   affiché sur la fiche de vos produits (BF-105).
@@ -615,8 +615,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Bell className="size-4.5" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold hyphens-auto break-words">
                   Notifications de commande
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -703,8 +703,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Volume2 className="size-4.5" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold hyphens-auto break-words">
                   Sons de notification
                 </h2>
                 <p className="text-sm text-muted-foreground">

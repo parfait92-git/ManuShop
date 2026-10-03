@@ -4,11 +4,14 @@ import type { Metadata } from "next";
 import { Badge } from "@/components/ui/Badge";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
 import { GuestRoute } from "@/components/auth/GuestRoute";
+import { REGISTER_DESCRIPTION, REGISTER_TITLE } from "@/lib/platformSeo";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { PageTour } from "@/components/onboarding/PageTour";
 
 export const metadata: Metadata = {
-  title: "Créer mon compte — ManuShop",
+  title: REGISTER_TITLE,
+  description: REGISTER_DESCRIPTION,
+  alternates: { canonical: "/register" },
 };
 
 export default function RegisterPage() {

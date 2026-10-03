@@ -78,7 +78,7 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
           <span aria-hidden className={styles.logo__mark}>
             <Store className="size-4" />
           </span>
-          Manu Shop
+          <span className={styles.logo__text}>Manu Shop</span>
         </Link>
 
         <nav data-tour="home-nav" aria-label="Navigation principale" className={styles.nav}>

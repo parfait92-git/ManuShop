@@ -87,6 +87,30 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Avis du client sur la livraison d'une commande (2026-10-02) — privé :
+    // lu par le client lui-même et par l'équipe (admin/seller) de la
+    // boutique, jamais public. Écriture (avis, puis réponse du commerçant)
+    // uniquement via src/server/actions/feedbackActions.ts.
+    match /orderFeedback/{orderId} {
+      allow read: if request.auth != null
+        && (resource.data.clientId == request.auth.uid
+          || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
+            && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId));
+      allow write: if false;
+    }
+
+    // Notifications dans l'application (2026-10-02) — chacun lit les
+    // siennes et peut seulement les marquer comme lues ; créées par le
+    // serveur (`src/server/notifications.ts`).
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
+      allow create, delete: if false;
+    }
+
     // Commandes (Module 4, BF-18→23/95→97) — double audience : le
     // commerçant (admin/seller de LA boutique de la commande) lit toutes
     // les commandes de sa boutique ; le client lit uniquement les siennes

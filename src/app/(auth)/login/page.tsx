@@ -8,7 +8,9 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { PageTour } from "@/components/onboarding/PageTour";
 
 export const metadata: Metadata = {
-  title: "Connexion — ManuShop",
+  title: "Connexion",
+  // Aucun intérêt dans des résultats de recherche.
+  robots: { index: false, follow: true },
 };
 
 export default function LoginPage() {

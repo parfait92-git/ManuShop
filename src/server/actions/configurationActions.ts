@@ -1,6 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { validateLaunchPromo, type LaunchPromoSettings } from "@/lib/launchPromo";
 import { requireSuperAdmin } from "@/server/auth/requireSuperAdmin";
 import { ValidationError } from "@/server/errors";
 
@@ -38,4 +41,32 @@ export async function setDemoCatalogueEnabledAction(
     .collection(CONFIGURATION_COLLECTION)
     .doc(GENERAL_DOC_ID)
     .set({ demoCatalogueEnabled: enabled }, { merge: true });
+}
+
+/**
+ * Promotion de la page d'accueil (`PlatformConfiguration.launchPromo`) —
+ * revalidée ici avec les mêmes règles que le formulaire, puis l'accueil est
+ * régénéré tout de suite (`revalidatePath`) plutôt qu'à sa prochaine
+ * expiration de cache.
+ */
+export async function setLaunchPromoAction(
+  idToken: string,
+  promo: LaunchPromoSettings
+): Promise<void> {
+  await requireSuperAdmin(idToken);
+  const clean: LaunchPromoSettings = {
+    enabled: promo.enabled === true,
+    eyebrow: String(promo.eyebrow ?? "").trim(),
+    title: String(promo.title ?? "").trim(),
+    description: String(promo.description ?? "").trim(),
+    endsAt: String(promo.endsAt ?? ""),
+  };
+  const errors = validateLaunchPromo(clean);
+  const first = Object.values(errors)[0];
+  if (first) throw new ValidationError(first);
+  await getAdminDb()
+    .collection(CONFIGURATION_COLLECTION)
+    .doc(GENERAL_DOC_ID)
+    .set({ launchPromo: clean }, { merge: true });
+  revalidatePath("/");
 }

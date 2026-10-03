@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
+import { SellerReply } from "@/components/storefront/SellerReply";
 import {
   CLIENT_CONTACT_METHOD_LABELS,
   buildClientContactLink,
@@ -29,6 +30,7 @@ import { effectivePrice } from "@/lib/promo";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { shopCurrency } from "@/lib/currency";
+import { productImageAlt } from "@/lib/seo";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -153,7 +155,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
         Retour à la boutique
       </Link>
 
-      <h1 className="text-4xl font-bold">{product.name}</h1>
+      <h1 className="text-3xl font-bold hyphens-auto break-words sm:text-4xl">{product.name}</h1>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">
@@ -161,7 +163,11 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             {product.images[0] && (
               <Image
                 src={product.images[0]}
-                alt={product.name}
+                alt={productImageAlt(product, {
+                  shopName: shop?.name,
+                  index: 0,
+                  total: product.images.length,
+                })}
                 fill
                 sizes="(min-width: 768px) 50vw, 100vw"
                 className="object-contain"
@@ -170,12 +176,22 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
           </div>
           {product.images.length > 1 && (
             <div className="flex gap-2">
-              {product.images.map((image) => (
+              {product.images.map((image, index) => (
                 <div
                   key={image}
                   className="relative size-20 overflow-hidden rounded-lg border border-border bg-muted"
                 >
-                  <Image src={image} alt="" fill sizes="80px" className="object-contain" />
+                  <Image
+                    src={image}
+                    alt={productImageAlt(product, {
+                      shopName: shop?.name,
+                      index,
+                      total: product.images.length,
+                    })}
+                    fill
+                    sizes="80px"
+                    className="object-contain"
+                  />
                 </div>
               ))}
             </div>
@@ -326,7 +342,9 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                 <ul className="mt-3 flex flex-col gap-2">
                   {reviews.map((review) => (
                     <li key={review.id} className="text-sm text-muted-foreground">
-                      « {review.comment} »
+                      <p className="break-words">« {review.comment} »</p>
+                      {/* Réponse publique de la boutique (2026-10-02). */}
+                      {review.reply && <SellerReply reply={review.reply} />}
                     </li>
                   ))}
                 </ul>

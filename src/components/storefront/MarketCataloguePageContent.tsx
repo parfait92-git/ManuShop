@@ -29,7 +29,7 @@ export function MarketCataloguePageContent() {
             <Badge icon={<Sparkles className="size-3.5" />} className="w-fit">
               La sélection ManuShop
             </Badge>
-            <h1 className="text-4xl leading-tight font-bold">
+            <h1 className="text-3xl leading-tight font-bold hyphens-auto break-words sm:text-4xl">
               Des pièces qui racontent{" "}
               <span className="text-primary">votre style.</span>
             </h1>

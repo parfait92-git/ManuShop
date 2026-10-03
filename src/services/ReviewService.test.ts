@@ -31,7 +31,7 @@ describe("ReviewService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    reviews = { listByProduct: jest.fn() };
+    reviews = { listByProduct: jest.fn(), listByOrder: jest.fn(), listByShop: jest.fn() };
     service = new ReviewService(reviews);
   });
 

@@ -1,3 +1,5 @@
+import type { LaunchPromoSettings } from "@/lib/launchPromo";
+
 /**
  * Collection `configuration`, document unique `configuration/general`.
  * Réglages plateforme, jamais écrits depuis le client directement (règle
@@ -21,4 +23,10 @@ export interface PlatformConfiguration {
    * besoin de taux. Absent : ces boutiques affichent leurs prix en FCFA.
    */
   usdToXafRate?: number;
+  /**
+   * Promotion de la page d'accueil, réglée par le Super Admin (2026-10-02).
+   * Absente : valeurs par défaut (`DEFAULT_LAUNCH_PROMO`), voir
+   * `src/lib/launchPromo.ts`.
+   */
+  launchPromo?: LaunchPromoSettings;
 }

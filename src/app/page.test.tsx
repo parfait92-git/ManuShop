@@ -37,7 +37,19 @@ jest.mock("../services/SupportMessageService", () => ({
   supportMessageService: { sendContactMessage: jest.fn() },
 }));
 
+// Promotion de l'accueil, lue côté serveur dans les réglages (Super Admin).
+const getLaunchPromoMock = jest.fn();
+jest.mock("../server/seo/publicData", () => ({
+  getLaunchPromo: () => getLaunchPromoMock(),
+}));
+
 import Home from "./page";
+
+/** La page d'accueil est asynchrone (elle lit la promotion) : on attend son
+ * rendu avant de le monter. */
+async function renderHome() {
+  return render(await Home());
+}
 import { HeroSection } from "@/components/sections/HeroSection";
 import { Badge } from "@/components/ui/Badge";
 import { FeatureCard } from "@/components/ui/FeatureCard";
@@ -56,12 +68,19 @@ TestIcon.displayName = "TestIcon";
 
 describe("Home page", () => {
   beforeEach(() => {
+    getLaunchPromoMock.mockResolvedValue({
+      enabled: true,
+      eyebrow: "Promotion de lancement",
+      title: "Votre première vitrine digitale commence ici.",
+      description: "Profitez de l'offre spéciale réservée aux commerçants.",
+      endsAt: "2099-10-30T23:59:59+01:00",
+    });
     useDemoCatalogueAvailableMock.mockReturnValue(true);
     useMarketCatalogueMock.mockReturnValue(undefined);
   });
 
-  it("renders the landing layout from the mockup", () => {
-    render(<Home />);
+  it("renders the landing layout from the mockup", async () => {
+    await renderHome();
 
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
@@ -88,9 +107,30 @@ describe("Home page", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the promotion set by the Super Admin, and hides it when disabled or unreadable", async () => {
+    const { unmount } = await renderHome();
+    expect(screen.getByText("Votre première vitrine digitale commence ici.")).toBeInTheDocument();
+    unmount();
+
+    getLaunchPromoMock.mockResolvedValue({
+      enabled: false,
+      eyebrow: "",
+      title: "Offre désactivée",
+      description: "Cette offre ne doit pas apparaître.",
+      endsAt: "2099-10-30T23:59:59+01:00",
+    });
+    const second = await renderHome();
+    expect(screen.queryByText("Offre désactivée")).not.toBeInTheDocument();
+    second.unmount();
+
+    getLaunchPromoMock.mockResolvedValue(null);
+    await renderHome();
+    expect(screen.queryByText(/L.offre expire dans/)).not.toBeInTheDocument();
+  });
+
   it("opens and closes the mobile navigation", async () => {
     const user = userEvent.setup();
-    render(<Home />);
+    await renderHome();
 
     await user.click(screen.getByRole("button", { name: "Ouvrir le menu" }));
 
@@ -108,7 +148,7 @@ describe("Home page", () => {
 
   it("navigates to the catalogue with the search term from the header search", async () => {
     const user = userEvent.setup();
-    render(<Home />);
+    await renderHome();
 
     await user.type(screen.getByLabelText("Rechercher un produit"), "wax");
     await user.keyboard("{Enter}");

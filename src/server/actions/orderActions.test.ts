@@ -68,6 +68,7 @@ const collectionMock = jest.fn((name: string) => {
   if (name === "productCosts") return { doc: (id: string) => ({ __ref: `productCosts/${id}` }) };
   if (name === "orderCosts") return { doc: (id: string) => ({ __ref: `orderCosts/${id}` }) };
   if (name === "shops") return { doc: shopDocMock };
+  if (name === "notifications") return { doc: () => ({ __ref: "notifications/new" }) };
   throw new Error(`Unexpected collection: ${name}`);
 });
 
@@ -468,6 +469,42 @@ describe("updateOrderStatusAction", () => {
         reason: "Trop tard",
       })
     ).rejects.toThrow(ValidationError);
+  });
+
+  // Avis après livraison (2026-10-02) : le client est invité, dans
+  // l'application, à donner son avis dès que la commande est livrée.
+  it("notifies the client in-app when the order becomes delivered", async () => {
+    mockOrder({ status: "delivering" });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "seller", shopId: "shop-1" }) });
+    shopGetMock.mockResolvedValue({ data: () => ({ name: "Chez Awa" }) });
+
+    await updateOrderStatusAction("token", "order-1", { status: "delivered" });
+
+    expect(batchSetMock).toHaveBeenCalledWith(
+      { __ref: "notifications/new" },
+      expect.objectContaining({
+        userId: "client-1",
+        type: "review_request",
+        orderId: "order-1",
+        shopId: "shop-1",
+        link: "/mes-commandes/order-1/avis",
+        read: false,
+        message: expect.stringContaining("Chez Awa"),
+      })
+    );
+    expect(batchCommitMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends no review request for a manual order without a client account", async () => {
+    mockOrder({ status: "delivering", clientId: undefined });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "admin", shopId: "shop-1" }) });
+
+    await updateOrderStatusAction("token", "order-1", { status: "delivered" });
+
+    expect(batchSetMock).not.toHaveBeenCalledWith(
+      { __ref: "notifications/new" },
+      expect.anything()
+    );
   });
 
   it("rejects cancellation from an unrelated caller", async () => {

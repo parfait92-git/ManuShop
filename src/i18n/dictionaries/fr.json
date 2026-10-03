@@ -24,5 +24,25 @@
   },
   "cart": {
     "otherShopConfirm": "Votre panier contient des articles d'une autre boutique. Une commande ne peut concerner qu'une seule boutique : vider le panier pour ajouter cet article ?"
+  },
+  "launchPromoSettings": {
+    "title": "Promotion de l'accueil",
+    "description": "L'offre affichée avec un compte à rebours sur la page d'accueil. Elle disparaît d'elle-même à sa date de fin.",
+    "enabled": "Afficher la promotion",
+    "enabledHelp": "Désactivée, la promotion n'apparaît plus sur l'accueil, même avant sa date de fin. Ses textes restent enregistrés pour plus tard.",
+    "eyebrow": "Petit titre",
+    "eyebrowHelp": "Court texte au-dessus du titre, par exemple « Promotion de lancement ». Facultatif.",
+    "titleLabel": "Titre",
+    "titleHelp": "La phrase principale de l'offre, en gros caractères.",
+    "descriptionLabel": "Description",
+    "descriptionHelp": "Ce que gagne le commerçant qui en profite, en une ou deux phrases.",
+    "endsAt": "Fin de l'offre (heure du Cameroun)",
+    "endsAtHelp": "Le compte à rebours s'arrête à cette date et cette heure, et la promotion disparaît de l'accueil.",
+    "statusActive": "En cours jusqu'au {date}.",
+    "statusEnded": "Terminée : elle n'est plus affichée sur l'accueil.",
+    "statusDisabled": "Désactivée : elle n'est pas affichée sur l'accueil.",
+    "save": "Enregistrer la promotion",
+    "saved": "Promotion enregistrée : l'accueil est à jour.",
+    "error": "La promotion n'a pas pu être enregistrée. Réessayez."
   }
 }

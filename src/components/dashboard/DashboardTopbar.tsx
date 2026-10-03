@@ -32,8 +32,11 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-4 sm:gap-4 sm:px-6">
+      {/* Petits écrans et police agrandie : le nom se tronque, les boutons
+      de droite gardent leur taille (audit à 320 px / 150 %, voir
+      06-journal-progression.md). */}
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={onMenuClick}
@@ -42,15 +45,15 @@ export function DashboardTopbar({ onMenuClick }: { onMenuClick: () => void }) {
         >
           <Menu className="size-5" />
         </button>
-        <div>
-          <p className="text-xs text-slate-400">Espace gérant</p>
-          <p className="text-sm font-semibold text-slate-950 sm:text-base">
+        <div className="min-w-0">
+          <p className="truncate text-xs text-slate-400">Espace gérant</p>
+          <p className="truncate text-sm font-semibold text-slate-950 sm:text-base">
             {shopName ?? "Ma boutique"}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-4">
         <TourReplayButton />
         <Link
           href="/dashboard/orders?status=under_review"

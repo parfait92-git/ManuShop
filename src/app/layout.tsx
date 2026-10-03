@@ -5,13 +5,37 @@ import "./globals.css";
 import { TourProvider } from "@/components/onboarding/TourProvider";
 import { CurrencyProvider } from "@/components/providers/CurrencyProvider";
 import { I18nProvider } from "@/i18n/I18nProvider";
+import { PLATFORM_DESCRIPTION, PLATFORM_KEYWORDS, PLATFORM_TITLE } from "@/lib/platformSeo";
+import { getSiteUrl } from "@/lib/siteUrl";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 export const metadata: Metadata = {
-  title: "ManuShop — Boutique numérique multicanal",
-  description:
-    "ManuShop digitalise votre boutique : catalogue, stock, facturation et publication multicanal (WhatsApp, Facebook, Instagram, TikTok).",
+  // Base des liens absolus (aperçus de partage, canonique) des pages qui
+  // déclarent des chemins relatifs — boutiques et articles notamment.
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: PLATFORM_TITLE,
+    // Pages de la plateforme ("Connexion | ManuShop"). Les boutiques et
+    // leurs articles utilisent un titre `absolute`, sans ManuShop : elles
+    // sont présentées comme le site de leur commerçant (`src/lib/seo.ts`).
+    template: "%s | ManuShop",
+  },
+  description: PLATFORM_DESCRIPTION,
+  keywords: PLATFORM_KEYWORDS,
+  applicationName: "ManuShop",
+  // Déclarées ici plutôt que par fichiers `app/favicon.ico`/`apple-icon.png`
+  // (que Next ajoute à TOUTES les pages, sans possibilité de les retirer) :
+  // les pages d'une boutique les remplacent par le logo de la boutique, qui
+  // y est présentée comme le site de son commerçant (voir `src/lib/seo.ts`).
+  icons: { icon: "/favicon.ico", apple: "/apple-icon.png" },
+  openGraph: {
+    type: "website",
+    siteName: "ManuShop",
+    locale: "fr_FR",
+    title: PLATFORM_TITLE,
+    description: PLATFORM_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

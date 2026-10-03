@@ -31,11 +31,22 @@ export function LaunchPromo({
 }: LaunchPromoProps) {
   const targetMs = Date.parse(targetDate);
   const [now, setNow] = React.useState<number>(() => targetMs);
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
+    queueMicrotask(() => {
+      setMounted(true);
+      setNow(Date.now());
+    });
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
+
+  // Offre terminée (page servie depuis le cache après l'échéance, ou
+  // échéance atteinte pendant la visite) : la section disparaît plutôt que
+  // d'afficher un compte à rebours figé à zéro. Seulement une fois monté,
+  // pour un premier rendu identique côté serveur et navigateur.
+  if (mounted && now >= targetMs) return null;
 
   const parts = getTimeParts(targetMs, now);
 
