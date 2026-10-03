@@ -107,8 +107,8 @@ function NavLink({
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active
-          ? "bg-slate-900 text-white"
-          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+          ? "bg-shell-active text-shell-active-text"
+          : "text-shell-muted hover:bg-shell-hover hover:text-shell-text"
       )}
     >
       <Icon className="size-4.5 shrink-0" />
@@ -116,7 +116,7 @@ function NavLink({
       {badge > 0 && (
         <span
           aria-label={`${badge} sans réponse`}
-          className="rounded-full bg-cyan-500 px-1.5 py-0.5 text-[0.65rem] font-semibold text-white"
+          className="rounded-full bg-shell-badge px-1.5 py-0.5 text-[0.65rem] font-semibold text-shell-badge-text"
         >
           {badge > 99 ? "99+" : badge}
         </span>
@@ -133,24 +133,24 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div
-      className="flex h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white"
+      className="flex h-full w-64 shrink-0 flex-col border-r border-shell-border bg-shell-surface"
       onClick={onNavigate}
     >
-      <div className="flex items-center gap-2 border-b border-slate-200 px-6 py-5">
+      <div className="flex items-center gap-2 border-b border-shell-border px-6 py-5">
         <span
           aria-hidden
-          className="flex size-8 items-center justify-center rounded-full bg-slate-950"
+          className="flex size-8 items-center justify-center rounded-full bg-shell-brand"
         >
-          <Store className="size-4 text-cyan-300" />
+          <Store className="size-4 text-shell-brand-icon" />
         </span>
-        <span className="text-base font-semibold tracking-tight text-slate-950">
-          Manu <span className="text-cyan-500">Shop</span>
+        <span className="text-base font-semibold tracking-tight text-shell-text">
+          Manu <span className="text-shell-brand-accent">Shop</span>
         </span>
       </div>
 
       <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-6">
         <div className="flex flex-col gap-1">
-          <span className="px-3 pb-2 text-[0.65rem] font-semibold tracking-widest text-slate-400 uppercase">
+          <span className="px-3 pb-2 text-[0.65rem] font-semibold tracking-widest text-shell-subtle uppercase">
             Menu principal
           </span>
           {MAIN_ITEMS.map((item) => (
@@ -164,7 +164,7 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="px-3 pb-2 text-[0.65rem] font-semibold tracking-widest text-slate-400 uppercase">
+          <span className="px-3 pb-2 text-[0.65rem] font-semibold tracking-widest text-shell-subtle uppercase">
             Configuration
           </span>
           {CONFIG_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => (
@@ -173,9 +173,9 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </nav>
 
-      <div className="m-4 rounded-xl bg-cyan-50 p-4 text-sm">
-        <p className="font-semibold text-cyan-900">Votre boutique est active</p>
-        <p className="mt-1 text-cyan-800/80">
+      <div className="m-4 rounded-xl bg-shell-promo p-4 text-sm">
+        <p className="font-semibold text-shell-promo-title">Votre boutique est active</p>
+        <p className="mt-1 text-shell-promo-text">
           Continuez à ajouter vos articles pour développer vos ventes.
         </p>
       </div>

@@ -1,10 +1,35 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { EVENTS, Joyride, STATUS, type EventData, type Step } from "react-joyride";
 
 export type { Step as GuidedTourStep };
 
-const PRIMARY_COLOR = "#0891b2"; // cyan-600 — cohérent avec le reste du dashboard
+/** Couleur des bulles avant lecture du thème (rendu serveur). */
+const FALLBACK_COLOR = "#0e7490";
+
+/** Abonnement au thème posé sur `<html>` (`useDocumentShopTheme`). */
+function subscribeToTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-shop-theme"] });
+  return () => observer.disconnect();
+}
+
+/**
+ * Couleur principale des bulles : `--tour-primary` du thème de la boutique
+ * (2026-10-03). Lue comme valeur calculée, car react-joyride en dérive
+ * d'autres teintes et a besoin d'une couleur hexadécimale, pas de
+ * `var(…)`.
+ */
+function useTourColor(): string {
+  return useSyncExternalStore(
+    subscribeToTheme,
+    () =>
+      getComputedStyle(document.documentElement).getPropertyValue("--tour-primary").trim() ||
+      FALLBACK_COLOR,
+    () => FALLBACK_COLOR
+  );
+}
 
 /**
  * BF-135 : moteur réutilisable de "product tour" (séquence de bulles
@@ -25,6 +50,8 @@ export function GuidedTour({
   steps: Step[];
   onFinish: () => void;
 }) {
+  const primaryColor = useTourColor();
+
   function handleEvent(data: EventData) {
     if (
       data.type === EVENTS.TOUR_END &&
@@ -50,7 +77,7 @@ export function GuidedTour({
         skip: "Passer",
       }}
       options={{
-        primaryColor: PRIMARY_COLOR,
+        primaryColor,
         zIndex: 10000,
         showProgress: true,
         // Contenu affiché immédiatement plutôt que derrière un balise

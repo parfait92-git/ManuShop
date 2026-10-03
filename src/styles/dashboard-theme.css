@@ -23,7 +23,41 @@
  * variables shadcn (`--primary`, `--background`, `--radius`…). Le thème
  * par défaut n'en redéfinit aucune : c'est l'apparence actuelle du site.
  */
+/*
+ * Cadre de l'espace de gestion (barre latérale, barre du haut, fond) et
+ * bulles des visites guidées : variables `--shell-*` et `--tour-*`. Le
+ * thème par défaut reprend les couleurs d'origine ; il est aussi posé sur
+ * `:root`, car les visites guidées existent hors des boutiques (Super
+ * Admin, accueil). Le thème de la boutique est reporté sur `<html>`
+ * (`useDocumentShopTheme`) : fenêtres et bulles, rendues hors du
+ * conteneur, le suivent aussi.
+ */
+:root,
 [data-shop-theme="default"] {
+  --shell-bg: #f8fafc;
+  --shell-surface: #ffffff;
+  --shell-border: #e2e8f0;
+  --shell-hover: #f1f5f9;
+  --shell-text: #020617;
+  --shell-text-muted: #475569;
+  --shell-text-subtle: #5f6e82;
+  --shell-nav-active-bg: #0f172a;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #020617;
+  --shell-brand-icon: #67e8f9;
+  --shell-brand-accent: #06b6d4;
+  --shell-badge-bg: #0e7490;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #dc2626;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #cffafe;
+  --shell-avatar-text: #0e7490;
+  --shell-promo-bg: #ecfeff;
+  --shell-promo-title: #164e63;
+  --shell-promo-text: #155e75;
+  --shell-overlay: rgba(2, 6, 23, 0.4);
+  --tour-primary: #0e7490;
+  --tour-primary-text: #ffffff;
 }
 
 /* ——— Thème par défaut : bleu nuit, cartes en dégradé, accents bleus ——— */
@@ -105,7 +139,10 @@
 
 /* ——— « Wax Soleil » (2026-10-03) : clair et chaleureux, inspiré du pagne
  * wax et des marchés — crème, terracotta, ocre, émeraude. ——— */
-[data-shop-theme="wax-soleil"] {
+/* `:root[…]` en plus : sur `<html>` (fenêtres, bulles), le sélecteur doit
+ * l'emporter sur le `:root` de globals.css, déclaré après ce fichier. */
+[data-shop-theme="wax-soleil"],
+:root[data-shop-theme="wax-soleil"] {
   /* Variables du système de style (shadcn), pour la vitrine et l'espace
    * de gestion. */
   --background: #fffbf5;
@@ -127,6 +164,32 @@
   --input: #ead7c2;
   --ring: #c2410c;
   --radius: 0.9rem;
+
+  /* Cadre de l'espace de gestion et visites guidées. */
+  --shell-bg: #fbf5ec;
+  --shell-surface: #fffdf9;
+  --shell-border: #ead7c2;
+  --shell-hover: #f7eadb;
+  --shell-text: #2a1608;
+  --shell-text-muted: #6b4a33;
+  --shell-text-subtle: #6b4a33;
+  --shell-nav-active-bg: #b4451f;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #3b1f0e;
+  --shell-brand-icon: #fdba74;
+  --shell-brand-accent: #c2410c;
+  --shell-badge-bg: #b4451f;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #b91c1c;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #fbe3cf;
+  --shell-avatar-text: #9a3412;
+  --shell-promo-bg: #fbe3cf;
+  --shell-promo-title: #3b1f0e;
+  --shell-promo-text: #6b4a33;
+  --shell-overlay: rgba(42, 22, 8, 0.45);
+  --tour-primary: #b4451f;
+  --tour-primary-text: #ffffff;
 }
 
 [data-dashboard-theme="wax-soleil"] {
@@ -286,6 +349,28 @@
   --color-dash-table-header: var(--dashboard-table-header);
   --color-dash-welcome-text: var(--dashboard-welcome-text);
   --color-dash-welcome-muted: var(--dashboard-welcome-muted);
+  --color-shell-bg: var(--shell-bg);
+  --color-shell-surface: var(--shell-surface);
+  --color-shell-border: var(--shell-border);
+  --color-shell-hover: var(--shell-hover);
+  --color-shell-text: var(--shell-text);
+  --color-shell-muted: var(--shell-text-muted);
+  --color-shell-subtle: var(--shell-text-subtle);
+  --color-shell-active: var(--shell-nav-active-bg);
+  --color-shell-active-text: var(--shell-nav-active-text);
+  --color-shell-brand: var(--shell-brand-bg);
+  --color-shell-brand-icon: var(--shell-brand-icon);
+  --color-shell-brand-accent: var(--shell-brand-accent);
+  --color-shell-badge: var(--shell-badge-bg);
+  --color-shell-badge-text: var(--shell-badge-text);
+  --color-shell-alert: var(--shell-alert-bg);
+  --color-shell-alert-text: var(--shell-alert-text);
+  --color-shell-avatar: var(--shell-avatar-bg);
+  --color-shell-avatar-text: var(--shell-avatar-text);
+  --color-shell-promo: var(--shell-promo-bg);
+  --color-shell-promo-title: var(--shell-promo-title);
+  --color-shell-promo-text: var(--shell-promo-text);
+  --color-shell-overlay: var(--shell-overlay);
   --radius-dash: var(--dashboard-card-radius);
   --shadow-dash: var(--dashboard-card-shadow);
 }

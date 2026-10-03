@@ -2013,3 +2013,33 @@ Proposé à l'utilisateur pour éprouver l'architecture des thèmes, puis accept
 Prochaine étape proposée : convertir ces éléments en variables.
 
 Vérifié : lint, `tsc`, 1 264 tests, build. Rien de commité.
+
+### 2026-10-03 — Cadre de l'espace de gestion, fenêtres et visites guidées habillés par le thème
+
+Suite du test de « Wax Soleil », accepté par l'utilisateur : la barre latérale, la barre du haut, le fond, les fenêtres et les bulles des visites guidées gardaient les couleurs d'origine.
+
+**Fait** :
+- **Variables du cadre** `--shell-*` (fond, surface, bordure, survol, textes, menu actif, marque, pastilles, alerte, avatar, carte « boutique active », voile) et `--tour-*`, définies par chaque thème. Le thème par défaut les pose aussi sur `:root`, car les visites guidées existent hors des boutiques. Utilitaires `bg-shell-*`, `text-shell-*`.
+- `DashboardSidebar`, `DashboardTopbar` et la mise en page du tableau de bord : plus aucune couleur en dur (couvert par le test « aucune couleur en dur »).
+- `useDocumentShopTheme` reporte le thème de la boutique sur `<html>` tant que son site est affiché. Fenêtres, menus et bulles, rendus directement dans `<body>`, suivent ainsi le thème. Les blocs de thème ciblent aussi `:root[data-shop-theme=…]` : sur `<html>`, ils doivent l'emporter sur le `:root` de `globals.css`, déclaré après.
+- `GuidedTour` lit `--tour-primary` en valeur calculée : react-joyride a besoin d'une couleur hexadécimale. Mise à jour par `MutationObserver` quand le thème change.
+- Bannière « boutique non publiée » : laissée en jaune dans tous les thèmes, un avertissement devant rester reconnaissable.
+
+**Accessibilité, thème par défaut** : le test de contraste du cadre a relevé trois couleurs d'origine insuffisantes, légèrement foncées :
+- libellés « MENU PRINCIPAL » et « Espace gérant » : de 2,6:1 à 5,2:1 ;
+- pastille du nombre d'avis : de 2,4:1 à 5,4:1 ;
+- bouton des visites guidées : de 3,7:1 à 5,4:1.
+
+**Corrigé en testant** : en « Wax Soleil », les fenêtres restaient blanches (priorité CSS de `:root`, voir plus haut). Elles sont maintenant crème.
+
+**Vérification réelle sur émulateurs** : deux boutiques, l'une en « Wax Soleil », l'autre en thème par défaut.
+- Wax : menu actif, bouton de visite et fenêtre aux couleurs du thème (`rgb(180, 69, 31)`, fond `rgb(255, 251, 245)`).
+- Par défaut : apparence d'origine (à part les trois corrections de contraste).
+
+**Tests** : contraste du cadre pour chaque thème ; chaque thème doit définir tout le cadre ; `useDocumentShopTheme`. Les 12 paires « habillage du site » du thème par défaut sont ignorées : il garde les couleurs de `globals.css`, qui ne sont pas dans le fichier de thème.
+
+**À noter** :
+- `GuidedTour.test.tsx` et `ShopSettingsForm.test.tsx` dépassent leur délai quand la machine est chargée (navigateur et éditeur ouverts, charge 8,4). Ils passent seuls, et toute la suite passe avec moins de tests en parallèle (`--maxWorkers=2`). Leur durée est la même avant et après ce changement.
+- Il reste environ 200 couleurs en dur dans les pages de gestion elles-mêmes (Produits, Commandes, Statistiques…) : elles restent grises et cyan dans un autre thème. La vitrine n'en a plus qu'une.
+
+Vérifié : lint, `tsc`, 1 304 tests, build. Rien de commité.

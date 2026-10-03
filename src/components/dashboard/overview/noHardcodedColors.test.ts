@@ -24,10 +24,16 @@ const files = DIRS.flatMap((dir) =>
     .filter((f) => /\.tsx?$/.test(f) && !f.endsWith(".test.ts") && !f.endsWith(".test.tsx"))
     .map((f) => join(dir, f))
 );
+// Cadre de l'espace de gestion, habillé par le thème de la boutique.
+files.push(
+  join(__dirname, "..", "DashboardSidebar.tsx"),
+  join(__dirname, "..", "DashboardTopbar.tsx"),
+  join(__dirname, "..", "..", "..", "app", "dashboard", "layout.tsx")
+);
 
 describe("dashboard overview components", () => {
   it("exist", () => {
-    expect(files.length).toBeGreaterThan(5);
+    expect(files.length).toBeGreaterThan(8);
   });
 
   it.each(files)("%s uses only theme variables for colours", (file) => {

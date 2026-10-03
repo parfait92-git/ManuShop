@@ -101,16 +101,50 @@ const SITE_PAIRS: [string, string, number][] = [
   ["--ring", "--background", 3],
 ];
 
-const SITE_THEMES = [...new Set(THEMES.map((t) => t.siteTheme))].filter(
-  (id) => Object.keys(themeVariables(id, "data-shop-theme")).length > 0
+/** Cadre de l'espace de gestion et visites guidées : défini par chaque
+ * thème, y compris celui par défaut. */
+const SHELL_PAIRS: [string, string, number][] = [];
+for (const bg of ["--shell-surface", "--shell-bg", "--shell-hover"]) {
+  for (const fg of ["--shell-text", "--shell-text-muted", "--shell-text-subtle"]) {
+    SHELL_PAIRS.push([fg, bg, 4.5]);
+  }
+}
+SHELL_PAIRS.push(
+  ["--shell-nav-active-text", "--shell-nav-active-bg", 4.5],
+  ["--shell-badge-text", "--shell-badge-bg", 4.5],
+  ["--shell-alert-text", "--shell-alert-bg", 4.5],
+  ["--shell-avatar-text", "--shell-avatar-bg", 4.5],
+  ["--shell-promo-title", "--shell-promo-bg", 4.5],
+  ["--shell-promo-text", "--shell-promo-bg", 4.5],
+  ["--shell-brand-icon", "--shell-brand-bg", 3],
+  ["--tour-primary-text", "--tour-primary", 4.5]
 );
+
+const SITE_THEMES = [...new Set(THEMES.map((t) => t.siteTheme))];
 
 describe.each(SITE_THEMES)("habillage du site « %s »", (themeId) => {
   const vars = themeVariables(themeId, "data-shop-theme");
+  const shellKeys = Object.keys(themeVariables("default", "data-shop-theme")).sort();
 
-  it.each(SITE_PAIRS)("%s on %s reaches %s:1", (fg, bg, min) => {
+  it("defines the whole management frame", () => {
+    expect(Object.keys(vars).filter((k) => /^--(shell|tour)-/.test(k)).sort()).toEqual(shellKeys);
+  });
+
+  it.each(SHELL_PAIRS)("%s on %s reaches %s:1", (fg, bg, min) => {
     expect(vars[fg]).toMatch(/^#[0-9a-f]{6}$/i);
     expect(vars[bg]).toMatch(/^#[0-9a-f]{6}$/i);
     expect(contrast(vars[fg], vars[bg])).toBeGreaterThanOrEqual(min);
   });
+
+  // Le thème par défaut garde les couleurs d'origine du système de style
+  // (globals.css) ; les autres les redéfinissent, et doivent rester lisibles.
+  const redefinesSite = "--background" in vars;
+  (redefinesSite ? it.each(SITE_PAIRS) : it.skip.each(SITE_PAIRS))(
+    "%s on %s reaches %s:1",
+    (fg, bg, min) => {
+      expect(vars[fg]).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(vars[bg]).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(contrast(vars[fg], vars[bg])).toBeGreaterThanOrEqual(min);
+    }
+  );
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
+import { useDocumentShopTheme } from "@/hooks/useDocumentShopTheme";
 import { useShopTheme } from "@/hooks/useShopTheme";
 
 /**
@@ -12,6 +13,7 @@ import { useShopTheme } from "@/hooks/useShopTheme";
 export function StorefrontThemeScope({ children }: { children: React.ReactNode }) {
   const { branding } = useShopBranding();
   const { theme } = useShopTheme(branding?.shopId);
+  useDocumentShopTheme(theme.siteTheme);
   return (
     // Fond et texte repris des variables du thème : un thème qui change
     // `--background` habille ainsi toute la vitrine.
