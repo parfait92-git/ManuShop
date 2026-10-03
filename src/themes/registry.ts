@@ -49,6 +49,16 @@ export const THEMES: ThemeDefinition[] = [
     siteTheme: "wax-soleil",
     invoiceColor: "#B4451F",
   },
+  {
+    id: "ocean-neon",
+    name: "Néon Océan",
+    description:
+      "Tout en bleu nuit, accents bleu électrique : menus, espace de gestion et vitrine dans la même ambiance sombre et moderne.",
+    highlights: ["Site entièrement sombre", "Accents bleu électrique", "Idéal électronique, high-tech, mode urbaine"],
+    dashboardTheme: "default",
+    siteTheme: "ocean-neon",
+    invoiceColor: "#0062D6",
+  },
 ];
 
 /** Thème connu, ou celui par défaut (id absent, retiré du catalogue…). */

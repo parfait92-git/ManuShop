@@ -39,8 +39,12 @@ export default function DashboardPage() {
   return (
     <>
       <PageTour tourId="dashboard-onboarding" />
+      {/* Tablette et ordinateur : le tableau de bord occupe toute la zone
+      de contenu (2026-10-03), d'où l'annulation de la marge haute. */}
       {isTabletUp ? (
-        <DashboardOverview shopId={profile.shopId} theme={theme.dashboardTheme} />
+        <div className="-mt-6">
+          <DashboardOverview shopId={profile.shopId} theme={theme.dashboardTheme} />
+        </div>
       ) : (
         <DashboardHomeContent shopId={profile.shopId} />
       )}

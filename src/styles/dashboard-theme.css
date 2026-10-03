@@ -208,6 +208,68 @@
   --tour-primary-text: #ffffff;
 }
 
+/* ——— « Néon Océan » (2026-10-03) : tout le site en bleu nuit, accents
+ * bleu électrique, à la manière du modèle de tableau de bord fourni —
+ * menus, espace de gestion et vitrine compris. Son tableau de bord est
+ * celui du thème par défaut. ——— */
+[data-shop-theme="ocean-neon"],
+:root[data-shop-theme="ocean-neon"] {
+  color-scheme: dark;
+
+  --background: #0b1437;
+  --foreground: #ffffff;
+  --card: #111c44;
+  --card-foreground: #ffffff;
+  --popover: #111c44;
+  --popover-foreground: #ffffff;
+  --primary: #3b8bff;
+  --primary-foreground: #071033;
+  --secondary: #1a2559;
+  --secondary-foreground: #ffffff;
+  --muted: #1a2559;
+  --muted-foreground: #a0aec0;
+  --accent: #1e2a66;
+  --accent-foreground: #ffffff;
+  --destructive: #ff7a7a;
+  --border: #2a3570;
+  --input: #2a3570;
+  --ring: #3b8bff;
+  --radius: 1rem;
+
+  --shell-bg: #0b1437;
+  --shell-surface: #0f1a45;
+  --shell-border: #24305e;
+  --shell-hover: #1a2559;
+  --shell-text: #ffffff;
+  --shell-text-muted: #c3cbe0;
+  --shell-text-subtle: #a0aec0;
+  --shell-nav-active-bg: #22307a;
+  --shell-nav-active-text: #ffffff;
+  --shell-brand-bg: #0062d6;
+  --shell-brand-icon: #ffffff;
+  --shell-brand-accent: #4fa3ff;
+  --shell-badge-bg: #0062d6;
+  --shell-badge-text: #ffffff;
+  --shell-alert-bg: #e11d48;
+  --shell-alert-text: #ffffff;
+  --shell-avatar-bg: #1a2559;
+  --shell-avatar-text: #7cb5ff;
+  --shell-promo-bg: #1b2a6b;
+  --shell-promo-title: #ffffff;
+  --shell-promo-text: #c3cff5;
+  --shell-overlay: rgba(0, 0, 0, 0.6);
+  --shell-border-strong: #5b6aa0;
+  --shell-faint: #3a4680;
+  --shell-brand-text: #ffffff;
+  --shell-accent: #7cb5ff;
+  --shell-accent-soft: #16245e;
+  --shell-accent-fill: #3b8bff;
+  --shell-accent-fill-hover: #5c9fff;
+  --shell-accent-fill-text: #071033;
+  --tour-primary: #0062d6;
+  --tour-primary-text: #ffffff;
+}
+
 [data-dashboard-theme="wax-soleil"] {
   color-scheme: light;
 

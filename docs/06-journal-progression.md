@@ -2082,3 +2082,20 @@ Demande de l'utilisateur : que le thème choisi s'applique aussi à la facture. 
 **Tests** : choix de la couleur (commerçant, thème, ancien bleu, valeur invalide), couleurs proposées jamais confondues avec « suivre le thème », émission (couleur du thème, couleur du commerçant prioritaire), formulaire (« Couleur du thème » coché par défaut, retour à la couleur du thème), lisibilité de la couleur de chaque thème.
 
 Vérifié : lint, `tsc`, 1 360 tests, build. Rien de commité.
+
+### 2026-10-03 — Tableau de bord pleine page, lien vers la boutique, thème « Néon Océan »
+
+Demande de l'utilisateur, avec capture et modèle :
+1. le tableau de bord occupe toute la page ;
+2. un accès pour visiter le site de la boutique ;
+3. un thème qui habille toute la boutique comme le modèle (bleu nuit, accents bleu électrique), menus et vitrine compris.
+
+**Fait** :
+- **Pleine page** : sur tablette et ordinateur, le panneau du tableau de bord annule les marges de la zone de contenu et la remplit jusqu'en bas. Il n'a plus de coins arrondis ni de largeur maximale.
+- **« Voir ma boutique »** dans la barre du haut, sur toutes les pages de gestion : ouvre la vitrine dans un nouvel onglet. Le libellé n'apparaît qu'à partir de l'ordinateur ; sur les écrans plus petits, l'icône seule, avec une étiquette accessible.
+- **Thème « Néon Océan »** (`ocean-neon`) : système de style sombre (fond `#0B1437`, cartes `#111C44`, primaire bleu `#3B8BFF` au texte bleu nuit), cadre de gestion sombre (menus, barre du haut, menu actif, pastilles, bulles des visites), `color-scheme: dark` pour les champs natifs. Son tableau de bord est celui du thème par défaut ; ses factures sont bleues (`#0062D6`). Tous les contrastes passent du premier coup.
+- Choix d'accessibilité : sur un fond bleu nuit, aucun bleu ne peut porter à la fois un texte blanc (≥ 4,5:1) et être lisible comme lien sur ce fond. Les boutons primaires ont donc un texte bleu nuit sur bleu vif.
+
+**Vérification réelle sur émulateurs** : boutique en « Néon Océan ». Tableau de bord pleine page, lien vers `/boutique/shop-oc`, page Produits et vitrine entièrement sombres, aucune erreur.
+
+Vérifié : lint, `tsc`, tests (`ThemesPageContent` adapté à trois thèmes). Rien de commité.

@@ -16,7 +16,7 @@ jest.mock("../../ui/CoachMark", () => ({ CoachMark: () => null }));
 const toastSuccess = jest.fn();
 jest.mock("sonner", () => ({ toast: { success: (...a: unknown[]) => toastSuccess(...a), error: jest.fn() } }));
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { ThemesPageContent } from "./ThemesPageContent";
@@ -52,7 +52,8 @@ describe("ThemesPageContent", () => {
     const user = userEvent.setup();
     render(<ThemesPageContent shopId="shop-1" />);
 
-    await user.click(screen.getByRole("button", { name: "Aperçu et appliquer" }));
+    const wax = screen.getByRole("radio", { name: "Wax Soleil" });
+    await user.click(within(wax).getByRole("button", { name: "Aperçu et appliquer" }));
     expect(screen.getByTestId("preview")).toHaveTextContent("aperçu wax-soleil");
     await user.click(screen.getByRole("button", { name: "Appliquer ce thème" }));
 
