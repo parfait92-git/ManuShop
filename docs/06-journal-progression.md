@@ -1903,3 +1903,90 @@ Vérifié : lint, `tsc`, 993 tests, build.
 4. Après l'achat d'un domaine, l'ajouter dans Vercel (Settings → Domains), puis l'enregistrer dans Super Admin → Réglages.
 
 Rien de commité.
+
+### 2026-10-03 — Refonte de l'accueil du tableau de bord, prête pour les thèmes
+
+Demande de l'utilisateur : refondre `/dashboard` sur le modèle fourni (sombre, cartes en dégradé bleu nuit, accents bleus), sur tablette et ordinateur seulement. Ce style doit être le **thème par défaut** d'une architecture de thèmes, les thèmes devant plus tard être vendus aux commerçants (« la plateforme doit être dynamique comme un CMS »). Le sélecteur de thème n'est pas construit. Les choix de conception lui ont été laissés ; le module Commandes existant déjà, toutes les données sont réelles.
+
+**Fait** :
+- **Chargement selon l'écran** :
+  - `useMediaQuery` (`useSyncExternalStore`) ;
+  - `DashboardOverview` chargé par `next/dynamic` (`ssr: false`) à partir de 768 px ; en dessous, la vue actuelle ;
+  - tant que la taille d'écran n'est pas connue, une place réservée, sans chargement inutile ;
+  - vérifié dans le build : Recharts (installé, v3) est dans un morceau séparé, absent de la page ; à 390 px, aucun script Recharts n'est téléchargé.
+- **Thèmes** (`src/styles/dashboard-theme.css`, seul fichier de couleurs) :
+  - thème `default` (bleu nuit) et thème `light`, ce dernier non proposé : il sert de modèle et au test de contraste ;
+  - un thème = un bloc `[data-dashboard-theme]`, ou des variables injectées sur le conteneur ;
+  - variables sémantiques : fond, cartes et dégradés, textes, accent, variations (`--kpi-*`), graphiques (`--chart-*` jusqu'aux arrêts de dégradé et à leur opacité), jauge, tableau, statuts (`--status-*`), bannière ;
+  - utilitaires Tailwind adossés (`bg-dash-card`, `text-dash-muted`…) ; Recharts reçoit `var(--…)` dans `fill`, `stroke` et `stopColor` ;
+  - `--chart-1/2` ne sont redéfinies qu'à l'intérieur du conteneur, donc shadcn n'est pas touché ailleurs.
+- **Disposition pilotée par une configuration** (`dashboardLayout.ts`) : une liste de blocs avec leur largeur. Réordonner ou masquer un bloc pour un thème ou une boutique se fera là. La grille suit la place **réellement disponible** (requêtes de conteneur Tailwind), pas la largeur de l'écran : menu latéral et police agrandie compris.
+- **Blocs** :
+  - 4 indicateurs comparés au mois précédent : ventes encaissées, commandes, nouveaux clients, produits actifs avec le nombre en alerte. « nouveau » ou « — » quand la comparaison est impossible, jamais de pourcentage inventé ;
+  - bannière de bienvenue : prénom, boutique, date, « X commandes à traiter » (lien vers Commandes), lien vers la vitrine, logo ;
+  - jauge de santé du stock : en stock, faible, rupture, et « Réapprovisionner N articles » ;
+  - courbe des ventes sur 12 mois (encaissé et commandé), infobulles dans la devise de la boutique ;
+  - barres fines des commandes des 7 derniers jours ;
+  - tableau des 6 dernières commandes ;
+  - un état vide honnête pour chaque bloc.
+- **Calculs** (`lib/dashboardMetrics.ts`, purs et testés) : mêmes règles que la page Statistiques (livrées seulement pour l'encaissé, datées par la création, heure du Cameroun, annulées exclues des comptes).
+- **Visite guidée** : trois étapes de plus sur ordinateur (courbe, jauge, dernières commandes), retirées d'elles-mêmes sur mobile.
+
+**Incohérence corrigée** : la vue mobile calculait autrement (mois à l'heure de l'appareil, annulées comptées, « nouveaux clients » = clients du mois). Sur les mêmes données, elle affichait 10 commandes et 10 nouveaux clients, contre 8 et 0 dans la nouvelle vue. Elle utilise maintenant le même calcul ; son apparence est inchangée.
+
+**Tests** :
+- nouveaux : contraste WCAG des deux thèmes (texte ≥ 4,5:1, graphiques et icônes ≥ 3:1, 140 vérifications) ; aucune couleur en dur dans les composants (hexadécimal, `rgb()`, classes de palette Tailwind) ; `dashboardMetrics` ; `DashboardOverview` (thème porté par le conteneur, chiffres réels, états vides, erreur) ; page (mobile ou graphique, `ssr: false`, attente de la taille) ;
+- `tours.test.ts` accepte maintenant la prop `dataTour="…"`.
+
+Vérifié : lint, `tsc`, 1 163 tests, build.
+
+**Vérification réelle sur émulateurs** (263 commandes sur 11 mois) : 1 440, 1 024 et 768 px, et 768 px avec la police à 150 %. Aucun débordement, aucune erreur dans la console, 2 graphiques dessinés, infobulle correcte, thème clair lisible.
+
+**Corrigé en testant** :
+- grille écrasée sur tablette à cause du menu latéral : passage aux requêtes de conteneur ;
+- jauge de taille fixe qui débordait avec la police à 150 % ;
+- cadre de « commandes à traiter » invisible en thème clair ;
+- seuils de colonnes trop prudents.
+
+Rien de commité.
+
+### 2026-10-03 — Page Thèmes et thème appliqué par boutique
+
+Demande de l'utilisateur :
+- une page qui liste les thèmes ; un thème appliqué habille tout le site de la boutique (vitrine et espace de gestion) ;
+- le thème appliqué rangé dans `shops/{idBoutique}/themes/`, pour qu'il disparaisse avec la boutique ;
+- pour l'instant, seul le thème par défaut, listé et coché ;
+- avant d'appliquer un thème, un aperçu du tableau de bord.
+
+La conception a été laissée à mon choix.
+
+**Fait** :
+- **Catalogue** `src/themes/registry.ts` : un seul thème, « ManuShop Nuit » (`default`). Chaque thème déclare son thème de tableau de bord (`data-dashboard-theme`) et son thème de site (`data-shop-theme`). Ajouter un thème = une entrée et ses blocs CSS ; un test vérifie que chaque thème du catalogue a ses blocs.
+- **Stockage** `shops/{shopId}/themes/active` = `{ themeId, appliedAt, appliedBy }`. Document absent ou thème inconnu : thème par défaut.
+  - Règle : lecture publique (la vitrine s'habille avec), écriture serveur seulement ;
+  - `applyShopThemeAction` : gérant seulement (comme les Paramètres), thème obligatoirement connu.
+- **Application** : `useShopTheme` suit le thème en direct (`onSnapshot`). `data-shop-theme` est posé sur toute la mise en page du tableau de bord et, par `StorefrontThemeScope`, sur la vitrine de la boutique affichée. L'accueil du tableau de bord reçoit son `dashboardTheme`. Le thème par défaut ne redéfinit rien côté site : apparence inchangée.
+- **Page `/dashboard/themes`** (menu Configuration, gérant seulement) :
+  - cartes des thèmes, chacune avec une miniature schématique aux couleurs du thème (formes seulement, aucun chiffre qui pourrait passer pour une donnée), sa description et le badge « Appliqué », dans un groupe de boutons radio accessible ;
+  - « Aperçu » : sur tablette et ordinateur, le **vrai** tableau de bord avec les vrais chiffres, réduit à la taille de la fenêtre et inerte. Sur mobile, la miniature, pour ne pas y charger les graphiques ;
+  - « Appliquer ce thème », désactivé pour le thème en place (« Thème actuel ») ;
+  - aide « ? », visite de page, visite de la fenêtre, étape dans la visite d'accueil (gérant).
+- **Suppression d'une boutique** (rien ne supprime de boutique aujourd'hui) : Firestore ne supprime **pas** les sous-collections d'un document supprimé. Démonstration sur l'émulateur : après `delete()` de la boutique, son thème restait ; après `recursiveDelete`, il disparaît. Le code de suppression à venir devra utiliser `deleteShopDocumentTree` (`src/server/shops/deleteShopData.ts`), prêt à l'emploi.
+
+**Tests** :
+- nouveaux : catalogue (et présence des blocs CSS), `applyShopThemeAction` (chemin `shops/{id}/themes/active`, gérant seulement, thème inconnu refusé), `useShopTheme` (direct, retour au thème par défaut, désabonnement), `StorefrontThemeScope`, `ThemesPageContent` (coché par défaut, aperçu, application) ;
+- le test « aucune couleur en dur » couvre aussi les miniatures.
+
+Vérifié : lint, `tsc`, 1 181 tests, build.
+
+**Vérification réelle sur émulateurs** :
+- gérant sur ordinateur : 1 thème, coché, aperçu avec 2 graphiques réels, « Thème actuel » désactivé, attribut posé sur l'espace de gestion ;
+- mobile (360 px, police à 150 %) : miniature, aucun script de graphiques, pas de débordement ;
+- vendeur : pas de lien dans le menu, page refusée (403) ;
+- vitrine `/boutique/shop-test` : `data-shop-theme="default"`.
+
+**Corrigé en testant** : miniature tronquée sur mobile avec la police agrandie ; texte de l'aperçu inexact sur mobile.
+
+**À faire par l'utilisateur** : déployer les règles Firestore.
+
+Rien de commité (la refonte de l'accueil non plus).

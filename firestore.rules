@@ -259,6 +259,14 @@ service cloud.firestore {
     // propriétaire (admin de CETTE boutique, pas n'importe laquelle — trou
     // de sécurité corrigé lors du passage multi-boutique, Module 12) ou par
     // un Super Admin (modération).
+    // Thème appliqué à une boutique (2026-10-03), rangé sous elle :
+    // lisible par tous (la vitrine s'habille avec), écrit seulement par le
+    // serveur (`applyShopThemeAction`, gérant de la boutique).
+    match /shops/{shopId}/themes/{themeDoc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /shops/{shopId} {
       allow read: if true;
       allow create: if request.auth != null

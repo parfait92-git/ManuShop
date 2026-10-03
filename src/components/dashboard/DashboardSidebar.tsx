@@ -15,6 +15,7 @@ import {
   Trash2,
   History,
   MessageSquareText,
+  Palette,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -72,6 +73,13 @@ const CONFIG_ITEMS: NavItem[] = [
     dataTour: "nav-shop-settings",
   },
   { href: "/dashboard/team", label: "Équipe", icon: UserCog, adminOnly: true },
+  {
+    href: "/dashboard/themes",
+    label: "Thèmes",
+    icon: Palette,
+    adminOnly: true,
+    dataTour: "nav-themes",
+  },
 ];
 
 function NavLink({

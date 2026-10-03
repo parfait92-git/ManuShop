@@ -11,10 +11,13 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { PublicationBanner } from "@/components/dashboard/PublicationBanner";
 import { NavigationBlockerProvider } from "@/components/providers/NavigationBlockerProvider";
+import { useShopTheme } from "@/hooks/useShopTheme";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Thème de la boutique, sur tout l'espace de gestion (2026-10-03).
+  const { theme } = useShopTheme(profile?.shopId);
 
   // ProtectedRoute garantit déjà un profil admin/vendeur à ce stade — mais
   // pas forcément une boutique : un admin obtenu par attribution manuelle ou
@@ -24,7 +27,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-svh bg-slate-50">
+    <div data-shop-theme={theme.siteTheme} className="flex h-svh bg-slate-50">
       <DashboardNotificationSounds />
       <div className="hidden md:block">
         <DashboardSidebar />

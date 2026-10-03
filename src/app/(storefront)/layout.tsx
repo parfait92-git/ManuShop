@@ -1,6 +1,7 @@
 import { ShopBrandingProvider } from "@/components/providers/ShopBrandingProvider";
 import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
+import { StorefrontThemeScope } from "@/components/providers/StorefrontThemeScope";
 
 export default function StorefrontLayout({
   children,
@@ -9,11 +10,11 @@ export default function StorefrontLayout({
 }) {
   return (
     <ShopBrandingProvider>
-      <div className="flex min-h-svh flex-col">
+      <StorefrontThemeScope>
         <StorefrontHeader />
         <main className="flex-1">{children}</main>
         <StorefrontFooter />
-      </div>
+      </StorefrontThemeScope>
     </ShopBrandingProvider>
   );
 }
