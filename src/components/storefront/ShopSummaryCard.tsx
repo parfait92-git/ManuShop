@@ -32,7 +32,7 @@ export function ShopSummaryCard({
         {shop.logo ? (
           <Image
             src={shop.logo}
-            alt={shop.name}
+            alt={`Logo de ${shop.name}`}
             fill
             sizes="(min-width: 1024px) 16vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110"

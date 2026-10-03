@@ -37,7 +37,7 @@ export function ProductCard({
       {image && (
         <Image
           src={image}
-          alt=""
+          alt={name}
           fill
           sizes="(min-width: 1024px) 33vw, 100vw"
           className={styles.card__image}

@@ -29,6 +29,7 @@ import { effectivePrice } from "@/lib/promo";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { shopCurrency } from "@/lib/currency";
+import { productImageAlt } from "@/lib/seo";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -161,7 +162,11 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             {product.images[0] && (
               <Image
                 src={product.images[0]}
-                alt={product.name}
+                alt={productImageAlt(product, {
+                  shopName: shop?.name,
+                  index: 0,
+                  total: product.images.length,
+                })}
                 fill
                 sizes="(min-width: 768px) 50vw, 100vw"
                 className="object-contain"
@@ -170,12 +175,22 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
           </div>
           {product.images.length > 1 && (
             <div className="flex gap-2">
-              {product.images.map((image) => (
+              {product.images.map((image, index) => (
                 <div
                   key={image}
                   className="relative size-20 overflow-hidden rounded-lg border border-border bg-muted"
                 >
-                  <Image src={image} alt="" fill sizes="80px" className="object-contain" />
+                  <Image
+                    src={image}
+                    alt={productImageAlt(product, {
+                      shopName: shop?.name,
+                      index,
+                      total: product.images.length,
+                    })}
+                    fill
+                    sizes="80px"
+                    className="object-contain"
+                  />
                 </div>
               ))}
             </div>

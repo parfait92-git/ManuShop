@@ -6,7 +6,8 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { PageTour } from "@/components/onboarding/PageTour";
 
 export const metadata: Metadata = {
-  title: "Mot de passe oublié — ManuShop",
+  title: "Mot de passe oublié",
+  robots: { index: false, follow: true },
 };
 
 export default function ForgotPasswordPage() {

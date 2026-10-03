@@ -1650,3 +1650,69 @@ Demande de l'utilisateur : composer les champs téléphone en deux blocs sépar�
 Résultat sur émulateurs, police vraiment à 150 % à 320 px : 0 débordement sur les 13 pages gérant, les 5 pages Super Admin, 7 pages vitrine et les 4 pages publiques. Seul le fond décoratif (`aria-hidden`) dépasse, et il est coupé volontairement.
 
 Vérifié : lint, `tsc`, 881 tests, build. Le `next dev` de l'utilisateur (:3000) n'a pas été touché (serveur de test sur une copie isolée). Rien de commité.
+
+### 2026-10-02 — Référencement des boutiques et des articles (BF-147)
+
+Demande de l'utilisateur : des descriptions sur les images d'articles (`alt`) et la description de chaque boutique dans l'en-tête de la page, pour le référencement ; choix de la méthode laissé à Claude.
+
+**Constat** : les pages boutique (`/boutique/[shopId]`) et article (`/catalogue/[productId]`) étaient entièrement `"use client"`. Un moteur de recherche recevait une page sans titre ni description propres, avec seulement le titre générique du site.
+
+**Méthode retenue** (guides Next de cette version : `generate-metadata.md`, `json-ld.md`, `sitemap.md`, `robots.md`) :
+- **Rendu serveur.** Les deux pages deviennent des composants serveur : `generateMetadata` (titre, description, canonique, Open Graph/Twitter avec logo ou photos) et JSON-LD schema.org (`Store` ; `Product` avec offre au prix réellement affiché, promo comprise, dans la devise de la boutique, et disponibilité). L'interactivité reste dans les composants existants (`ShopStorefrontPage`, extrait tel quel de l'ancienne page ; `ProductDetailPageContent`).
+- **Lecture des données.** `src/server/seo/publicData.ts` utilise le SDK Admin, comme les actions serveur, et seulement pour les données publiques : boutique publiée, article visible d'une boutique publiée. `cache` de React évite une double lecture entre métadonnées et page. Un échec de lecture garde des métadonnées génériques, sans jamais casser la page.
+- **Fonctions pures** (`src/lib/seo.ts`) :
+  - description de repli quand la boutique ou l'article n'en a pas, construite à partir du nom, du secteur, de la ville ou de la catégorie ;
+  - troncature à 160 caractères ;
+  - `alt` des photos : nom, catégorie, boutique, « photo n sur N » ;
+  - neutralisation de `<` dans le JSON-LD (un nom saisi par un commerçant ne peut pas injecter de HTML).
+- **Pages générales.** Mise en page racine : `metadataBase` (`src/lib/siteUrl.ts` : `NEXT_PUBLIC_APP_URL`, sinon `VERCEL_PROJECT_PRODUCTION_URL`, sinon localhost), modèle de titre « %s | ManuShop », Open Graph par défaut. Titres et descriptions du Marché et de l'annuaire via des `layout.tsx`, puisque ces pages sont côté navigateur. Le titre du Marché redéclare le modèle, faute de quoi les fiches article en dessous perdaient leur « | ManuShop ».
+- **Plan du site.** `sitemap.ts` (boutiques publiées et articles visibles, `revalidate` d'une heure) et `robots.ts` (dashboard, super-admin, compte, commandes, favoris, paiement, API exclus).
+- **Pages cachées.** Boutique non publiée et article masqué en `noindex, nofollow`, sans URL canonique héritée.
+- **Textes alternatifs** des cartes produit, de la galerie de la fiche (miniatures comprises, `alt` vide jusque-là), des cartes de l'accueil, et des logos de boutique (« Logo de … »).
+
+**Tests** : `seo.test.ts` (10). Le test de la page boutique est déplacé vers `ShopStorefrontPage.test.tsx`. Vérifié : lint, `tsc`, 891 tests, build.
+
+**Vérification réelle** : HTML brut récupéré comme un robot d'indexation, sur les émulateurs.
+- Titre « Chez Awa — boutique en ligne | ManuShop » et description de la boutique ; canonique absolue ; logo en `og:image` ; JSON-LD `Store`.
+- Article : photos en `og:image` ; JSON-LD à 12,20 € (8 000 FCFA promo, boutique en euros) ; `<b>` dans le nom bien neutralisé.
+- Boutique non publiée et article masqué en `noindex`, absents du plan du site.
+- `robots.txt` correct, et vitrine toujours fonctionnelle dans Chrome.
+
+**En production** :
+- `FIREBASE_SERVICE_ACCOUNT_KEY_BASE64` (déjà requis par les actions serveur) doit être présent sur Vercel, sinon les métadonnées restent génériques.
+- Renseigner `NEXT_PUBLIC_APP_URL` avec le domaine définitif quand il existera.
+- Soumettre `https://<domaine>/sitemap.xml` dans Google Search Console.
+
+Le plan du site lit toute la collection `products` : suffisant à l'échelle actuelle, à paginer plus tard.
+
+Rien de commité.
+
+**Complément, même jour : boutique présentée comme le site du commerçant.** Précision de l'utilisateur : la plateforme vit des abonnements de commerçants qui considèrent leur boutique comme **leur propre site**. Sur les pages d'une boutique et de ses articles, plus aucune trace de ManuShop :
+- titre `absolute` (« Chez Awa — Mode », « Pagne wax — Chez Awa », sans « | ManuShop ») ;
+- `applicationName` et `og:site_name` = nom de la boutique ;
+- icônes (`icon`, `apple`) = logo de la boutique ;
+- descriptions de repli sans « sur ManuShop ».
+
+`favicon.ico` et `apple-icon.png` sont déplacés de `src/app/` vers `public/` et déclarés dans les métadonnées racine. En fichiers `app/`, Next les ajoute à **toutes** les pages sans qu'une page puisse les retirer, et l'icône ManuShop coexistait avec le logo de la boutique.
+
+Vérifié sur le HTML brut (émulateurs) : aucune occurrence de « ManuShop » dans le `<head>` des pages boutique et article ; icônes = logo de la boutique uniquement ; pages plateforme inchangées. 891 tests, build.
+
+**Limite côté Google** (documentation Google Search Central, à revérifier si le sujet est approfondi) : le **nom de site** et l'**icône** affichés dans les résultats de recherche sont déterminés par domaine ou sous-domaine, pas par chemin. Tant qu'une boutique vit sous `manu-shop…/boutique/xxx`, Google peut afficher le nom et l'icône du domaine ManuShop, malgré les métadonnées de la page (titre, description et données structurées, eux, sont bien ceux de la boutique). Pour une identité complète dans Google : un sous-domaine par boutique (`chezawa.manushop.cm`) ou un nom de domaine propre au commerçant, candidat naturel à une offre d'abonnement. Proposé à l'utilisateur, non construit.
+
+**Complément, même jour : référencement de la plateforme ManuShop elle-même.** Demande de l'utilisateur : une description de ce que fait ManuShop, avec des mots clés pour se positionner face aux sites qui proposent le même service.
+
+`src/lib/platformSeo.ts` regroupe :
+- titres de moins de 60 caractères et descriptions de moins de 160 pour l'accueil, le Marché, l'annuaire et l'inscription ;
+- mots clés de la niche : boutique en ligne Cameroun, vendre sur WhatsApp, gestion de stock, commerce en ligne Douala/Yaoundé, marketplace Cameroun… ;
+- JSON-LD de l'accueil (`Organization` + `WebSite` avec `SearchAction` vers `/catalogue?q=`, que le Marché sait lire).
+
+**Règle tenue et testée** : ne citer que ce qui existe. L'ancienne description du site annonçait « facturation » et « publication multicanal (WhatsApp, Facebook, Instagram, TikTok) », non construites (BF-24→29, BF-41→45), et le paiement Mobile Money n'est qu'un écran (BF-78). `platformSeo.test.ts` refuse ces termes dans les textes de la plateforme.
+
+Autres changements :
+- Pages connexion et mot de passe oublié en `noindex, follow`.
+- Leurs titres « … — ManuShop » donnaient « … — ManuShop | ManuShop » avec le modèle racine : corrigé.
+- Les pages boutique ont leurs propres `keywords` (nom, secteur, ville) au lieu d'hériter de ceux de la plateforme.
+
+Vérifié sur le HTML brut (émulateurs) et par 896 tests et le build.
+
+**Signalé, non modifié** : la page d'accueil *visible* (`src/app/page.tsx`, `features`) présente toujours des cartes « Facturation automatique » et « Publication multicanal ». Le texte visible pèse davantage que les métadonnées pour Google, et promet aux futurs abonnés des fonctions absentes. Décision laissée à l'utilisateur (feuille de route assumée ou à reformuler).

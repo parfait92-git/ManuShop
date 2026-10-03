@@ -25,6 +25,16 @@ import { AboutSection } from "@/components/sections/AboutSection";
 import { LaunchPromo } from "@/components/sections/LaunchPromo";
 import { SiteFooter } from "@/components/sections/SiteFooter";
 import { PageTour } from "@/components/onboarding/PageTour";
+import type { Metadata } from "next";
+import { platformJsonLd } from "@/lib/platformSeo";
+import { serializeJsonLd } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/siteUrl";
+
+/** Titre, description et mots clés : ceux de la mise en page racine
+ * (`platformSeo.ts`) ; ici, l'adresse canonique de l'accueil. */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const features: FeatureGridItem[] = [
   {
@@ -70,6 +80,10 @@ export default function Home() {
     <>
       <PageTour tourId="home" />
       <div className="relative flex min-h-screen flex-1 flex-col overflow-hidden bg-slate-950">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(platformJsonLd(getSiteUrl())) }}
+        />
         <PageBackground />
         <SiteHeader />
 
