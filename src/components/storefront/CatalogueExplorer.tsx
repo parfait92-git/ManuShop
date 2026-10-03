@@ -191,8 +191,8 @@ export function CatalogueExplorer({
               ? "Chargement..."
               : `${visibleItems.length} article${visibleItems.length > 1 ? "s" : ""} disponible${visibleItems.length > 1 ? "s" : ""}`}
           </span>
-          <div className="flex items-center gap-2">
-            <label data-tour="catalogue-sort" className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label data-tour="catalogue-sort" className="flex flex-wrap items-center gap-2">
               Trier par
               <Select
                 value={sortOrder}

@@ -167,7 +167,7 @@ export function ProductList({
             size="sm"
             onClick={() => setOnlyWithoutImage((current) => !current)}
             aria-pressed={showOnlyWithoutImage}
-            className="w-fit shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+            className="h-auto w-fit shrink-0 border-amber-300 bg-white py-1.5 whitespace-normal text-amber-900 hover:bg-amber-100"
           >
             {showOnlyWithoutImage
               ? "Afficher tous les produits"

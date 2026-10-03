@@ -2,8 +2,10 @@
 
 import "react-phone-number-input/style.css";
 
+import { useState } from "react";
 import ReactPhoneNumberInput, {
   getCountryCallingCode,
+  parsePhoneNumber,
   type Country,
 } from "react-phone-number-input";
 import frLabels from "react-phone-number-input/locale/fr.json";
@@ -22,6 +24,25 @@ export const DEFAULT_PHONE_COUNTRY: Country = "CM";
  * plutôt que de prétendre couvrir n'importe quel pays sans l'avoir vérifié.
  */
 export const SUPPORTED_PHONE_COUNTRIES: Country[] = ["CM", "US", "CA"];
+
+/** Exemple de numéro national affiché dans le second bloc, selon le pays
+ * choisi dans le premier — sans l'indicatif, qui a son propre bloc. */
+const NATIONAL_EXAMPLE: Partial<Record<Country, string>> = {
+  CM: "6 71 23 45 67",
+  US: "(201) 555-0123",
+  CA: "(506) 234-5678",
+};
+
+/** Pays d'une valeur déjà enregistrée, sinon le pays par défaut. */
+function countryOf(value: string, fallback: Country): Country {
+  if (!value) return fallback;
+  try {
+    const country = parsePhoneNumber(value)?.country;
+    return country && SUPPORTED_PHONE_COUNTRIES.includes(country) ? country : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 /**
  * Adapte notre `<Select>` (stylé comme le reste de l'app) à la signature
@@ -66,7 +87,16 @@ function CountrySelect({
 }
 
 /**
- * Champ téléphone international basé sur `react-phone-number-input`
+ * Champ téléphone en **deux blocs séparés** (demande de l'utilisateur,
+ * 2026-10-02) : l'indicatif du pays dans un sélecteur, le numéro national
+ * seul dans le champ texte (`international={false}`). Auparavant, le champ
+ * texte affichait le numéro au format international, indicatif compris
+ * ("+237 6 90…") : l'indicatif apparaissait deux fois, et effacer le champ
+ * pour taper son numéro supprimait aussi l'indicatif — un "690000000" tapé
+ * ainsi devenait "+690000000", un numéro invalide. La valeur émise reste
+ * complète, au format E.164 ("+237690000000").
+ *
+ * Basé sur `react-phone-number-input`
  * (construit sur `libphonenumber-js`, comme la version maison précédente) :
  * formatage et longueur maximale gérés par la bibliothèque elle-même
  * (`limitMaxLength`), avec une meilleure gestion du curseur en édition
@@ -95,6 +125,9 @@ export function PhoneInput({
   "aria-invalid"?: boolean;
   placeholder?: string;
 }) {
+  // Suivi du pays choisi, pour adapter l'exemple affiché dans le numéro.
+  const [country, setCountry] = useState<Country>(() => countryOf(value, defaultCountry));
+
   return (
     <ReactPhoneNumberInput
       id={id}
@@ -102,20 +135,28 @@ export function PhoneInput({
       value={value}
       onChange={(next) => onChange(next ?? "")}
       defaultCountry={defaultCountry}
+      onCountryChange={(next) => next && setCountry(next)}
       countries={SUPPORTED_PHONE_COUNTRIES}
-      international
+      international={false}
       limitMaxLength
       addInternationalOption={false}
       labels={frLabels}
-      placeholder={placeholder}
+      placeholder={placeholder ?? NATIONAL_EXAMPLE[country]}
       inputComponent={Input}
       countrySelectComponent={CountrySelect}
-      numberInputProps={{ className: "min-w-0 flex-1" }}
+      // Deux blocs côte à côte quand la place le permet ; sinon (petit
+      // téléphone, police agrandie), le numéro passe sous l'indicatif plutôt
+      // que d'être écrasé — il garde une largeur minimale lisible.
+      numberInputProps={{
+        className: "min-w-40 flex-1",
+        inputMode: "tel",
+        autoComplete: "tel-national",
+      }}
       countrySelectProps={{
-        className: "w-28 shrink-0 sm:w-36",
+        className: "w-auto max-w-full shrink-0",
         "aria-label": "Indicatif du pays",
       }}
-      className="flex gap-2"
+      className="flex flex-wrap gap-2"
     />
   );
 }

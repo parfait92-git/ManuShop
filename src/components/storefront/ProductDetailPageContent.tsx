@@ -153,7 +153,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
         Retour à la boutique
       </Link>
 
-      <h1 className="text-4xl font-bold">{product.name}</h1>
+      <h1 className="text-3xl font-bold hyphens-auto break-words sm:text-4xl">{product.name}</h1>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">

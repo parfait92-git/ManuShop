@@ -363,13 +363,13 @@ function CategoryRow({
   const isActive = category.isActive ?? true;
   const tag = tags.find((t) => t.id === category.tagId);
   return (
-    <li className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
       <div
         className="flex min-w-0 flex-1 cursor-pointer flex-col"
         onDoubleClick={() => onEdit(category)}
         title="Double-cliquez pour modifier"
       >
-        <span className="flex items-center gap-1.5 text-sm font-medium">
+        <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium break-words">
           {category.name}
           {tag && (
             <span

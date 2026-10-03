@@ -116,7 +116,7 @@ export function PaymentMethodPageContent() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
       <div>
-        <h1 className="text-4xl font-bold">Confirmer ma commande</h1>
+        <h1 className="text-3xl font-bold hyphens-auto break-words sm:text-4xl">Confirmer ma commande</h1>
         <p className="mt-1 text-muted-foreground">
           Total · {money(total)}
         </p>
@@ -202,7 +202,9 @@ export function PaymentMethodPageContent() {
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
         <Button
           data-tour="checkout-confirm"
-          className="mt-4 w-full"
+          // Libellé long (montant compris) : il passe à la ligne sur petit
+          // écran ou avec une police agrandie, au lieu de sortir du bouton.
+          className="mt-4 h-auto min-h-9 w-full py-2 text-center whitespace-normal"
           disabled={!canSubmit || submitting}
           onClick={handleConfirm}
         >

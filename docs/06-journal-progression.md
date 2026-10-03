@@ -1625,3 +1625,28 @@ Demande de l'utilisateur : appliquer la devise configurée par la boutique à to
 Piège de test : `platformAdmins` est indexé par **email**, pas par uid.
 
 Rien de commité.
+
+### 2026-10-02 — Téléphone en deux blocs (indicatif | numéro) + débordements réels à 320 px / police à 150 %
+
+Demande de l'utilisateur : composer les champs téléphone en deux blocs séparés, l'indicatif du pays puis le numéro.
+
+**Téléphone** (`ui/phone-input.tsx`, 8 écrans concernés) :
+- Le second bloc affichait le numéro au **format international, indicatif compris** (`international` de `react-phone-number-input`). L'indicatif apparaissait donc deux fois, et remplacer le contenu du champ (tout sélectionner, coller) supprimait l'indicatif : un « 690000000 » devenait `+690000000`, invalide. Constaté pendant les tests sur émulateurs des jours précédents.
+- Désormais `international={false}` : premier bloc = indicatif, second = numéro national seul (« 6 90 00 00 00 ») ; la valeur émise reste E.164 (`+237690000000`).
+- Exemple de saisie propre au pays choisi, `inputMode="tel"`, `autoComplete="tel-national"`.
+- Sur petit écran ou avec une police agrandie, les deux blocs passent l'un sous l'autre (`flex-wrap`, numéro `min-w-40`). Avant, le sélecteur à largeur fixe écrasait le numéro à quelques pixels.
+- 3 tests, dont 2 vérifiés par mutation : ils échouent avec l'ancien comportement.
+
+**Correction de l'entrée « Tableaux défilables… » du 2026-10-02** : elle affirmait « aucun débordement de page à 150 % de police ». **C'était faux.** Deux biais de mesure le masquaient :
+1. Le script injectait la police via `document.documentElement.appendChild`, avant que l'élément existe. Il plantait (erreurs `appendChild` attribuées à tort au script seul) et la police n'était **pas** agrandie.
+2. Dans l'espace gérant, c'est la colonne principale qui défile (`overflow-y-auto`, donc aussi `overflow-x: auto`), pas la page : ses débordements étaient invisibles pour `documentElement.scrollWidth`, et le filtre ignorait tout ce qui était dans une zone défilante.
+
+**Nouvel audit, police vraiment à 150 % à 320 px** (injection via `document.head`, mesure de la colonne du tableau de bord, seuls les vrais tableaux exclus). Résultat : 77 px de débordement sur **toutes** les pages gérant et Super Admin, plus des débordements dans la vitrine et sur les pages publiques. Sur ces dernières, le contenu était même **coupé** (pages en `overflow-hidden`) : le bouton du menu mobile de l'accueil devenait inaccessible. Corrigé :
+- Barres du haut (gérant, Super Admin), accueil (`SiteHeader.module.scss`), auth (`(auth)/layout.tsx`) : textes tronquables (`min-w-0`, `minmax(0, auto)`), groupes de boutons en `shrink-0`, espacements resserrés. « Retour à l'accueil » réduit à sa flèche sous `sm`, avec `aria-label`.
+- Boutons à long libellé autorisés à passer à la ligne (« Confirmer ma commande · montant », « Voir les produits concernés ») : le `Button` du projet est en `whitespace-nowrap`.
+- Lignes de catégorie et ligne « Trier par » en `flex-wrap`. Titres de section des paramètres réductibles avec césure. Titres `text-4xl` de la vitrine passés en `text-3xl sm:text-4xl` avec césure. `Label` avec aide en `flex-wrap`.
+- Accueil : grilles en `minmax(0, 1fr)` (promotion, sélection de produits), compte à rebours de la promotion en `flex-wrap`, texte des cartes produit réductible.
+
+Résultat sur émulateurs, police vraiment à 150 % à 320 px : 0 débordement sur les 13 pages gérant, les 5 pages Super Admin, 7 pages vitrine et les 4 pages publiques. Seul le fond décoratif (`aria-hidden`) dépasse, et il est coupé volontairement.
+
+Vérifié : lint, `tsc`, 881 tests, build. Le `next dev` de l'utilisateur (:3000) n'a pas été touché (serveur de test sur une copie isolée). Rien de commité.

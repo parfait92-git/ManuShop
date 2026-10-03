@@ -42,9 +42,14 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.75rem;
+
+  > :first-child {
+    min-width: 0;
+  }
 }
 
 .card__name {
+  overflow-wrap: anywhere;
   font-size: 0.95rem;
   font-weight: 600;
   color: #fff;

@@ -2,6 +2,10 @@
 
 .section {
   display: grid;
+  // `minmax(0, 1fr)` : sans colonne explicite, la grille prend la largeur
+  // minimale de son contenu (le compte à rebours) et débordait à 320 px
+  // avec une police agrandie, coupant le texte de la section.
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   gap: 2rem;
   align-items: end;
@@ -57,6 +61,7 @@
 
 .units {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.65rem;
 }
 

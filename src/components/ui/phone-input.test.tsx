@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 
@@ -108,5 +108,33 @@ describe("PhoneInput", () => {
     await user.type(screen.getByRole("textbox"), "41655512349999");
 
     expect(screen.getByTestId("value")).toHaveTextContent("+14165551234");
+  });
+
+  describe("deux blocs séparés : indicatif, puis numéro national", () => {
+    it("shows the number without its country code — the code has its own block", () => {
+      render(<ControlledPhoneInput initial="+237690000000" />);
+
+      const number = (screen.getByRole("textbox") as HTMLInputElement).value;
+      expect(number.replace(/\s/g, "")).toBe("690000000");
+      expect(number).not.toContain("+237");
+    });
+
+    it("keeps the country code when the whole field content is replaced (select all + paste used to give +690000000)", () => {
+      render(<ControlledPhoneInput initial="+237677777777" />);
+
+      // Remplacement d'un bloc, comme un « tout sélectionner » puis coller.
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "690000000" } });
+
+      expect(screen.getByTestId("value")).toHaveTextContent("+237690000000");
+    });
+
+    it("suggests a national number example matching the selected country", async () => {
+      const user = userEvent.setup();
+      render(<ControlledPhoneInput />);
+
+      expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", "6 71 23 45 67");
+      await user.selectOptions(screen.getByLabelText("Indicatif du pays"), "US");
+      expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", "(201) 555-0123");
+    });
   });
 });

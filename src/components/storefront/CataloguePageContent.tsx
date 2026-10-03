@@ -133,7 +133,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
           <Badge icon={<Sparkles className="size-3.5" />} className="w-fit">
             La sélection ManuShop
           </Badge>
-          <h1 className="text-4xl leading-tight font-bold">
+          <h1 className="text-3xl leading-tight font-bold hyphens-auto break-words sm:text-4xl">
             Des pièces qui racontent{" "}
             <span className="text-primary">votre style.</span>
           </h1>
@@ -180,8 +180,8 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
               ? "Chargement..."
               : `${visibleProducts.length} article${visibleProducts.length > 1 ? "s" : ""} disponible${visibleProducts.length > 1 ? "s" : ""}`}
           </span>
-          <div className="flex items-center gap-2">
-            <label data-tour="catalogue-sort" className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label data-tour="catalogue-sort" className="flex flex-wrap items-center gap-2">
               Trier par
               <Select
                 value={sortOrder}
