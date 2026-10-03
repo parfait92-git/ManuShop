@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Menu, ShoppingBag, Store, X } from "lucide-react"
 import { cn } from "cn"
 
+import { TourReplayButton } from "@/components/onboarding/TourReplayButton"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { authService } from "@/services/AuthService"
 import styles from "@/styles/SiteHeader.module.scss"
@@ -80,7 +81,7 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
           Manu Shop
         </Link>
 
-        <nav aria-label="Navigation principale" className={styles.nav}>
+        <nav data-tour="home-nav" aria-label="Navigation principale" className={styles.nav}>
           <Link className={styles.navLink} href="/catalogue">
             Boutique
           </Link>
@@ -101,11 +102,12 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
               Se déconnecter
             </button>
           ) : (
-            <Link className={styles.login} href="/login">
+            <Link data-tour="home-login" className={styles.login} href="/login">
               Se connecter
             </Link>
           )}
           <form
+            data-tour="home-search"
             className={styles.search}
             onSubmit={(event) => {
               event.preventDefault();
@@ -127,6 +129,7 @@ export function SiteHeader({ className, style, ...props }: SiteHeaderProps) {
               aria-label="Rechercher un produit"
             />
           </form>
+          <TourReplayButton className="border-white/15 text-white/70 hover:bg-white/10 hover:text-white" />
           <Link
             className={styles.cart}
             href="/catalogue"

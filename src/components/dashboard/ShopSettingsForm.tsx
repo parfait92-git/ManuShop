@@ -22,9 +22,9 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { FieldHint } from "@/components/dashboard/FieldHint";
 import { ShareShopLinkButton } from "@/components/dashboard/ShareShopLinkButton";
 import { ShopLogoStep } from "@/components/storefront/ShopLogoStep";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   CLIENT_CONTACT_METHODS,
   CLIENT_CONTACT_METHOD_LABELS,
@@ -44,6 +44,9 @@ import type {
 } from "@/models/shop/Shop";
 import { activityLogService } from "@/services/ActivityLogService";
 import { shopService } from "@/services/ShopService";
+import { useCurrencyRates } from "@/components/providers/CurrencyContext";
+import { useI18n } from "@/i18n/I18nProvider";
+import { BASE_CURRENCY, CURRENCIES, shopCurrency } from "@/lib/currency";
 
 const NETWORK_FORMAT_HINT: Record<PrimarySocialNetwork, string> = {
   whatsapp: "idéal pour le catalogue et les statuts",
@@ -145,6 +148,9 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     name: "primarySocialNetwork",
   });
   const notifyOrdersByEmail = useWatch({ control, name: "notifyOrdersByEmail" });
+  const currency = shopCurrency({ currency: useWatch({ control, name: "currency" }) });
+  const rates = useCurrencyRates();
+  const { t, intlLocale } = useI18n();
   const notifyOrdersBySocial = useWatch({
     control,
     name: "notifyOrdersBySocial",
@@ -235,7 +241,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-visibility" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Eye className="size-4.5" />
@@ -250,8 +256,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">
+                <p className="flex items-center gap-1.5 text-sm font-medium">
                   {isPublished ? "Boutique publiée" : "Boutique non publiée"}
+                  <CoachMark label="Aide : publication de la boutique">
+                    Une boutique non publiée reste invisible : ni sa vitrine ni ses produits n&apos;apparaissent dans le Marché. Pratique pour la préparer tranquillement avant l&apos;ouverture.
+                  </CoachMark>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {isPublished
@@ -277,7 +286,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-profile" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div>
               <h2 className="text-lg font-semibold">Profil de la boutique</h2>
               <p className="text-sm text-muted-foreground">
@@ -286,7 +295,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name">Nom de la boutique</Label>
+              <Label htmlFor="name" help="Le nom de votre boutique, affiché à vos clients sur la vitrine et dans le Marché.">Nom de la boutique</Label>
               <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
               {errors.name && (
                 <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -309,7 +318,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="address">Adresse</Label>
+              <Label htmlFor="address" help="L'adresse de votre boutique, affichée à vos clients pour qu'ils puissent vous trouver ou estimer la livraison.">Adresse</Label>
               <Input
                 id="address"
                 aria-invalid={!!errors.address}
@@ -323,9 +332,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="description" className="gap-1.5">
+              <Label htmlFor="description" className="gap-1.5" help="Présentée sur la fiche de vos produits, pour donner confiance à vos clients (qui vous êtes, ce que vous proposez).">
                 Description
-                <FieldHint text="Présentée sur la fiche de vos produits, pour donner confiance à vos clients (qui vous êtes, ce que vous proposez)." />
               </Label>
               <textarea
                 id="description"
@@ -346,7 +354,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             simple ; le forcer dans une demi-colonne écrasait le numéro. */}
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="phone">Téléphone</Label>
+                <Label htmlFor="phone" help="Le numéro principal de la boutique, affiché à vos clients pour vous appeler.">Téléphone</Label>
                 <PhoneInput
                   id="phone"
                   value={phone ?? ""}
@@ -363,7 +371,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="whatsapp">WhatsApp</Label>
+                <Label htmlFor="whatsapp" help="Le numéro WhatsApp qui reçoit les commandes passées depuis le panier « Commander via WhatsApp ».">WhatsApp</Label>
                 <PhoneInput
                   id="whatsapp"
                   value={whatsapp ?? ""}
@@ -397,9 +405,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="language" className="gap-1.5">
+                <Label htmlFor="language" className="gap-1.5" help="La langue affichée à vos clients sur la boutique en ligne. Le changement de langue de l'interface arrive dans une prochaine version.">
                   Langue de la boutique
-                  <FieldHint text="La langue affichée à vos clients sur la boutique en ligne. Le changement de langue de l'interface arrive dans une prochaine version." />
                 </Label>
                 <Select id="language" {...register("language")}>
                   <option value="fr">Français</option>
@@ -408,20 +415,31 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="currency" className="gap-1.5">
+                <Label htmlFor="currency" className="gap-1.5" help={t("currency.shopSettingsHelp")}>
                   Devise
-                  <FieldHint text="La devise utilisée pour afficher vos prix. Pour le Cameroun, le FCFA (XAF) est recommandé." />
                 </Label>
                 <Select id="currency" {...register("currency")}>
-                  <option value="XAF">FCFA (XAF)</option>
-                  <option value="EUR">Euro (EUR)</option>
-                  <option value="USD">Dollar US (USD)</option>
+                  {CURRENCIES.map((code) => (
+                    <option key={code} value={code}>
+                      {t(`currency.names.${code}`)}
+                    </option>
+                  ))}
                 </Select>
+                {currency !== BASE_CURRENCY && (
+                  <p className="text-sm text-muted-foreground">
+                    {rates[currency]
+                      ? t("currency.conversionNote", {
+                          currency,
+                          rate: rates[currency]!.toLocaleString(intlLocale),
+                        })
+                      : t("currency.usdRateMissing")}
+                  </p>
+                )}
               </div>
             </div>
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-multichannel" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <MessageCircle className="size-4.5" />
@@ -436,9 +454,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="primarySocialNetwork" className="gap-1.5">
+              <Label htmlFor="primarySocialNetwork" className="gap-1.5" help="Le réseau où vous publiez le plus souvent vos produits. Sert uniquement à personnaliser les conseils affichés ici.">
                 Réseau social principal
-                <FieldHint text="Le réseau où vous publiez le plus souvent vos produits. Sert uniquement à personnaliser les conseils affichés ici." />
               </Label>
               <Select
                 id="primarySocialNetwork"
@@ -465,9 +482,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                 (voir `lib/shopSocialNetworks.ts`) — affiché sur la fiche
                 produit plutôt que de montrer les 4 liens en permanence. */}
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="primarySocialNetworkUrl" className="gap-1.5">
+                  <Label htmlFor="primarySocialNetworkUrl" className="gap-1.5" help="Affiché sur la fiche de vos produits, pour que vos clients puissent vous retrouver sur ce réseau.">
                     Lien de votre page {SOCIAL_NETWORK_LABELS[primarySocialNetwork as PrimarySocialNetwork]}
-                    <FieldHint text="Affiché sur la fiche de vos produits, pour que vos clients puissent vous retrouver sur ce réseau." />
                   </Label>
                   <Input
                     id="primarySocialNetworkUrl"
@@ -489,7 +505,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-contact-methods" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Mail className="size-4.5" />
@@ -533,8 +549,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                       className="flex items-center justify-between gap-4 rounded-lg border border-border p-3"
                     >
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="flex items-center gap-1.5 text-sm font-medium">
                           {CLIENT_CONTACT_METHOD_LABELS[method]}
+                          <CoachMark label={`Aide : contact par ${CLIENT_CONTACT_METHOD_LABELS[method]}`}>
+                            Activé, ce moyen de contact apparaît sur la fiche de vos produits pour que vos clients vous joignent. Il n&apos;est activable que si la coordonnée correspondante est renseignée.
+                          </CoachMark>
                         </p>
                         {!hasValue && (
                           <p className="text-sm text-muted-foreground">
@@ -568,7 +587,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                 })}
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="publicContactEmail">
+                  <Label htmlFor="publicContactEmail" help="L'adresse email affichée sur la fiche de vos produits, pour que vos clients puissent vous écrire.">
                     E-mail affiché aux clients
                   </Label>
                   <div className="relative">
@@ -591,7 +610,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
             )}
           </section>
 
-          <section className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
+          <section data-tour="shop-notifications" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Bell className="size-4.5" />
@@ -609,8 +628,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">
+                <p className="flex items-center gap-1.5 text-sm font-medium">
                   Recevoir les commandes par e-mail
+                  <CoachMark label="Aide : commandes par e-mail">
+                    Préférence enregistrée, mais l&apos;envoi d&apos;emails n&apos;est pas encore disponible sur ManuShop : activer cette option ne déclenche aucun email pour le moment.
+                  </CoachMark>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Un résumé de chaque commande sera envoyé à votre adresse de
@@ -628,8 +650,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">
+                <p className="flex items-center gap-1.5 text-sm font-medium">
                   Recevoir les commandes des réseaux sociaux
+                  <CoachMark label="Aide : commandes des réseaux sociaux">
+                    À chaque nouvelle commande, un message WhatsApp est envoyé au numéro WhatsApp de la boutique, pour ne rien manquer même hors de l&apos;application.
+                  </CoachMark>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Alerte pour les commandes initiées depuis WhatsApp, Facebook,
@@ -647,8 +672,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">
+                <p className="flex items-center gap-1.5 text-sm font-medium">
                   Activer les alertes urgentes par téléphone
+                  <CoachMark label="Aide : alertes urgentes par téléphone">
+                    Préférence enregistrée, mais ces alertes ne sont pas encore disponibles : activer cette option n&apos;envoie rien pour le moment.
+                  </CoachMark>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Utilise le numéro ci-dessous pour rediriger les clients en
@@ -688,7 +716,12 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">Nouvelle commande</p>
+                <p className="flex items-center gap-1.5 text-sm font-medium">
+                  Nouvelle commande
+                  <CoachMark label="Aide : son de nouvelle commande">
+                    Un bip retentit dans l&apos;espace gérant dès qu&apos;une commande arrive, même si vous êtes sur une autre page. L&apos;onglet doit rester ouvert.
+                  </CoachMark>
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Bip joué dès qu&apos;une commande arrive.
                 </p>
@@ -704,8 +737,11 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">
+                <p className="flex items-center gap-1.5 text-sm font-medium">
                   Changement de statut de commande
+                  <CoachMark label="Aide : son de changement de statut">
+                    Un bip retentit quand une commande change de statut, par exemple quand un membre de l&apos;équipe la marque comme livrée.
+                  </CoachMark>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Bip joué quand le statut d&apos;une commande change.
@@ -722,7 +758,12 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
               <div>
-                <p className="text-sm font-medium">Nouveau message</p>
+                <p className="flex items-center gap-1.5 text-sm font-medium">
+                  Nouveau message
+                  <CoachMark label="Aide : son de nouveau message">
+                    Un bip retentit quand le Super Admin répond à l&apos;un de vos messages de support.
+                  </CoachMark>
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Bip joué à la réponse du Super Admin à un message.
                 </p>
@@ -748,9 +789,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="contactEmail" className="gap-1.5">
+                <Label htmlFor="contactEmail" className="gap-1.5" help="L'adresse email qui recevra le résumé des commandes si l'option est activée ci-dessus.">
                   Contact e-mail
-                  <FieldHint text="L'adresse email qui recevra le résumé des commandes si l'option est activée ci-dessus." />
                 </Label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -770,9 +810,8 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="urgentPhone" className="gap-1.5">
+                <Label htmlFor="urgentPhone" className="gap-1.5" help="Le numéro utilisé pour rediriger un client en cas de commande urgente, si l'option est activée ci-dessus.">
                   Téléphone urgent
-                  <FieldHint text="Le numéro utilisé pour rediriger un client en cas de commande urgente, si l'option est activée ci-dessus." />
                 </Label>
                 <PhoneInput
                   id="urgentPhone"
@@ -786,7 +825,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
 
         <div className="flex flex-col gap-4">
           <InfoPanel />
-          <Button type="submit" disabled={isSubmitting} className="w-full gap-1.5">
+          <Button data-tour="shop-save" type="submit" disabled={isSubmitting} className="w-full gap-1.5">
             <Save className="size-4" />
             {isSubmitting ? "Enregistrement..." : "Enregistrer les paramètres"}
           </Button>

@@ -1,10 +1,18 @@
+// Rafraîchissement des prix du panier (testé dans useCartPriceSync.test.ts) :
+// il lit les produits via le SDK Firebase, hors sujet ici.
+jest.mock("../../hooks/useCartPriceSync", () => ({ useCartPriceSync: () => [] }));
+
+// Visite guidée de la fenêtre (BF-134/135, testée dans onboarding/) : elle
+// charge le SDK Firebase via useAuth et se lancerait sur le profil de test.
+jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
+
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import { CartPanel } from "@/components/storefront/CartPanel";
 import { useCartStore } from "@/store/cartStore";
 
-jest.mock("../../hooks/useShop", () => ({
-  useShop: () => ({ shop: { id: "shop-1", whatsapp: "+237600000000", name: "Boutique" }, loading: false }),
+jest.mock("../../hooks/useCartShop", () => ({
+  useCartShop: () => ({ shop: { id: "shop-1", whatsapp: "+237600000000", name: "Boutique" }, loading: false }),
 }));
 
 const useAuthMock = jest.fn();

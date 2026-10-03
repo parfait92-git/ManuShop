@@ -78,12 +78,13 @@ export function RegisterForm() {
 
   return (
     <form
+      data-tour="register-form"
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="displayName">Votre nom</Label>
+        <Label htmlFor="displayName" help="Le nom affiché sur votre compte. Vous pourrez le modifier plus tard dans Paramètres du compte.">Votre nom</Label>
         <Input
           id="displayName"
           autoComplete="name"
@@ -98,7 +99,7 @@ export function RegisterForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" help="Votre adresse email sert à vous connecter et à récupérer votre mot de passe si vous l'oubliez.">Email</Label>
         <Input
           id="email"
           type="email"
@@ -112,7 +113,7 @@ export function RegisterForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Mot de passe</Label>
+        <Label htmlFor="password" help="Choisissez un mot de passe que vous seul connaissez. L'icône en forme d'œil l'affiche en clair.">Mot de passe</Label>
         <div className="relative">
           <Input
             id="password"
@@ -143,7 +144,7 @@ export function RegisterForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+        <Label htmlFor="confirmPassword" help="Retapez le même mot de passe, pour éviter une faute de frappe qui vous empêcherait de vous connecter.">Confirmer le mot de passe</Label>
         <div className="relative">
           <Input
             id="confirmPassword"
@@ -179,13 +180,14 @@ export function RegisterForm() {
 
       {formError && <p className="text-sm text-destructive">{formError}</p>}
 
-      <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+      <Button data-tour="register-submit" type="submit" disabled={isSubmitting} className="mt-2 w-full">
         {isSubmitting ? "Création du compte..." : "Créer mon compte"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         Déjà un compte ?{" "}
         <Link
+          data-tour="register-login"
           href={buildAuthHref("/login", redirectTarget)}
           className="text-primary underline-offset-4 hover:underline"
         >

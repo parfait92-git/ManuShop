@@ -8,6 +8,7 @@ import type { Area } from "react-easy-crop";
 import { ImageCropDialog } from "@/components/dashboard/ImageCropDialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   LOGO_IMAGE_SIZE,
   SMALL_IMAGE_MAX_BYTES,
@@ -96,31 +97,35 @@ export function ShopLogoStep({
         </div>
       )}
 
-      <div className="grid grid-cols-2 rounded-lg border border-border p-1">
-        <button
-          type="button"
-          onClick={() => onModeChange("gallery")}
-          aria-pressed={mode === "gallery"}
-          className={`rounded-md py-2 text-sm font-medium ${
-            mode === "gallery" ? "bg-muted" : "text-muted-foreground"
-          }`}
-        >
-          Galerie
-        </button>
-        <button
-          type="button"
-          onClick={() => onModeChange("link")}
-          aria-pressed={mode === "link"}
-          className={`rounded-md py-2 text-sm font-medium ${
-            mode === "link" ? "bg-muted" : "text-muted-foreground"
-          }`}
-        >
-          Lien
-        </button>
+      <div className="flex items-center gap-2">
+        <div data-tour="logo-mode" className="grid flex-1 grid-cols-2 rounded-lg border border-border p-1">
+          <button
+            type="button"
+            onClick={() => onModeChange("gallery")}
+            aria-pressed={mode === "gallery"}
+            className={`rounded-md py-2 text-sm font-medium ${
+              mode === "gallery" ? "bg-muted" : "text-muted-foreground"
+            }`}
+          >
+            Galerie
+          </button>
+          <button
+            type="button"
+            onClick={() => onModeChange("link")}
+            aria-pressed={mode === "link"}
+            className={`rounded-md py-2 text-sm font-medium ${
+              mode === "link" ? "bg-muted" : "text-muted-foreground"
+            }`}
+          >
+            Lien
+          </button>
+        </div>
+        <CoachMark label="Aide : source du logo">
+          Galerie : envoyez une image depuis votre appareil (recadrée et compressée automatiquement). Lien : collez l&apos;adresse d&apos;une image déjà en ligne.
+        </CoachMark>
       </div>
-
       {mode === "gallery" ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <div data-tour="logo-gallery" className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
           {logoUrl ? (
             <div className="relative size-24 overflow-hidden rounded-full border border-border">
               {/* `unoptimized` : réutilisé depuis `ShopSettingsForm` pour
@@ -171,12 +176,18 @@ export function ShopLogoStep({
           </p>
         </div>
       ) : (
-        <Input
-          value={logoUrl ?? ""}
-          onChange={(event) => onLogoChange(event.target.value)}
-          placeholder="https://exemple.com/logo.png"
-          aria-label="Lien du logo"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            value={logoUrl ?? ""}
+            onChange={(event) => onLogoChange(event.target.value)}
+            placeholder="https://exemple.com/logo.png"
+            aria-label="Lien du logo"
+              className="flex-1"
+          />
+          <CoachMark label="Aide : lien du logo">
+            L&apos;adresse complète d&apos;une image déjà en ligne (commençant par https://), par exemple le logo de votre page Facebook. Utilisez plutôt Galerie pour envoyer une image de votre appareil.
+          </CoachMark>
+        </div>
       )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}

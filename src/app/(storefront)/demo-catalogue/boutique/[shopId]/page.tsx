@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { StorefrontProductCard } from "@/components/storefront/StorefrontProductCard";
+import { PageTour } from "@/components/onboarding/PageTour";
 import { getArticlesByShop, mockShops } from "@/data/mockData";
 import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 
@@ -58,18 +59,21 @@ export default function DemoShopStorefrontPage() {
   const articles = getArticlesByShop(shop.id);
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
-      <div>
-        <h1 className="text-2xl font-bold">{shop.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {shop.sector} · {shop.address}
-        </p>
+    <>
+      <PageTour tourId="storefront-shop" />
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
+        <div>
+          <h1 className="text-2xl font-bold">{shop.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {shop.sector} · {shop.address}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {articles.map((article) => (
+            <StorefrontProductCard key={article.id} product={article} />
+          ))}
+        </div>
       </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {articles.map((article) => (
-          <StorefrontProductCard key={article.id} product={article} />
-        ))}
-      </div>
-    </div>
+    </>
   );
 }

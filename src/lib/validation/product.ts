@@ -23,6 +23,15 @@ export const ProductSchema = z
     isPromo: z.boolean(),
     promoPrice: z.coerce.number().positive().optional(),
     promoEndDate: z.string().optional(),
+    // Prix d'achat (gérant uniquement, stocké à part : `productCosts`).
+    // Facultatif : un champ vidé vaut "non renseigné", pas 0.
+    purchasePrice: z.preprocess(
+      (value) => (value === "" || value === null ? undefined : value),
+      z.coerce
+        .number()
+        .min(0, { error: "Le prix d'achat ne peut pas être négatif." })
+        .optional()
+    ),
   })
   .refine(
     (data) => !data.isPromo || data.promoPrice !== undefined,

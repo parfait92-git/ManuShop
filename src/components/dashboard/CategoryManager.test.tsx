@@ -1,3 +1,7 @@
+// Visite guidée de la fenêtre (BF-134/135, testée dans onboarding/) : elle
+// charge le SDK Firebase via useAuth et se lancerait sur le profil de test.
+jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
+
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -116,8 +120,8 @@ describe("CategoryManager", () => {
     const user = userEvent.setup();
     render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
 
-    await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
-    await user.type(screen.getByLabelText(/Description/), "Desc");
+    await user.type(screen.getByLabelText(/^Nom de la catégorie/), "Test");
+    await user.type(screen.getByLabelText(/^Description/), "Desc");
     await user.click(screen.getByRole("button", { name: /Créer la catégorie/ }));
 
     await waitFor(() =>
@@ -135,8 +139,8 @@ describe("CategoryManager", () => {
     const user = userEvent.setup();
     render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
 
-    await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
-    await user.type(screen.getByLabelText(/Description/), "Desc");
+    await user.type(screen.getByLabelText(/^Nom de la catégorie/), "Test");
+    await user.type(screen.getByLabelText(/^Description/), "Desc");
     await user.click(screen.getByLabelText("Afficher la catégorie"));
     await user.click(screen.getByRole("button", { name: /Créer la catégorie/ }));
 
@@ -285,8 +289,8 @@ describe("CategoryManager", () => {
       const user = userEvent.setup();
       render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
 
-      await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
-      await user.type(screen.getByLabelText(/Description/), "Desc");
+      await user.type(screen.getByLabelText(/^Nom de la catégorie/), "Test");
+      await user.type(screen.getByLabelText(/^Description/), "Desc");
       await user.selectOptions(
         await screen.findByLabelText("Tag de catégorie système"),
         "tag1"
@@ -308,8 +312,8 @@ describe("CategoryManager", () => {
       const user = userEvent.setup();
       render(<CategoryManager shopId="shop-1" initialCategories={[]} />);
 
-      await user.type(screen.getByLabelText(/Nom de la catégorie/), "Test");
-      await user.type(screen.getByLabelText(/Description/), "Desc");
+      await user.type(screen.getByLabelText(/^Nom de la catégorie/), "Test");
+      await user.type(screen.getByLabelText(/^Description/), "Desc");
       await user.click(screen.getByRole("button", { name: /Créer la catégorie/ }));
 
       await waitFor(() =>

@@ -17,6 +17,11 @@ export interface CartItem {
    * champ (persisté en localStorage) le lit comme `undefined` — traité comme
    * "pas de limite connue", pour ne pas bloquer une quantité déjà choisie. */
   stock?: number;
+  /** Boutique de l'article. Un panier ne contient les articles que d'une
+   * seule boutique : c'est à elle que la commande est passée (voir
+   * `useAddToCart`). Absent sur un panier enregistré avant ce champ —
+   * renseigné au rafraîchissement suivant (`useCartPriceSync`). */
+  shopId?: string;
 }
 
 interface CartState {
@@ -24,6 +29,10 @@ interface CartState {
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  /** Remplace le prix des articles par leur prix actuel, ex. après la fin
+   * d'une promotion, et complète leur boutique (`productId` → valeurs). Les
+   * articles absents de la table restent inchangés. */
+  refreshPrices: (current: Record<string, { price: number; shopId: string }>) => void;
   clear: () => void;
 }
 
@@ -75,11 +84,24 @@ export const useCartStore = create<CartState>()(
                     : i
                 ),
         })),
+      refreshPrices: (current) =>
+        set((state) => ({
+          items: state.items.map((i) => {
+            const latest = current[i.productId];
+            if (!latest || (latest.price === i.price && latest.shopId === i.shopId)) return i;
+            return { ...i, price: latest.price, shopId: latest.shopId };
+          }),
+        })),
       clear: () => set({ items: [] }),
     }),
     { name: "manushop-cart" }
   )
 );
+
+/** Boutique du panier : celle de ses articles (un seul possible). */
+export function cartShopId(items: CartItem[]): string | undefined {
+  return items.find((item) => item.shopId)?.shopId;
+}
 
 export function cartItemCount(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.quantity, 0);

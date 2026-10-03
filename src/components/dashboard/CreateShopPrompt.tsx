@@ -66,7 +66,7 @@ export function CreateShopPrompt() {
           noValidate
         >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="shopName">Nom de la boutique</Label>
+            <Label htmlFor="shopName" help="Le nom de votre boutique, tel que vos clients le verront. Vous pourrez le modifier plus tard.">Nom de la boutique</Label>
             <Input
               id="shopName"
               autoComplete="organization"

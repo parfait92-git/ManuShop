@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
+import { CoachMark } from "@/components/ui/CoachMark";
 import {
   PREMIUM_FEATURES,
   PREMIUM_FEATURE_KEYS,
@@ -12,6 +13,21 @@ import {
 } from "@/lib/premiumFeatures";
 import type { MerchantDto, MerchantShopDto } from "@/server/actions/platformAdminActions";
 import { platformAdminService } from "@/services/PlatformAdminService";
+
+/** Aide du bouton "?" de chaque privilège — honnête sur ceux dont la
+ * fonctionnalité n'est pas encore construite (voir premiumFeatures.ts). */
+const PREMIUM_FEATURE_HELP: Record<PremiumFeatureKey, string> = {
+  salesIntervalFilter:
+    "Filtrer les ventes du tableau de bord par jour, semaine ou année. Fonctionnalité pas encore construite : l'activer prépare l'accès de cette boutique.",
+  advancedContact:
+    "Permet au commerçant de choisir les moyens de contact (email, WhatsApp, Facebook, Instagram) affichés sur les fiches de ses produits.",
+  socialFooterLinks:
+    "Affiche les liens vers les réseaux sociaux de la boutique en pied de page de sa vitrine.",
+  visitStats:
+    "Statistiques de consultation de la boutique (visites, articles les plus vus). Fonctionnalité pas encore construite : l'activer prépare l'accès de cette boutique.",
+  contactForm:
+    "Donne accès au formulaire « Nous contacter » de l'espace gérant, pour écrire à l'équipe ManuShop.",
+};
 
 function ShopPremiumFeatures({
   shop,
@@ -30,13 +46,16 @@ function ShopPremiumFeatures({
           {shop.isPublished ? "Publiée" : "Non publiée"}
         </span>
       </div>
-      <ul className="flex flex-col gap-2">
+      <ul data-tour="merchants-features" className="flex flex-col gap-2">
         {PREMIUM_FEATURE_KEYS.map((key) => {
           const enabled = shop.premiumFeatures.includes(key);
           return (
             <li key={key} className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 {PREMIUM_FEATURES[key]}
+                <CoachMark label={`Aide : ${PREMIUM_FEATURES[key]}`}>
+                  {PREMIUM_FEATURE_HELP[key]}
+                </CoachMark>
               </span>
               <Switch
                 checked={enabled}
@@ -199,7 +218,7 @@ export function MerchantsPageContent() {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-background">
+        <ul data-tour="merchants-list" className="divide-y divide-border rounded-xl border border-border bg-background">
           {merchants.map((merchant) => (
             <MerchantRow
               key={merchant.ownerId}

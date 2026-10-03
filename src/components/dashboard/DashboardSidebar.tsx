@@ -54,7 +54,7 @@ const MAIN_ITEMS: NavItem[] = [
 ];
 
 const CONFIG_ITEMS: NavItem[] = [
-  { href: "/dashboard/stats", label: "Statistiques", icon: BarChart3 },
+  { href: "/dashboard/stats", label: "Statistiques", icon: BarChart3, adminOnly: true },
   { href: "/dashboard/shops", label: "Mes boutiques", icon: Building2, adminOnly: true },
   {
     href: "/dashboard/shop",

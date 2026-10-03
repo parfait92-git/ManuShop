@@ -119,6 +119,7 @@ export function SupportPageContent() {
       ) : (
         <>
           <form
+            data-tour="support-form"
             onSubmit={handleSubmit}
             className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6"
           >
@@ -132,7 +133,7 @@ export function SupportPageContent() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="support-subject">Objet</Label>
+              <Label htmlFor="support-subject" help="Le sujet de votre demande en quelques mots, ex. « Problème d'ajout de photo ».">Objet</Label>
               <Input
                 id="support-subject"
                 value={subject}
@@ -141,7 +142,7 @@ export function SupportPageContent() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="support-body">Message</Label>
+              <Label htmlFor="support-body" help="Décrivez votre question ou votre problème : ce que vous faisiez, ce qui s'est passé. Plus c'est précis, plus la réponse sera rapide.">Message</Label>
               <textarea
                 id="support-body"
                 rows={4}
@@ -169,7 +170,7 @@ export function SupportPageContent() {
               Aucun message envoyé pour le moment.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul data-tour="support-history" className="flex flex-col gap-3">
               {messages.map((message) => (
                 <MessageCard key={message.id} message={message} />
               ))}

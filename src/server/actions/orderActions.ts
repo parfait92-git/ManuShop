@@ -7,8 +7,11 @@ import { sendOrderNotification } from "@/lib/whatsappBusiness";
 import type { OrderStatus } from "@/models/order/OrderStatus";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
+import { effectivePrice, type PromoFields } from "@/lib/promo";
 
 const ORDERS_COLLECTION = "orders";
+const PRODUCT_COSTS_COLLECTION = "productCosts";
+const ORDER_COSTS_COLLECTION = "orderCosts";
 const PRODUCTS_COLLECTION = "products";
 const USERS_COLLECTION = "users";
 const SHOPS_COLLECTION = "shops";
@@ -76,6 +79,9 @@ export async function createOrderAction(
   }
 
   const orderRef = db.collection(ORDERS_COLLECTION).doc();
+  // Montants réellement enregistrés, fixés dans la transaction (voir plus
+  // bas) — relus ensuite pour la notification au commerçant.
+  let total = input.total;
   const productRefs = input.items.map((item) =>
     db.collection(PRODUCTS_COLLECTION).doc(item.productId)
   );
@@ -88,8 +94,29 @@ export async function createOrderAction(
     const productSnapshots = await Promise.all(
       productRefs.map((ref) => transaction.get(ref))
     );
+    // Prix d'achat du moment, figés avec la commande (`orderCosts`) : un
+    // prix d'achat modifié plus tard ne doit pas réécrire les gains passés.
+    const costSnapshots = await Promise.all(
+      input.items.map((item) =>
+        transaction.get(db.collection(PRODUCT_COSTS_COLLECTION).doc(item.productId))
+      )
+    );
 
     input.items.forEach((item, index) => {
+      // Sans prix lisible, la commande en ligne ne peut pas être chiffrée
+      // (le prix n'est plus repris du panier, voir plus bas).
+      // Une commande concerne une seule boutique : refuser un article d'une
+      // autre (le panier le garantit côté client, `useAddToCart`, mais une
+      // requête peut toujours être forgée).
+      if (productSnapshots[index].data()?.shopId !== input.shopId) {
+        throw new ValidationError(
+          `« ${item.name} » n'appartient pas à cette boutique.`
+        );
+      }
+      const currentPrice = productSnapshots[index].data()?.price;
+      if (!input.manual && typeof currentPrice !== "number") {
+        throw new ValidationError(`Le produit « ${item.name} » n'est plus disponible.`);
+      }
       const currentStock = productSnapshots[index].data()?.stock;
       const available = typeof currentStock === "number" ? currentStock : 0;
       if (available < item.quantity) {
@@ -99,20 +126,56 @@ export async function createOrderAction(
       }
     });
 
+    // Commande en ligne : le prix de chaque article est recalculé ici depuis
+    // le produit, au prix en vigueur à cet instant, plutôt que repris du
+    // panier. Le panier est conservé dans le navigateur avec le prix du
+    // moment de l'ajout : sans ça, un article ajouté pendant une promotion
+    // puis commandé après sa date de fin serait encore facturé au prix promo
+    // (et un client pourrait envoyer n'importe quel prix). La commande
+    // manuelle garde le prix saisi par le commerçant lui-même.
+    const now = new Date();
+    const items = input.manual
+      ? input.items
+      : input.items.map((item, index) => ({
+          ...item,
+          unitPrice: effectivePrice(
+            productSnapshots[index].data() as PromoFields,
+            now
+          ),
+        }));
+    const subtotal = input.manual
+      ? input.subtotal
+      : items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const discount = input.discount ?? 0;
+    total = input.manual ? input.total : Math.max(subtotal - discount, 0);
+
     transaction.set(orderRef, {
       shopId: input.shopId,
       ...(clientId ? { clientId } : {}),
       clientName: input.clientName,
       clientPhone: input.clientPhone,
       clientAddress: input.clientAddress,
-      items: input.items,
-      subtotal: input.subtotal,
-      discount: input.discount ?? 0,
-      total: input.total,
+      items,
+      subtotal,
+      discount,
+      total,
       status: "under_review" satisfies OrderStatus,
       notes: input.notes ?? "",
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // À part de la commande, que le client peut lire (il y verrait la marge
+    // du commerçant) — lisible par le seul gérant (firestore.rules).
+    transaction.set(db.collection(ORDER_COSTS_COLLECTION).doc(orderRef.id), {
+      shopId: input.shopId,
+      items: input.items.map((item, index) => {
+        const unitCost = costSnapshots[index].data()?.purchasePrice;
+        return typeof unitCost === "number"
+          ? { productId: item.productId, unitCost }
+          : { productId: item.productId };
+      }),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     productRefs.forEach((ref, index) => {
@@ -131,7 +194,7 @@ export async function createOrderAction(
       shopWhatsapp: shop.whatsapp ?? "",
       orderId: orderRef.id,
       clientName: input.clientName,
-      total: input.total,
+      total,
     });
   }
 

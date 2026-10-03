@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 import { ShopSummaryCard } from "@/components/storefront/ShopSummaryCard";
 import { Badge } from "@/components/ui/Badge";
+import { PageTour } from "@/components/onboarding/PageTour";
 import { mockShops } from "@/data/mockData";
 import { useDemoCatalogueAvailable } from "@/hooks/useDemoCatalogueAvailable";
 
@@ -35,28 +36,31 @@ export default function DemoAllShopsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
-      <section className="flex flex-col gap-3">
-        <Badge icon={<Sparkles className="size-3.5" />} className="w-fit">
-          Démo — toutes les boutiques
-        </Badge>
-        <h1 className="text-3xl font-bold">
-          {mockShops.length} boutiques de démonstration
-        </h1>
-        <p className="text-muted-foreground">
-          Choisissez une boutique pour découvrir tous ses produits.
-        </p>
-      </section>
+    <>
+      <PageTour tourId="storefront-shops" />
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <section className="flex flex-col gap-3">
+          <Badge icon={<Sparkles className="size-3.5" />} className="w-fit">
+            Démo — toutes les boutiques
+          </Badge>
+          <h1 className="text-3xl font-bold">
+            {mockShops.length} boutiques de démonstration
+          </h1>
+          <p className="text-muted-foreground">
+            Choisissez une boutique pour découvrir tous ses produits.
+          </p>
+        </section>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {mockShops.map((shop) => (
-          <ShopSummaryCard
-            key={shop.id}
-            shop={shop}
-            href={`/demo-catalogue/boutique/${shop.id}`}
-          />
-        ))}
+        <div data-tour="shops-directory" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {mockShops.map((shop) => (
+            <ShopSummaryCard
+              key={shop.id}
+              shop={shop}
+              href={`/demo-catalogue/boutique/${shop.id}`}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

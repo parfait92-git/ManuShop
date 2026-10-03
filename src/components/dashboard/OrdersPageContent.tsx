@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { CoachMark } from "@/components/ui/CoachMark";
+import {
+  STICKY_COLUMN_CONTENT,
+  ScrollableTable,
+} from "@/components/ui/scrollable-table";
 import {
   ManualOrderDialog,
 } from "@/components/dashboard/ManualOrderDialog";
@@ -270,27 +275,33 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
             Suivez et traitez les commandes de votre boutique.
           </p>
         </div>
-        <Button className="w-fit gap-1.5" onClick={() => setManualOrderOpen(true)}>
+        <Button data-tour="orders-manual" className="w-fit gap-1.5" onClick={() => setManualOrderOpen(true)}>
           <Plus className="size-4" />
           Commande manuelle
         </Button>
       </div>
 
-      <Select
-        value={statusFilter}
-        onChange={(event) => setStatusFilter(event.target.value)}
-        aria-label="Filtrer par statut"
-        className="h-10 sm:w-64"
-      >
-        <option value="">Tous les statuts</option>
-        {FILTERABLE_STATUSES.map((status) => (
-          <option key={status} value={status}>
-            {ORDER_STATUS_LABEL[status]}
-          </option>
-        ))}
-      </Select>
+      <div className="flex items-center gap-2 sm:w-72">
+        <Select
+          data-tour="orders-filter"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          aria-label="Filtrer par statut"
+          className="h-10 flex-1"
+        >
+          <option value="">Tous les statuts</option>
+          {FILTERABLE_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {ORDER_STATUS_LABEL[status]}
+            </option>
+          ))}
+        </Select>
+        <CoachMark label="Aide : filtre par statut">
+          N&apos;affiche que les commandes à une étape donnée — par exemple « En cours d&apos;analyse » pour traiter d&apos;abord les nouvelles.
+        </CoachMark>
+      </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
+      <div data-tour="orders-table" className="rounded-xl border border-slate-200 bg-white">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
             <ShoppingBag className="size-8 text-slate-300" />
@@ -301,11 +312,11 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
             </p>
           </div>
         ) : (
-          <div className="-mx-4 overflow-x-auto sm:-mx-6">
+          <ScrollableTable label="Liste des commandes" hintClassName="pt-3">
             <table className="w-full min-w-160 border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
-                  <th className="px-4 py-2 sm:px-6">Client</th>
+                  <th className="px-3 py-2 sm:px-6">Client</th>
                   <th className="px-4 py-2">Articles</th>
                   <th className="px-4 py-2">Total</th>
                   <th className="px-4 py-2">Date</th>
@@ -316,17 +327,19 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((order) => (
                   <tr key={order.id}>
-                    <td className="px-4 py-3 sm:px-6">
-                      <p className="font-medium text-slate-900">
-                        {order.clientName}
-                      </p>
-                      {!order.clientId && (
-                        <p className="text-xs text-slate-400">
-                          Commande manuelle
+                    <td className="px-3 py-3 sm:px-6">
+                      <div className={STICKY_COLUMN_CONTENT}>
+                        <p className="font-medium text-slate-900">
+                          {order.clientName}
                         </p>
-                      )}
+                        {!order.clientId && (
+                          <p className="text-xs text-slate-400">
+                            Commande manuelle
+                          </p>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="min-w-48 px-4 py-3 text-slate-700">
                       {itemsSummary(order)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-slate-700">
@@ -340,7 +353,7 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_BADGE_CLASS[order.status]}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${ORDER_STATUS_BADGE_CLASS[order.status]}`}
                       >
                         {ORDER_STATUS_LABEL[order.status]}
                       </span>
@@ -357,7 +370,7 @@ export function OrdersPageContent({ shopId }: { shopId: string }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollableTable>
         )}
       </div>
 

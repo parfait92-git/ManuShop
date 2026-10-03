@@ -1,3 +1,6 @@
+// La visite guidée (BF-134) charge le SDK Firebase via useAuth — hors sujet ici.
+jest.mock("../../../components/onboarding/PageTour", () => ({ PageTour: () => null }));
+
 jest.mock("../../../lib/firebase", () => ({ db: {}, auth: {} }));
 
 const replaceMock = jest.fn();

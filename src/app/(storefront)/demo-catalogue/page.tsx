@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { CatalogueExplorer } from "@/components/storefront/CatalogueExplorer";
+import { PageTour } from "@/components/onboarding/PageTour";
 import {
   getArticlesByShop,
   getCategoriesByShop,
@@ -66,24 +67,27 @@ export default function DemoCataloguePage() {
   }
 
   return (
-    <CatalogueExplorer
-      items={items}
-      seeAllShopsHref="/demo-catalogue/boutiques"
-      shopHref={(shopId) => `/demo-catalogue/boutique/${shopId}`}
-      hero={
-        <section className="flex flex-col gap-4">
-          <Badge icon={<Sparkles className="size-3.5" />} className="w-fit">
-            Démo — données fictives
-          </Badge>
-          <h1 className="text-4xl leading-tight font-bold">
-            Le catalogue multi-boutiques de ManuShop
-          </h1>
-          <p className="max-w-2xl text-muted-foreground">
-            {mockShops.length} boutiques de démonstration, réparties dans
-            plusieurs villes du Cameroun et secteurs d&apos;activité.
-          </p>
-        </section>
-      }
-    />
+    <>
+      <PageTour tourId="storefront-catalogue" />
+      <CatalogueExplorer
+        items={items}
+        seeAllShopsHref="/demo-catalogue/boutiques"
+        shopHref={(shopId) => `/demo-catalogue/boutique/${shopId}`}
+        hero={
+          <section className="flex flex-col gap-4">
+            <Badge icon={<Sparkles className="size-3.5" />} className="w-fit">
+              Démo — données fictives
+            </Badge>
+            <h1 className="text-4xl leading-tight font-bold">
+              Le catalogue multi-boutiques de ManuShop
+            </h1>
+            <p className="max-w-2xl text-muted-foreground">
+              {mockShops.length} boutiques de démonstration, réparties dans
+              plusieurs villes du Cameroun et secteurs d&apos;activité.
+            </p>
+          </section>
+        }
+      />
+    </>
   );
 }

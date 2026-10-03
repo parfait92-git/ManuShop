@@ -45,12 +45,13 @@ export function ForgotPasswordForm() {
 
   return (
     <form
+      data-tour="forgot-form"
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" help="L'adresse email de votre compte. Vous y recevrez un lien pour choisir un nouveau mot de passe.">Email</Label>
         <Input
           id="email"
           type="email"

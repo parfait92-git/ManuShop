@@ -12,13 +12,15 @@ function sanitizePhone(phone: string): string {
  */
 export function buildWhatsAppOrderLink(
   shop: Pick<Shop, "whatsapp" | "name">,
-  items: CartItem[]
+  items: CartItem[],
+  /** Montant enregistré en FCFA → texte dans la devise de la boutique
+   * (`useMoney`). Par défaut : FCFA. */
+  formatPrice: (amountXaf: number) => string = (amount) =>
+    `${amount.toLocaleString("fr-FR")} FCFA`
 ): string {
   const lines = items.map(
     (item) =>
-      `• ${item.name} x${item.quantity} — ${(
-        item.price * item.quantity
-      ).toLocaleString("fr-FR")} FCFA`
+      `• ${item.name} x${item.quantity} — ${formatPrice(item.price * item.quantity)}`
   );
 
   const message = [
@@ -26,7 +28,7 @@ export function buildWhatsAppOrderLink(
     "",
     ...lines,
     "",
-    `Total : ${cartTotal(items).toLocaleString("fr-FR")} FCFA`,
+    `Total : ${formatPrice(cartTotal(items))}`,
   ].join("\n");
 
   return `https://wa.me/${sanitizePhone(shop.whatsapp)}?text=${encodeURIComponent(

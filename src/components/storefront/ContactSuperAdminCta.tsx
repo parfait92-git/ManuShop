@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import { supportMessageService } from "@/services/SupportMessageService";
 import styles from "@/styles/GlassButton.module.scss";
 
@@ -85,7 +86,10 @@ export function ContactSuperAdminCta() {
         }}
       >
         <DialogPortal className="max-w-md">
-          <DialogTitle>Nous contacter</DialogTitle>
+          <div className="flex items-start justify-between gap-3">
+            <DialogTitle>Nous contacter</DialogTitle>
+            <DialogTour tourId="dialog-contact" />
+          </div>
           <DialogDescription>
             Envoyez un message à l&apos;équipe ManuShop.
           </DialogDescription>
@@ -100,8 +104,8 @@ export function ContactSuperAdminCta() {
               className="flex flex-col gap-4"
               noValidate
             >
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="contact-subject">Objet</Label>
+              <div data-tour="contact-subject" className="flex flex-col gap-1.5">
+                <Label htmlFor="contact-subject" help="Le sujet de votre message en quelques mots.">Objet</Label>
                 <Input
                   id="contact-subject"
                   value={subject}
@@ -109,8 +113,8 @@ export function ContactSuperAdminCta() {
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="contact-body">Message</Label>
+              <div data-tour="contact-body" className="flex flex-col gap-1.5">
+                <Label htmlFor="contact-body" help="Votre message pour l'équipe ManuShop : question, demande d'ouverture de boutique, problème rencontré…">Message</Label>
                 <textarea
                   id="contact-body"
                   rows={4}
@@ -140,6 +144,7 @@ export function ContactSuperAdminCta() {
                   Annuler
                 </Button>
                 <Button
+                  data-tour="contact-send"
                   type="submit"
                   disabled={submitting || !subject.trim() || !body.trim()}
                 >

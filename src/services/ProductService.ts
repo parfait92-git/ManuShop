@@ -1,5 +1,6 @@
 import type { Product } from "@/models/product/Product";
 import { productRepository } from "@/repositories/ProductRepository";
+import { isPromoActive } from "@/lib/promo";
 import type {
   CreateProductDto,
   IProductRepository,
@@ -76,7 +77,8 @@ export class ProductService {
    * classement (ventes, vues...) une fois ces données réellement suivies.
    */
   compareByRelevance(a: Product, b: Product): number {
-    if (a.isPromo !== b.isPromo) return a.isPromo ? -1 : 1;
+    const aPromo = isPromoActive(a);
+    if (aPromo !== isPromoActive(b)) return aPromo ? -1 : 1;
     const dateDiff = b.createdAt.toMillis() - a.createdAt.toMillis();
     if (dateDiff !== 0) return dateDiff;
     return b.price - a.price;
@@ -88,9 +90,9 @@ export class ProductService {
    * aucun champ pour ça). La promo prime sur la nouveauté.
    */
   getBadge(product: Product): string | null {
-    if (product.isPromo && product.promoPrice && product.promoPrice < product.price) {
+    if (isPromoActive(product) && product.promoPrice! < product.price) {
       const percent = Math.round(
-        (1 - product.promoPrice / product.price) * 100
+        (1 - product.promoPrice! / product.price) * 100
       );
       return `-${percent}%`;
     }

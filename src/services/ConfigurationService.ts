@@ -1,7 +1,10 @@
 import { auth } from "@/lib/firebase";
 import { configurationRepository } from "@/repositories/ConfigurationRepository";
 import type { IConfigurationRepository } from "@/repositories/interfaces/IConfigurationRepository";
-import { setDemoCatalogueEnabledAction } from "@/server/actions/configurationActions";
+import {
+  setDemoCatalogueEnabledAction,
+  setUsdToXafRateAction,
+} from "@/server/actions/configurationActions";
 
 export class ConfigurationService {
   constructor(
@@ -27,6 +30,16 @@ export class ConfigurationService {
    * plus d'un accès direct à la console Firebase. */
   async setDemoCatalogueEnabled(enabled: boolean): Promise<void> {
     await setDemoCatalogueEnabledAction(await this.getCallerIdToken(), enabled);
+  }
+
+  /** Valeur d'un dollar en FCFA, ou `undefined` si pas encore fixée. */
+  async getUsdToXafRate(): Promise<number | undefined> {
+    const config = await this.configuration.getGeneral();
+    return config?.usdToXafRate;
+  }
+
+  async setUsdToXafRate(rate: number): Promise<void> {
+    await setUsdToXafRateAction(await this.getCallerIdToken(), rate);
   }
 
   private async getCallerIdToken(): Promise<string> {

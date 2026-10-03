@@ -24,8 +24,11 @@ import type { ClientContactMethod, Shop } from "@/models/shop/Shop";
 import { productService, type StockStatus } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
-import { useCartStore } from "@/store/cartStore";
 import { isOptimizableImage } from "@/lib/imageHosts";
+import { effectivePrice } from "@/lib/promo";
+import { useAddToCart } from "@/hooks/useAddToCart";
+import { useMoney } from "@/hooks/useMoney";
+import { shopCurrency } from "@/lib/currency";
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   "in-stock": "En stock",
@@ -49,8 +52,9 @@ const STOCK_CLASS: Record<StockStatus, string> = {
 export function ProductDetailPageContent({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [shop, setShop] = useState<Shop | null>(null);
+  const money = useMoney(shopCurrency(shop));
   const [reviews, setReviews] = useState<Review[]>([]);
-  const addItem = useCartStore((state) => state.addItem);
+  const addItem = useAddToCart();
   const { firebaseUser, profile, toggleFavorite } = useAuth();
 
   useEffect(() => {
@@ -118,8 +122,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
 
   const badge = productService.getBadge(product);
   const status = productService.getStockStatus(product);
-  const price =
-    product.isPromo && product.promoPrice ? product.promoPrice : product.price;
+  const price = effectivePrice(product);
   const averageRating = reviewService.getAverageRating(reviews);
   const socialUrl = shop ? getPrimarySocialNetworkUrl(shop) : null;
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
@@ -154,7 +157,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">
-          <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
+          <div data-tour="product-gallery" className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
             {product.images[0] && (
               <Image
                 src={product.images[0]}
@@ -185,7 +188,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             {badge ? ` · ${badge}` : ""}
           </Badge>
           <p className="text-3xl font-bold">
-            {price.toLocaleString("fr-FR")} FCFA
+            {money(price)}
           </p>
           <p className="text-muted-foreground">{product.description}</p>
           <p className={`text-sm font-medium ${STOCK_CLASS[status]}`}>
@@ -195,6 +198,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
 
           <div className="flex items-center gap-3">
             <Button
+              data-tour="product-buy"
               className="flex-1"
               disabled={status === "out-of-stock"}
               onClick={() =>
@@ -204,12 +208,14 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                   price,
                   image: product.images[0] ?? "",
                   stock: product.stock,
+                  shopId: product.shopId,
                 })
               }
             >
               Ajouter au panier
             </Button>
             <button
+              data-tour="product-detail-favorite"
               type="button"
               onClick={() => {
                 if (!firebaseUser) {
@@ -230,7 +236,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
           </div>
 
           {shop && (
-            <div className="rounded-2xl border border-border p-4">
+            <div data-tour="product-seller" className="rounded-2xl border border-border p-4">
               <h2 className="font-semibold">Vendu par</h2>
               <Link
                 href={`/boutique/${shop.id}`}
@@ -303,7 +309,7 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             </div>
           )}
 
-          <div className="rounded-2xl border border-border bg-muted/40 p-4">
+          <div data-tour="product-reviews" className="rounded-2xl border border-border bg-muted/40 p-4">
             <h2 className="font-semibold">Avis clients</h2>
             {reviews.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">

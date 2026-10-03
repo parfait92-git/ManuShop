@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DialogTour } from "@/components/onboarding/DialogTour";
 import type { CategoryTag } from "@/models/category/CategoryTag";
 import { categoryTagService } from "@/services/CategoryTagService";
 
@@ -65,7 +66,7 @@ function CreateTagForm({ onCreated }: { onCreated: (tag: CategoryTag) => void })
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
-          <Label htmlFor="tag-name">Nom du tag</Label>
+          <Label htmlFor="tag-name" help="Le nom du rayon commun du Marché (ex. Alimentation). Les commerçants y rattachent leurs catégories, et les clients filtrent le Marché avec.">Nom du tag</Label>
           <Input
             id="tag-name"
             placeholder="Ex. Alimentation"
@@ -74,7 +75,7 @@ function CreateTagForm({ onCreated }: { onCreated: (tag: CategoryTag) => void })
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tag-color">Couleur</Label>
+          <Label htmlFor="tag-color" help="La couleur du tag dans les filtres du Marché, pour le repérer d'un coup d'œil.">Couleur</Label>
           <Input
             id="tag-color"
             type="color"
@@ -146,23 +147,26 @@ function EditTagDialog({
       }}
     >
       <DialogPortal className="max-w-md">
-        <DialogTitle>Modifier le tag</DialogTitle>
+        <div className="flex items-start justify-between gap-3">
+          <DialogTitle>Modifier le tag</DialogTitle>
+          <DialogTour tourId="dialog-edit-tag" />
+        </div>
         <DialogDescription>
           Visible par tous les commerçants en créant une catégorie.
         </DialogDescription>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="edit-tag-name">Nom du tag</Label>
+            <div data-tour="edit-tag-name" className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="edit-tag-name" help="Le nom du rayon commun du Marché. Le modifier le renomme pour toutes les boutiques qui l'utilisent.">Nom du tag</Label>
               <Input
                 id="edit-tag-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-tag-color">Couleur</Label>
+            <div data-tour="edit-tag-color" className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-tag-color" help="La couleur du tag dans les filtres du Marché.">Couleur</Label>
               <Input
                 id="edit-tag-color"
                 type="color"
@@ -183,7 +187,7 @@ function EditTagDialog({
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={submitting || !name.trim()}>
+            <Button data-tour="edit-tag-save" type="submit" disabled={submitting || !name.trim()}>
               {submitting ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>
@@ -272,7 +276,11 @@ export function CategoryTagsPageContent() {
         </p>
       </div>
 
-      <CreateTagForm onCreated={handleCreated} />
+      <div data-tour="tags-create">
+
+        <CreateTagForm onCreated={handleCreated} />
+
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -288,7 +296,7 @@ export function CategoryTagsPageContent() {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-background">
+        <ul data-tour="tags-list" className="divide-y divide-border rounded-xl border border-border bg-background">
           {tags.map((tag) => (
             <li
               key={tag.id}

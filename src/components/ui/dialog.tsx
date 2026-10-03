@@ -1,7 +1,37 @@
+"use client";
+
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 
-const Dialog = DialogPrimitive.Root;
+import { useTour } from "@/components/onboarding/TourProvider";
+
+/**
+ * `Dialog.Root` de Base UI, adapté aux visites guidées (BF-134/135) : la
+ * bulle de visite est rendue hors de la fenêtre (portail `react-joyride`).
+ * Une fenêtre modale bloquerait alors les clics dessus, et un clic sur
+ * "Suivant" compterait comme un clic extérieur qui la ferme. Pendant une
+ * visite, la fenêtre passe donc en non modale et ignore toute demande de
+ * fermeture (clic extérieur, Échap qui sert aussi à quitter la visite).
+ */
+function Dialog({
+  modal,
+  disablePointerDismissal,
+  onOpenChange,
+  ...props
+}: DialogPrimitive.Root.Props) {
+  const { isRunning } = useTour();
+  return (
+    <DialogPrimitive.Root
+      {...props}
+      modal={isRunning ? false : modal}
+      disablePointerDismissal={isRunning || disablePointerDismissal}
+      onOpenChange={(open, eventDetails) => {
+        if (!open && isRunning) return;
+        onOpenChange?.(open, eventDetails);
+      }}
+    />
+  );
+}
 const DialogClose = DialogPrimitive.Close;
 
 function DialogPortal({

@@ -1407,3 +1407,221 @@ Demande de l'utilisateur : « l'image du produit doit être obligatoire à l'ajo
 **Avertissement** (`ProductList`, donc à la fois sur `/dashboard` et `/dashboard/products`) : bandeau `role="alert"` non fermable (« N produits n'ont pas de photo »), qui disparaît de lui-même quand le dernier est corrigé ; bouton « Voir les produits concernés » qui filtre la table ; vignette pointillée `ImageOff` + lien « Sans photo — ajouter » vers l'édition sur chaque ligne. Nouveau `productService.hasImage`.
 
 Tests : `ProductForm.test.tsx` (+4, dont une vérification par mutation), `ProductList.test.tsx` (+3), `ProductService.test.ts` (+1) ; un test existant créait un produit sans photo, mis à jour. Vérifié : `npm run lint`, `npx tsc --noEmit`, `npm run build`, `npm run test:coverage` (767 tests). Rien de commité.
+
+### 2026-10-02 — Règles Firestore « photo obligatoire » déployées
+
+Les règles `products` de l'entrée précédente ont été déployées par l'utilisateur (`npx firebase-tools deploy --only firestore:rules` — la CLI n'est pas installée globalement, toujours passer par `npx`). La règle est donc désormais appliquée côté serveur, plus seulement par le formulaire.
+
+### 2026-10-02 — Visites guidées étendues à toutes les interfaces (BF-134/135)
+
+Demande de l'utilisateur : « que les onboarding tour et guided tour soient appliqués dans toutes les interfaces ». Jusqu'ici, seul `/dashboard` en avait une (`DashboardOnboardingTour`, pilote du 2026-09-29).
+
+**Mécanisme générique** (`src/components/onboarding/`) :
+- `tours.ts` : le texte de chaque visite, une entrée par page. Les cibles sont des attributs `data-tour` posés dans les composants (~80 ajoutés). Une étape peut être réservée à un rôle (`roles`).
+- `PageTour` : monté dans chaque `page.tsx`. Il attend que les cibles s'affichent (5 s max, les pages lisent d'abord Firestore), puis ne garde que les étapes dont la cible est visible (liste vide, rôle, sidebar masquée sur mobile), pour que le compteur « Suivant (3/7) » reste juste. « Déjà vue » est mémorisé sur le compte (`User.seenTours`, inchangé), ou dans `localStorage` pour un visiteur non connecté (`src/lib/guestSeenTours.ts`).
+- `TourProvider` (racine) + `TourReplayButton` (« ? ») dans les 5 en-têtes (dashboard, Super Admin, vitrine, accueil, auth) : il relance la visite de la page affichée, et n'apparaît que si la page en a une. La toute première visite d'un compte ou navigateur se termine par une étape qui montre ce bouton.
+- `DashboardOnboardingTour` supprimé : remplacé par `<PageTour tourId="dashboard-onboarding" />`, même id, donc pas revue par ceux qui l'avaient déjà vue.
+
+**Pages couvertes** : les 32 pages sauf `/erreur` et les pages « bientôt disponible » Statistiques et Clients (rien à présenter). Les pages démo réutilisent la visite de leur équivalent réel.
+
+**Deux bugs trouvés en vérifiant dans Chrome (Playwright sur `next start`), invisibles aux tests unitaires** (qui remplacent `react-joyride` par un faux) :
+1. Plantage de toute page avec une visite (« This page couldn't load ») : `toStep` passait `placement: undefined`, et `react-joyride` fusionne l'étape par-dessus ses valeurs par défaut, donc la clé `undefined` écrasait `"bottom"` (`placement.startsWith`). Corrigé (clés omises si vides) ; test de non-régression vérifié par mutation.
+2. Sur la vitrine, une cible atteinte par défilement se retrouvait sous l'en-tête collant (marge par défaut 20 px) : `scrollOffset: 100` dans `GuidedTour`.
+
+**Tests** : `PageTour.test.tsx` (8), `TourReplayButton.test.tsx`, `tours.test.ts`. Ce dernier vérifie que chaque cible de `tours.ts` existe en `data-tour` dans le code et que chaque visite est montée par une page : une faute de frappe retirerait sinon l'étape en silence. 5 tests de pages vitrine ont un faux `PageTour` en plus (il chargeait le SDK Firebase). Vérifié : lint, `tsc`, build, `test:coverage`. Navigateur : `/login`, `/register`, `/`, `/catalogue`, `/boutiques` sur ordinateur, et `/login` sur mobile (lancement auto, parcours complet, non relancée après rechargement, bouton « ? »). **Pas vérifié dans un navigateur** : les pages derrière connexion (dashboard, Super Admin, mes commandes...), couvertes seulement par les tests. Rien de commité.
+
+### 2026-10-02 — Visites guidées dans les fenêtres et formulaires en surimpression
+
+Demande de l'utilisateur, sur une capture de l'assistant « Créer ma boutique » : la visite guidée doit aussi tourner dans les fenêtres et formulaires ouverts, sur toutes les pages (réponse à une question de clarification : « Visite dans les fenêtres »).
+
+**Problème technique** : la bulle `react-joyride` est rendue hors de la fenêtre (portail dans `body`). Or une fenêtre Base UI modale bloque les clics extérieurs et se ferme sur un clic extérieur : cliquer « Suivant » aurait fermé la fenêtre. Le portail de joyride dans la fenêtre a été écarté, car la fenêtre est positionnée par `transform`, ce qui fausse le `position: fixed` de la bulle et du voile.
+
+**Solution** :
+- `Dialog` (`ui/dialog.tsx`) devient une enveloppe de `Dialog.Root` : pendant une visite (`useTour().isRunning`), la fenêtre passe en `modal={false}` + `disablePointerDismissal` et ignore toute demande de fermeture (Échap sert aussi à quitter la visite). Testé dans `TourProvider.test.tsx`.
+- `TourProvider` : pile de visites (celle de la fenêtre passe devant celle de la page, qui reprend la main à la fermeture) et compteur `isRunning`/`markRunning`.
+- `DialogTour` : `PageTour` sans l'étape « revoir ici » (elle viserait le « ? » de l'en-tête, caché derrière la fenêtre), plus son propre bouton « ? », placé à côté du titre de chaque fenêtre.
+
+**Couvert** : assistant « Créer ma boutique » (une visite par étape, `STEP_TOURS`, remontée via `key={step}`), commande manuelle, motif d'annulation/retour/défaut, avis client, « Nous contacter », édition de catégorie, édition de tag, recadrage photo, et le panneau panier (pas une fenêtre, même mécanisme). Pas de visite sur les simples confirmations (données non enregistrées, connexion requise, suppression définitive avec compte à rebours) : deux boutons, au moment où l'utilisateur doit décider, une visite y gênerait plus qu'elle n'aiderait.
+
+Tests : `TourProvider.test.tsx` (pile, `Dialog` ignore Échap pendant une visite et le respecte sinon) ; `tours.test.ts` étendu à `DialogTour` et aux ids dynamiques. Les 9 tests de fenêtres existants ont un faux `DialogTour` : sur le profil de test, la vraie visite se lançait et le test de l'assistant prenait 415 s. Vérifié : lint, `tsc`, build, `test:coverage` (818 tests). Chrome (`next start`) : « Nous contacter » sur `/` et panier sur `/catalogue`. Visite complète, la fenêtre reste ouverte pendant tout le parcours, puis Échap la ferme normalement. Les fenêtres derrière connexion ne sont pas vérifiées dans un navigateur. Rien de commité.
+
+### 2026-10-02 — Tableaux défilables horizontalement et affichage sur petits téléphones / police agrandie
+
+Demande de l'utilisateur : que les tableaux de données soient défilables horizontalement et bien visibles sur petit téléphone ou avec une police système agrandie, dans le respect des bonnes pratiques UI/UX.
+
+**`ScrollableTable`** (`src/components/ui/scrollable-table.tsx`), appliqué aux deux seuls vrais tableaux (produits, commandes) :
+- première colonne (produit, client) fixe à gauche, avec une ombre dès que le tableau a défilé ;
+- ombre sur le bord droit tant qu'il reste des colonnes cachées, et une ligne d'aide affichée tant que le tableau déborde, sans disparaître en fin de défilement (évite un décalage pendant le geste) ;
+- `role="region"` + `aria-label`, `tabIndex=0` seulement quand ça déborde (défilement au clavier, WCAG 2.1.1) ;
+- badges de statut et de catégorie en `whitespace-nowrap`.
+
+**Bugs corrigés** :
+- Tableau des commandes : il reprenait les marges négatives (`-mx-4 sm:-mx-6`) du tableau produits, conçues pour une carte avec rembourrage. La sienne n'en a pas, donc la zone défilable débordait de la carte.
+- Colonne fixe : la plafonner sur la cellule (`max-w-[40vw]`, puis `w-[40vw]`) ne marche pas, car un tableau en mise en page auto ignore `max-width` sur une cellule et n'y respecte pas `width` comme minimum. Avec `overflow-wrap:anywhere`, la colonne « Client » tombait à une lettre de large. La largeur est maintenant portée par le contenu (`STICKY_COLUMN_CONTENT`, `w-[calc(40vw-1.5rem)]`), avec césure française (`hyphens-auto`). Une 1ʳᵉ tentative en `rem` (`min-w-36`) grandissait avec la police : la colonne fixe prenait 85 % de l'écran à 150 %.
+- En-tête de la vitrine : déjà trop large à 320 px (24 px de débordement), à cause du logo et des 4 boutons ronds (le « ? » ajouté pour les visites l'a fait basculer). À 150 % de police, il atteignait 515 px et élargissait toute la page, ce qui faisait sortir les champs et boutons de `/mon-compte` de leurs cartes. Correctifs : marges `px-4` sur mobile, logo tronquable, cloche des notifications masquée sous `sm` (aucune action n'y est branchée), flèche du menu compte masquée sur mobile.
+- Panneau panier plafonné à la largeur de l'écran ; ligne « N articles · Trier par » et prix des cartes produit en `flex-wrap` ; bulle de visite guidée plafonnée à `calc(100vw - 24px)` (380 px par défaut).
+
+**Vérification réelle** sur les émulateurs Firebase (compte gérant, boutique, 6 produits et 5 commandes de test, noms volontairement longs), dans Chrome à 320 px, police à 100 % puis 150 % appliquée dès le chargement : 18 écrans (tout le tableau de bord, `/mon-compte`, catalogue, boutique, fiche produit, mes commandes, favoris). Aucun débordement horizontal de page ; seuls les tableaux défilent. Deux pièges de mesure à retenir pour de futurs audits : en émulation mobile, Chrome élargit `innerWidth` jusqu'au contenu qui déborde (il faut comparer à `documentElement.clientWidth`) ; et une police agrandie après le chargement fausse les éléments mesurés au démarrage, comme le voile de visite guidée. Limite : Chrome sous Linux n'a pas de dictionnaire de césure, les rares mots plus larges que la colonne fixe y sont coupés sans trait d'union (Android en a un). Tests : `scrollable-table.test.tsx` (3). Vérifié : lint, `tsc`, build, `test:coverage` (821 tests). Rien de commité.
+
+### 2026-10-02 — Bouton d'aide « ? » sur tous les champs (BF-136 étendu)
+
+Demande de l'utilisateur : une icône « ? » sur tous les champs, qui affiche au survol (ordinateur) ou au clic l'aide sur le rôle du champ et son utilité.
+
+**Mécanisme unique** :
+- `CoachMark` (bulle « ? » existante, BF-136) s'ouvre désormais au survol (`openOnHover`, délai de 150 ms), au toucher sur mobile et au clavier. Sa zone de toucher fait 24 × 24 px au minimum (WCAG 2.5.8).
+- `Label` reçoit une prop `help` qui place le « ? » à côté du libellé, jamais dedans : un bouton dans un `<label>` est invalide, et un clic activerait aussi le champ. Le bouton s'appelle « Aide : <libellé> », nom déduit du texte du libellé.
+- L'ancien `FieldHint` (`title` natif, survol seulement, donc inutilisable sur mobile) est supprimé ; ses 10 textes ont été repris.
+
+**Couverture** : 97 points d'aide, dont 66 libellés (`help`) et 31 directs. Ces derniers couvrent les interrupteurs des paramètres (sur le titre de la ligne), les recherches et filtres, le tri du catalogue, la colonne « Publié », « Se souvenir de moi », les articles de la commande manuelle, le zoom du recadrage, les privilèges premium, la note et la case « défectueux » de l'avis, la source et le lien du logo, et le moyen de paiement. Trois zones de texte sans libellé visible en ont reçu un, avec son aide (motif de commande, avis, réponse du Super Admin) : c'était aussi un défaut d'accessibilité. Seul exclu : la recherche de l'en-tête de l'accueil, où le « ? » se trouverait collé au « ? » de la visite guidée (deux icônes identiques aux rôles différents).
+
+**Honnêteté des textes**, après vérification dans le code :
+- `promoEnd` n'est lu nulle part : une promotion ne s'arrête pas d'elle-même à sa date de fin, l'aide le dit.
+- « Commandes par e-mail » et « alertes urgentes par téléphone » n'ont aucun effet aujourd'hui ; « Notifications par email » (compte) non plus.
+- Le paiement en ligne n'est pas actif.
+- Deux privilèges premium (filtre de ventes par intervalle, statistiques de consultation) ne sont pas encore construits.
+
+**Bug trouvé en vérifiant dans Chrome** : la bulle s'affichait derrière la carte des pages de connexion. Le `z-50` était posé sur la bulle, mais son positionneur Base UI (placé par `transform`) crée un contexte d'empilement, et la carte en `z-10` passait devant. Corrigé dans `ui/popover.tsx` (`z-50` sur le positionneur), ce qui profite aussi aux autres popovers.
+
+Tests : `label.test.tsx` (nouveau). `CategoryManager.test.tsx` et `ShopSettingsForm.test.tsx` ont leurs requêtes `getByLabelText(/X/)` ancrées en `/^X/`, car elles trouvaient aussi le bouton « Aide : X ». Vérifié : lint, `tsc`, build, `test:coverage`. Chrome (`next start`) sur `/login` : survol (ouvre puis ferme), clavier (Tab puis Entrée), toucher mobile (ouvre, toucher ailleurs ferme), sans soumettre le formulaire ni faire déborder la page. Rien de commité.
+
+### 2026-10-02 — Fin de promotion automatique (BF-31)
+
+Demande de l'utilisateur, après la découverte que `promoEnd` était enregistré mais lu nulle part : brancher la fin de promotion automatique.
+
+**Règle unique** (`src/lib/promo.ts`, sans dépendance aux SDK Firebase, utilisée par le navigateur comme par le serveur) : `isPromoActive`, `effectivePrice`, `isPromoExpired`, `promoEndsAt`. Une promotion est active jusqu'à la fin de son jour de fin, **heure du Cameroun** (UTC+1 fixe, pas d'heure d'été). Le décalage est figé dans le code plutôt que lu sur la machine, pour que le serveur (UTC) et les navigateurs tranchent pareil au même instant. Le jour se lit sur les composantes UTC, car `ProductForm` enregistre la date choisie comme minuit UTC.
+
+**Branché partout** :
+- **Vitrine** : prix des cartes, fiche produit, mise en avant de l'accueil, badge « -X % » (`getBadge`), classement (`compareByRelevance`), filtre « Promotions » et tri par prix des deux catalogues. Le tri utilisait le prix normal même en promo, il utilise maintenant le prix réellement affiché.
+- **Facturation** (`createOrderAction`) : le serveur reprenait tel quel le prix envoyé par le panier, qui est stocké dans le navigateur avec le prix du moment de l'ajout. Un article ajouté pendant une promo puis commandé après sa fin aurait été facturé au prix promo (et un client pouvait envoyer n'importe quel prix). Pour une commande en ligne, chaque prix est maintenant recalculé dans la transaction depuis le produit relu. Un produit sans prix lisible fait refuser la commande (`ValidationError`), au lieu d'enregistrer `NaN`. La commande manuelle garde le prix saisi par le commerçant.
+- **Panier** : `cartStore.refreshPrices` + `useCartPriceSync` relisent les produits à l'ouverture du panier et de l'écran de paiement. Le total et le message « Commander via WhatsApp » annoncent ainsi le prix réel, et un message prévient le client quand un prix a changé.
+- **Formulaire produit** : encart « Cette promotion est terminée depuis le … » quand la case est cochée mais la date passée ; textes d'aide corrigés.
+
+**Erreur de ma part corrigée** : l'aide de « Produit en promotion » (commit `2d1ead6`) affirmait que l'ancien prix apparaissait barré. Aucun prix barré n'existe : la vitrine montre le prix promo avec un badge de réduction.
+
+**Hors périmètre, signalé** : la commande manuelle propose toujours le prix normal, même pendant une promotion (choix existant, non modifié). Pas de date de début de promotion.
+
+Tests : `promo.test.ts` (dont la limite exacte : 22 h 59 UTC actif, 23 h 00 UTC terminé), `useCartPriceSync.test.ts`, 3 nouveaux cas dans `orderActions.test.ts`, et un cas dans `ProductService.test.ts` (promo expirée qui ne passe plus en tête). Tests existants adaptés : prix ajouté aux faux produits du serveur, et un faux `useCartPriceSync` dans les tests du panier et du paiement. Vérifié : lint, `tsc`, 833 tests.
+
+**Scénario réel sur les émulateurs** (compte client, produit à promo terminée la veille, et un autre à promo en cours) :
+- vitrine : 20 000 FCFA sans badge pour la promo terminée, 8 000 FCFA « -20% » pour la promo en cours ;
+- panier rempli « pendant la promo » (15 000 + 8 000) : l'écran de paiement affiche l'avertissement et passe à 28 000 FCFA ;
+- commande confirmée : enregistrée à 20 000 + 8 000 = 28 000, et non au prix promo envoyé par le panier.
+
+Rien de commité.
+
+### 2026-10-02 — Prix d'achat et gains par article / catégorie / semaine / mois / période
+
+Demande de l'utilisateur : saisir le prix d'achat de chaque article pour gérer son stock et extraire les gains par article, par catégorie, par semaine, par mois et sur une période définie.
+
+**Décisions de l'utilisateur** (questions posées avant de coder) :
+- prix d'achat et gains réservés au **gérant** ;
+- seules les commandes **livrées** comptent ;
+- les ventes antérieures au prix d'achat sont **estimées** avec le prix d'achat actuel, et signalées comme telles ;
+- la période personnalisée est **accessible à tous**, alors que BF-102 la prévoyait premium.
+
+**Confidentialité, décidée d'office (constat de sécurité)** : `products` est lisible par tout le monde, et une commande est lisible par son client. D'où deux collections privées :
+- `productCosts/{productId}` (`{shopId, purchasePrice}`) : lecture et écriture par le gérant de la boutique uniquement ;
+- `orderCosts/{orderId}` (`{shopId, items:[{productId, unitCost?}]}`) : coût figé à la vente, écrit par `createOrderAction` dans la même transaction, lecture gérant uniquement, écriture par le serveur seulement.
+
+Un prix d'achat modifié plus tard ne réécrit donc pas les gains passés. **Règles Firestore à déployer** : sans elles, l'enregistrement du prix d'achat et la page Statistiques sont refusés en production.
+
+**Fait** :
+- Modèles `ProductCost`/`OrderCost`, dépôts, `CostService`.
+- `src/lib/profitReport.ts`, calcul pur sans lecture Firestore :
+  - bornes de jour, semaine (lundi) et mois en heure du Cameroun (UTC+1 figé, comme `promo.ts`) ;
+  - vente datée par la création de la commande, comme « Ventes du mois » ;
+  - remise de commande répartie au prorata des lignes ;
+  - ordre de priorité du coût : figé, sinon estimé, sinon inconnu (ligne comptée dans le chiffre d'affaires mais pas dans le gain) ;
+  - un produit mis à la corbeille garde son nom et sa catégorie dans l'historique ;
+  - valeur du stock au prix d'achat.
+- Formulaire produit : champ « Prix d'achat » (gérant seul), aperçu de la marge unitaire, avertissement de vente à perte. Si l'enregistrement du coût échoue après celui du produit, un toast prévient et la page avance quand même : un nouvel essai aurait recréé le produit en double.
+- `/dashboard/stats` (était « bientôt disponible ») : `StatsPageContent`, réservée au gérant, entrée de menu masquée aux vendeurs. Visite guidée `dashboard-stats`, aides « ? » sur chaque indicateur, tableaux `ScrollableTable`.
+
+**Bug évité, attrapé par un test** : en modification, si le prix d'achat existant n'a pas pu être lu (réseau), le champ restait vide, et l'enregistrement de n'importe quelle autre modification l'effaçait. Le coût n'est maintenant réécrit que si le champ a été modifié (`dirtyFields`). Le prix chargé est posé comme valeur de référence (`resetField`), et la valeur par défaut est `""` plutôt que `undefined` (react-hook-form tenait sinon le champ pour modifié).
+
+**Tests** : `profitReport.test.ts` (9), `StatsPageContent.test.tsx` (2), 6 nouveaux cas dans `ProductForm.test.tsx` (gérant/vendeur, enregistrement, vente à perte, échec du coût, chargement, non-effacement, modification réelle), et un test `orderCosts` dans `orderActions.test.ts` (dont : aucun coût dans la commande lisible par le client). Vérifié : lint, `tsc`, 853 tests.
+
+**Vérification réelle sur les émulateurs** :
+- Parcours navigateur : prix d'achat 6 000 saisi par le gérant (aperçu « Marge par unité : 4 000 FCFA (40 %) ») ; vendeur sans le champ ni le menu, et `/dashboard/stats` renvoyé vers `/erreur` ; commande client puis livraison par le gérant.
+- Statistiques : chiffre d'affaires 30 000, coût 18 000, gain 12 000, marge 40 %, avertissement « 1 vente estimée », valeur du stock 54 000.
+- Règles, interrogées avec de vrais jetons : `productCosts` gérant 200, vendeur/client/anonyme 403 ; `orderCosts` gérant 200, vendeur/client 403 ; écritures refusées au vendeur et au gérant sur `orderCosts`. Aucun coût dans la commande lue par le client, ni dans le produit public.
+
+Rien de commité.
+
+### 2026-10-02 — Règles `productCosts`/`orderCosts` déployées
+
+Déployées par l'utilisateur (`npx firebase-tools deploy --only firestore:rules`) : le prix d'achat et la page Gains et statistiques sont opérationnels en production.
+
+### 2026-10-02 — Page Clients (`/dashboard/clients`, BF-144)
+
+Demande de l'utilisateur : implémenter la page Clients, jusque-là « bientôt disponible ». Aucun besoin détaillé dans le cahier des charges : conception partie des données réellement disponibles.
+
+**Source** : les commandes de la boutique. Les comptes clients (`users`) ne sont pas lisibles par le commerçant (règles), et une commande manuelle n'a pas de compte.
+
+**`src/lib/clientDirectory.ts`** (calcul pur) :
+- Regroupement d'un même client : par **téléphone normalisé** d'abord (chiffres seuls), seul identifiant commun à une commande en ligne et à une commande saisie en boutique ; sinon par compte ; sinon par nom.
+- Agrégats : nombre de commandes ; total dépensé sur les commandes **livrées** seulement, comme les gains ; dates de première et dernière commande.
+- Repères : Nouveau (1ʳᵉ commande il y a moins de 30 j), Fidèle (au moins 3 livrées), Inactif (rien depuis au moins 90 j).
+- Tri, recherche par nom ou par chiffres du numéro, lien WhatsApp.
+- Export CSV avec point-virgule et BOM UTF-8, ce qu'Excel en français ouvre directement, accents compris.
+
+**`ClientsPageContent`** :
+- Pastilles de repères qui servent aussi de filtres, avec leur nombre.
+- Recherche, tri et export, chacun avec son aide « ? ».
+- Tableau défilant (`ScrollableTable`, nom du client fixé à gauche) et état vide explicatif.
+- Fiche client en fenêtre : coordonnées, boutons Appeler (`tel:`) et WhatsApp, historique complet des commandes avec leur statut.
+- Visites guidées `dashboard-clients` et `dialog-client`. Accès gérant et vendeurs : pas de donnée de coût sur cette page.
+
+**Tests** : `clientDirectory.test.ts` (8), `ClientsPageContent.test.tsx` (3). Vérifié : lint, `tsc`, 866 tests.
+
+**Vérification réelle sur les émulateurs** (Chrome, ordinateur, et 320 px avec police à 150 %) : une cliente qui avait commandé en ligne et en boutique avec un numéro écrit autrement apparaît comme un seul client (3 commandes, 30 000 FCFA livrés). Repères, fiche, historique et liens d'appel et WhatsApp sont corrects, sans aucun débordement de page.
+
+**Note d'environnement** : l'utilisateur avait son propre `next dev` sur le port 3000, et Next 16 refuse un second serveur de dev dans le même dossier. Le serveur de test a donc tourné sur une copie du projet dans le dossier temporaire, avec `--webpack` (Turbopack refuse un `node_modules` relié par lien symbolique hors du projet). Le serveur de l'utilisateur n'a pas été touché.
+
+Rien de commité.
+
+### 2026-10-02 — Devise de la boutique côté clients (BF-145) + préparation multilingue (BF-146)
+
+Demande de l'utilisateur : appliquer la devise configurée par la boutique à tous ses articles, avec calculs et conversion côté clients ; prévoir les fichiers de langue pour l'étape suivante.
+
+**Constat de départ** : `Shop.currency` (FCFA, EUR, USD) était enregistré mais lu nulle part. « FCFA » était écrit en dur 62 fois dans 23 fichiers, et tous les prix existants sont en FCFA.
+
+**Choix de l'utilisateur** (questions posées) :
+- prix toujours saisis et enregistrés en FCFA, et affichés convertis aux clients ;
+- taux fixés par le Super Admin, sans service externe ;
+- sur le Marché, chaque article dans la devise de sa boutique ;
+- pour la langue : la structure et les textes de prix maintenant, la traduction complète plus tard.
+
+**Devise** :
+- `src/lib/currency.ts` : conversion et `formatMoney` (`Intl`, sans centimes pour le FCFA). Euro à la parité fixe 655,957. Dollar au taux `PlatformConfiguration.usdToXafRate`, saisi par le Super Admin dans Réglages via `setUsdToXafRateAction`, borné de 50 à 5 000 côté serveur et côté client. Sans taux, l'affichage reste en FCFA plutôt que faux.
+- `CurrencyContext` (léger) et `CurrencyProvider` (charge les taux une fois), `useMoney(devise)`, `useShopCurrency(shopId)` (cache par boutique, service chargé à la demande).
+- Converti côté clients : cartes, fiche produit, mise en avant de l'accueil, panier, message WhatsApp, paiement, « Mes commandes », seuil de livraison offerte de la vitrine.
+- Restent en FCFA : tout l'espace commerçant (référence, gains), les abonnements et la notification WhatsApp au commerçant. Il voit un aperçu « Vos clients verront : 15,24 € » dans le formulaire produit, et une note de conversion dans ses paramètres.
+
+**Bug majeur corrigé, découvert en chemin** : le panier et le paiement utilisaient `useShop()`, qui renvoie la **première boutique de la base**. Sur une plateforme à plusieurs boutiques, toute commande et tout message WhatsApp partaient chez elle, quels que soient les articles. Le serveur ne vérifiait pas non plus l'appartenance des articles à la boutique de la commande. Corrigé :
+- `CartItem.shopId`, complété au rafraîchissement pour les paniers existants ;
+- `useAddToCart` : un panier = une seule boutique, avec confirmation pour vider ;
+- `useCartShop` remplace `useShop()` ;
+- `createOrderAction` refuse un article d'une autre boutique.
+
+`useShop`/`getPrimaryShop` ne sont plus utilisés par le panier.
+
+**Langue** :
+- `src/i18n/config.ts` (fr par défaut, en), `dictionaries/fr.json` et `en.json`.
+- `I18nProvider`/`useI18n` : `t()` typé par les clés du dictionnaire français, variables `{nom}`.
+- Utilisé pour les textes de devise, de taux et de panier. Un test vérifie que chaque langue a exactement les mêmes clés et les mêmes variables.
+- Reste, à l'étape langue : routage `app/[lang]` (guide Next), sélecteur, et traduction de tous les écrans.
+
+**Tests** : `currency.test.ts`, `dictionaries.test.ts`, `useAddToCart.test.ts` (nouveaux), test « autre boutique » dans `orderActions.test.ts`, et `useCartPriceSync.test.ts` étendu. Tests adaptés : faux produits serveur avec `shopId`, tests du panier et du paiement sur `useCartShop`, faux service de configuration étendu. Délai de 15 s pour un test `ShopSettingsForm` qui tape une URL caractère par caractère : il était déjà à 12,7 s pour l'ensemble du fichier, et dépassait 5 s sous la suite complète. Vérifié : lint, `tsc`, 878 tests.
+
+**Vérification réelle sur les émulateurs** (copie isolée, le `next dev` de l'utilisateur sur :3000 n'a pas été touché) :
+- trois boutiques EUR, USD et XAF : 15,24 €, 10 000 FCFA (taux du dollar pas encore fixé) et 10 000 FCFA ;
+- achat en euros cohérent partout (fiche, panier, WhatsApp, paiement, « Mes commandes ») ;
+- confirmation affichée pour un article d'une autre boutique ;
+- commande enregistrée chez la boutique EUR, en FCFA (10 000) ;
+- Super Admin : 12 refusé, 600 enregistré, puis la boutique USD affiche 16,67 $US ;
+- aperçu et note de conversion présents côté commerçant.
+
+Piège de test : `platformAdmins` est indexé par **email**, pas par uid.
+
+Rien de commité.

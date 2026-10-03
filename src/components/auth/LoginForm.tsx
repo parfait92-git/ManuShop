@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FacebookIcon, GoogleIcon } from "@/components/icons/BrandIcons";
+import { CoachMark } from "@/components/ui/CoachMark";
 import { useRedirectParam } from "@/hooks/useRedirectParam";
 import { buildAuthHref } from "@/lib/redirectParam";
 import { LoginSchema, type LoginInput } from "@/lib/validation/auth";
@@ -50,7 +51,11 @@ export function LoginForm() {
         </p>
       )}
 
-      <EmailLoginForm redirectTarget={redirectTarget} />
+      <div data-tour="login-form">
+
+        <EmailLoginForm redirectTarget={redirectTarget} />
+
+      </div>
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
@@ -58,9 +63,13 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <SocialLoginButtons redirectTarget={redirectTarget} />
+      <div data-tour="login-social">
 
-      <p className="text-center text-sm text-muted-foreground">
+        <SocialLoginButtons redirectTarget={redirectTarget} />
+
+      </div>
+
+      <p data-tour="login-register" className="text-center text-sm text-muted-foreground">
         Pas encore de boutique ?{" "}
         <Link
           href={buildAuthHref("/register", redirectTarget)}
@@ -99,7 +108,7 @@ function EmailLoginForm({ redirectTarget }: { redirectTarget: string | null }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Adresse email</Label>
+        <Label htmlFor="email" help="L'adresse email utilisée lors de la création de votre compte.">Adresse email</Label>
         <Input
           id="email"
           type="email"
@@ -114,8 +123,9 @@ function EmailLoginForm({ redirectTarget }: { redirectTarget: string | null }) {
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password">Mot de passe</Label>
+          <Label htmlFor="password" help="Le mot de passe de votre compte. L'icône en forme d'œil l'affiche en clair pour vérifier ce que vous tapez.">Mot de passe</Label>
           <Link
+            data-tour="login-forgot"
             href="/forgot-password"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >
@@ -151,10 +161,15 @@ function EmailLoginForm({ redirectTarget }: { redirectTarget: string | null }) {
         )}
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input type="checkbox" className="size-4" {...register("rememberMe")} />
-        Se souvenir de moi
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input type="checkbox" className="size-4" {...register("rememberMe")} />
+          Se souvenir de moi
+        </label>
+        <CoachMark label="Aide : se souvenir de moi">
+          Cochée, vous restez connecté sur cet appareil même après avoir fermé le navigateur. Décochée, vous êtes déconnecté à la fermeture : à préférer sur un appareil partagé.
+        </CoachMark>
+      </div>
 
       {formError && <p className="text-sm text-destructive">{formError}</p>}
 

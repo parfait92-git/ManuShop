@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { useShopBranding } from "@/components/providers/ShopBrandingProvider";
 import { CataloguePageContent } from "@/components/storefront/CataloguePageContent";
+import { PageTour } from "@/components/onboarding/PageTour";
 import { SOCIAL_NETWORK_URL_FIELD } from "@/lib/shopSocialNetworks";
 import type { Shop } from "@/models/shop/Shop";
 import { shopService } from "@/services/ShopService";
@@ -80,5 +81,10 @@ export default function ShopStorefrontPage() {
     );
   }
 
-  return <CataloguePageContent shopId={shop.id} />;
+  return (
+    <>
+      <PageTour tourId="storefront-shop" />
+      <CataloguePageContent shopId={shop.id} />
+    </>
+  );
 }

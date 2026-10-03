@@ -1,3 +1,7 @@
+// Rafraîchissement des prix du panier (testé dans useCartPriceSync.test.ts) :
+// il lit les produits via le SDK Firebase, hors sujet ici.
+jest.mock("../../hooks/useCartPriceSync", () => ({ useCartPriceSync: () => [] }));
+
 const mockItems = [
   { productId: "p1", name: "Sac à main artisanal", price: 12500, image: "", quantity: 1 },
 ];
@@ -30,8 +34,8 @@ jest.mock("../providers/AuthProvider", () => ({
 }));
 
 let mockShop: { id: string } | null = { id: "shop-1" };
-jest.mock("../../hooks/useShop", () => ({
-  useShop: () => ({ shop: mockShop, loading: false }),
+jest.mock("../../hooks/useCartShop", () => ({
+  useCartShop: () => ({ shop: mockShop, loading: false }),
 }));
 
 const createOrderMock = jest.fn();

@@ -44,12 +44,13 @@ export function OnboardingForm() {
 
   return (
     <form
+      data-tour="onboarding-form"
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="displayName">Votre nom</Label>
+        <Label htmlFor="displayName" help="Le nom affiché sur votre compte, visible par les boutiques auprès desquelles vous commandez.">Votre nom</Label>
         <Input
           id="displayName"
           autoComplete="name"

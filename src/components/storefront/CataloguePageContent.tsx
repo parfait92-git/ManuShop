@@ -8,10 +8,14 @@ import { StorefrontProductCard } from "@/components/storefront/StorefrontProduct
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { CoachMark } from "@/components/ui/CoachMark";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
 import { productService } from "@/services/ProductService";
+import { effectivePrice, isPromoActive } from "@/lib/promo";
+import { useMoney } from "@/hooks/useMoney";
+import { useShopCurrency } from "@/hooks/useShopCurrency";
 
 type SortOrder = "newest" | "price-asc" | "price-desc";
 
@@ -19,9 +23,9 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
   const sorted = [...products];
   switch (order) {
     case "price-asc":
-      return sorted.sort((a, b) => a.price - b.price);
+      return sorted.sort((a, b) => effectivePrice(a) - effectivePrice(b));
     case "price-desc":
-      return sorted.sort((a, b) => b.price - a.price);
+      return sorted.sort((a, b) => effectivePrice(b) - effectivePrice(a));
     case "newest":
     default:
       return sorted.sort(
@@ -30,7 +34,12 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
   }
 }
 
+/** Seuil de livraison offerte, en FCFA (devise de référence), affiché
+ * converti dans la devise de la boutique. */
+const FREE_DELIVERY_THRESHOLD_XAF = 50000;
+
 export function CataloguePageContent({ shopId }: { shopId: string }) {
+  const money = useMoney(useShopCurrency(shopId));
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [term, setTerm] = useState("");
@@ -93,7 +102,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       ? bySearch.filter((product) => product.category === category)
       : bySearch;
     const byPromo = promoOnly
-      ? byCategory.filter((product) => product.isPromo)
+      ? byCategory.filter((product) => isPromoActive(product))
       : byCategory;
     return sortProducts(byPromo, sortOrder);
   }, [publishedProducts, term, category, sortOrder, promoOnly]);
@@ -133,53 +142,63 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
             aider à choisir simplement.
           </p>
         </div>
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-4">
+        <div data-tour="shop-contact" className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-4">
           <Truck className="size-5 text-primary" />
           <div>
             <p className="text-sm font-semibold">Livraison offerte</p>
             <p className="text-sm text-muted-foreground">
-              Dès 50 000 FCFA de commande
+              Dès {money(FREE_DELIVERY_THRESHOLD_XAF)} de commande
             </p>
           </div>
         </div>
       </section>
 
       <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-tour="catalogue-filters" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CategoryFilterPills
             categories={categories.map((c) => ({ value: c.name, label: c.name }))}
             selected={category}
             onSelect={setCategory}
           />
-          <Input
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-            placeholder="Rechercher un article"
-            aria-label="Rechercher un article"
-            className="sm:max-w-xs"
-          />
+          <div className="flex items-center gap-2 sm:max-w-xs">
+            <Input
+              value={term}
+              onChange={(event) => setTerm(event.target.value)}
+              placeholder="Rechercher un article"
+              aria-label="Rechercher un article"
+              className="flex-1"
+            />
+            <CoachMark label="Aide : recherche d'article">
+              Tapez une partie du nom d&apos;un article pour n&apos;afficher que ceux qui correspondent. Combinable avec le filtre par catégorie.
+            </CoachMark>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
           <span>
             {products === null
               ? "Chargement..."
               : `${visibleProducts.length} article${visibleProducts.length > 1 ? "s" : ""} disponible${visibleProducts.length > 1 ? "s" : ""}`}
           </span>
-          <label className="flex items-center gap-2">
-            Trier par
-            <Select
-              value={sortOrder}
-              onChange={(event) =>
-                setSortOrder(event.target.value as SortOrder)
-              }
-              className="w-auto"
-            >
-              <option value="newest">Nouveautés</option>
-              <option value="price-asc">Prix croissant</option>
-              <option value="price-desc">Prix décroissant</option>
-            </Select>
-          </label>
+          <div className="flex items-center gap-2">
+            <label data-tour="catalogue-sort" className="flex items-center gap-2">
+              Trier par
+              <Select
+                value={sortOrder}
+                onChange={(event) =>
+                  setSortOrder(event.target.value as SortOrder)
+                }
+                className="w-auto"
+              >
+                <option value="newest">Nouveautés</option>
+                <option value="price-asc">Prix croissant</option>
+                <option value="price-desc">Prix décroissant</option>
+              </Select>
+            </label>
+            <CoachMark label="Aide : tri des articles">
+              Change l&apos;ordre d&apos;affichage : les plus récents d&apos;abord, ou du moins cher au plus cher (et inversement).
+            </CoachMark>
+          </div>
         </div>
 
         {products !== null && visibleProducts.length === 0 ? (
@@ -187,7 +206,7 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
             Aucun produit ne correspond à votre recherche.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div data-tour="catalogue-products" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.map((product) => (
               <StorefrontProductCard key={product.id} product={product} />
             ))}

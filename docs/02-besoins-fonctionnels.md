@@ -83,7 +83,7 @@
 | ID | Besoin | Description |
 |---|---|---|
 | BF-30 | Créer promotion | Réduction en % ou montant fixe sur un produit ou catégorie |
-| BF-31 | Promotion limitée | Définir une date de début et fin de promotion |
+| BF-31 | Promotion limitée | Définir une date de début et fin de promotion (partiel — **fin automatique faite le 2026-10-02** : la promotion s'arrête d'elle-même à la fin de sa journée de fin, heure du Cameroun, sur toute la vitrine et dans la facturation (`src/lib/promo.ts`) ; pas encore de date de **début** : une promotion cochée commence immédiatement) |
 | BF-32 | Code promo | Générer et gérer des codes promotionnels |
 | BF-33 | Promotion flash | Affichage spécial sur la boutique (compteur de temps) |
 | BF-34 | Historique promos | Voir les promotions passées et leur impact |
@@ -139,7 +139,7 @@
 | ID | Besoin | Description |
 |---|---|---|
 | BF-53 | Dashboard général | Chiffre d'affaires, commandes, stock en un coup d'œil. **Fait le 2026-09-25** : cartes "Ventes du mois" (total des commandes `delivered` du mois), "Commandes du mois", "Nouveaux clients" (`clientId` distincts du mois) et "Produits actifs" toutes réelles, plus "Ventes récentes" (5 dernières commandes) — débloqué par le Module 4. |
-| BF-54 | Rapport ventes | Ventes par jour, semaine, mois (non commencé — filtre par intervalle personnalisé pas construit ; seul le mois courant est affiché sur le dashboard, voir BF-53/BF-102) |
+| BF-54 | Rapport ventes | Ventes par jour, semaine, mois. **Fait le 2026-10-02, avec les gains** : page `/dashboard/stats` (gérant uniquement) — chiffre d'affaires, coût d'achat, gain et marge des commandes livrées, par article, catégorie, semaine et mois, sur cette semaine / ce mois / cette année / une période personnalisée, plus la valeur du stock au prix d'achat. Repose sur le prix d'achat saisi sur chaque produit (voir 04-besoins-techniques.md). |
 | BF-55 | Produits populaires | Top produits les plus vendus (non commencé — les commandes existent désormais, mais aucun classement par produit n'est encore calculé) |
 | BF-56 | Rapport stock | Produits en rupture ou stock bas (partiel — compte affiché sur le tableau de bord + colonne "Statut" dans la table produits ; pas de page de rapport dédiée) |
 | BF-57 | Export données | Exporter les rapports en CSV ou PDF (non commencé) |
@@ -233,6 +233,9 @@
 | BF-92 | Gestion du stock | Suivi du stock comme dans une boutique physique — rejoint le Module 3 (BF-13→17), toujours non commencé. |
 | BF-93 | Fin d'abonnement, accès restreint | Une boutique dont l'abonnement a expiré reste consultable (commandes, stock) mais ne peut plus rien publier de nouveau ; les menus nécessitant un abonnement actif disparaissent de son espace admin. Révise BF-70 : la restriction s'applique désormais **par boutique**, pas en rétrogradant tout le compte. |
 | BF-94 | Toute publication est premium | La visibilité publique (boutique comme produits) nécessite un abonnement actif sur la boutique concernée. |
+| BF-144 | Fichier clients du commerçant | Page `/dashboard/clients` (gérant et vendeurs) : liste des clients reconstituée à partir des commandes de la boutique (les comptes clients ne lui sont pas lisibles) — même client regroupé par téléphone, sinon par compte, sinon par nom ; nombre de commandes, total dépensé (commandes livrées), dernière commande ; repères Nouveau / Fidèle / Inactif servant de filtres ; recherche par nom ou numéro, tri, export CSV ; fiche client avec appel, WhatsApp et historique des commandes. **Fait le 2026-10-02.** |
+| BF-145 | Devise de la boutique appliquée aux clients | La devise configurée par la boutique (FCFA, euro, dollar US) s'applique à tous ses articles côté clients : vitrine, fiche produit, Marché, panier, message WhatsApp, paiement, « Mes commandes ». **Fait le 2026-10-02** : prix saisis et enregistrés en FCFA (devise de référence — commandes et gains aussi), affichés convertis ; euro à la parité fixe officielle (655,957), dollar au taux saisi par le Super Admin (Réglages), FCFA tant qu'il n'est pas fixé. Le commerçant voit un aperçu de ses prix côté client. Corrige au passage le panier, qui envoyait toute commande à la première boutique de la plateforme : un panier ne contient plus que les articles d'une seule boutique, revérifié par le serveur. |
+| BF-146 | Préparation multilingue | Fichiers de langue français/anglais (`src/i18n/dictionaries/`, convention du guide Next.js) et mécanisme de traduction typé (`useI18n`), utilisés dès maintenant pour les montants, les devises et les nouveaux textes. **Structure faite le 2026-10-02** ; reste, à l'étape langue : routage `app/[lang]`, sélecteur de langue, traduction de tous les écrans. |
 
 ### Module 17 — Statuts de Commande, Retours & Corbeille
 
@@ -252,7 +255,7 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-102 | Filtre de ventes par intervalle (premium) | Le tableau de bord filtre les ventes par jour/semaine/année, borné entre la date-heure de création de la boutique (minimum) et la date-heure du jour (maximum). |
+| BF-102 | Filtre de ventes par intervalle (premium) | Le tableau de bord filtre les ventes par jour/semaine/année, borné entre la date-heure de création de la boutique (minimum) et la date-heure du jour (maximum). **2026-10-02** : la période personnalisée est accessible à toutes les boutiques sur la page Gains et statistiques (choix de l'utilisateur), sans dépendre de ce privilège premium. |
 | BF-103 | Consultation de facture | Voir la facture d'une commande individuelle (rejoint BF-24/25). |
 | BF-104 | Factures groupées par période | Factures du jour, de la semaine, du mois et de l'année, consultables et imprimables (étend BF-26). |
 
@@ -310,7 +313,7 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-134 | Onboarding flow (prise en main par page) | Un parcours de première prise en main propre à chaque page/écran important de l'application (pas seulement à la création de boutique, voir `/onboarding` existant, BF-63 — distinct : ceci concerne l'usage courant de chaque page, pas la seule création initiale). **Fait le 2026-09-29, pilote sur `/dashboard`** : `DashboardOnboardingTour` lance automatiquement (une seule fois par compte, `User.seenTours`) un tour guidé (BF-135) présentant les KPI, le menu Produits/Commandes, les Paramètres (admin uniquement) et le bouton "Voir la boutique". Reste à étendre aux autres pages importantes au cas par cas. |
+| BF-134 | Onboarding flow (prise en main par page) | Un parcours de première prise en main propre à chaque page/écran important de l'application (pas seulement à la création de boutique, voir `/onboarding` existant, BF-63 — distinct : ceci concerne l'usage courant de chaque page, pas la seule création initiale). **Fait le 2026-09-29, pilote sur `/dashboard`** : `DashboardOnboardingTour` lance automatiquement (une seule fois par compte, `User.seenTours`) un tour guidé (BF-135) présentant les KPI, le menu Produits/Commandes, les Paramètres (admin uniquement) et le bouton "Voir la boutique". **Étendu à toute l'application le 2026-10-02** : une visite par page (tableau de bord, Super Admin, vitrine, accueil, connexion/inscription — sauf `/erreur` et les pages "bientôt disponible" Statistiques/Clients), via `PageTour` + `tours.ts`. Mémoire "déjà vue" sur le compte, ou dans le navigateur pour un visiteur non connecté ; bouton "Revoir la visite" (`?`) dans chaque en-tête. |
 | BF-135 | Product tour / Guided tour | Série de popups/tooltips séquentiels ("Suivant"/"Précédent") pointant successivement vers chaque élément d'une fonctionnalité complexe pour l'expliquer pas à pas. **Fait le 2026-09-29** : `GuidedTour` (`react-joyride`, ajouté en dépendance) — moteur réutilisable, ne gère jamais lui-même la persistance "déjà vu" (laissée à l'appelant, voir BF-134). SSR-safe nativement (pas d'import dynamique `ssr: false` nécessaire, contrairement à ce qui était anticipé). |
 | BF-136 | Coach marks | Petites bulles/tooltips ponctuelles pointant vers un élément précis de l'interface (courant en UX mobile), affichées à la demande sur un champ ou une fonctionnalité quand l'utilisateur a besoin d'aide — contrairement au product tour (BF-135), pas une séquence guidée complète. **Fait le 2026-09-29, un usage pilote** : `CoachMark` (nouveau `Popover` Base UI ajouté, `src/components/ui/popover.tsx`) — bouton "?" qui révèle une bulle au clic (fonctionne sur mobile, contrairement à `FieldHint`/`title` natif, survol uniquement). Appliqué au KPI "Ventes du mois" de `/dashboard` pour expliquer son calcul. |
 | BF-137 | Feature discovery | Mise en avant ciblée d'une fonctionnalité existante, typiquement après une mise à jour de la plateforme, pour la faire découvrir aux utilisateurs qui ne l'ont pas encore remarquée. **Non commencé.** |

@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { useShop } from "@/hooks/useShop";
+import { CoachMark } from "@/components/ui/CoachMark";
+import { useCartShop } from "@/hooks/useCartShop";
+import { useMoney } from "@/hooks/useMoney";
+import { shopCurrency } from "@/lib/currency";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { orderService } from "@/services/OrderService";
+import { useCartPriceSync } from "@/hooks/useCartPriceSync";
 
 type PaymentMethod = "visa" | "orange-money" | "mtn-momo";
 
@@ -37,9 +41,11 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
 export function PaymentMethodPageContent() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { shop } = useShop();
+  const { shop } = useCartShop();
+  const money = useMoney(shopCurrency(shop));
   const items = useCartStore((state) => state.items);
   const clear = useCartStore((state) => state.clear);
+  const changedPrices = useCartPriceSync();
   const total = cartTotal(items);
 
   const [method, setMethod] = useState<PaymentMethod>("visa");
@@ -112,14 +118,22 @@ export function PaymentMethodPageContent() {
       <div>
         <h1 className="text-4xl font-bold">Confirmer ma commande</h1>
         <p className="mt-1 text-muted-foreground">
-          Total · {total.toLocaleString("fr-FR")} FCFA
+          Total · {money(total)}
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/40 p-5">
+      {changedPrices.length > 0 && (
+        <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {changedPrices.length === 1
+            ? `Le prix de « ${changedPrices[0]} » a changé depuis son ajout au panier (fin de promotion, par exemple) : le total est à jour.`
+            : `Le prix de ${changedPrices.length} articles a changé depuis leur ajout au panier (fin de promotion, par exemple) : le total est à jour.`}
+        </p>
+      )}
+
+      <div data-tour="checkout-delivery" className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/40 p-5">
         <h2 className="font-semibold">Livraison</h2>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="client-name">Nom</Label>
+          <Label htmlFor="client-name" help="Le nom de la personne qui recevra la commande.">Nom</Label>
           <Input
             id="client-name"
             value={clientName}
@@ -127,7 +141,7 @@ export function PaymentMethodPageContent() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="client-phone">Téléphone</Label>
+          <Label htmlFor="client-phone" help="Le livreur vous appellera à ce numéro pour convenir de la livraison.">Téléphone</Label>
           <PhoneInput
             id="client-phone"
             value={clientPhone}
@@ -135,7 +149,7 @@ export function PaymentMethodPageContent() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="client-address">Adresse de livraison</Label>
+          <Label htmlFor="client-address" help="Où livrer : quartier, ville et un point de repère pour aider le livreur à vous trouver.">Adresse de livraison</Label>
           <Input
             id="client-address"
             value={clientAddress}
@@ -145,7 +159,13 @@ export function PaymentMethodPageContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="flex items-center gap-1.5 font-semibold">
+        Moyen de paiement
+        <CoachMark label="Aide : moyen de paiement">
+          Choisissez comment vous comptez payer. Le paiement en ligne n&apos;est pas encore actif : quel que soit votre choix, vous réglez à la livraison.
+        </CoachMark>
+      </div>
+      <div data-tour="checkout-methods" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {METHODS.map((option) => (
           <button
             key={option.id}
@@ -164,8 +184,8 @@ export function PaymentMethodPageContent() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-muted/40 p-5">
-        <Label htmlFor="payment-field">
+      <div data-tour="checkout-summary" className="rounded-2xl border border-border bg-muted/40 p-5">
+        <Label htmlFor="payment-field" help="Le numéro associé au moyen de paiement choisi. Le paiement en ligne n'est pas encore actif : vous paierez à la livraison.">
           {method === "visa" ? "Numéro de carte" : "Numéro de téléphone"}
         </Label>
         <Input
@@ -181,13 +201,14 @@ export function PaymentMethodPageContent() {
         </p>
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
         <Button
+          data-tour="checkout-confirm"
           className="mt-4 w-full"
           disabled={!canSubmit || submitting}
           onClick={handleConfirm}
         >
           {submitting
             ? "Enregistrement..."
-            : `Confirmer ma commande · ${total.toLocaleString("fr-FR")} FCFA`}
+            : `Confirmer ma commande · ${money(total)}`}
         </Button>
       </div>
     </div>

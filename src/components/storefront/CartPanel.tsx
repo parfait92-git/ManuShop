@@ -6,10 +6,14 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { buttonVariants } from "@/components/ui/button";
-import { useShop } from "@/hooks/useShop";
+import { useCartShop } from "@/hooks/useCartShop";
+import { useMoney } from "@/hooks/useMoney";
+import { shopCurrency } from "@/lib/currency";
 import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { LoginRequiredDialog } from "@/components/storefront/LoginRequiredDialog";
+import { DialogTour } from "@/components/onboarding/DialogTour";
+import { useCartPriceSync } from "@/hooks/useCartPriceSync";
 
 const CHECKOUT_PATH = "/checkout/payment";
 
@@ -17,29 +21,42 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const items = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
-  const { shop } = useShop();
+  const changedPrices = useCartPriceSync();
+  const { shop } = useCartShop();
+  const money = useMoney(shopCurrency(shop));
   const { firebaseUser } = useAuth();
   const [showLoginRequired, setShowLoginRequired] = useState(false);
 
   return (
-    <div className="absolute top-full right-0 z-30 mt-2 w-80 rounded-lg border border-border bg-background p-4 shadow-lg">
+    <div className="absolute top-full right-0 z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-background p-4 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Votre panier</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer le panier"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <X className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <DialogTour tourId="panel-cart" className="size-7 border-border" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer le panier"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
       </div>
+
+{changedPrices.length > 0 && (
+        <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {changedPrices.length === 1
+            ? `Le prix de « ${changedPrices[0]} » a changé depuis son ajout au panier (fin de promotion, par exemple) : le total est à jour.`
+            : `Le prix de ${changedPrices.length} articles a changé depuis leur ajout au panier (fin de promotion, par exemple) : le total est à jour.`}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Votre panier est vide.</p>
       ) : (
         <>
-          <ul className="flex flex-col gap-3">
+          <ul data-tour="cart-items" className="flex flex-col gap-3">
             {items.map((item) => {
               // `stock` absent (article ajouté avant ce champ, voir
               // cartStore) : pas de limite connue à afficher/appliquer.
@@ -51,10 +68,10 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.price.toLocaleString("fr-FR")} FCFA
+                        {money(item.price)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div data-tour="cart-quantity" className="flex items-center gap-1">
                       <button
                         type="button"
                         aria-label="Diminuer la quantité"
@@ -102,7 +119,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm font-medium">
             <span>Total</span>
-            <span>{cartTotal(items).toLocaleString("fr-FR")} FCFA</span>
+            <span>{money(cartTotal(items))}</span>
           </div>
 
           {/* Un vrai <a>, pas <Button render={<a/>}> : Base UI documente
@@ -111,7 +128,8 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           n'est pas chargée (pas de lien WhatsApp valide à proposer). */}
           {shop ? (
             <a
-              href={buildWhatsAppOrderLink(shop, items)}
+              data-tour="cart-whatsapp"
+              href={buildWhatsAppOrderLink(shop, items, money)}
               target="_blank"
               rel="noreferrer"
               className={buttonVariants({ className: "mt-3 w-full" })}
@@ -120,6 +138,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
             </a>
           ) : (
             <button
+              data-tour="cart-whatsapp"
               type="button"
               disabled
               className={buttonVariants({ className: "mt-3 w-full" })}
@@ -135,6 +154,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           n'exige aucun compte, c'est tout son intérêt. */}
           {firebaseUser ? (
             <Link
+              data-tour="cart-checkout"
               href={CHECKOUT_PATH}
               className={buttonVariants({
                 variant: "outline",
@@ -145,6 +165,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
             </Link>
           ) : (
             <button
+              data-tour="cart-checkout"
               type="button"
               onClick={() => setShowLoginRequired(true)}
               className={buttonVariants({

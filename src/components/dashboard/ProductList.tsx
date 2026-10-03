@@ -17,6 +17,11 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { CoachMark } from "@/components/ui/CoachMark";
+import {
+  STICKY_COLUMN_CONTENT,
+  ScrollableTable,
+} from "@/components/ui/scrollable-table";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { activityLogService } from "@/services/ActivityLogService";
@@ -128,6 +133,7 @@ export function ProductList({
           </p>
         </div>
         <Link
+          data-tour="products-add"
           href="/dashboard/products/new"
           className={buttonVariants({ className: "w-fit gap-1.5" })}
         >
@@ -170,30 +176,40 @@ export function ProductList({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-            placeholder="Rechercher par nom ou catégorie"
-            aria-label="Rechercher un produit"
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 text-sm outline-none placeholder:text-slate-400 focus-visible:border-slate-400"
-          />
+      <div data-tour="products-filters" className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={term}
+              onChange={(event) => setTerm(event.target.value)}
+              placeholder="Rechercher par nom ou catégorie"
+              aria-label="Rechercher un produit"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 text-sm outline-none placeholder:text-slate-400 focus-visible:border-slate-400"
+            />
+          </div>
+          <CoachMark label="Aide : recherche de produit">
+            Retrouvez un produit en tapant une partie de son nom ou de sa catégorie. La liste se filtre au fur et à mesure.
+          </CoachMark>
         </div>
-        <Select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          aria-label="Filtrer par catégorie"
-          className="h-10 sm:w-56"
-        >
-          <option value="">Toutes les catégories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>
-              {cat.name}
-            </option>
-          ))}
-        </Select>
+        <div className="flex items-center gap-2 sm:w-64">
+          <Select
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            aria-label="Filtrer par catégorie"
+            className="h-10 flex-1"
+          >
+            <option value="">Toutes les catégories</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
+          </Select>
+          <CoachMark label="Aide : filtre par catégorie">
+            N&apos;affiche que les produits d&apos;une catégorie. Choisissez « Toutes les catégories » pour tout revoir.
+          </CoachMark>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -201,17 +217,24 @@ export function ProductList({
           Aucun produit trouvé.
         </p>
       ) : (
-        <div className="-mx-4 overflow-x-auto sm:-mx-6">
-          <table className="w-full min-w-160 border-collapse text-sm">
+        <ScrollableTable label="Liste des produits" className="-mx-4 sm:-mx-6">
+          <table data-tour="products-table" className="w-full min-w-160 border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs font-semibold tracking-wide text-slate-400 uppercase">
-                <th className="px-4 py-2 sm:px-6">Produit</th>
+                <th className="px-3 py-2 sm:px-6">Produit</th>
                 <th className="px-4 py-2">Catégorie</th>
                 <th className="px-4 py-2">Prix</th>
                 <th className="px-4 py-2">Stock</th>
                 <th className="px-4 py-2">Statut</th>
-                <th className="px-4 py-2">Publié</th>
-                <th className="px-4 py-2 text-right sm:pr-6">Actions</th>
+                <th data-tour="products-publish" className="px-4 py-2">
+                  <span className="inline-flex items-center gap-1.5">
+                    Publié
+                    <CoachMark label="Aide : publication d'un produit">
+                      Activé, le produit est visible par vos clients et peut être commandé. Désactivé, il reste dans votre catalogue mais leur est caché. Un nouveau produit commence masqué.
+                    </CoachMark>
+                  </span>
+                </th>
+                <th data-tour="products-actions" className="px-4 py-2 text-right sm:pr-6">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -220,8 +243,10 @@ export function ProductList({
                 const hasImage = productService.hasImage(product);
                 return (
                   <tr key={product.id}>
-                    <td className="px-4 py-3 sm:px-6">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 py-3 sm:px-6">
+                      <div
+                        className={`flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3 ${STICKY_COLUMN_CONTENT}`}
+                      >
                         <div
                           className={`relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border ${
                             hasImage
@@ -257,7 +282,7 @@ export function ProductList({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-slate-600">
                         {product.category}
                       </span>
                     </td>
@@ -267,7 +292,7 @@ export function ProductList({
                     <td className="px-4 py-3 text-slate-700">{product.stock}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${STOCK_STATUS_CLASS[status]}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${STOCK_STATUS_CLASS[status]}`}
                       >
                         {STOCK_STATUS_LABEL[status]}
                       </span>
@@ -306,7 +331,7 @@ export function ProductList({
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollableTable>
       )}
     </div>
   );

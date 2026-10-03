@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DialogTour } from "@/components/onboarding/DialogTour";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogDescription,
@@ -58,11 +60,22 @@ export function OrderReasonDialog({
       <DialogPortal className="max-w-sm">
         {copy && (
           <>
-            <DialogTitle>{copy.title}</DialogTitle>
+            <div className="flex items-start justify-between gap-3">
+              <DialogTitle>{copy.title}</DialogTitle>
+              <DialogTour tourId="dialog-order-reason" />
+            </div>
             <DialogDescription>{copy.description}</DialogDescription>
           </>
         )}
+        <Label
+          htmlFor="order-reason"
+          help="Expliquez pourquoi en une phrase, ex. « Produit en rupture » ou « Article arrivé cassé ». Le motif est obligatoire et visible par le client."
+        >
+          Motif
+        </Label>
         <textarea
+          id="order-reason"
+          data-tour="reason-text"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           rows={3}
@@ -74,6 +87,7 @@ export function OrderReasonDialog({
             Retour
           </Button>
           <Button
+            data-tour="reason-confirm"
             type="button"
             variant="destructive"
             disabled={!reason.trim()}

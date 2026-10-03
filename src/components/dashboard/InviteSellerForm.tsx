@@ -62,7 +62,7 @@ export function InviteSellerForm({
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="displayName">Nom du vendeur</Label>
+        <Label htmlFor="displayName" help="Le nom du vendeur, affiché dans votre équipe et dans le journal d'activité.">Nom du vendeur</Label>
         <Input
           id="displayName"
           autoComplete="name"
@@ -77,7 +77,7 @@ export function InviteSellerForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" help="Le vendeur reçoit à cette adresse un email pour choisir son propre mot de passe : vous ne le connaissez jamais.">Email</Label>
         <Input
           id="email"
           type="email"

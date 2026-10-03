@@ -1,0 +1,28 @@
+{
+  "currency": {
+    "names": {
+      "XAF": "FCFA (XAF)",
+      "EUR": "Euro (EUR)",
+      "USD": "Dollar US (USD)"
+    },
+    "shopSettingsHelp": "La devise dans laquelle vos clients voient vos prix, leur panier et leurs commandes. Vous continuez à saisir vos prix en FCFA : la conversion est automatique.",
+    "conversionNote": "Vos prix restent saisis en FCFA. Vos clients les voient convertis en {currency} (1 {currency} = {rate} FCFA).",
+    "usdRateMissing": "Le taux du dollar n'est pas encore fixé par l'équipe ManuShop : en attendant, vos clients voient vos prix en FCFA.",
+    "clientPreview": "Vos clients verront : {amount}",
+    "referenceNotice": "Montants en FCFA, la devise de référence de vos prix."
+  },
+  "platformRates": {
+    "title": "Taux de change",
+    "description": "Taux utilisés pour afficher les prix des boutiques qui ont choisi une autre devise que le FCFA. Les prix restent enregistrés en FCFA.",
+    "eurFixed": "Euro : parité fixe officielle, 1 € = {rate} FCFA.",
+    "usdLabel": "1 dollar US vaut (en FCFA)",
+    "usdHelp": "Le dollar n'a pas de parité fixe avec le FCFA : mettez ce taux à jour régulièrement. Sans taux, les boutiques en dollars affichent leurs prix en FCFA.",
+    "save": "Enregistrer le taux",
+    "saved": "Taux du dollar enregistré.",
+    "invalid": "Indiquez un taux entre 50 et 5 000 FCFA.",
+    "error": "Le taux n'a pas pu être enregistré. Réessayez."
+  },
+  "cart": {
+    "otherShopConfirm": "Votre panier contient des articles d'une autre boutique. Une commande ne peut concerner qu'une seule boutique : vider le panier pour ajouter cet article ?"
+  }
+}

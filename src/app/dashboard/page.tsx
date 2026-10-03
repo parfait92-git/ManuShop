@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/providers/AuthProvider";
 import { DashboardHomeContent } from "@/components/dashboard/DashboardHomeContent";
-import { DashboardOnboardingTour } from "@/components/dashboard/DashboardOnboardingTour";
+import { PageTour } from "@/components/onboarding/PageTour";
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -13,7 +13,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <DashboardOnboardingTour />
+      <PageTour tourId="dashboard-onboarding" />
       <DashboardHomeContent shopId={profile.shopId} />
     </>
   );
