@@ -139,7 +139,7 @@
 | ID | Besoin | Description |
 |---|---|---|
 | BF-53 | Dashboard général | Chiffre d'affaires, commandes, stock en un coup d'œil. **Fait le 2026-09-25** : cartes "Ventes du mois" (total des commandes `delivered` du mois), "Commandes du mois", "Nouveaux clients" (`clientId` distincts du mois) et "Produits actifs" toutes réelles, plus "Ventes récentes" (5 dernières commandes) — débloqué par le Module 4. |
-| BF-54 | Rapport ventes | Ventes par jour, semaine, mois (non commencé — filtre par intervalle personnalisé pas construit ; seul le mois courant est affiché sur le dashboard, voir BF-53/BF-102) |
+| BF-54 | Rapport ventes | Ventes par jour, semaine, mois. **Fait le 2026-10-02, avec les gains** : page `/dashboard/stats` (gérant uniquement) — chiffre d'affaires, coût d'achat, gain et marge des commandes livrées, par article, catégorie, semaine et mois, sur cette semaine / ce mois / cette année / une période personnalisée, plus la valeur du stock au prix d'achat. Repose sur le prix d'achat saisi sur chaque produit (voir 04-besoins-techniques.md). |
 | BF-55 | Produits populaires | Top produits les plus vendus (non commencé — les commandes existent désormais, mais aucun classement par produit n'est encore calculé) |
 | BF-56 | Rapport stock | Produits en rupture ou stock bas (partiel — compte affiché sur le tableau de bord + colonne "Statut" dans la table produits ; pas de page de rapport dédiée) |
 | BF-57 | Export données | Exporter les rapports en CSV ou PDF (non commencé) |
@@ -252,7 +252,7 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-102 | Filtre de ventes par intervalle (premium) | Le tableau de bord filtre les ventes par jour/semaine/année, borné entre la date-heure de création de la boutique (minimum) et la date-heure du jour (maximum). |
+| BF-102 | Filtre de ventes par intervalle (premium) | Le tableau de bord filtre les ventes par jour/semaine/année, borné entre la date-heure de création de la boutique (minimum) et la date-heure du jour (maximum). **2026-10-02** : la période personnalisée est accessible à toutes les boutiques sur la page Gains et statistiques (choix de l'utilisateur), sans dépendre de ce privilège premium. |
 | BF-103 | Consultation de facture | Voir la facture d'une commande individuelle (rejoint BF-24/25). |
 | BF-104 | Factures groupées par période | Factures du jour, de la semaine, du mois et de l'année, consultables et imprimables (étend BF-26). |
 

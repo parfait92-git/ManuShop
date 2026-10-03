@@ -10,6 +10,8 @@ import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors"
 import { effectivePrice, type PromoFields } from "@/lib/promo";
 
 const ORDERS_COLLECTION = "orders";
+const PRODUCT_COSTS_COLLECTION = "productCosts";
+const ORDER_COSTS_COLLECTION = "orderCosts";
 const PRODUCTS_COLLECTION = "products";
 const USERS_COLLECTION = "users";
 const SHOPS_COLLECTION = "shops";
@@ -92,6 +94,13 @@ export async function createOrderAction(
     const productSnapshots = await Promise.all(
       productRefs.map((ref) => transaction.get(ref))
     );
+    // Prix d'achat du moment, figés avec la commande (`orderCosts`) : un
+    // prix d'achat modifié plus tard ne doit pas réécrire les gains passés.
+    const costSnapshots = await Promise.all(
+      input.items.map((item) =>
+        transaction.get(db.collection(PRODUCT_COSTS_COLLECTION).doc(item.productId))
+      )
+    );
 
     input.items.forEach((item, index) => {
       // Sans prix lisible, la commande en ligne ne peut pas être chiffrée
@@ -146,6 +155,19 @@ export async function createOrderAction(
       notes: input.notes ?? "",
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // À part de la commande, que le client peut lire (il y verrait la marge
+    // du commerçant) — lisible par le seul gérant (firestore.rules).
+    transaction.set(db.collection(ORDER_COSTS_COLLECTION).doc(orderRef.id), {
+      shopId: input.shopId,
+      items: input.items.map((item, index) => {
+        const unitCost = costSnapshots[index].data()?.purchasePrice;
+        return typeof unitCost === "number"
+          ? { productId: item.productId, unitCost }
+          : { productId: item.productId };
+      }),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     productRefs.forEach((ref, index) => {

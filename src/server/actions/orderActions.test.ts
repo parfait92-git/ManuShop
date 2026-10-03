@@ -23,6 +23,9 @@ const batchMock = jest.fn(() => ({
 // `runTransaction` de firebase-admin en appelant directement le callback
 // avec un objet transaction dont `get`/`set`/`update` sont ces mêmes mocks.
 const transactionGetMock = jest.fn();
+// Prix d'achat (`productCosts`), lus dans la même transaction : séparés des
+// lectures de produits pour que chaque test garde la maîtrise de celles-ci.
+const productCostGetMock = jest.fn();
 const transactionSetMock = jest.fn();
 const transactionUpdateMock = jest.fn();
 const runTransactionMock = jest.fn(
@@ -34,7 +37,10 @@ const runTransactionMock = jest.fn(
     }) => Promise<void>
   ) => {
     await updateFunction({
-      get: transactionGetMock,
+      get: ((ref: { __ref?: string }) =>
+        ref.__ref?.startsWith("productCosts/")
+          ? productCostGetMock(ref)
+          : transactionGetMock(ref)) as typeof transactionGetMock,
       set: transactionSetMock,
       update: transactionUpdateMock,
     });
@@ -59,6 +65,8 @@ const collectionMock = jest.fn((name: string) => {
   if (name === "users") return { doc: userDocMock };
   if (name === "orders") return { doc: orderDocMock };
   if (name === "products") return { doc: productDocMock };
+  if (name === "productCosts") return { doc: (id: string) => ({ __ref: `productCosts/${id}` }) };
+  if (name === "orderCosts") return { doc: (id: string) => ({ __ref: `orderCosts/${id}` }) };
   if (name === "shops") return { doc: shopDocMock };
   throw new Error(`Unexpected collection: ${name}`);
 });
@@ -100,6 +108,38 @@ describe("createOrderAction", () => {
       exists: true,
       data: () => ({ stock: 100, price: 5000 }),
     });
+    productCostGetMock.mockResolvedValue({ data: () => undefined });
+  });
+
+  it("freezes each item's purchase price in a private orderCosts document — never on the order the client can read", async () => {
+    productCostGetMock.mockImplementation(async (ref: { __ref: string }) => ({
+      data: () => (ref.__ref === "productCosts/p1" ? { purchasePrice: 3000 } : undefined),
+    }));
+
+    await createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou Ba",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: [
+        { productId: "p1", name: "Wax", quantity: 2, unitPrice: 5000 },
+        { productId: "p2", name: "Savon", quantity: 1, unitPrice: 5000 },
+      ],
+      subtotal: 15000,
+      total: 15000,
+    });
+
+    expect(transactionSetMock).toHaveBeenCalledWith(
+      { __ref: "orderCosts/order-new" },
+      expect.objectContaining({
+        shopId: "shop-1",
+        items: [{ productId: "p1", unitCost: 3000 }, { productId: "p2" }],
+      })
+    );
+    const orderWrite = transactionSetMock.mock.calls.find(
+      ([ref]) => (ref as { id?: string }).id === "order-new"
+    )![1];
+    expect(JSON.stringify(orderWrite)).not.toContain("3000");
   });
 
   describe("prix recalculé côté serveur (fin de promotion automatique)", () => {

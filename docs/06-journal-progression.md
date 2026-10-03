@@ -1508,3 +1508,42 @@ Tests : `promo.test.ts` (dont la limite exacte : 22 h 59 UTC actif, 23 h 00 UTC 
 - commande confirmée : enregistrée à 20 000 + 8 000 = 28 000, et non au prix promo envoyé par le panier.
 
 Rien de commité.
+
+### 2026-10-02 — Prix d'achat et gains par article / catégorie / semaine / mois / période
+
+Demande de l'utilisateur : saisir le prix d'achat de chaque article pour gérer son stock et extraire les gains par article, par catégorie, par semaine, par mois et sur une période définie.
+
+**Décisions de l'utilisateur** (questions posées avant de coder) :
+- prix d'achat et gains réservés au **gérant** ;
+- seules les commandes **livrées** comptent ;
+- les ventes antérieures au prix d'achat sont **estimées** avec le prix d'achat actuel, et signalées comme telles ;
+- la période personnalisée est **accessible à tous**, alors que BF-102 la prévoyait premium.
+
+**Confidentialité, décidée d'office (constat de sécurité)** : `products` est lisible par tout le monde, et une commande est lisible par son client. D'où deux collections privées :
+- `productCosts/{productId}` (`{shopId, purchasePrice}`) : lecture et écriture par le gérant de la boutique uniquement ;
+- `orderCosts/{orderId}` (`{shopId, items:[{productId, unitCost?}]}`) : coût figé à la vente, écrit par `createOrderAction` dans la même transaction, lecture gérant uniquement, écriture par le serveur seulement.
+
+Un prix d'achat modifié plus tard ne réécrit donc pas les gains passés. **Règles Firestore à déployer** : sans elles, l'enregistrement du prix d'achat et la page Statistiques sont refusés en production.
+
+**Fait** :
+- Modèles `ProductCost`/`OrderCost`, dépôts, `CostService`.
+- `src/lib/profitReport.ts`, calcul pur sans lecture Firestore :
+  - bornes de jour, semaine (lundi) et mois en heure du Cameroun (UTC+1 figé, comme `promo.ts`) ;
+  - vente datée par la création de la commande, comme « Ventes du mois » ;
+  - remise de commande répartie au prorata des lignes ;
+  - ordre de priorité du coût : figé, sinon estimé, sinon inconnu (ligne comptée dans le chiffre d'affaires mais pas dans le gain) ;
+  - un produit mis à la corbeille garde son nom et sa catégorie dans l'historique ;
+  - valeur du stock au prix d'achat.
+- Formulaire produit : champ « Prix d'achat » (gérant seul), aperçu de la marge unitaire, avertissement de vente à perte. Si l'enregistrement du coût échoue après celui du produit, un toast prévient et la page avance quand même : un nouvel essai aurait recréé le produit en double.
+- `/dashboard/stats` (était « bientôt disponible ») : `StatsPageContent`, réservée au gérant, entrée de menu masquée aux vendeurs. Visite guidée `dashboard-stats`, aides « ? » sur chaque indicateur, tableaux `ScrollableTable`.
+
+**Bug évité, attrapé par un test** : en modification, si le prix d'achat existant n'a pas pu être lu (réseau), le champ restait vide, et l'enregistrement de n'importe quelle autre modification l'effaçait. Le coût n'est maintenant réécrit que si le champ a été modifié (`dirtyFields`). Le prix chargé est posé comme valeur de référence (`resetField`), et la valeur par défaut est `""` plutôt que `undefined` (react-hook-form tenait sinon le champ pour modifié).
+
+**Tests** : `profitReport.test.ts` (9), `StatsPageContent.test.tsx` (2), 6 nouveaux cas dans `ProductForm.test.tsx` (gérant/vendeur, enregistrement, vente à perte, échec du coût, chargement, non-effacement, modification réelle), et un test `orderCosts` dans `orderActions.test.ts` (dont : aucun coût dans la commande lisible par le client). Vérifié : lint, `tsc`, 853 tests.
+
+**Vérification réelle sur les émulateurs** :
+- Parcours navigateur : prix d'achat 6 000 saisi par le gérant (aperçu « Marge par unité : 4 000 FCFA (40 %) ») ; vendeur sans le champ ni le menu, et `/dashboard/stats` renvoyé vers `/erreur` ; commande client puis livraison par le gérant.
+- Statistiques : chiffre d'affaires 30 000, coût 18 000, gain 12 000, marge 40 %, avertissement « 1 vente estimée », valeur du stock 54 000.
+- Règles, interrogées avec de vrais jetons : `productCosts` gérant 200, vendeur/client/anonyme 403 ; `orderCosts` gérant 200, vendeur/client 403 ; écritures refusées au vendeur et au gérant sur `orderCosts`. Aucun coût dans la commande lue par le client, ni dans le produit public.
+
+Rien de commité.

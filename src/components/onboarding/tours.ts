@@ -99,6 +99,12 @@ export const TOURS = {
         "Un nom clair et précis : c'est la première chose que vos clients liront.",
     },
     {
+      target: "product-purchase-price",
+      content:
+        "Votre prix d'achat, visible de vous seul : il sert à calculer vos gains et la marge de chaque article.",
+      roles: ["admin"],
+    },
+    {
       target: "product-stock",
       content:
         "Le stock disponible et le seuil d'alerte : vous êtes prévenu quand le stock passe en dessous.",
@@ -158,7 +164,30 @@ export const TOURS = {
       placement: "top",
     },
   ],
-  "dashboard-trash": [
+  "dashboard-stats": [
+    {
+      target: "stats-period",
+      content:
+        "Choisissez la période : cette semaine, ce mois, cette année, ou les dates de votre choix.",
+    },
+    {
+      target: "stats-totals",
+      content:
+        "Ce que vous avez vendu, ce que ça vous a coûté, et votre gain — sur les commandes livrées uniquement.",
+    },
+    {
+      target: "stats-breakdown",
+      content:
+        "Le détail de vos gains par article, par catégorie, par semaine ou par mois, pour voir ce qui rapporte le plus.",
+      placement: "top",
+    },
+    {
+      target: "stats-stock",
+      content: "Ce que vaut la marchandise encore en rayon, au prix d'achat.",
+      placement: "top",
+    },
+  ],
+    "dashboard-trash": [
     {
       target: "trash-list",
       content:

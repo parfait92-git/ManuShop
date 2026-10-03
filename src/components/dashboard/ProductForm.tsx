@@ -5,12 +5,14 @@ import { Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { ProductImageUploader } from "@/components/dashboard/ProductImageUploader";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useNavigationBlocker } from "@/components/providers/NavigationBlockerProvider";
 import {
   ProductSchema,
@@ -25,6 +27,7 @@ import {
 import { isPromoExpired } from "@/lib/promo";
 import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
+import { costService } from "@/services/CostService";
 import { productService } from "@/services/ProductService";
 
 function toDateInputValue(timestamp?: Timestamp): string {
@@ -61,7 +64,8 @@ export function ProductForm({
     control,
     getValues,
     reset,
-    formState: { errors, isSubmitting, isDirty },
+    resetField,
+    formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<ProductFormValues, unknown, ProductInput>({
     resolver: zodResolver(ProductSchema),
     defaultValues: product
@@ -75,6 +79,8 @@ export function ProductForm({
           isPromo: product.isPromo,
           promoPrice: product.promoPrice,
           promoEndDate: toDateInputValue(product.promoEnd),
+          // Chargé à part (`productCosts`), voir l'effet plus bas.
+          purchasePrice: "",
         }
       : {
           isPromo: false,
@@ -82,6 +88,44 @@ export function ProductForm({
   });
 
   const isPromo = useWatch({ control, name: "isPromo" });
+  const priceValue = useWatch({ control, name: "price" });
+  const purchasePriceValue = useWatch({ control, name: "purchasePrice" });
+
+  // Prix d'achat et marge : réservés au gérant (choix de l'utilisateur,
+  // 2026-10-02) — un vendeur crée toujours des produits, sans ce champ.
+  const { profile } = useAuth();
+  const isOwner = profile?.role === "admin";
+
+  // Le prix d'achat vit à part du produit (`productCosts`, privé) : chargé
+  // séparément à l'ouverture d'un produit existant.
+  useEffect(() => {
+    if (!product || !isOwner) return;
+    let active = true;
+    costService
+      .getPurchasePrice(product.id)
+      .then((purchasePrice) => {
+        // Valeur de référence, pas simple valeur : le champ ne devient
+        // "modifié" (et n'est réenregistré) que si le gérant change ce prix.
+        if (active && purchasePrice !== undefined) {
+          resetField("purchasePrice", { defaultValue: String(purchasePrice) });
+        }
+      })
+      // Échec de lecture : champ laissé vide. Sans danger, voir `onSubmit`
+      // (un prix d'achat n'est réécrit que si le champ a été modifié).
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [product, isOwner, resetField]);
+
+  const marginPreview = (() => {
+    const sale = Number(priceValue);
+    const cost = Number(purchasePriceValue);
+    if (purchasePriceValue === undefined || purchasePriceValue === "" || !sale || Number.isNaN(cost)) {
+      return null;
+    }
+    return { amount: sale - cost, rate: (sale - cost) / sale };
+  })();
 
   // Brouillon local : uniquement pour la création (BF-06), jamais mélangé à
   // une édition de produit existant. Restauré au montage plutôt que via
@@ -148,7 +192,9 @@ export function ProductForm({
           }
         : { isPromo: false as const };
 
+      let savedId: string;
       if (product) {
+        savedId = product.id;
         await productService.updateProduct(product.id, {
           name: data.name,
           description: data.description,
@@ -160,7 +206,7 @@ export function ProductForm({
           ...promoFields,
         });
       } else {
-        await productService.createProduct({
+        const created = await productService.createProduct({
           shopId,
           name: data.name,
           description: data.description,
@@ -176,7 +222,24 @@ export function ProductForm({
           isPublished: false,
           ...promoFields,
         });
+        savedId = created.id;
         clearProductDraft();
+      }
+
+      // En modification, seulement si le champ a été touché : un prix
+      // d'achat qui n'a pas pu être chargé (champ resté vide) serait sinon
+      // effacé par n'importe quelle autre modification du produit.
+      if (isOwner && (!product || dirtyFields.purchasePrice)) {
+        // Produit déjà enregistré à ce stade : un échec ici ne doit pas
+        // afficher l'erreur générique (un nouvel essai recréerait le
+        // produit en double).
+        try {
+          await costService.savePurchasePrice(savedId, shopId, data.purchasePrice);
+        } catch {
+          toast.error(
+            "Produit enregistré, mais pas son prix d'achat. Réessayez depuis la fiche du produit."
+          );
+        }
       }
 
       router.push("/dashboard/products");
@@ -276,6 +339,40 @@ export function ProductForm({
           )}
         </div>
       </div>
+
+      {isOwner && (
+        <div data-tour="product-purchase-price" className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="purchasePrice"
+            help="Ce que vous a coûté une unité de ce produit (achat, transport…). Visible de vous seul, jamais des clients ni de vos vendeurs. Il sert à calculer vos gains dans Statistiques et la valeur de votre stock."
+          >
+            Prix d&apos;achat (FCFA)
+          </Label>
+          <Input
+            id="purchasePrice"
+            type="number"
+            step="1"
+            min="0"
+            placeholder="Facultatif"
+            aria-invalid={!!errors.purchasePrice}
+            aria-describedby="purchasePrice-margin"
+            {...register("purchasePrice")}
+          />
+          {errors.purchasePrice && (
+            <p className="text-sm text-destructive">{errors.purchasePrice.message}</p>
+          )}
+          {marginPreview && (
+            <p
+              id="purchasePrice-margin"
+              className={`text-sm ${marginPreview.amount < 0 ? "text-destructive" : "text-muted-foreground"}`}
+            >
+              {marginPreview.amount < 0
+                ? `Attention : vente à perte de ${Math.abs(marginPreview.amount).toLocaleString("fr-FR")} FCFA par unité.`
+                : `Marge par unité : ${marginPreview.amount.toLocaleString("fr-FR")} FCFA (${Math.round(marginPreview.rate * 100)} % du prix de vente).`}
+            </p>
+          )}
+        </div>
+      )}
 
       <div data-tour="product-stock" className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">

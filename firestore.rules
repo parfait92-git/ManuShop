@@ -97,6 +97,35 @@ service cloud.firestore {
     // l'autorisation en code, donc passent uniquement par `firebase-admin`
     // via src/server/actions/orderActions.ts (même schéma que
     // `platformAdmins`/BF-68).
+    // Prix d'achat des produits — à part de `products`, lisible par tout le
+    // monde (vitrine publique) : un prix d'achat y serait visible de
+    // n'importe quel visiteur ou concurrent. Réservé au gérant (role admin)
+    // de la boutique ; les vendeurs n'y ont pas accès (choix de
+    // l'utilisateur, 2026-10-02). Lu aussi par le serveur (`firebase-admin`,
+    // hors règles) pour figer le coût de chaque vente.
+    match /productCosts/{productId} {
+      allow read, delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow create, update: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && request.resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId
+        && request.resource.data.purchasePrice is number
+        && request.resource.data.purchasePrice >= 0
+        && (resource == null
+          || resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId);
+    }
+
+    // Coûts figés de chaque commande, écrits par le serveur à la création
+    // (`createOrderAction`). À part de `orders`, que le client lit : il y
+    // verrait sinon la marge du commerçant. Lecture réservée au gérant.
+    match /orderCosts/{orderId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow write: if false;
+    }
+
     match /orders/{orderId} {
       allow read: if request.auth != null
         && (resource.data.clientId == request.auth.uid
