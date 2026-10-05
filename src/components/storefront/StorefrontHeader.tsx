@@ -188,7 +188,14 @@ export function StorefrontHeader() {
   useEffect(() => {
     if (!cartOpen) return;
     function onPointerDown(event: PointerEvent) {
-      if (!cartRef.current?.contains(event.target as Node)) setCartOpen(false);
+      const target = event.target as Element;
+      if (cartRef.current?.contains(target)) return;
+      // Bulle de visite guidée (rendue hors du panier) : la toucher ne
+      // ferme pas le panier. Sinon la bulle disparaissait avec lui avant la
+      // fin du toucher, qui atteignait la page dessous (sur téléphone : la
+      // photo s'ouvrait en plein écran, plus moyen de commander).
+      if (target.closest?.("#react-joyride-portal, [class*='react-joyride']")) return;
+      setCartOpen(false);
     }
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setCartOpen(false);

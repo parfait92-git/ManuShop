@@ -2479,3 +2479,19 @@ Demande de l'utilisateur (capture de la fiche « Mielle ») : seule la grande ph
 Fait : vignettes « Afficher la photo n sur N » (curseur main, plus de vue plein écran) ; la grande photo garde la loupe et ouvre la vue plein écran sur la photo affichée ; visite guidée et guide du client mis à jour. Test de la fiche produit réécrit pour ce comportement.
 
 Vérifié : lint, `tsc`, tests de la vitrine et des guides. Rien de commité.
+
+### 2026-10-04 — Impossible de commander sur téléphone : visites guidées et panier
+
+Signalé par l'utilisateur : conflit entre la visite guidée « qui apparaît tout le temps » et la commande sur mobile.
+
+**Reproduit** (téléphone 390 px, compte neuf) : une visite à chaque page (connexion, Marché, fiche, panier) ; dans le panier, toucher « Passer » ou « Suivant » fermait le panier (toucher « en dehors », la bulle étant hors du panneau) — la bulle disparaissait avec lui et le toucher atteignait la page dessous (la photo s'ouvrait en plein écran) : le bouton « Choisir un mode de paiement » n'était plus jamais atteint.
+
+**Corrigé** :
+- le panier ignore les touchers sur une bulle de visite guidée (`StorefrontHeader`) ;
+- « Passer » arrête toutes les visites automatiques du compte ou du navigateur (marque `*`), chacune restant disponible avec « ? » ;
+- pas de visite automatique sur le parcours d'achat (panier, paiement) : `autoStart={false}` ;
+- les visites vues avant la connexion comptent après (fusion avec `User.seenTours`).
+
+**Vérifié dans le navigateur** (build de production, émulateurs, compte neuf) : « Passer » sur la visite de connexion, plus aucune visite ensuite ; panier → « Choisir un mode de paiement » → coordonnées → « Confirmer ma commande » → « Mes commandes » ; aucune erreur. Tests : panier ouvert au toucher d'une bulle ; « Passer » ; visites vues avant connexion ; lancement automatique désactivé mais visite rejouable.
+
+Vérifié : lint, `tsc`, tests. Rien de commité.

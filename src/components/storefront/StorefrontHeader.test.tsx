@@ -247,4 +247,24 @@ describe("StorefrontHeader", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByTestId("cart-panel")).not.toBeInTheDocument();
   });
+
+  // Signalé par l'utilisateur (2026-10-04) : sur téléphone, toucher la bulle
+  // de la visite guidée fermait le panier, et le toucher atteignait la page
+  // dessous — impossible de commander.
+  it("stays open when the guided tour bubble is touched", () => {
+    useAuthMock.mockReturnValue({ firebaseUser: null, profile: null, isSuperAdmin: false });
+    useShopBrandingMock.mockReturnValue({ branding: null });
+    useCartItemCountMock.mockReturnValue(1);
+    render(<StorefrontHeader />);
+    const portal = document.createElement("div");
+    portal.id = "react-joyride-portal";
+    const skip = document.createElement("button");
+    portal.appendChild(skip);
+    document.body.appendChild(portal);
+
+    fireEvent.click(screen.getByRole("button", { name: "Voir le panier" }));
+    fireEvent.pointerDown(skip);
+    expect(screen.getByTestId("cart-panel")).toBeInTheDocument();
+    portal.remove();
+  });
 });

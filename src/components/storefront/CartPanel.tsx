@@ -33,7 +33,9 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Votre panier</h2>
         <div className="flex items-center gap-2">
-          <DialogTour tourId="panel-cart" className="size-7 border-border" />
+          {/* Pas de visite d'office dans le panier : rien ne doit gêner une
+              commande (disponible avec « ? »). */}
+          <DialogTour tourId="panel-cart" className="size-7 border-border" autoStart={false} />
           <button
             type="button"
             onClick={onClose}

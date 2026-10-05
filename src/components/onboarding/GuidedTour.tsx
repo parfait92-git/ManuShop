@@ -48,7 +48,8 @@ export function GuidedTour({
 }: {
   run: boolean;
   steps: Step[];
-  onFinish: () => void;
+  /** `skipped` : l'utilisateur a touché « Passer ». */
+  onFinish: (skipped: boolean) => void;
 }) {
   const primaryColor = useTourColor();
 
@@ -57,7 +58,7 @@ export function GuidedTour({
       data.type === EVENTS.TOUR_END &&
       (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED)
     ) {
-      onFinish();
+      onFinish(data.status === STATUS.SKIPPED);
     }
   }
 

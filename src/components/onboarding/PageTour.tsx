@@ -16,6 +16,11 @@ import { guestSeenTours, markGuestTourSeen } from "@/lib/guestSeenTours";
 import type { User } from "@/models/user/User";
 import { authService } from "@/services/AuthService";
 
+/** Marque « toutes les visites » : posée par « Passer », elle arrête les
+ * lancements automatiques (2026-10-04, visites trop insistantes sur
+ * téléphone). Chaque visite reste disponible avec le bouton « ? ». */
+export const ALL_TOURS = "*";
+
 /** Délai maximal d'attente des éléments ciblés : la plupart des pages
  * affichent d'abord "Chargement..." le temps de lire Firestore. */
 const TARGETS_TIMEOUT_MS = 5000;
@@ -106,8 +111,12 @@ function definitionsFor(
 export function PageTour({
   tourId,
   replayHint = true,
+  autoStart = true,
 }: {
   tourId: TourId;
+  /** `false` : jamais lancée d'office, seulement avec le bouton « ? »
+   * (parcours d'achat : rien ne doit gêner une commande). */
+  autoStart?: boolean;
   /** Terminer la toute première visite par l'étape montrant le bouton
    * "Revoir la visite" de l'en-tête. Désactivé dans une fenêtre
    * (`DialogTour`) : ce bouton-là est caché derrière elle. */
@@ -122,8 +131,10 @@ export function PageTour({
   const [runKey, setRunKey] = useState(0);
 
   const role = profile?.role;
-  const seenTours = profile ? (profile.seenTours ?? []) : guestSeenTours();
-  const seen = seenTours.includes(tourId);
+  // Connecté : les visites vues sur le compte, et celles vues avant la
+  // connexion sur ce navigateur — se connecter ne les relance pas.
+  const seenTours = profile ? [...(profile.seenTours ?? []), ...guestSeenTours()] : guestSeenTours();
+  const seen = !autoStart || seenTours.includes(tourId) || seenTours.includes(ALL_TOURS);
   // Toute première visite de ce compte/navigateur : elle se termine en
   // montrant où la relancer.
   const isFirstTour = replayHint && seenTours.length === 0;
@@ -156,14 +167,16 @@ export function PageTour({
   // ni bloquer les clics sur la bulle pendant ce temps (voir `Dialog`).
   useEffect(() => (run ? markRunning() : undefined), [run, markRunning]);
 
-  async function handleFinish() {
+  async function handleFinish(skipped: boolean) {
     setRun(false);
+    // « Passer » : plus aucune visite automatique ; sinon, celle-ci.
+    const mark = skipped ? ALL_TOURS : tourId;
     if (profile) {
-      if (seen) return;
-      await authService.markTourSeen(profile.id, tourId);
+      if (seen && !skipped) return;
+      await authService.markTourSeen(profile.id, mark);
       await refreshProfile();
     } else {
-      markGuestTourSeen(tourId);
+      markGuestTourSeen(mark);
     }
   }
 
