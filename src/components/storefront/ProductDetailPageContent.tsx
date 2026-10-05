@@ -220,13 +220,12 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                 <button
                   key={image}
                   type="button"
-                  aria-label={`Agrandir la photo ${index + 1} sur ${product.images.length}`}
+                  // Une vignette s'affiche en grand sur la page ; seule la
+                  // photo principale ouvre la vue plein écran.
+                  aria-label={`Afficher la photo ${index + 1} sur ${product.images.length}`}
                   aria-current={index === shownIndex ? "true" : undefined}
-                  onClick={() => {
-                    setSelectedImage(index);
-                    setLightboxIndex(index);
-                  }}
-                  className={`relative size-20 cursor-zoom-in overflow-hidden rounded-lg border-2 bg-muted transition duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+                  onClick={() => setSelectedImage(index)}
+                  className={`relative size-20 cursor-pointer overflow-hidden rounded-lg border-2 bg-muted transition duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
                     index === shownIndex ? "border-foreground" : "border-border hover:border-muted-foreground"
                   }`}
                 >

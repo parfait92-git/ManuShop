@@ -2471,3 +2471,11 @@ Suite du plan de travail, validée par l'utilisateur.
 3. déployer les règles Firestore.
 
 Vérifié : lint, `tsc`, 2 301 tests, build. Rien de commité.
+
+### 2026-10-04 — Vignettes de la fiche produit : affichage sur la grande photo
+
+Demande de l'utilisateur (capture de la fiche « Mielle ») : seule la grande photo s'ouvre en plein écran ; un clic sur une vignette l'affiche à la place de la grande photo.
+
+Fait : vignettes « Afficher la photo n sur N » (curseur main, plus de vue plein écran) ; la grande photo garde la loupe et ouvre la vue plein écran sur la photo affichée ; visite guidée et guide du client mis à jour. Test de la fiche produit réécrit pour ce comportement.
+
+Vérifié : lint, `tsc`, tests de la vitrine et des guides. Rien de commité.
