@@ -27,10 +27,13 @@ export interface StockMovement {
   /** Nom du produit au moment du mouvement (le produit peut être renommé
    * ou supprimé ensuite). */
   productName: string;
+  /** Version concernée (BF-17) ; `productName` la mentionne déjà. */
+  variantId?: string;
+  variantLabel?: string;
   type: StockMovementType;
   /** Variation : positive pour une entrée, négative pour une sortie. */
   quantity: number;
-  /** Stock du produit juste après le mouvement. */
+  /** Stock juste après le mouvement (celui de la version, s'il y en a une). */
   stockAfter: number;
   orderId?: string;
   /** Fournisseur, motif de la correction… */

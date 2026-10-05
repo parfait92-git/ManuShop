@@ -133,3 +133,29 @@ describe("buildStockMovementsReport", () => {
     expect(stockMovementsTable(report, true).rows[1].slice(5)).toEqual(["Client", "Commande ABCDEFGH"]);
   });
 });
+
+describe("état du stock avec des versions (BF-17)", () => {
+  it("lists each version on its own line, at its own price", () => {
+    const report = buildStockStateReport(
+      [
+        {
+          id: "p1",
+          name: "Huile",
+          category: "Soins",
+          price: 3000,
+          stock: 5,
+          stockThreshold: 2,
+          isPublished: true,
+          variants: { a: { label: "250 ml", stock: 5, position: 0 }, b: { label: "500 ml", stock: 0, price: 5500, position: 1 } },
+        } as unknown as Product,
+      ],
+      new Map([["p1", 1800]])
+    );
+    expect(report.rows.map((r) => [r.name, r.stock, r.status, r.price, r.valueAtPrice, r.valueAtCost])).toEqual([
+      ["Huile — 500 ml", 0, "Rupture", 5500, 0, 0],
+      ["Huile — 250 ml", 5, "En stock", 3000, 15000, 9000],
+    ]);
+    expect(report.totals.products).toBe(1);
+    expect(report.totals.out).toBe(1);
+  });
+});

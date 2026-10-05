@@ -8,8 +8,10 @@ import type { IReviewRepository } from "@/repositories/interfaces/IReviewReposit
 import {
   replyToFeedbackAction,
   submitDeliveryFeedbackAction,
-  type ReplyToFeedbackInput,
-  type SubmitDeliveryFeedbackInput,
+} from "@/server/actions/client/feedbackActions";
+import type {
+  ReplyToFeedbackInput,
+  SubmitDeliveryFeedbackInput,
 } from "@/server/actions/feedbackActions";
 
 /** Avis d'une commande livrée : la livraison (privé) et ses articles. */

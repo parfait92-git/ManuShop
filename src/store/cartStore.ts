@@ -22,16 +22,26 @@ export interface CartItem {
    * `useAddToCart`). Absent sur un panier enregistré avant ce champ —
    * renseigné au rafraîchissement suivant (`useCartPriceSync`). */
   shopId?: string;
+  /** Version choisie (BF-17) ; `name` reste le nom du produit, `stock`
+   * celui de la version. Deux versions d'un produit font deux lignes. */
+  variantId?: string;
+  variantLabel?: string;
+}
+
+/** Identifiant d'une ligne du panier : le produit, et sa version. */
+export function cartLineKey(item: Pick<CartItem, "productId" | "variantId">): string {
+  return item.variantId ? `${item.productId}::${item.variantId}` : item.productId;
 }
 
 interface CartState {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  /** `key` : `cartLineKey` de la ligne. */
+  removeItem: (key: string) => void;
+  updateQuantity: (key: string, quantity: number) => void;
   /** Remplace le prix des articles par leur prix actuel, ex. après la fin
-   * d'une promotion, et complète leur boutique (`productId` → valeurs). Les
-   * articles absents de la table restent inchangés. */
+   * d'une promotion, et complète leur boutique (`cartLineKey` → valeurs).
+   * Les articles absents de la table restent inchangés. */
   refreshPrices: (current: Record<string, { price: number; shopId: string }>) => void;
   clear: () => void;
 }
@@ -46,13 +56,12 @@ export const useCartStore = create<CartState>()(
       items: [],
       addItem: (item, quantity = 1) =>
         set((state) => {
-          const existing = state.items.find(
-            (i) => i.productId === item.productId
-          );
+          const key = cartLineKey(item);
+          const existing = state.items.find((i) => cartLineKey(i) === key);
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.productId === item.productId
+                cartLineKey(i) === key
                   ? {
                       ...i,
                       stock: item.stock,
@@ -69,17 +78,17 @@ export const useCartStore = create<CartState>()(
             ],
           };
         }),
-      removeItem: (productId) =>
+      removeItem: (key) =>
         set((state) => ({
-          items: state.items.filter((i) => i.productId !== productId),
+          items: state.items.filter((i) => cartLineKey(i) !== key),
         })),
-      updateQuantity: (productId, quantity) =>
+      updateQuantity: (key, quantity) =>
         set((state) => ({
           items:
             quantity <= 0
-              ? state.items.filter((i) => i.productId !== productId)
+              ? state.items.filter((i) => cartLineKey(i) !== key)
               : state.items.map((i) =>
-                  i.productId === productId
+                  cartLineKey(i) === key
                     ? { ...i, quantity: clampToStock(quantity, i.stock) }
                     : i
                 ),
@@ -87,7 +96,7 @@ export const useCartStore = create<CartState>()(
       refreshPrices: (current) =>
         set((state) => ({
           items: state.items.map((i) => {
-            const latest = current[i.productId];
+            const latest = current[cartLineKey(i)];
             if (!latest || (latest.price === i.price && latest.shopId === i.shopId)) return i;
             return { ...i, price: latest.price, shopId: latest.shopId };
           }),

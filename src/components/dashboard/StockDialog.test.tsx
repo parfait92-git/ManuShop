@@ -154,4 +154,36 @@ describe("StockDialog", () => {
     await user.click(screen.getByRole("tab", { name: "Historique" }));
     expect(await screen.findByText(/L'historique commence le 3 octobre 2026/)).toBeInTheDocument();
   });
+
+  it("restocks and corrects one version at a time, keeping the total", async () => {
+    restockMock.mockResolvedValue(6);
+    const onStockChange = jest.fn();
+    const user = userEvent.setup();
+    render(
+      <StockDialog
+        product={
+          {
+            ...product,
+            stock: 6,
+            variantName: "Contenance",
+            variants: { a: { label: "250 ml", stock: 4, position: 0 }, b: { label: "500 ml", stock: 2, position: 1 } },
+          } as Product
+        }
+        onClose={jest.fn()}
+        onStockChange={onStockChange}
+      />
+    );
+
+    const select = screen.getByRole("combobox", { name: /Contenance/ });
+    expect(select).toHaveValue("a");
+    await user.selectOptions(select, "b");
+    await user.type(screen.getByLabelText("Quantité reçue"), "4");
+    expect(screen.getByText("Nouveau stock (500 ml) : 6")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ajouter au stock" }));
+
+    await waitFor(() => expect(restockMock).toHaveBeenCalledWith(expect.objectContaining({ productId: "p1", variantId: "b", quantity: 4 })));
+    expect(onStockChange).toHaveBeenCalledWith("p1", 10, { b: 6 });
+    expect(screen.getByTestId("current-stock")).toHaveTextContent("10");
+    expect(screen.getByRole("option", { name: "500 ml — 6 en stock" })).toBeInTheDocument();
+  });
 });

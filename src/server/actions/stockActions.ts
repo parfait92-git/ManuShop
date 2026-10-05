@@ -5,6 +5,8 @@ import { FieldValue, type Firestore, type Transaction } from "firebase-admin/fir
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
+import { hasVariants, lineName, listVariants, totalVariantStock } from "@/lib/variants";
+import type { ProductVariant } from "@/models/product/ProductVariant";
 import { STOCK_MOVEMENTS_COLLECTION, queueStockMovement } from "@/server/stock/stockMovements";
 
 /** Borne haute d'une saisie, contre une faute de frappe (un zéro de trop). */
@@ -40,7 +42,7 @@ async function readProduct(
   transaction: Transaction,
   productId: string,
   member: TeamMember
-): Promise<{ name: string; stock: number }> {
+): Promise<{ name: string; stock: number; variants?: Record<string, ProductVariant> }> {
   const snapshot = await transaction.get(db.collection("products").doc(productId));
   const product = snapshot.data();
   if (!snapshot.exists || !product || product.shopId !== member.shopId) {
@@ -52,6 +54,30 @@ async function readProduct(
   return {
     name: String(product.name ?? ""),
     stock: typeof product.stock === "number" ? product.stock : 0,
+    variants: product.variants as Record<string, ProductVariant> | undefined,
+  };
+}
+
+/**
+ * Stock visé par un mouvement : celui d'une version (obligatoire pour un
+ * produit qui en a), sinon celui du produit.
+ */
+function target(product: { name: string; stock: number; variants?: Record<string, ProductVariant> }, variantId?: string) {
+  if (hasVariants(product)) {
+    const variant = variantId ? product.variants![variantId] : undefined;
+    if (!variant) throw new ValidationError("Choisissez la version concernée.");
+    return { variantId, variant, stock: variant.stock, name: lineName(product.name, variant.label) };
+  }
+  if (variantId) throw new ValidationError("Ce produit n'existe pas en plusieurs versions.");
+  return { variantId: undefined, variant: undefined, stock: product.stock, name: product.name };
+}
+
+/** Écriture du nouveau stock : total du produit, et version s'il y a lieu. */
+function stockUpdate(productStock: number, delta: number, variantId: string | undefined) {
+  return {
+    stock: productStock + delta,
+    ...(variantId ? { [`variants.${variantId}.stock`]: FieldValue.increment(delta) } : {}),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 }
 
@@ -69,6 +95,8 @@ function isWholeNumber(value: unknown, min: number): value is number {
 
 export interface RestockInput {
   productId: string;
+  /** Version réapprovisionnée (BF-17), pour un produit qui en a. */
+  variantId?: string;
   /** Unités reçues. */
   quantity: number;
   /** Fournisseur, numéro de bon de livraison… */
@@ -102,12 +130,10 @@ export async function restockProductAction(
 
   return db.runTransaction(async (transaction) => {
     const product = await readProduct(db, transaction, input.productId, member);
-    const stockAfter = product.stock + input.quantity;
+    const t = target(product, input.variantId);
+    const stockAfter = t.stock + input.quantity;
 
-    transaction.update(db.collection("products").doc(input.productId), {
-      stock: stockAfter,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    transaction.update(db.collection("products").doc(input.productId), stockUpdate(product.stock, input.quantity, t.variantId));
     if (input.purchasePrice !== undefined) {
       transaction.set(db.collection("productCosts").doc(input.productId), {
         shopId: member.shopId,
@@ -118,7 +144,8 @@ export async function restockProductAction(
     queueStockMovement(db, transaction, {
       shopId: member.shopId,
       productId: input.productId,
-      productName: product.name,
+      productName: t.name,
+      ...(t.variant ? { variantId: t.variantId, variantLabel: t.variant.label } : {}),
       type: "restock",
       quantity: input.quantity,
       stockAfter,
@@ -132,6 +159,8 @@ export async function restockProductAction(
 
 export interface AdjustStockInput {
   productId: string;
+  /** Version recomptée (BF-17), pour un produit qui en a. */
+  variantId?: string;
   /** Quantité réellement comptée en rayon ou en réserve. */
   countedStock: number;
   /** Motif obligatoire : casse, perte, erreur de saisie… */
@@ -156,19 +185,18 @@ export async function adjustStockAction(
 
   return db.runTransaction(async (transaction) => {
     const product = await readProduct(db, transaction, input.productId, member);
-    const quantity = input.countedStock - product.stock;
+    const t = target(product, input.variantId);
+    const quantity = input.countedStock - t.stock;
     if (quantity === 0) {
-      throw new ValidationError(`Le stock est déjà de ${product.stock} : rien à corriger.`);
+      throw new ValidationError(`Le stock est déjà de ${t.stock} : rien à corriger.`);
     }
 
-    transaction.update(db.collection("products").doc(input.productId), {
-      stock: input.countedStock,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    transaction.update(db.collection("products").doc(input.productId), stockUpdate(product.stock, quantity, t.variantId));
     queueStockMovement(db, transaction, {
       shopId: member.shopId,
       productId: input.productId,
-      productName: product.name,
+      productName: t.name,
+      ...(t.variant ? { variantId: t.variantId, variantLabel: t.variant.label } : {}),
       type: "adjustment",
       quantity,
       stockAfter: input.countedStock,
@@ -199,15 +227,145 @@ export async function recordInitialStockAction(idToken: string, productId: strin
     );
     if (!existing.empty) return;
 
-    queueStockMovement(db, transaction, {
-      shopId: member.shopId,
-      productId,
-      productName: product.name,
-      type: "initial",
-      quantity: product.stock,
-      stockAfter: product.stock,
-      actorId: member.uid,
-      actorName: member.name,
+    // Un mouvement par version, ou un seul pour le produit.
+    const lines = hasVariants(product)
+      ? listVariants(product).map((v) => ({ variantId: v.id, variantLabel: v.label, name: lineName(product.name, v.label), stock: v.stock }))
+      : [{ variantId: undefined, variantLabel: undefined, name: product.name, stock: product.stock }];
+    for (const line of lines) {
+      queueStockMovement(db, transaction, {
+        shopId: member.shopId,
+        productId,
+        productName: line.name,
+        variantId: line.variantId,
+        variantLabel: line.variantLabel,
+        type: "initial",
+        quantity: line.stock,
+        stockAfter: line.stock,
+        actorId: member.uid,
+        actorName: member.name,
+      });
+    }
+  });
+}
+
+export interface VariantDraft {
+  /** Version existante ; absent : nouvelle version. */
+  id?: string;
+  label: string;
+  /** Prix propre (FCFA) ; absent : prix du produit. */
+  price?: number;
+  /** Stock de départ d'une nouvelle version (ignoré pour une existante :
+   * son stock se change par réapprovisionnement ou correction). */
+  stock?: number;
+}
+
+const MAX_VARIANTS = 30;
+const MAX_LABEL_LENGTH = 60;
+
+/**
+ * Versions d'un produit existant (BF-17, 2026-10-04) : ajout, libellé,
+ * prix, ordre, retrait. Par le serveur seulement (les règles Firestore
+ * interdisent de toucher `variants` depuis le navigateur), pour que le
+ * stock reste juste et tracé :
+ * - une version existante garde son stock ;
+ * - une nouvelle version entre avec son stock de départ (« Stock initial ») ;
+ * - une version ne peut être retirée qu'à stock nul ;
+ * - passer d'un stock unique à des versions répartit le stock : l'ancien
+ *   stock sort (« Correction d'inventaire »), chaque version entre avec le
+ *   sien.
+ */
+export async function saveProductVariantsAction(
+  idToken: string,
+  input: { productId: string; variantName: string; variants: VariantDraft[] }
+): Promise<void> {
+  const db = getAdminDb();
+  const member = await requireTeamMember(db, idToken);
+  const variantName = input.variantName.trim();
+  if (input.variants.length > MAX_VARIANTS) {
+    throw new ValidationError(`${MAX_VARIANTS} versions au plus.`);
+  }
+  if (input.variants.length > 0 && !variantName) {
+    throw new ValidationError("Indiquez ce qui distingue les versions (ex. Contenance, Taille).");
+  }
+  const labels = input.variants.map((v) => v.label.trim());
+  if (labels.some((l) => !l || l.length > MAX_LABEL_LENGTH)) {
+    throw new ValidationError(`Chaque version a un nom (${MAX_LABEL_LENGTH} caractères au plus).`);
+  }
+  if (new Set(labels.map((l) => l.toLowerCase())).size !== labels.length) {
+    throw new ValidationError("Deux versions portent le même nom.");
+  }
+  for (const v of input.variants) {
+    if (v.price !== undefined && (typeof v.price !== "number" || !Number.isFinite(v.price) || v.price <= 0)) {
+      throw new ValidationError(`Le prix de « ${v.label.trim()} » doit être un montant positif.`);
+    }
+    if (!v.id && v.stock !== undefined && !isWholeNumber(v.stock, 0)) {
+      throw new ValidationError(`Le stock de départ de « ${v.label.trim()} » doit être un nombre entier.`);
+    }
+  }
+
+  await db.runTransaction(async (transaction) => {
+    const product = await readProduct(db, transaction, input.productId, member);
+    const before = product.variants ?? {};
+    const kept = new Set(input.variants.flatMap((v) => (v.id ? [v.id] : [])));
+    for (const id of kept) {
+      if (!before[id]) throw new ValidationError("Une version a été supprimée entre-temps : rechargez la page.");
+    }
+    for (const [id, variant] of Object.entries(before)) {
+      if (!kept.has(id) && variant.stock !== 0) {
+        throw new ValidationError(
+          `« ${variant.label} » a encore ${variant.stock} en stock : corrigez son stock à 0 avant de la retirer.`
+        );
+      }
+    }
+
+    const next: Record<string, ProductVariant> = {};
+    const added: { id: string; label: string; stock: number }[] = [];
+    input.variants.forEach((draft, position) => {
+      const id = draft.id ?? db.collection("products").doc().id;
+      const stock = draft.id ? before[draft.id].stock : (draft.stock ?? 0);
+      next[id] = {
+        label: draft.label.trim(),
+        stock,
+        position,
+        ...(draft.price !== undefined ? { price: draft.price } : {}),
+      };
+      if (!draft.id) added.push({ id, label: draft.label.trim(), stock });
     });
+
+    const wasSingle = !hasVariants(product);
+    const total = input.variants.length > 0 ? totalVariantStock(next) : wasSingle ? product.stock : 0;
+    transaction.update(db.collection("products").doc(input.productId), {
+      variants: input.variants.length > 0 ? next : FieldValue.delete(),
+      variantName: input.variants.length > 0 ? variantName : FieldValue.delete(),
+      stock: total,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    const actor = { actorId: member.uid, actorName: member.name };
+    if (wasSingle && input.variants.length > 0 && product.stock !== 0) {
+      queueStockMovement(db, transaction, {
+        shopId: member.shopId,
+        productId: input.productId,
+        productName: product.name,
+        type: "adjustment",
+        quantity: -product.stock,
+        stockAfter: 0,
+        note: "Stock réparti entre les versions",
+        ...actor,
+      });
+    }
+    for (const v of added) {
+      queueStockMovement(db, transaction, {
+        shopId: member.shopId,
+        productId: input.productId,
+        productName: lineName(product.name, v.label),
+        variantId: v.id,
+        variantLabel: v.label,
+        type: "initial",
+        quantity: v.stock,
+        stockAfter: v.stock,
+        ...actor,
+      });
+    }
   });
 }

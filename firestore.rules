@@ -47,7 +47,11 @@ service cloud.firestore {
         // Le stock ne change plus depuis le navigateur après la création :
         // commandes, réapprovisionnements et corrections passent par le
         // serveur, qui les inscrit dans l'historique (`stockMovements`).
-        && request.resource.data.get('stock', 0) == resource.data.get('stock', 0);
+        && request.resource.data.get('stock', 0) == resource.data.get('stock', 0)
+        // Versions (BF-17) : leur stock suit la même règle ; elles ne se
+        // modifient que par le serveur (`saveProductVariantsAction`).
+        && request.resource.data.get('variants', null) == resource.data.get('variants', null)
+        && request.resource.data.get('variantName', null) == resource.data.get('variantName', null);
       allow delete: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'seller']
         && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;

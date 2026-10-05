@@ -14,7 +14,12 @@ export interface Product {
   isPromo: boolean;
   promoPrice?: number;
   promoEnd?: Timestamp;
-  variants?: ProductVariant[];
+  /** Versions du produit (BF-17), par identifiant. Avec des versions,
+   * `stock` est leur total, tenu à jour par le serveur. */
+  variants?: Record<string, ProductVariant>;
+  /** Nom de l'option qui distingue les versions : « Contenance »,
+   * « Taille », « Couleur »… */
+  variantName?: string;
   // Absent/true = visible côté client (BF-90). Contrairement à
   // `Shop.isPublished` (absent = non publiée), absent est traité comme
   // publié ici pour ne pas faire disparaître rétroactivement les produits

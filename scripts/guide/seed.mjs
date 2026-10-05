@@ -70,7 +70,13 @@ const PRODUCTS = [
   { id: "huile-ricin", name: "Huile de ricin pure 100 ml", category: "Soins cheveux", price: 3500, cost: 2000, stock: 24, threshold: 5, description: "Huile de ricin pressée à froid, sans additif. Fortifie les cheveux, les cils et les sourcils." },
   { id: "beurre-karite", name: "Beurre de karité brut 250 g", category: "Soins du corps", price: 2500, cost: 1300, stock: 3, threshold: 5, description: "Karité non raffiné du Nord-Cameroun. Nourrit et protège la peau sèche." },
   { id: "savon-noir", name: "Savon noir africain", category: "Savons", price: 1500, cost: 700, stock: 40, threshold: 10, description: "Savon artisanal à l'huile de palme et au cacao. Nettoie en douceur visage et corps." },
-  { id: "lait-corporel", name: "Lait corporel au karité 400 ml", category: "Soins du corps", price: 4500, cost: 2600, stock: 12, threshold: 4, description: "Lait hydratant léger au karité et à l'aloe vera, pénètre vite." },
+  {
+    id: "lait-corporel", name: "Lait corporel au karité", category: "Soins du corps", price: 4500, cost: 2600, stock: 12, threshold: 4,
+    description: "Lait hydratant léger au karité et à l'aloe vera, pénètre vite.",
+    // Deux versions (BF-17) : le stock du produit est leur total.
+    variantName: "Contenance",
+    variants: { v200: { label: "200 ml", stock: 5, price: 2500, position: 0 }, v400: { label: "400 ml", stock: 7, position: 1 } },
+  },
   { id: "huile-coco", name: "Huile de coco vierge 250 ml", category: "Soins cheveux", price: 3000, cost: 1800, stock: 0, threshold: 4, description: "Huile de coco vierge pour cheveux et peau, au parfum naturel." },
   { id: "masque-avocat", name: "Masque capillaire à l'avocat", category: "Soins cheveux", price: 5000, cost: 2900, stock: 9, threshold: 3, description: "Masque nourrissant à l'avocat et au miel pour cheveux secs et crépus.", promoPrice: 4000 },
   { id: "gommage-cafe", name: "Gommage au café 200 g", category: "Soins du corps", price: 2800, cost: 1200, stock: 15, threshold: 4, description: "Gommage exfoliant au café et au sucre de canne." },
@@ -78,20 +84,20 @@ const PRODUCTS = [
 ];
 
 const CLIENTS = [
-  ["Christelle Ngo", "+237 690 11 22 33", "Bonapriso, Douala"],
-  ["Fatou Ndiaye", "+237 677 45 67 89", "Bastos, Yaoundé"],
-  ["Jean-Paul Mbarga", "+237 699 88 77 66", "Akwa, Douala"],
-  ["Aminata Bello", "+237 655 12 34 56", "Garoua centre"],
-  ["Brice Kamga", "+237 670 98 76 54", "Bafoussam"],
-  ["Grâce Etoundi", "+237 691 23 45 67", "Kribi"],
+  ["Christelle Ngo", "+237690112233", "Bonapriso, Douala"],
+  ["Fatou Ndiaye", "+237677456789", "Bastos, Yaoundé"],
+  ["Jean-Paul Mbarga", "+237699887766", "Akwa, Douala"],
+  ["Aminata Bello", "+237655123456", "Garoua centre"],
+  ["Brice Kamga", "+237670987654", "Bafoussam"],
+  ["Grâce Etoundi", "+237691234567", "Kribi"],
 ];
 
 async function main() {
-  const gerant = await user("gerant@guide.local", "Aïssatou Mbarga", { role: "admin", shopId: SHOP, phone: "+237 690 00 00 01", adminSource: "subscription" });
-  const vendeur = await user("vendeur@guide.local", "Junior Tchoupo", { role: "seller", shopId: SHOP, phone: "+237 690 00 00 02" });
+  const gerant = await user("gerant@guide.local", "Aïssatou Mbarga", { role: "admin", shopId: SHOP, phone: "+237690000001", adminSource: "subscription" });
+  const vendeur = await user("vendeur@guide.local", "Junior Tchoupo", { role: "seller", shopId: SHOP, phone: "+237690000002" });
   const client = await user("client@guide.local", "Christelle Ngo", {
     role: "client",
-    phone: "+237 690 11 22 33",
+    phone: "+237690112233",
     deliveryAddress: "Bonapriso, Douala",
     favoriteProductIds: ["huile-ricin", "masque-avocat"],
   });
@@ -107,8 +113,8 @@ async function main() {
     logo: img("logo-maison-awa"),
     description: "Cosmétiques naturels faits au Cameroun : karité, huiles, savons et accessoires en wax.",
     address: "Rue Joss, Bonanjo, Douala",
-    phone: "+237 690 00 00 01",
-    whatsapp: "+237 690 00 00 01",
+    phone: "+237690000001",
+    whatsapp: "+237690000001",
     currency: "XAF",
     ownerId: gerant,
     sector: "Cosmétique",
@@ -135,7 +141,7 @@ async function main() {
     ["shop-saveurs-nord", "Saveurs du Nord", saveurs, "Alimentation"],
   ]) {
     await db.doc(`shops/${id}`).set({
-      name, logo: "", address: "Yaoundé", phone: "+237 690 00 00 09", whatsapp: "", currency: "XAF",
+      name, logo: "", address: "Yaoundé", phone: "+237690000009", whatsapp: "", currency: "XAF",
       ownerId: owner, sector, isPublished: true, subscriptionPlan: "monthly", adminSource: "subscription",
       subscriptionExpiresAt: Timestamp.fromDate(new Date(NOW + 20 * DAY)), createdAt: at(90),
     });
@@ -155,6 +161,7 @@ async function main() {
       shopId: SHOP, name: p.name, description: p.description, price: p.price, category: p.category,
       images: [img(p.id)], stock: p.stock, stockThreshold: p.threshold,
       isPromo: !!p.promoPrice, ...(p.promoPrice ? { promoPrice: p.promoPrice } : {}),
+      ...(p.variants ? { variants: p.variants, variantName: p.variantName } : {}),
       isPublished: true, createdAt: at(148), updatedAt: at(2),
     });
     await db.doc(`productCosts/${p.id}`).set({ shopId: SHOP, purchasePrice: p.cost, updatedAt: at(148) });

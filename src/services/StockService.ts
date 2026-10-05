@@ -6,8 +6,12 @@ import {
   adjustStockAction,
   recordInitialStockAction,
   restockProductAction,
-  type AdjustStockInput,
-  type RestockInput,
+  saveProductVariantsAction,
+} from "@/server/actions/client/stockActions";
+import type {
+  AdjustStockInput,
+  RestockInput,
+  VariantDraft,
 } from "@/server/actions/stockActions";
 
 async function idToken(): Promise<string> {
@@ -45,6 +49,11 @@ export class StockService {
 
   async adjust(input: AdjustStockInput): Promise<number> {
     return (await adjustStockAction(await idToken(), input)).stockAfter;
+  }
+
+  /** Versions d'un produit existant (BF-17) : ajout, prix, ordre, retrait. */
+  async saveVariants(productId: string, variantName: string, variants: VariantDraft[]): Promise<void> {
+    await saveProductVariantsAction(await idToken(), { productId, variantName, variants });
   }
 
   /** Stock de départ d'un produit qui vient d'être créé. */

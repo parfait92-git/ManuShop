@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { convertFromXaf, displayCurrency, shopCurrency, type CurrencyRates } from "@/lib/currency";
-import { effectivePrice } from "@/lib/promo";
+import { lowestPrice } from "@/lib/variants";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 
@@ -183,7 +183,7 @@ export function productJsonLd(
   rates: CurrencyRates
 ): JsonLd {
   const currency = displayCurrency(shopCurrency(shop), rates);
-  const price = convertFromXaf(effectivePrice(product), currency, rates);
+  const price = convertFromXaf(lowestPrice(product), currency, rates);
   return {
     "@context": "https://schema.org",
     "@type": "Product",

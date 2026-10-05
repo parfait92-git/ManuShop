@@ -8,7 +8,7 @@ import {
   listPremiumRequestsAction,
   requestPremiumItemAction,
   setPremiumCatalogAction,
-} from "@/server/actions/premiumActions";
+} from "@/server/actions/client/premiumActions";
 
 /** Offres premium (2026-10-03) : catalogue public, demandes d'achat. */
 export class PremiumService {

@@ -3,7 +3,9 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { toShopPremiumState, type ShopPremiumState } from "@/lib/premiumCatalog";
 import { ACTIVE_THEME_DOC } from "@/models/theme/ShopTheme";
-import { applyShopThemeAction } from "@/server/actions/themeActions";
+import {
+  applyShopThemeAction,
+} from "@/server/actions/client/themeActions";
 import { DEFAULT_THEME_ID } from "@/themes/registry";
 
 /** Thème des boutiques (2026-10-03) : lecture en direct du thème appliqué

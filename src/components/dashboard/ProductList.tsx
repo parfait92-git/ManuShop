@@ -58,8 +58,18 @@ export function ProductList({
   const [onlyWithoutImage, setOnlyWithoutImage] = useState(false);
   const [stockProduct, setStockProduct] = useState<Product | null>(null);
 
-  function handleStockChange(productId: string, stock: number) {
-    setProducts((current) => current.map((p) => (p.id === productId ? { ...p, stock } : p)));
+  function handleStockChange(productId: string, stock: number, variantStocks?: Record<string, number>) {
+    setProducts((current) =>
+      current.map((p) => {
+        if (p.id !== productId) return p;
+        if (!variantStocks || !p.variants) return { ...p, stock };
+        const variants = { ...p.variants };
+        for (const [id, value] of Object.entries(variantStocks)) {
+          if (variants[id]) variants[id] = { ...variants[id], stock: value };
+        }
+        return { ...p, stock, variants };
+      })
+    );
   }
 
   const withoutImageCount = products.filter(

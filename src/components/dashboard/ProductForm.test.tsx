@@ -1,4 +1,9 @@
 jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
+// jsdom n'a pas `PointerEvent`, qu'utilise l'interrupteur de Base UI.
+if (typeof window !== "undefined" && !("PointerEvent" in window)) {
+  (window as unknown as { PointerEvent: typeof MouseEvent }).PointerEvent = class extends MouseEvent {};
+}
+
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -13,8 +18,10 @@ jest.mock("../../services/StockService", () => ({
     restock: (...args: unknown[]) => restockMock(...args),
     adjust: jest.fn(),
     listProductHistory: (...args: unknown[]) => listProductHistoryMock(...args),
+    saveVariants: (...args: unknown[]) => saveVariantsMock(...args),
   },
 }));
+const saveVariantsMock: jest.Mock = jest.fn(async () => undefined);
 
 // Rôle configurable par test : le prix d'achat est réservé au gérant.
 let mockRole = "admin";
@@ -256,6 +263,54 @@ describe("ProductForm — photo obligatoire", () => {
     expect(
       await screen.findByText("Ajoutez au moins une photo du produit.")
     ).toBeInTheDocument();
+    expect(mockedProductService.createProduct).not.toHaveBeenCalled();
+  });
+
+  it("creates a product with versions, its stock being their total", async () => {
+    mockedProductService.createProduct.mockResolvedValue({ id: "new-id" } as never);
+    const user = userEvent.setup();
+    render(<ProductForm shopId="shop-1" categories={[activeCategory]} />);
+    await user.type(screen.getByLabelText("Nom du produit"), "Huile de coco");
+    await user.type(screen.getByLabelText("Description"), "Vierge.");
+    await user.type(screen.getByLabelText("Prix (FCFA)"), "3000");
+    await user.selectOptions(screen.getByLabelText("Catégorie"), "Mode");
+    await user.type(screen.getByLabelText("Seuil d'alerte"), "1");
+    await user.click(screen.getByRole("button", { name: "fake-add-photo" }));
+
+    await user.click(screen.getByRole("switch", { name: /plusieurs versions/ }));
+    await user.type(screen.getByRole("combobox", { name: /Les versions diffèrent par/ }), "Contenance");
+    await user.type(screen.getByLabelText("Nom de la version 1"), "250 ml");
+    await user.type(screen.getByLabelText("Stock de la version 1"), "4");
+    await user.type(screen.getByLabelText("Nom de la version 2"), "500 ml");
+    await user.type(screen.getByLabelText("Prix de la version 2"), "5500");
+    await user.type(screen.getByLabelText("Stock de la version 2"), "2");
+    expect((screen.getByRole("textbox", { name: /Stock total/ }) as HTMLInputElement).value).toBe("6");
+
+    await user.click(screen.getByRole("button", { name: "Créer le produit" }));
+
+    await waitFor(() => expect(mockedProductService.createProduct).toHaveBeenCalled());
+    const created = mockedProductService.createProduct.mock.calls[0][0];
+    expect(created).toEqual(expect.objectContaining({ stock: 6, variantName: "Contenance" }));
+    expect(Object.values(created.variants!)).toEqual([
+      { label: "250 ml", stock: 4, position: 0 },
+      { label: "500 ml", stock: 2, price: 5500, position: 1 },
+    ]);
+    expect(recordInitialStockMock).toHaveBeenCalledWith("new-id");
+  });
+
+  it("refuses versions with the same name", async () => {
+    const user = userEvent.setup();
+    render(<ProductForm shopId="shop-1" categories={[activeCategory]} />);
+    await fillRequiredFields(user);
+    await user.click(screen.getByRole("button", { name: "fake-add-photo" }));
+    await user.click(screen.getByRole("switch", { name: /plusieurs versions/ }));
+    await user.type(screen.getByRole("combobox", { name: /Les versions diffèrent par/ }), "Taille");
+    await user.type(screen.getByLabelText("Nom de la version 1"), "M");
+    await user.type(screen.getByLabelText("Nom de la version 2"), "m");
+
+    await user.click(screen.getByRole("button", { name: "Créer le produit" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Deux versions portent le même nom.");
     expect(mockedProductService.createProduct).not.toHaveBeenCalled();
   });
 
@@ -539,5 +594,78 @@ describe("ProductForm — prix d'achat existant", () => {
     await waitFor(() =>
       expect(savePurchasePriceMock).toHaveBeenCalledWith("p1", "shop-1", 5000)
     );
+  });
+});
+
+describe("ProductForm — versions d'un produit existant (BF-17)", () => {
+  const withVariants = {
+    id: "p1",
+    shopId: "shop-1",
+    name: "Huile de coco",
+    description: "Vierge.",
+    price: 3000,
+    category: "Mode",
+    stock: 6,
+    stockThreshold: 1,
+    isPromo: false,
+    images: ["https://res.cloudinary.com/demo/old.jpg"],
+    variantName: "Contenance",
+    variants: {
+      a: { label: "250 ml", stock: 4, position: 0 },
+      b: { label: "500 ml", stock: 2, price: 5500, position: 1 },
+    },
+    createdAt: {} as never,
+    updatedAt: {} as never,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRole = "admin";
+    mockedProductService.updateProduct.mockResolvedValue(undefined);
+  });
+
+  it("keeps the stock of saved versions read-only and sends the changes to the server first", async () => {
+    const user = userEvent.setup();
+    render(<ProductForm shopId="shop-1" categories={[activeCategory]} product={withVariants} />);
+
+    expect(screen.getByLabelText("Stock de la version 1")).toHaveAttribute("readonly");
+    await user.click(screen.getByRole("button", { name: "Ajouter une version" }));
+    await user.type(screen.getByLabelText("Nom de la version 3"), "1 l");
+    await user.type(screen.getByLabelText("Stock de la version 3"), "3");
+    await user.click(screen.getByRole("button", { name: "Enregistrer les modifications" }));
+
+    await waitFor(() => expect(mockedProductService.updateProduct).toHaveBeenCalled());
+    expect(saveVariantsMock).toHaveBeenCalledWith("p1", "Contenance", [
+      { id: "a", label: "250 ml" },
+      { id: "b", label: "500 ml", price: 5500 },
+      { stock: 3, label: "1 l" },
+    ]);
+    expect(saveVariantsMock.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedProductService.updateProduct.mock.invocationCallOrder[0]
+    );
+  });
+
+  it("shows the server's refusal and keeps the form open", async () => {
+    saveVariantsMock.mockRejectedValueOnce(new Error("« 500 ml » a encore 2 en stock : corrigez son stock à 0 avant de la retirer."));
+    const user = userEvent.setup();
+    render(<ProductForm shopId="shop-1" categories={[activeCategory]} product={withVariants} />);
+
+    await user.click(screen.getByRole("button", { name: "Retirer la version 500 ml" }));
+    await user.type(screen.getByLabelText("Nom de la version 1"), " ");
+    await user.click(screen.getByRole("button", { name: "Ajouter une version" }));
+    await user.type(screen.getByLabelText("Nom de la version 2"), "1 l");
+    await user.click(screen.getByRole("button", { name: "Enregistrer les modifications" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("a encore 2 en stock");
+    expect(mockedProductService.updateProduct).not.toHaveBeenCalled();
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("doesn't touch the versions when they weren't changed", async () => {
+    const user = userEvent.setup();
+    render(<ProductForm shopId="shop-1" categories={[activeCategory]} product={withVariants} />);
+    await user.click(screen.getByRole("button", { name: "Enregistrer les modifications" }));
+    await waitFor(() => expect(mockedProductService.updateProduct).toHaveBeenCalled());
+    expect(saveVariantsMock).not.toHaveBeenCalled();
   });
 });

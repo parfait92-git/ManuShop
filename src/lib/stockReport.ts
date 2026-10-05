@@ -22,6 +22,7 @@ import type { Period } from "@/lib/profitReport";
 import type { Order } from "@/models/order/Order";
 import type { Product } from "@/models/product/Product";
 import { STOCK_MOVEMENT_LABEL, type StockMovement } from "@/models/stock/StockMovement";
+import { lineName, listVariants } from "@/lib/variants";
 
 export type StockStatusLabel = "Rupture" | "Faible" | "En stock";
 
@@ -72,19 +73,26 @@ export function buildStockStateReport(
   products: Product[],
   costs: Map<string, number> | null
 ): StockStateReport {
-  const rows = products
-    .map((product) => {
-      const stock = Math.max(product.stock, 0);
+  // Une ligne par version (BF-17), sinon une par produit. Prix de vente
+  // hors promotion : la valeur du stock au tarif normal.
+  const lines = products.flatMap((product) => {
+    const variants = listVariants(product);
+    if (variants.length === 0) return [{ product, name: product.name, stock: product.stock, price: product.price }];
+    return variants.map((v) => ({ product, name: lineName(product.name, v.label), stock: v.stock, price: v.price ?? product.price }));
+  });
+  const rows = lines
+    .map(({ product, name, stock: rawStock, price }) => {
+      const stock = Math.max(rawStock, 0);
       const purchasePrice = costs?.get(product.id);
       return {
-        name: product.name,
+        name,
         category: product.category || "Sans catégorie",
         stock,
         threshold: product.stockThreshold,
-        status: stockStatusLabel(product),
-        price: product.price,
+        status: stockStatusLabel({ stock, stockThreshold: product.stockThreshold }),
+        price,
         ...(costs ? { purchasePrice } : {}),
-        valueAtPrice: stock * product.price,
+        valueAtPrice: stock * price,
         ...(costs && purchasePrice !== undefined ? { valueAtCost: stock * purchasePrice } : {}),
         published: product.isPublished !== false,
       } as StockStateRow;
@@ -97,7 +105,7 @@ export function buildStockStateReport(
   return {
     rows,
     totals: {
-      products: rows.length,
+      products: products.length,
       units: rows.reduce((sum, r) => sum + r.stock, 0),
       out: rows.filter((r) => r.status === "Rupture").length,
       low: rows.filter((r) => r.status === "Faible").length,

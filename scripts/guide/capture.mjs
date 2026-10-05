@@ -123,6 +123,18 @@ const SHOTS = [
       await settle(p, 1200);
     },
   ],
+  [
+    "client-variantes",
+    null,
+    PHONE,
+    async (p) => {
+      await go(p, "/catalogue/lait-corporel");
+      await p.getByRole("radio", { name: "400 ml" }).click();
+      await p.locator('[data-tour="product-variants"]').scrollIntoViewIfNeeded();
+      await p.evaluate(() => window.scrollBy(0, 160));
+      await settle(p, 800);
+    },
+  ],
   ["client-connexion", null, PHONE, async (p) => go(p, "/login")],
   ["client-inscription", null, PHONE, async (p) => go(p, "/register")],
   [
@@ -240,6 +252,17 @@ const SHOTS = [
       await p.getByRole("textbox", { name: "Prix d'achat unitaire (FCFA)", exact: true }).fill("1800");
       await p.getByRole("textbox", { name: "Note", exact: true }).fill("Grossiste Marché Mboppi");
       await settle(p, 600);
+    },
+  ],
+  [
+    "gerant-variantes",
+    "gerant@guide.local",
+    DESKTOP,
+    async (p) => {
+      await go(p, "/dashboard/products/lait-corporel/edit");
+      await p.locator('[data-tour="product-variants"]').scrollIntoViewIfNeeded();
+      await p.evaluate(() => window.scrollBy(0, 200));
+      await settle(p, 800);
     },
   ],
   ["gerant-categories", "gerant@guide.local", DESKTOP, async (p) => go(p, "/dashboard/categories")],

@@ -13,7 +13,8 @@ import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
 import { productService } from "@/services/ProductService";
-import { effectivePrice, isPromoActive } from "@/lib/promo";
+import { isPromoActive } from "@/lib/promo";
+import { lowestPrice } from "@/lib/variants";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
 
@@ -23,9 +24,9 @@ function sortProducts(products: Product[], order: SortOrder): Product[] {
   const sorted = [...products];
   switch (order) {
     case "price-asc":
-      return sorted.sort((a, b) => effectivePrice(a) - effectivePrice(b));
+      return sorted.sort((a, b) => lowestPrice(a) - lowestPrice(b));
     case "price-desc":
-      return sorted.sort((a, b) => effectivePrice(b) - effectivePrice(a));
+      return sorted.sort((a, b) => lowestPrice(b) - lowestPrice(a));
     case "newest":
     default:
       return sorted.sort(
