@@ -78,6 +78,10 @@ export const sellerGuide: Guide = {
             "Le crayon modifie un produit ; la corbeille le retire (restaurable depuis **Corbeille**).",
           ],
         },
+        {
+          type: "tip",
+          text: "Un article vendu en plusieurs tailles, couleurs ou contenances se crée une seule fois, avec ses **versions** : activez **Cet article existe en plusieurs versions** et saisissez chacune avec son stock (et son prix s'il diffère). Dans la fenêtre Stock, choisissez ensuite la version à réapprovisionner.",
+        },
         { type: "h2", text: "Les catégories" },
         {
           type: "p",

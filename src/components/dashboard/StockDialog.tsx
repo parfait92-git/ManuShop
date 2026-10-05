@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogDescription, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/dateTime";
+import { listVariants } from "@/lib/variants";
 import type { Product } from "@/models/product/Product";
 import { STOCK_MOVEMENT_LABEL, type StockMovement } from "@/models/stock/StockMovement";
 import { stockService } from "@/services/StockService";
@@ -46,7 +48,8 @@ export function StockDialog({
 }: {
   product: Product | null;
   onClose: () => void;
-  onStockChange: (productId: string, stock: number) => void;
+  /** Nouveau stock total ; et celui des versions modifiées (BF-17). */
+  onStockChange: (productId: string, stock: number, variantStocks?: Record<string, number>) => void;
 }) {
   return (
     <Dialog open={!!product} onOpenChange={(open) => !open && onClose()}>
@@ -63,12 +66,21 @@ function StockPanel({
   onStockChange,
 }: {
   product: Product;
-  onStockChange: (productId: string, stock: number) => void;
+  onStockChange: (productId: string, stock: number, variantStocks?: Record<string, number>) => void;
 }) {
   const { profile } = useAuth();
   const isManager = profile?.role === "admin";
   const [tab, setTab] = useState<Tab>("restock");
   const [stock, setStock] = useState(product.stock);
+  // Versions (BF-17) : chaque mouvement vise une version précise.
+  const variants = listVariants(product);
+  const [variantId, setVariantId] = useState<string | undefined>(variants[0]?.id);
+  const [variantStocks, setVariantStocks] = useState<Record<string, number>>(() =>
+    Object.fromEntries(variants.map((v) => [v.id, v.stock]))
+  );
+  const variant = variants.find((v) => v.id === variantId);
+  /** Stock concerné par les formulaires : celui de la version choisie. */
+  const targetStock = variantId ? (variantStocks[variantId] ?? 0) : stock;
   const [history, setHistory] = useState<StockMovement[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -100,8 +112,16 @@ function StockPanel({
   const priceInvalid = price !== undefined && (!Number.isFinite(price) || price < 0);
 
   function done(stockAfter: number, message: string) {
-    setStock(stockAfter);
-    onStockChange(product.id, stockAfter);
+    if (variantId) {
+      const next = { ...variantStocks, [variantId]: stockAfter };
+      const total = Object.values(next).reduce((sum, n) => sum + Math.max(n, 0), 0);
+      setVariantStocks(next);
+      setStock(total);
+      onStockChange(product.id, total, { [variantId]: stockAfter });
+    } else {
+      setStock(stockAfter);
+      onStockChange(product.id, stockAfter);
+    }
     toast.success(message);
     setReceived("");
     setPurchasePrice("");
@@ -135,11 +155,13 @@ function StockPanel({
       () =>
         stockService.restock({
           productId: product.id,
+          ...(variantId ? { variantId } : {}),
           quantity: receivedQty,
           ...(supplierNote.trim() ? { note: supplierNote.trim() } : {}),
           ...(isManager && price !== undefined ? { purchasePrice: price } : {}),
         }),
-      (after) => `${receivedQty} unité${receivedQty > 1 ? "s" : ""} ajoutée${receivedQty > 1 ? "s" : ""} : stock à ${after}.`
+      (after) =>
+        `${receivedQty} unité${receivedQty > 1 ? "s" : ""} ajoutée${receivedQty > 1 ? "s" : ""}${variant ? ` (${variant.label})` : ""} : stock à ${after}.`
     );
   }
 
@@ -148,8 +170,9 @@ function StockPanel({
     event.stopPropagation();
     if (countedQty === null || !reason.trim()) return;
     void submit(
-      () => stockService.adjust({ productId: product.id, countedStock: countedQty, note: reason.trim() }),
-      (after) => `Stock corrigé : ${after}.`
+      () =>
+        stockService.adjust({ productId: product.id, ...(variantId ? { variantId } : {}), countedStock: countedQty, note: reason.trim() }),
+      (after) => `Stock corrigé${variant ? ` (${variant.label})` : ""} : ${after}.`
     );
   }
 
@@ -167,6 +190,28 @@ function StockPanel({
         </div>
         <DialogTour tourId="dialog-stock" />
       </div>
+
+      {variants.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="stock-variant" help="Le stock se suit version par version : choisissez celle que vous réapprovisionnez ou recomptez.">
+            {product.variantName || "Version"}
+          </Label>
+          <Select
+            id="stock-variant"
+            value={variantId}
+            onChange={(e) => {
+              setVariantId(e.target.value);
+              setError(null);
+            }}
+          >
+            {variants.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.label} — {variantStocks[v.id] ?? 0} en stock
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       <div data-tour="stock-tabs" role="tablist" aria-label="Actions sur le stock" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
         {TABS.map((t) => (
@@ -203,7 +248,9 @@ function StockPanel({
               placeholder="Ex. 12"
             />
             {receivedQty ? (
-              <p className="text-xs text-muted-foreground">Nouveau stock : {stock + receivedQty}</p>
+              <p className="text-xs text-muted-foreground">
+                Nouveau stock{variant ? ` (${variant.label})` : ""} : {targetStock + receivedQty}
+              </p>
             ) : null}
           </div>
           {isManager && (
@@ -260,11 +307,11 @@ function StockPanel({
               inputMode="numeric"
               value={counted}
               onChange={(e) => setCounted(e.target.value)}
-              placeholder={String(stock)}
+              placeholder={String(targetStock)}
             />
             {countedQty !== null && (
               <p className="text-xs text-muted-foreground">
-                {countedQty === stock ? "Aucun écart avec le stock actuel." : `Écart : ${signed(countedQty - stock)}`}
+                {countedQty === targetStock ? "Aucun écart avec le stock actuel." : `Écart : ${signed(countedQty - targetStock)}`}
               </p>
             )}
           </div>
@@ -285,7 +332,7 @@ function StockPanel({
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <Button
             type="submit"
-            disabled={saving || countedQty === null || countedQty === stock || !reason.trim()}
+            disabled={saving || countedQty === null || countedQty === targetStock || !reason.trim()}
             className="self-end"
           >
             Corriger le stock
@@ -308,7 +355,14 @@ function StockPanel({
               {history.map((m) => (
                 <li key={m.id} className="flex flex-col gap-0.5 px-3 py-2 text-sm">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="font-medium">{STOCK_MOVEMENT_LABEL[m.type]}</span>
+                    <span className="font-medium">
+                      {STOCK_MOVEMENT_LABEL[m.type]}
+                      {m.variantLabel && (
+                        <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+                          {m.variantLabel}
+                        </span>
+                      )}
+                    </span>
                     <span
                       className={`shrink-0 font-semibold tabular-nums ${
                         m.quantity > 0 ? "text-emerald-700" : m.quantity < 0 ? "text-red-600" : "text-muted-foreground"

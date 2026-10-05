@@ -13,6 +13,15 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { ProductImageUploader } from "@/components/dashboard/ProductImageUploader";
 import { StockDialog } from "@/components/dashboard/StockDialog";
+import {
+  VariantsEditor,
+  toDrafts,
+  toVariantMap,
+  totalRowsStock,
+  validateVariants,
+  variantsStateFrom,
+  type VariantsState,
+} from "@/components/dashboard/VariantsEditor";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useNavigationBlocker } from "@/components/providers/NavigationBlockerProvider";
 import {
@@ -72,6 +81,7 @@ export function ProductForm({
     getValues,
     reset,
     resetField,
+    setValue,
     formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<ProductFormValues, unknown, ProductInput>({
     resolver: zodResolver(ProductSchema),
@@ -112,6 +122,19 @@ export function ProductForm({
   // Stock (réapprovisionnement, correction), qui le trace dans l'historique.
   const [currentStock, setCurrentStock] = useState(product?.stock ?? 0);
   const [stockOpen, setStockOpen] = useState(false);
+
+  // Versions (BF-17), hors de react-hook-form comme les photos.
+  const [variants, setVariants] = useState<VariantsState>(() => variantsStateFrom(product));
+  const [variantsError, setVariantsError] = useState<string | null>(null);
+  const variantsTouched = useRef(false);
+  const variantsRef = useRef<HTMLDivElement>(null);
+  function handleVariantsChange(next: VariantsState) {
+    variantsTouched.current = true;
+    setVariants(next);
+    setVariantsError(null);
+    // À la création, le stock du produit est le total des versions.
+    if (!product && next.enabled) setValue("stock", totalRowsStock(next), { shouldValidate: true });
+  }
 
   // Le prix d'achat vit à part du produit (`productCosts`, privé) : chargé
   // séparément à l'ouverture d'un produit existant.
@@ -198,6 +221,12 @@ export function ProductForm({
 
   async function onSubmit(data: ProductInput) {
     setFormError(null);
+    const variantsProblem = validateVariants(variants);
+    if (variantsProblem) {
+      setVariantsError(variantsProblem);
+      variantsRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      return;
+    }
     try {
       const promoFields = data.isPromo
         ? {
@@ -212,6 +241,17 @@ export function ProductForm({
       let savedId: string;
       if (product) {
         savedId = product.id;
+        // Versions d'abord (par le serveur, qui garde le stock juste) : un
+        // refus (« a encore 2 en stock ») laisse le formulaire ouvert.
+        if (variantsTouched.current) {
+          try {
+            await stockService.saveVariants(product.id, variants.name, toDrafts(variants));
+          } catch (err) {
+            setVariantsError(err instanceof Error && err.message ? err.message : "Les versions n'ont pas pu être enregistrées.");
+            variantsRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+            return;
+          }
+        }
         await productService.updateProduct(product.id, {
           name: data.name,
           description: data.description,
@@ -228,7 +268,13 @@ export function ProductForm({
           description: data.description,
           price: data.price,
           category: data.category,
-          stock: data.stock,
+          stock: variants.enabled ? totalRowsStock(variants) : data.stock,
+          ...(variants.enabled
+            ? {
+                variants: toVariantMap(variants, () => Math.random().toString(36).slice(2, 10)),
+                variantName: variants.name.trim(),
+              }
+            : {}),
           stockThreshold: data.stockThreshold,
           images,
           // Non publié par défaut : un nouveau produit part masqué le temps
@@ -416,8 +462,24 @@ export function ProductForm({
             <StockDialog
               product={stockOpen ? { ...product, stock: currentStock } : null}
               onClose={() => setStockOpen(false)}
-              onStockChange={(_, stock) => setCurrentStock(stock)}
+              onStockChange={(_, stock, variantStocks) => {
+                setCurrentStock(stock);
+                if (variantStocks)
+                  setVariants((current) => ({
+                    ...current,
+                    rows: current.rows.map((row) =>
+                      row.id && variantStocks[row.id] !== undefined ? { ...row, stock: String(variantStocks[row.id]) } : row
+                    ),
+                  }));
+              }}
             />
+          </div>
+        ) : variants.enabled ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="stock" help="Avec des versions, le stock du produit est le total de leurs stocks, saisis ci-dessous.">
+              Stock total
+            </Label>
+            <Input id="stock" value={totalRowsStock(variants)} readOnly aria-readonly className="bg-muted" />
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
@@ -437,7 +499,7 @@ export function ProductForm({
         )}
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="stockThreshold" help="Quand le stock descend à ce nombre ou en dessous, le produit est signalé « Stock faible » pour vous rappeler de le réapprovisionner.">Seuil d&apos;alerte</Label>
+          <Label htmlFor="stockThreshold" help="Quand le stock descend à ce nombre ou en dessous, le produit est signalé « Stock faible » pour vous rappeler de le réapprovisionner. Avec des versions, il s'applique à chacune.">Seuil d&apos;alerte</Label>
           <Input
             id="stockThreshold"
             type="number"
@@ -452,6 +514,16 @@ export function ProductForm({
             </p>
           )}
         </div>
+      </div>
+
+      <div ref={variantsRef}>
+        <VariantsEditor
+          value={variants}
+          onChange={handleVariantsChange}
+          basePrice={Number(priceValue) || undefined}
+          editing={!!product}
+          error={variantsError}
+        />
       </div>
 
       <div data-tour="product-photos" ref={photosRef} className="flex flex-col gap-1.5">

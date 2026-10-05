@@ -163,4 +163,20 @@ describe("StorefrontProductCard", () => {
       "/demo-catalogue/boutique/shop-1"
     );
   });
+
+  it("sends to the product page to choose a version, from the lowest price", () => {
+    render(
+      <StorefrontProductCard
+        product={fakeProduct({
+          variants: {
+            a: { label: "S", stock: 2, position: 0 },
+            b: { label: "L", stock: 1, price: 15000, position: 1 },
+          },
+        })}
+      />
+    );
+    expect(screen.getByRole("link", { name: "Choisir une version" })).toHaveAttribute("href", "/catalogue/p1");
+    expect(screen.queryByRole("button", { name: "Ajouter au panier" })).not.toBeInTheDocument();
+    expect(screen.getByText(/^Dès 12\s?500 FCFA$/)).toBeInTheDocument();
+  });
 });

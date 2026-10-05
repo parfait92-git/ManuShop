@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 
 import {
   cartItemCount,
+  cartLineKey,
   cartTotal,
   useCartItemCount,
   useCartStore,
@@ -25,6 +26,22 @@ describe("useCartStore", () => {
     useCartStore.getState().addItem(shoes);
     useCartStore.getState().addItem(shoes, 2);
     expect(useCartStore.getState().items).toEqual([{ ...shoes, quantity: 3 }]);
+  });
+
+  it("keeps one line per version of a product, each with its own quantity", () => {
+    const small = { ...shoes, variantId: "s", variantLabel: "39" };
+    const big = { ...shoes, variantId: "l", variantLabel: "42", price: 10500 };
+    useCartStore.getState().addItem(small);
+    useCartStore.getState().addItem(big);
+    useCartStore.getState().addItem(small);
+    expect(useCartStore.getState().items.map((i) => [cartLineKey(i), i.quantity])).toEqual([
+      ["p1::s", 2],
+      ["p1::l", 1],
+    ]);
+
+    useCartStore.getState().updateQuantity("p1::l", 3);
+    useCartStore.getState().removeItem("p1::s");
+    expect(useCartStore.getState().items).toEqual([{ ...big, quantity: 3 }]);
   });
 
   it("keeps separate line items for different products", () => {

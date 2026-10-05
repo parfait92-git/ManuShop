@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 import { effectivePrice } from "@/lib/promo";
 import { productService } from "@/services/ProductService";
-import { useCartStore } from "@/store/cartStore";
+import { lineName, variantPrice } from "@/lib/variants";
+import { cartLineKey, useCartStore } from "@/store/cartStore";
 
 /**
  * Le panier est conservé dans le navigateur avec le prix du moment de
@@ -36,9 +37,13 @@ export function useCartPriceSync(): string[] {
       const changed: string[] = [];
       products.forEach((product, index) => {
         if (!product) return;
-        const price = effectivePrice(product);
-        current[product.id] = { price, shopId: product.shopId };
-        if (price !== items[index].price) changed.push(items[index].name);
+        const item = items[index];
+        // Une version (BF-17) a son prix propre, sinon celui du produit.
+        const variant = item.variantId ? product.variants?.[item.variantId] : undefined;
+        if (item.variantId && !variant) return;
+        const price = variant ? variantPrice(product, variant) : effectivePrice(product);
+        current[cartLineKey(item)] = { price, shopId: product.shopId };
+        if (price !== item.price) changed.push(lineName(item.name, item.variantLabel));
       });
       refreshPrices(current);
       setChangedNames(changed);

@@ -10,7 +10,8 @@ import { useCartShop } from "@/hooks/useCartShop";
 import { useMoney } from "@/hooks/useMoney";
 import { shopCurrency } from "@/lib/currency";
 import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
-import { cartTotal, useCartStore } from "@/store/cartStore";
+import { lineName } from "@/lib/variants";
+import { cartLineKey, cartTotal, useCartStore } from "@/store/cartStore";
 import { LoginRequiredDialog } from "@/components/storefront/LoginRequiredDialog";
 import { DialogTour } from "@/components/onboarding/DialogTour";
 import { useCartPriceSync } from "@/hooks/useCartPriceSync";
@@ -63,10 +64,13 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
               const atMax =
                 item.stock !== undefined && item.quantity >= item.stock;
               return (
-                <li key={item.productId} className="flex flex-col gap-1">
+                <li key={cartLineKey(item)} className="flex flex-col gap-1">
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
+                      {item.variantLabel && (
+                        <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         {money(item.price)}
                       </p>
@@ -76,7 +80,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                         type="button"
                         aria-label="Diminuer la quantité"
                         onClick={() =>
-                          updateQuantity(item.productId, item.quantity - 1)
+                          updateQuantity(cartLineKey(item), item.quantity - 1)
                         }
                         className="flex size-6 items-center justify-center rounded-full border border-border"
                       >
@@ -90,7 +94,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                         aria-label="Augmenter la quantité"
                         disabled={atMax}
                         onClick={() =>
-                          updateQuantity(item.productId, item.quantity + 1)
+                          updateQuantity(cartLineKey(item), item.quantity + 1)
                         }
                         className="flex size-6 items-center justify-center rounded-full border border-border disabled:cursor-not-allowed disabled:opacity-40"
                       >
@@ -99,8 +103,8 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                     </div>
                     <button
                       type="button"
-                      aria-label={`Retirer ${item.name}`}
-                      onClick={() => removeItem(item.productId)}
+                      aria-label={`Retirer ${lineName(item.name, item.variantLabel)}`}
+                      onClick={() => removeItem(cartLineKey(item))}
                       className="text-muted-foreground hover:text-destructive"
                     >
                       <X className="size-3.5" />

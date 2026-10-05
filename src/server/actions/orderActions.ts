@@ -12,6 +12,8 @@ import { appendHistoryEvent, nextHistoryEvent, type HistoryHead } from "@/server
 import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
 import { queueStockMovement } from "@/server/stock/stockMovements";
+import { hasVariants, lineName, variantPrice, type VariantFields } from "@/lib/variants";
+import type { ProductVariant } from "@/models/product/ProductVariant";
 
 const ORDERS_COLLECTION = "orders";
 const PRODUCT_COSTS_COLLECTION = "productCosts";
@@ -27,6 +29,8 @@ export interface OrderItemInput {
   name: string;
   quantity: number;
   unitPrice: number;
+  /** Version choisie (BF-17), pour un produit qui en a. */
+  variantId?: string;
 }
 
 export interface CreateOrderActionInput {
@@ -113,26 +117,48 @@ export async function createOrderAction(
       )
     );
 
+    // Version commandée (BF-17) : obligatoire pour un produit qui en a,
+    // interdite sinon ; quantités cumulées par produit et par version (deux
+    // lignes peuvent viser le même stock).
+    const wanted = new Map<string, number>();
+    const stockKey = (item: OrderItemInput) => (item.variantId ? `${item.productId}::${item.variantId}` : item.productId);
+    const variantOf = (index: number): ProductVariant | undefined => {
+      const variants = productSnapshots[index].data()?.variants as Record<string, ProductVariant> | undefined;
+      const id = input.items[index].variantId;
+      return id ? variants?.[id] : undefined;
+    };
     input.items.forEach((item, index) => {
+      const product = productSnapshots[index].data();
       // Sans prix lisible, la commande en ligne ne peut pas être chiffrée
       // (le prix n'est plus repris du panier, voir plus bas).
       // Une commande concerne une seule boutique : refuser un article d'une
       // autre (le panier le garantit côté client, `useAddToCart`, mais une
       // requête peut toujours être forgée).
-      if (productSnapshots[index].data()?.shopId !== input.shopId) {
+      if (product?.shopId !== input.shopId) {
         throw new ValidationError(
           `« ${item.name} » n'appartient pas à cette boutique.`
         );
       }
-      const currentPrice = productSnapshots[index].data()?.price;
+      const currentPrice = product?.price;
       if (!input.manual && typeof currentPrice !== "number") {
         throw new ValidationError(`Le produit « ${item.name} » n'est plus disponible.`);
       }
-      const currentStock = productSnapshots[index].data()?.stock;
+      if (hasVariants({ variants: product?.variants })) {
+        if (!variantOf(index)) {
+          throw new ValidationError(`Choisissez une version de « ${item.name} » (elle n'existe plus, ou n'a pas été choisie).`);
+        }
+      } else if (item.variantId) {
+        throw new ValidationError(`« ${item.name} » n'existe pas en plusieurs versions.`);
+      }
+      wanted.set(stockKey(item), (wanted.get(stockKey(item)) ?? 0) + item.quantity);
+    });
+    input.items.forEach((item, index) => {
+      const variant = variantOf(index);
+      const currentStock = variant ? variant.stock : productSnapshots[index].data()?.stock;
       const available = typeof currentStock === "number" ? currentStock : 0;
-      if (available < item.quantity) {
+      if (available < (wanted.get(stockKey(item)) ?? item.quantity)) {
         throw new ValidationError(
-          `Stock insuffisant pour « ${item.name} » (${available} disponible${available > 1 ? "s" : ""}).`
+          `Stock insuffisant pour « ${lineName(item.name, variant?.label)} » (${available} disponible${available > 1 ? "s" : ""}).`
         );
       }
     });
@@ -143,17 +169,27 @@ export async function createOrderAction(
     // moment de l'ajout : sans ça, un article ajouté pendant une promotion
     // puis commandé après sa date de fin serait encore facturé au prix promo
     // (et un client pourrait envoyer n'importe quel prix). La commande
-    // manuelle garde le prix saisi par le commerçant lui-même.
+    // manuelle garde le prix saisi par le commerçant lui-même. Une version
+    // a son prix propre, sinon celui du produit.
     const now = new Date();
-    const items = input.manual
-      ? input.items
-      : input.items.map((item, index) => ({
-          ...item,
-          unitPrice: effectivePrice(
-            productSnapshots[index].data() as PromoFields,
-            now
-          ),
-        }));
+    const items = input.items.map((item, index) => {
+      const product = productSnapshots[index].data();
+      const variant = variantOf(index);
+      const unitPrice = input.manual
+        ? item.unitPrice
+        : variant
+          ? variantPrice(product as VariantFields, variant, now)
+          : effectivePrice(product as PromoFields, now);
+      if (!variant) return { ...item, unitPrice };
+      return {
+        productId: item.productId,
+        name: lineName((product?.name as string | undefined) ?? item.name, variant.label),
+        quantity: item.quantity,
+        unitPrice,
+        variantId: item.variantId,
+        variantLabel: variant.label,
+      };
+    });
     const subtotal = input.manual
       ? input.subtotal
       : items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
@@ -195,23 +231,41 @@ export async function createOrderAction(
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    // Historique du stock (BF-15) : une sortie par article, avec le stock
-    // restant. Cumulé si un même produit figure sur deux lignes.
-    const remaining = new Map<string, number>();
-    productRefs.forEach((ref, index) => {
-      const item = input.items[index];
+    // Stock : une seule écriture par produit (total et versions), en
+    // incréments — deux commandes simultanées ne s'écrasent pas.
+    const updates = new Map<string, { ref: (typeof productRefs)[number]; data: Record<string, unknown>; total: number }>();
+    input.items.forEach((item, index) => {
+      const entry = updates.get(item.productId) ?? { ref: productRefs[index], data: {}, total: 0 };
+      entry.total += item.quantity;
+      if (item.variantId) {
+        const field = `variants.${item.variantId}.stock`;
+        entry.data[field] = (entry.data[field] as number | undefined ?? 0) + item.quantity;
+      }
+      updates.set(item.productId, entry);
+    });
+    updates.forEach(({ ref, data, total }) => {
       transaction.update(ref, {
-        stock: FieldValue.increment(-item.quantity),
+        stock: FieldValue.increment(-total),
+        ...Object.fromEntries(Object.entries(data).map(([field, qty]) => [field, FieldValue.increment(-(qty as number))])),
       });
+    });
+
+    // Historique du stock (BF-15) : une sortie par article, avec le stock
+    // restant (de la version s'il y en a une). Cumulé si un même stock
+    // figure sur deux lignes.
+    const remaining = new Map<string, number>();
+    input.items.forEach((item, index) => {
       const product = productSnapshots[index].data();
-      const before =
-        remaining.get(item.productId) ?? (typeof product?.stock === "number" ? product.stock : 0);
+      const variant = variantOf(index);
+      const start = variant ? variant.stock : typeof product?.stock === "number" ? product.stock : 0;
+      const before = remaining.get(stockKey(item)) ?? start;
       const stockAfter = before - item.quantity;
-      remaining.set(item.productId, stockAfter);
+      remaining.set(stockKey(item), stockAfter);
       queueStockMovement(db, transaction, {
         shopId: input.shopId,
         productId: item.productId,
-        productName: (product?.name as string | undefined) ?? item.name,
+        productName: lineName((product?.name as string | undefined) ?? item.name, variant?.label),
+        ...(variant ? { variantId: item.variantId, variantLabel: variant.label } : {}),
         type: "order",
         quantity: -item.quantity,
         stockAfter,
@@ -271,7 +325,7 @@ export async function updateOrderStatusAction(
     shopId: string;
     clientId?: string;
     status: OrderStatus;
-    items: { productId: string; quantity: number }[];
+    items: { productId: string; quantity: number; name?: string; variantId?: string; variantLabel?: string }[];
   } & HistoryHead;
 
   const callerSnapshot = await db.collection(USERS_COLLECTION).doc(caller.uid).get();
@@ -340,22 +394,35 @@ export async function updateOrderStatusAction(
   });
 
   if (needsRestock) {
+    // Une écriture par produit (total et versions), en incréments. Une
+    // version supprimée depuis n'est pas recréée : sa ligne est ignorée,
+    // comme un produit supprimé.
+    const updates = new Map<string, Record<string, number>>();
     const running = new Map<string, number>();
     (order.items ?? []).forEach((item, index) => {
       const snapshot = restockProducts[index];
       if (!snapshot?.exists) return;
       const product = snapshot.data() ?? {};
-      batch.update(db.collection(PRODUCTS_COLLECTION).doc(item.productId), {
-        stock: FieldValue.increment(item.quantity),
-      });
-      const before =
-        running.get(item.productId) ?? (typeof product.stock === "number" ? product.stock : 0);
-      const stockAfter = before + item.quantity;
-      running.set(item.productId, stockAfter);
+      const variants = product.variants as Record<string, ProductVariant> | undefined;
+      const variant = item.variantId ? variants?.[item.variantId] : undefined;
+      if (item.variantId && !variant) return;
+      const fields = updates.get(item.productId) ?? {};
+      fields.stock = (fields.stock ?? 0) + item.quantity;
+      if (variant) {
+        const field = `variants.${item.variantId}.stock`;
+        fields[field] = (fields[field] ?? 0) + item.quantity;
+      }
+      updates.set(item.productId, fields);
+
+      const key = variant ? `${item.productId}::${item.variantId}` : item.productId;
+      const start = variant ? variant.stock : typeof product.stock === "number" ? product.stock : 0;
+      const stockAfter = (running.get(key) ?? start) + item.quantity;
+      running.set(key, stockAfter);
       queueStockMovement(db, batch, {
         shopId: order.shopId,
         productId: item.productId,
-        productName: (product.name as string | undefined) ?? (item as { name?: string }).name ?? "",
+        productName: lineName((product.name as string | undefined) ?? item.name ?? "", variant?.label),
+        ...(variant ? { variantId: item.variantId, variantLabel: variant.label } : {}),
         type: input.status as "cancelled" | "returned" | "defective",
         quantity: item.quantity,
         stockAfter,
@@ -367,6 +434,12 @@ export async function updateOrderStatusAction(
           (callerData?.email as string | undefined) ||
           (isMerchant ? "Équipe" : "Client"),
       });
+    });
+    updates.forEach((fields, productId) => {
+      batch.update(
+        db.collection(PRODUCTS_COLLECTION).doc(productId),
+        Object.fromEntries(Object.entries(fields).map(([field, qty]) => [field, FieldValue.increment(qty)]))
+      );
     });
   }
 

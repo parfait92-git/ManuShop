@@ -18,6 +18,7 @@ import { DialogTour } from "@/components/onboarding/DialogTour";
 import { CoachMark } from "@/components/ui/CoachMark";
 import type { OrderItem } from "@/models/order/OrderItem";
 import type { Product } from "@/models/product/Product";
+import { lineName, listVariants } from "@/lib/variants";
 
 interface DraftLine extends OrderItem {
   key: string;
@@ -29,6 +30,7 @@ interface DraftLine extends OrderItem {
  * true})`. Le picker d'articles reste volontairement simple (une ligne à la
  * fois depuis le catalogue de la boutique) : pas de recherche/variantes,
  * cohérent avec `ProductService.search` déjà "en mémoire, catalogue petit".
+ * Un produit à versions (BF-17) propose une entrée par version.
  */
 export function ManualOrderDialog({
   open,
@@ -65,16 +67,21 @@ export function ManualOrderDialog({
   }
 
   function handleAddLine() {
-    const product = products.find((p) => p.id === productId);
+    // Choix « produit » ou « produit::version ».
+    const [chosenProduct, chosenVariant] = productId.split("::");
+    const product = products.find((p) => p.id === chosenProduct);
     if (!product || quantity < 1) return;
+    const variant = chosenVariant ? product.variants?.[chosenVariant] : undefined;
+    if (chosenVariant && !variant) return;
     setLines((current) => [
       ...current,
       {
-        key: `${product.id}-${Date.now()}`,
+        key: `${productId}-${Date.now()}`,
         productId: product.id,
-        name: product.name,
+        name: lineName(product.name, variant?.label),
         quantity,
-        unitPrice: product.price,
+        unitPrice: variant?.price ?? product.price,
+        ...(variant ? { variantId: chosenVariant, variantLabel: variant.label } : {}),
       },
     ]);
     setProductId("");
@@ -96,6 +103,7 @@ export function ManualOrderDialog({
         name: line.name,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
+        ...(line.variantId ? { variantId: line.variantId } : {}),
       })),
     });
     reset();
@@ -166,11 +174,20 @@ export function ManualOrderDialog({
               className="flex-1"
             >
               <option value="">Choisir un produit</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name} — {product.price.toLocaleString("fr-FR")} FCFA
-                </option>
-              ))}
+              {products.flatMap((product) => {
+                const variants = listVariants(product);
+                if (variants.length === 0)
+                  return [
+                    <option key={product.id} value={product.id}>
+                      {product.name} — {product.price.toLocaleString("fr-FR")} FCFA
+                    </option>,
+                  ];
+                return variants.map((v) => (
+                  <option key={`${product.id}::${v.id}`} value={`${product.id}::${v.id}`}>
+                    {lineName(product.name, v.label)} — {(v.price ?? product.price).toLocaleString("fr-FR")} FCFA
+                  </option>
+                ));
+              })}
             </Select>
             <Input
               type="number"

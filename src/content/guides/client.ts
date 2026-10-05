@@ -129,6 +129,12 @@ export const clientGuide: Guide = {
             "Touchez la photo pour zoomer ; touchez la croix pour revenir à la fiche.",
           ],
         },
+        { type: "h2", text: "Choisir une version" },
+        {
+          type: "p",
+          text: "Certains articles existent en plusieurs versions (taille, couleur, contenance…). Touchez la version voulue : son prix et sa disponibilité s'affichent ; une version barrée est épuisée. Sur le Marché, ces articles affichent « Dès » leur prix le plus bas et le bouton **Choisir une version**.",
+        },
+        { type: "shot", shot: { id: "client-variantes", caption: "Choisir la contenance d'un article." } },
         { type: "h2", text: "Disponibilité et favoris" },
         {
           type: "list",

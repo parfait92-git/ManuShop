@@ -6,11 +6,12 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/providers/AuthProvider";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 import { productService } from "@/services/ProductService";
 import { effectivePrice } from "@/lib/promo";
+import { hasPriceRange, hasVariants, lowestPrice } from "@/lib/variants";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
@@ -36,7 +37,11 @@ export function StorefrontProductCard({
   const { firebaseUser, profile, toggleFavorite } = useAuth();
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
   const badge = productService.getBadge(product);
-  const price = effectivePrice(product);
+  // Avec des versions (BF-17) : le prix le plus bas, « Dès » s'ils varient ;
+  // la version se choisit sur la fiche de l'article.
+  const withVariants = hasVariants(product);
+  const price = withVariants ? lowestPrice(product) : effectivePrice(product);
+  const priceFrom = withVariants && hasPriceRange(product);
   const money = useMoney(useShopCurrency(product.shopId));
 
   return (
@@ -74,7 +79,7 @@ export function StorefrontProductCard({
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <h3 className="text-sm font-semibold">{product.name}</h3>
             <span className="shrink-0 text-sm font-semibold">
-              {money(price)}
+              {priceFrom ? `Dès ${money(price)}` : money(price)}
             </span>
           </div>
         </div>
@@ -113,22 +118,32 @@ export function StorefrontProductCard({
             {shop.name}
           </Link>
         )}
-        <Button
-          data-tour="product-add-to-cart"
-          className="w-full"
-          onClick={() =>
-            addItem({
-              productId: product.id,
-              name: product.name,
-              price,
-              image: product.images[0] ?? "",
-              stock: product.stock,
-              shopId: product.shopId,
-            })
-          }
-        >
-          Ajouter au panier
-        </Button>
+        {withVariants ? (
+          <Link
+            data-tour="product-add-to-cart"
+            href={`/catalogue/${product.id}`}
+            className={buttonVariants({ className: "w-full" })}
+          >
+            Choisir une version
+          </Link>
+        ) : (
+          <Button
+            data-tour="product-add-to-cart"
+            className="w-full"
+            onClick={() =>
+              addItem({
+                productId: product.id,
+                name: product.name,
+                price,
+                image: product.images[0] ?? "",
+                stock: product.stock,
+                shopId: product.shopId,
+              })
+            }
+          >
+            Ajouter au panier
+          </Button>
+        )}
       </div>
     </article>
   );

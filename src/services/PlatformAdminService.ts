@@ -11,8 +11,10 @@ import {
   revokeAdminAction,
   searchUsersAction,
   setShopPremiumFeatureAction,
-  type MerchantDto,
-  type SearchedUserDto,
+} from "@/server/actions/client/platformAdminActions";
+import type {
+  MerchantDto,
+  SearchedUserDto,
 } from "@/server/actions/platformAdminActions";
 
 function fromSearchedUserDto(dto: SearchedUserDto): User {

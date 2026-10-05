@@ -7,7 +7,7 @@ import {
   setDemoCatalogueEnabledAction,
   setLaunchPromoAction,
   setUsdToXafRateAction,
-} from "@/server/actions/configurationActions";
+} from "@/server/actions/client/configurationActions";
 import { resolveLaunchPromo, type LaunchPromoSettings } from "@/lib/launchPromo";
 
 export class ConfigurationService {

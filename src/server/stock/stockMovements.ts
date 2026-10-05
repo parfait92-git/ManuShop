@@ -10,6 +10,9 @@ export interface StockMovementInput {
   shopId: string;
   productId: string;
   productName: string;
+  /** Version concernée (BF-17) ; `stockAfter` est alors celui de la version. */
+  variantId?: string;
+  variantLabel?: string;
   type: StockMovementType;
   quantity: number;
   stockAfter: number;

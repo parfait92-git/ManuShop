@@ -701,3 +701,116 @@ describe("updateOrderStatusAction", () => {
     ).rejects.toThrow(ValidationError);
   });
 });
+
+describe("versions d'un produit (BF-17)", () => {
+  const coco = {
+    shopId: "shop-1",
+    name: "Huile de coco",
+    price: 3000,
+    stock: 7,
+    variants: {
+      v250: { label: "250 ml", stock: 5, position: 0 },
+      v500: { label: "500 ml", stock: 2, price: 5500, position: 1 },
+    },
+  };
+  const order = (items: unknown[]) =>
+    createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: items as never,
+      subtotal: 0,
+      total: 0,
+    });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireCallerMock.mockResolvedValue({ uid: "client-1", email: "c@b.com" });
+    shopGetMock.mockResolvedValue({ data: () => ({}) });
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => coco });
+    productCostGetMock.mockResolvedValue({ data: () => undefined });
+  });
+
+  it("charges each version at its own price, names it, and takes it out of its own stock", async () => {
+    await order([
+      { productId: "p1", name: "Huile de coco", quantity: 2, unitPrice: 1, variantId: "v250" },
+      { productId: "p1", name: "Huile de coco", quantity: 1, unitPrice: 1, variantId: "v500" },
+    ]);
+
+    const saved = transactionSetMock.mock.calls.find(([ref]) => ref.id === "order-new")?.[1];
+    expect(saved.items).toEqual([
+      { productId: "p1", name: "Huile de coco — 250 ml", quantity: 2, unitPrice: 3000, variantId: "v250", variantLabel: "250 ml" },
+      { productId: "p1", name: "Huile de coco — 500 ml", quantity: 1, unitPrice: 5500, variantId: "v500", variantLabel: "500 ml" },
+    ]);
+    expect(saved.total).toBe(11500);
+    // Une seule écriture pour le produit : total et chaque version.
+    expect(transactionUpdateMock).toHaveBeenCalledTimes(1);
+    expect(transactionUpdateMock).toHaveBeenCalledWith(
+      { __ref: "products/p1" },
+      {
+        stock: { __op: "increment", n: -3 },
+        "variants.v250.stock": { __op: "increment", n: -2 },
+        "variants.v500.stock": { __op: "increment", n: -1 },
+      }
+    );
+    const movements = transactionSetMock.mock.calls.filter(([ref]) => ref.__ref === "stockMovements/new").map(([, m]) => m);
+    expect(movements.map((m) => [m.productName, m.variantId, m.quantity, m.stockAfter])).toEqual([
+      ["Huile de coco — 250 ml", "v250", -2, 3],
+      ["Huile de coco — 500 ml", "v500", -1, 1],
+    ]);
+  });
+
+  it("requires a version for a product that has some, and refuses one for a product that has none", async () => {
+    await expect(order([{ productId: "p1", name: "Huile de coco", quantity: 1, unitPrice: 1 }])).rejects.toThrow(
+      /Choisissez une version/
+    );
+    await expect(
+      order([{ productId: "p1", name: "Huile de coco", quantity: 1, unitPrice: 1, variantId: "v1l" }])
+    ).rejects.toThrow(/Choisissez une version/);
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", price: 1500, stock: 9 }) });
+    await expect(order([{ productId: "p2", name: "Savon", quantity: 1, unitPrice: 1, variantId: "x" }])).rejects.toThrow(
+      /n'existe pas en plusieurs versions/
+    );
+    expect(transactionUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("checks the stock of the chosen version, not the product's total", async () => {
+    await expect(
+      order([{ productId: "p1", name: "Huile de coco", quantity: 3, unitPrice: 1, variantId: "v500" }])
+    ).rejects.toThrow("Stock insuffisant pour « Huile de coco — 500 ml » (2 disponibles).");
+  });
+
+  describe("remise en stock", () => {
+    beforeEach(() => {
+      requireCallerMock.mockResolvedValue({ uid: "merchant-1", email: "m@b.com" });
+      userGetMock.mockResolvedValue({ data: () => ({ role: "admin", shopId: "shop-1", displayName: "Awa" }) });
+      orderGetMock.mockResolvedValue({
+        exists: true,
+        data: () => ({
+          shopId: "shop-1",
+          status: "delivered",
+          items: [
+            { productId: "p1", name: "Huile de coco — 500 ml", quantity: 1, variantId: "v500", variantLabel: "500 ml" },
+            { productId: "p1", name: "Huile de coco — 1 l", quantity: 2, variantId: "v1l", variantLabel: "1 l" },
+          ],
+        }),
+      });
+      productGetMock.mockResolvedValue({ exists: true, data: () => coco });
+    });
+
+    it("puts each version back in its own stock, and skips a version deleted since", async () => {
+      await updateOrderStatusAction("token", "order-1", { status: "returned", reason: "Flacon fêlé" });
+
+      expect(batchUpdateMock).toHaveBeenCalledWith(
+        { __ref: "products/p1" },
+        { stock: { __op: "increment", n: 1 }, "variants.v500.stock": { __op: "increment", n: 1 } }
+      );
+      const movements = batchSetMock.mock.calls.filter(([ref]) => ref.__ref === "stockMovements/new").map(([, m]) => m);
+      expect(movements).toHaveLength(1);
+      expect(movements[0]).toEqual(
+        expect.objectContaining({ productName: "Huile de coco — 500 ml", variantId: "v500", quantity: 1, stockAfter: 3, type: "returned" })
+      );
+    });
+  });
+});

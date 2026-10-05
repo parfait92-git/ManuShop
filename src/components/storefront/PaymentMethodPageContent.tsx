@@ -91,6 +91,7 @@ export function PaymentMethodPageContent() {
           name: item.name,
           quantity: item.quantity,
           unitPrice: item.price,
+          ...(item.variantId ? { variantId: item.variantId } : {}),
         })),
         subtotal: total,
         total,

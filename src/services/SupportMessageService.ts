@@ -10,7 +10,9 @@ import {
   listSupportMessagesAction,
   sendContactMessageAction,
   sendSupportMessageAction,
-  type SupportMessageDto,
+} from "@/server/actions/client/supportMessageActions";
+import type {
+  SupportMessageDto,
 } from "@/server/actions/supportMessageActions";
 
 function fromSupportMessageDto(dto: SupportMessageDto): SupportMessage {

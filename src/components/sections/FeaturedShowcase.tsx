@@ -11,7 +11,7 @@ import { productService } from "@/services/ProductService";
 import { useCurrencyRates } from "@/components/providers/CurrencyContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { BASE_CURRENCY, formatMoney, shopCurrency, type CurrencyCode } from "@/lib/currency";
-import { effectivePrice } from "@/lib/promo";
+import { lowestPrice } from "@/lib/variants";
 
 // Un dégradé par boutique de démo plutôt que par position dans la liste,
 // pour que la carte reste visuellement liée à la boutique même si le
@@ -103,7 +103,7 @@ export function FeaturedShowcase() {
 
   const products = useMemo(() => {
     const format: PriceFormatter = (product, currency) =>
-      formatMoney(effectivePrice(product), currency, rates, intlLocale);
+      formatMoney(lowestPrice(product), currency, rates, intlLocale);
     if (demoAvailable === undefined) return undefined;
     if (demoAvailable) return demoShowcase(format);
     if (marketCatalogue === undefined) return undefined;

@@ -4,7 +4,9 @@ import { reviewRepository } from "@/repositories/ReviewRepository";
 import type { IReviewRepository } from "@/repositories/interfaces/IReviewRepository";
 import {
   submitReviewAction,
-  type SubmitReviewActionInput,
+} from "@/server/actions/client/reviewActions";
+import type {
+  SubmitReviewActionInput,
 } from "@/server/actions/reviewActions";
 
 export class ReviewService {

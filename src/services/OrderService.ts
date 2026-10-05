@@ -6,7 +6,9 @@ import type { IOrderRepository } from "@/repositories/interfaces/IOrderRepositor
 import {
   createOrderAction,
   updateOrderStatusAction,
-  type CreateOrderActionInput,
+} from "@/server/actions/client/orderActions";
+import type {
+  CreateOrderActionInput,
 } from "@/server/actions/orderActions";
 
 export class OrderService {

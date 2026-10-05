@@ -2,7 +2,7 @@
 // charge le SDK Firebase via useAuth et se lancerait sur le profil de test.
 jest.mock("../onboarding/DialogTour", () => ({ DialogTour: () => null }));
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Timestamp } from "firebase/firestore";
 
@@ -146,5 +146,40 @@ describe("ManualOrderDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "Annuler" }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("offers one entry per version, at the version's price", async () => {
+    const user = userEvent.setup();
+    render(
+      <ManualOrderDialog
+        open
+        onOpenChange={onOpenChange}
+        submitting={false}
+        onSubmit={onSubmit}
+        products={[
+          fakeProduct({
+            name: "Huile",
+            price: 3000,
+            variants: { a: { label: "250 ml", stock: 3, position: 0 }, b: { label: "500 ml", stock: 1, price: 5500, position: 1 } },
+          }),
+        ]}
+      />
+    );
+    expect(within(screen.getByLabelText("Produit")).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "Choisir un produit",
+      expect.stringMatching(/^Huile — 250 ml — 3\s000 FCFA$/),
+      expect.stringMatching(/^Huile — 500 ml — 5\s500 FCFA$/),
+    ]);
+
+    await user.type(screen.getByRole("textbox", { name: /Nom du client/ }), "Mme Biloa");
+    await user.selectOptions(screen.getByLabelText("Produit"), "p1::b");
+    await user.click(screen.getByRole("button", { name: "Ajouter l'article" }));
+    await user.click(screen.getByRole("button", { name: /Créer la commande/ }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [{ productId: "p1", name: "Huile — 500 ml", quantity: 1, unitPrice: 5500, variantId: "b" }],
+      })
+    );
   });
 });

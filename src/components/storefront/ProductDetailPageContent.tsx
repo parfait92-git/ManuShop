@@ -30,6 +30,7 @@ import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
 import { isOptimizableImage } from "@/lib/imageHosts";
 import { effectivePrice } from "@/lib/promo";
+import { listVariants, variantPrice } from "@/lib/variants";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { shopCurrency } from "@/lib/currency";
@@ -61,6 +62,8 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
    * (`null` : fermée). */
   const [selectedImage, setSelectedImage] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  /** Version choisie (BF-17) ; `null` : la première disponible. */
+  const [chosenVariant, setChosenVariant] = useState<string | null>(null);
   const hasAccess = usePremiumAccess(shop);
   const money = useMoney(shopCurrency(shop));
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -131,8 +134,19 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
   }
 
   const badge = productService.getBadge(product);
-  const status = productService.getStockStatus(product);
-  const price = effectivePrice(product);
+  const variants = listVariants(product);
+  const variant =
+    variants.find((v) => v.id === chosenVariant) ?? variants.find((v) => v.stock > 0) ?? variants[0];
+  // Avec des versions, prix et disponibilité sont ceux de la version choisie.
+  const status: StockStatus = variant
+    ? variant.stock <= 0
+      ? "out-of-stock"
+      : variant.stock <= product.stockThreshold
+        ? "low-stock"
+        : "in-stock"
+    : productService.getStockStatus(product);
+  const available = variant ? variant.stock : product.stock;
+  const price = variant ? variantPrice(product, variant) : effectivePrice(product);
   const averageRating = reviewService.getAverageRating(reviews);
   const socialUrl = shop ? getPrimarySocialNetworkUrl(shop) : null;
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
@@ -254,8 +268,39 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
           <p className="text-muted-foreground">{product.description}</p>
           <p className={`text-sm font-medium ${STOCK_CLASS[status]}`}>
             {STOCK_LABEL[status]}
-            {status !== "out-of-stock" ? ` · ${product.stock} disponibles` : ""}
+            {status !== "out-of-stock" ? ` · ${available} disponible${available > 1 ? "s" : ""}` : ""}
           </p>
+
+          {variants.length > 0 && (
+            <div data-tour="product-variants" className="flex flex-col gap-2">
+              <p id="variant-choice" className="text-sm font-medium">
+                {product.variantName || "Version"} : <span className="font-normal text-muted-foreground">{variant?.label}</span>
+              </p>
+              <div role="radiogroup" aria-labelledby="variant-choice" className="flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const selected = v.id === variant?.id;
+                  const soldOut = v.stock <= 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={`${v.label}${soldOut ? " (épuisé)" : ""}`}
+                      onClick={() => setChosenVariant(v.id)}
+                      className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                        selected
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border hover:border-muted-foreground"
+                      } ${soldOut ? "text-muted-foreground line-through decoration-1" : ""} ${selected && soldOut ? "text-background/70" : ""}`}
+                    >
+                      {v.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <Button
@@ -268,8 +313,9 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
                   name: product.name,
                   price,
                   image: product.images[0] ?? "",
-                  stock: product.stock,
+                  stock: available,
                   shopId: product.shopId,
+                  ...(variant ? { variantId: variant.id, variantLabel: variant.label } : {}),
                 })
               }
             >

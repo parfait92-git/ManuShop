@@ -116,6 +116,20 @@ export const managerGuide: Guide = {
           ],
         },
         { type: "shot", shot: { id: "gerant-produits", caption: "La liste des produits." } },
+        { type: "h2", text: "Les versions d'un article" },
+        {
+          type: "p",
+          text: "Un article vendu en plusieurs tailles, couleurs, contenances ou parfums n'est créé qu'une fois : activez **Cet article existe en plusieurs versions**, indiquez ce qui les distingue (ex. Contenance) puis une ligne par version, avec son stock et, si besoin, son propre prix (vide : le prix de l'article, promotion comprise).",
+        },
+        { type: "shot", shot: { id: "gerant-variantes", caption: "Les versions d'un article : 200 ml, 400 ml, 1 l." } },
+        {
+          type: "list",
+          items: [
+            "Le stock de l'article est le total de ses versions ; il est en **stock faible** dès qu'une version atteint le seuil d'alerte.",
+            "Le client choisit sa version sur la fiche de l'article ; elle figure sur la commande et la facture (« Lait corporel — 400 ml »).",
+            "Une version ne peut être retirée qu'à stock nul : corrigez d'abord son stock dans la fenêtre Stock.",
+          ],
+        },
       ],
     },
     {
@@ -124,7 +138,7 @@ export const managerGuide: Guide = {
       blocks: [
         {
           type: "p",
-          text: "Le stock baisse automatiquement à chaque commande et remonte en cas d'annulation ou de retour. Pour le reste, l'icône **Stock** d'un produit (ou **Gérer le stock** sur sa fiche) ouvre une fenêtre à trois onglets ; chaque changement y est tracé.",
+          text: "Le stock baisse automatiquement à chaque commande et remonte en cas d'annulation ou de retour. Pour le reste, l'icône **Stock** d'un produit (ou **Gérer le stock** sur sa fiche) ouvre une fenêtre à trois onglets ; chaque changement y est tracé. Pour un article à versions, choisissez d'abord la version concernée.",
         },
         { type: "h2", text: "Réapprovisionner" },
         {

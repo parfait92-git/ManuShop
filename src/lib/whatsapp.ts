@@ -1,4 +1,5 @@
 import type { Shop } from "@/models/shop/Shop";
+import { lineName } from "@/lib/variants";
 import { cartTotal, type CartItem } from "@/store/cartStore";
 
 function sanitizePhone(phone: string): string {
@@ -20,7 +21,7 @@ export function buildWhatsAppOrderLink(
 ): string {
   const lines = items.map(
     (item) =>
-      `• ${item.name} x${item.quantity} — ${formatPrice(item.price * item.quantity)}`
+      `• ${lineName(item.name, item.variantLabel)} x${item.quantity} — ${formatPrice(item.price * item.quantity)}`
   );
 
   const message = [

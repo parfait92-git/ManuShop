@@ -40,6 +40,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { ProductDetailPageContent } from "@/components/storefront/ProductDetailPageContent";
+import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/models/product/Product";
 import type { Review } from "@/models/review/Review";
 import type { Shop } from "@/models/shop/Shop";
@@ -128,6 +129,41 @@ describe("ProductDetailPageContent", () => {
     expect(screen.getByRole("button", { name: "Agrandir la photo 1 sur 2" })).toHaveAttribute("aria-current", "true");
     await user.click(screen.getByRole("button", { name: "Agrandir la photo" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("1 / 2");
+  });
+
+  it("lets the client choose a version, with its own price and stock, and adds that version to the cart", async () => {
+    useCartStore.setState({ items: [] });
+    productServiceMock.getProduct.mockResolvedValue(
+      fakeProduct({
+        name: "Huile de coco",
+        price: 3000,
+        stock: 6,
+        variantName: "Contenance",
+        variants: {
+          a: { label: "250 ml", stock: 0, position: 0 },
+          b: { label: "500 ml", stock: 6, price: 5500, position: 1 },
+        },
+      })
+    );
+    const user = userEvent.setup();
+    render(<ProductDetailPageContent productId="p1" />);
+
+    // La première version disponible est choisie d'office.
+    const half = await screen.findByRole("radio", { name: "500 ml" });
+    expect(half).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "250 ml (épuisé)" })).toBeInTheDocument();
+    expect(screen.getByText(/5\s?500 FCFA/)).toBeInTheDocument();
+    expect(screen.getByText("En stock · 6 disponibles")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ajouter au panier" }));
+    expect(useCartStore.getState().items).toEqual([
+      expect.objectContaining({ productId: "p1", name: "Huile de coco", variantId: "b", variantLabel: "500 ml", price: 5500, stock: 6 }),
+    ]);
+
+    // Une version épuisée ne s'ajoute pas.
+    await user.click(screen.getByRole("radio", { name: "250 ml (épuisé)" }));
+    expect(screen.getByRole("button", { name: "Ajouter au panier" })).toBeDisabled();
+    expect(screen.getByText(/3\s?000 FCFA/)).toBeInTheDocument();
   });
 
   it("shows a not-found state when the product doesn't exist", async () => {

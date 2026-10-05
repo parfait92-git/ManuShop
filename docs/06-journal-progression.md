@@ -2147,7 +2147,7 @@ Choix de l'utilisateur :
 
 **À faire par l'utilisateur** : déployer les règles Firestore (`premiumRequests`).
 
-Vérifié : lint, `tsc`, tests, build. Rien de commité.
+Vérifié : lint, `tsc`, 2 268 tests, build. Rien de commité.
 
 ### 2026-10-03 — Le thème suit tout le site de la boutique ; fermeture du panier
 
@@ -2302,7 +2302,7 @@ Demande de l'utilisateur : permettre au commerçant de générer des rapports su
 
 **Tests** : calculs des deux rapports (tri, valeurs, totaux, sans coût pour un vendeur, période, produit supprimé), CSV (BOM, séparateur, guillemets, nombres bruts), page (colonnes du gérant, du vendeur, téléchargements, nom de fichier, couleur, période personnalisée).
 
-Vérifié : lint, `tsc`, tests, build. Rien de commité.
+Vérifié : lint, `tsc`, 2 268 tests, build. Rien de commité.
 
 ### 2026-10-03 — Heure de l'utilisateur ; catégories non publiées masquées
 
@@ -2414,3 +2414,32 @@ Demande de l'utilisateur : une page de guide d'utilisation, accessible uniquemen
 **Remarque d'interface vue sur les captures** (non corrigée) : sur la page Commandes à 1 280 px, la colonne Client est étroite et coupe les noms (« Christe lle Ngo »).
 
 Vérifié : lint, `tsc`, 2 222 tests, build. Rien de commité.
+
+### 2026-10-04 — Première colonne des tableaux écrasée sur tablette et ordinateur
+
+Vu sur les captures du guide : sur la page Commandes à 1 280 px, la colonne Client coupait les noms au milieu (« Christe lle Ngo ») ; même défaut sur Produits (« Ré fr igé ra teur »). Choix de l'utilisateur : me laisser décider de la priorité — corrigé avant les variantes.
+
+**Cause** : `STICKY_COLUMN_CONTENT` (première colonne des tableaux défilables) autorise la coupure d'un mot n'importe où, utile sur téléphone ; à partir de la tablette, le navigateur s'en servait pour réduire la colonne à une lettre de large au profit des autres.
+
+**Corrigé** (`ui/scrollable-table.tsx`, donc Commandes, Produits, Clients et Statistiques) : à partir de `sm`, largeur minimale de 10 rem et coupure d'un mot seulement en dernier recours ; téléphone inchangé (colonne fixe à 40 % de l'écran).
+
+**Vérifié dans le navigateur** : première colonne de 208 px à 640 et 768 px, 144 px à 360 px (colonne fixe), aucun débordement de page ; noms lisibles en entier à 1 280 px. Captures du guide régénérées.
+
+### 2026-10-04 — Versions des produits (BF-17) ; messages d'erreur des actions serveur enfin visibles en production
+
+Suite du module Stock (choix laissé par l'utilisateur).
+
+**Versions (BF-17)** :
+- **Modèle** : `Product.variants` (table par identifiant : libellé, stock, prix facultatif, ordre) et `Product.variantName` ; `Product.stock` = total des versions. Table plutôt que liste pour incrémenter `variants.<id>.stock` sans relire le produit. Règles partagées dans `lib/variants.ts` (ordre, prix d'une version, prix le plus bas, nom de ligne « Produit — Version »).
+- **Serveur** : `createOrderAction` exige une version pour un produit qui en a (et la refuse sinon), vérifie le stock de la version (lignes cumulées), facture son prix, nomme la ligne, écrit une seule mise à jour par produit en incréments (total et versions) et un mouvement par version ; l'annulation et le retour remettent chaque version en stock (une version supprimée depuis est ignorée) ; réapprovisionnement, correction et stock initial par version ; `saveProductVariantsAction` (ajout, prix, ordre, retrait à stock nul seulement, répartition tracée d'un stock unique entre versions).
+- **Règles Firestore** : `variants` et `variantName` ne se modifient plus depuis le navigateur. **À déployer.**
+- **Écrans** : éditeur de versions dans le formulaire produit (`VariantsEditor` ; stock des versions enregistrées en lecture seule) ; choix de la version dans la fenêtre Stock ; fiche produit (choix de la version, prix et disponibilité de la version, version épuisée barrée, première disponible choisie d'office) ; cartes « Dès … » et « Choisir une version » ; panier par version ; WhatsApp, paiement, commande manuelle ; tri par prix et page d'accueil au prix le plus bas ; état du stock une ligne par version ; statut « Stock faible » dès qu'une version atteint le seuil.
+- **Guides** : chapitres Catégories et produits, Gérer le stock (gérant), Produits (vendeur), Consulter un article (client) ; deux captures (`gerant-variantes`, `client-variantes`) ; le lait corporel de la boutique de démonstration a deux contenances.
+
+**Messages d'erreur des actions serveur (corrigé, toute la plateforme)** : vu en testant les versions en production — Next masque le message des erreurs levées par une action serveur ; le client recevait un message technique (« Minified React error #441 ») au lieu de « Stock insuffisant pour… », « a encore 2 en stock… », etc. Corrigé comme le recommande la documentation de Next (erreurs attendues renvoyées comme valeur) sans toucher aux 33 actions : `lib/actionResult.ts`, `server/actionResult.ts`, et deux couches générées par `scripts/generate-action-layers.mjs` (`server/actions/results/*` en « use server », `server/actions/client/*` qui relancent l'erreur avec son message) ; les services importent la couche client. Un test vérifie que les couches couvrent chaque action et qu'aucun service n'appelle une action brute.
+
+**Vérification réelle (build de production, émulateurs)** : carte « Dès 2 500 FCFA · Choisir une version » ; 200 ml choisi d'office, 5 disponibles ; panier 200 ml + 400 ml → commande : 5→4 et 7→6, total 12→10 ; annulation → 5 et 7 ; réapprovisionnement 400 ml +3 → 10, total 15, historique « Réapprovisionnement 400 ml » ; ajout de « 1 l » (8 000 FCFA, 2) → total 17 ; retrait de « 1 l » refusé avec le message lisible en production ; écriture du stock d'une version par le navigateur refusée (403) ; aucune erreur console (numéros de téléphone de la démonstration corrigés au format international).
+
+**Limite** : prix d'achat par article, pas par version (la marge affichée dans la fiche se calcule sur le prix de l'article).
+
+Vérifié : lint, `tsc`, 2 268 tests, build. Rien de commité.

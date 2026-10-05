@@ -6,7 +6,7 @@ import {
   createCategoryTagAction,
   deleteCategoryTagAction,
   updateCategoryTagAction,
-} from "@/server/actions/categoryTagActions";
+} from "@/server/actions/client/categoryTagActions";
 
 export class CategoryTagService {
   constructor(

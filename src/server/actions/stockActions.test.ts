@@ -1,7 +1,11 @@
 jest.mock("../auth/requireCaller", () => ({ requireCaller: jest.fn() }));
 
 jest.mock("firebase-admin/firestore", () => ({
-  FieldValue: { serverTimestamp: () => ({ __op: "serverTimestamp" }) },
+  FieldValue: {
+    serverTimestamp: () => ({ __op: "serverTimestamp" }),
+    increment: (n: number) => ({ __op: "increment", n }),
+    delete: () => ({ __op: "delete" }),
+  },
 }));
 
 const userGetMock = jest.fn();
@@ -23,7 +27,16 @@ function movementsQuery(filters: unknown[] = []) {
 
 const collectionMock = jest.fn((name: string) => {
   if (name === "users") return { doc: () => ({ get: userGetMock }) };
-  if (name === "products") return { doc: (id: string) => ({ __ref: `products/${id}` }) };
+  if (name === "products")
+    return {
+      // Identifiant généré (`doc()` sans argument) non énumérable : les
+      // comparaisons sur `{ __ref }` restent exactes.
+      doc: (id?: string) => {
+        const ref = { __ref: `products/${id ?? "auto"}` };
+        Object.defineProperty(ref, "id", { value: id ?? `new-${++autoId}`, enumerable: false });
+        return ref;
+      },
+    };
   if (name === "productCosts") return { doc: (id: string) => ({ __ref: `productCosts/${id}` }) };
   if (name === "stockMovements") return { doc: () => ({ __ref: "stockMovements/new" }), ...movementsQuery() };
   throw new Error(`Unexpected collection: ${name}`);
@@ -43,7 +56,12 @@ jest.mock("../../lib/firebaseAdmin", () => ({
 }));
 
 import { requireCaller } from "@/server/auth/requireCaller";
-import { adjustStockAction, recordInitialStockAction, restockProductAction } from "@/server/actions/stockActions";
+import {
+  adjustStockAction,
+  recordInitialStockAction,
+  restockProductAction,
+  saveProductVariantsAction,
+} from "@/server/actions/stockActions";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
 
 const requireCallerMock = requireCaller as jest.Mock;
@@ -56,6 +74,8 @@ function productWith(data: Record<string, unknown> | null) {
   productGetMock.mockResolvedValue({ exists: !!data, data: () => data ?? undefined });
 }
 
+let autoId = 0;
+const movements = () => txSetMock.mock.calls.filter(([ref]) => ref.__ref === "stockMovements/new").map(([, m]) => m);
 const movement = () => txSetMock.mock.calls.find(([ref]) => ref.__ref === "stockMovements/new")?.[1];
 
 beforeEach(() => {
@@ -175,5 +195,118 @@ describe("recordInitialStockAction", () => {
     movementsQueryGetMock.mockResolvedValue({ empty: false });
     await recordInitialStockAction("t", "p1");
     expect(txSetMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("versions (BF-17)", () => {
+  const coco = {
+    shopId: "shop-1",
+    name: "Huile de coco",
+    stock: 7,
+    variants: {
+      v250: { label: "250 ml", stock: 5, position: 0 },
+      v500: { label: "500 ml", stock: 2, price: 5500, position: 1 },
+    },
+  };
+  beforeEach(() => {
+    autoId = 0;
+    productWith(coco);
+  });
+
+  it("restocks the chosen version, keeping the product total in step", async () => {
+    expect(await restockProductAction("t", { productId: "p1", variantId: "v500", quantity: 4 })).toEqual({ stockAfter: 6 });
+    expect(txUpdateMock).toHaveBeenCalledWith(
+      { __ref: "products/p1" },
+      expect.objectContaining({ stock: 11, "variants.v500.stock": { __op: "increment", n: 4 } })
+    );
+    expect(movement()).toEqual(
+      expect.objectContaining({ productName: "Huile de coco — 500 ml", variantId: "v500", variantLabel: "500 ml", quantity: 4, stockAfter: 6 })
+    );
+  });
+
+  it("corrects the stock of one version", async () => {
+    expect(await adjustStockAction("t", { productId: "p1", variantId: "v250", countedStock: 3, note: "Casse" })).toEqual({ stockAfter: 3 });
+    expect(txUpdateMock).toHaveBeenCalledWith(
+      { __ref: "products/p1" },
+      expect.objectContaining({ stock: 5, "variants.v250.stock": { __op: "increment", n: -2 } })
+    );
+  });
+
+  it("asks which version when the product has some", async () => {
+    await expect(restockProductAction("t", { productId: "p1", quantity: 1 })).rejects.toThrow("Choisissez la version concernée.");
+    await expect(restockProductAction("t", { productId: "p1", variantId: "nope", quantity: 1 })).rejects.toThrow(ValidationError);
+  });
+
+  it("records the starting stock of each version of a new product", async () => {
+    await recordInitialStockAction("t", "p1");
+    expect(movements().map((m) => [m.productName, m.quantity])).toEqual([
+      ["Huile de coco — 250 ml", 5],
+      ["Huile de coco — 500 ml", 2],
+    ]);
+  });
+
+  describe("saveProductVariantsAction", () => {
+    it("keeps the stock of existing versions, adds new ones with their starting stock, and recomputes the total", async () => {
+      await saveProductVariantsAction("t", {
+        productId: "p1",
+        variantName: " Contenance ",
+        variants: [
+          { id: "v500", label: "500 ml", price: 5000 },
+          { id: "v250", label: "250 ml ", stock: 99 },
+          { label: "1 l", price: 9000, stock: 3 },
+        ],
+      });
+
+      expect(txUpdateMock).toHaveBeenCalledWith(
+        { __ref: "products/p1" },
+        expect.objectContaining({
+          variantName: "Contenance",
+          stock: 10,
+          variants: {
+            v500: { label: "500 ml", stock: 2, price: 5000, position: 0 },
+            v250: { label: "250 ml", stock: 5, position: 1 },
+            "new-1": { label: "1 l", stock: 3, price: 9000, position: 2 },
+          },
+        })
+      );
+      expect(movements()).toEqual([
+        expect.objectContaining({ type: "initial", productName: "Huile de coco — 1 l", variantId: "new-1", quantity: 3, stockAfter: 3 }),
+      ]);
+    });
+
+    it("refuses to drop a version that still has stock", async () => {
+      await expect(
+        saveProductVariantsAction("t", { productId: "p1", variantName: "Contenance", variants: [{ id: "v250", label: "250 ml" }] })
+      ).rejects.toThrow("« 500 ml » a encore 2 en stock : corrigez son stock à 0 avant de la retirer.");
+      expect(txUpdateMock).not.toHaveBeenCalled();
+    });
+
+    it("splits a single stock into versions, tracing the move", async () => {
+      productWith({ shopId: "shop-1", name: "Savon", stock: 6 });
+      await saveProductVariantsAction("t", {
+        productId: "p2",
+        variantName: "Parfum",
+        variants: [
+          { label: "Citron", stock: 4 },
+          { label: "Karité", stock: 2 },
+        ],
+      });
+      expect(txUpdateMock).toHaveBeenCalledWith({ __ref: "products/p2" }, expect.objectContaining({ stock: 6 }));
+      expect(movements().map((m) => [m.type, m.productName, m.quantity])).toEqual([
+        ["adjustment", "Savon", -6],
+        ["initial", "Savon — Citron", 4],
+        ["initial", "Savon — Karité", 2],
+      ]);
+    });
+
+    it("validates names, prices and duplicates", async () => {
+      const save = (variants: unknown[], variantName = "Taille") =>
+        saveProductVariantsAction("t", { productId: "p1", variantName, variants: variants as never });
+      await expect(save([{ label: "S" }], " ")).rejects.toThrow(/ce qui distingue/);
+      await expect(save([{ label: "S" }, { label: "s" }])).rejects.toThrow("Deux versions portent le même nom.");
+      await expect(save([{ label: " " }])).rejects.toThrow(/a un nom/);
+      await expect(save([{ label: "S", price: 0 }])).rejects.toThrow(/montant positif/);
+      await expect(save([{ label: "S", stock: 1.5 }])).rejects.toThrow(/nombre entier/);
+    });
   });
 });

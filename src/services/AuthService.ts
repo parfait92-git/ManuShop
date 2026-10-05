@@ -25,7 +25,9 @@ import type {
 import { userRepository } from "@/repositories/UserRepository";
 import {
   createShopAction,
-  type CreateShopActionInput,
+} from "@/server/actions/client/shopActions";
+import type {
+  CreateShopActionInput,
 } from "@/server/actions/shopActions";
 
 export interface RegisterShopOwnerInput {

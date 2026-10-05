@@ -1,3 +1,4 @@
+import { listVariants } from "@/lib/variants";
 import type { Product } from "@/models/product/Product";
 import { productRepository } from "@/repositories/ProductRepository";
 import { isPromoActive } from "@/lib/promo";
@@ -113,11 +114,13 @@ export class ProductService {
     return product.images.length > 0;
   }
 
-  /** Dérivé de `stock`/`stockThreshold`, pas d'un module Stock dédié (pas
-   * encore construit) — la seule donnée fiable disponible aujourd'hui. */
+  /** Dérivé de `stock`/`stockThreshold`. Avec des versions (BF-17), le
+   * produit est en stock faible dès qu'une version atteint le seuil, pour
+   * penser à la réapprovisionner, et en rupture quand toutes sont vides. */
   getStockStatus(product: Product): StockStatus {
     if (product.stock <= 0) return "out-of-stock";
     if (product.stock <= product.stockThreshold) return "low-stock";
+    if (listVariants(product).some((v) => v.stock <= product.stockThreshold)) return "low-stock";
     return "in-stock";
   }
 }
