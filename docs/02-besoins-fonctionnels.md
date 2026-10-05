@@ -151,10 +151,10 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-58 | Notification nouvelle commande | Alerte immédiate au gérant |
-| BF-59 | Notification stock bas | Alerte quand stock sous le seuil |
-| BF-60 | Notification promotion | Rappel de fin de promotion imminente |
-| BF-61 | Push notification | Notifications PWA sur mobile |
+| BF-58 | Notification nouvelle commande | Alerte immédiate au gérant. **Fait le 2026-10-04** : notification push à l'équipe de la boutique (propriétaire, gérants et vendeurs) pour chaque commande en ligne. |
+| BF-59 | Notification stock bas | Alerte quand stock sous le seuil. **Fait le 2026-10-04** : notification push à l'équipe quand une commande fait passer un produit ou une version sous son seuil d'alerte (une seule fois, au passage du seuil), ou l'épuise. |
+| BF-60 | Notification promotion | Rappel de fin de promotion imminente. **Fait le 2026-10-04** : tâche planifiée Vercel chaque matin (`/api/cron/promo-reminders`, `vercel.json`) ; l'équipe est prévenue la veille du dernier jour d'une promotion. |
+| BF-61 | Push notification | Notifications PWA sur mobile. **Fait le 2026-10-04** : Firebase Cloud Messaging sur le service worker de l'application ; activation par appareil dans **Mon compte** (avec notification d'essai) et invitation sur le tableau de bord ; client prévenu de chaque étape de sa commande et des réponses à ses avis ; appareil désinscrit à la déconnexion et réinscrit pour le compte suivant. Sur iPhone : application installée requise (iOS 16.4+). **Nécessite la clé Web Push (VAPID)** dans `NEXT_PUBLIC_FIREBASE_VAPID_KEY`. |
 
 ---
 
@@ -286,7 +286,7 @@
 | BF-113 | Réception des messages (Super Admin) | Le Super Admin consulte les messages envoyés par les commerçants. **Fait le 2026-09-27** : `/super-admin/messages` liste tous les messages, toutes boutiques confondues. |
 | BF-114 | Réponse du Super Admin | Réponse rédigée avec le même modèle de mise en forme que le message reçu ; la signature porte automatiquement "ManuShop" avec le logo de la plateforme, sans saisie manuelle. **Fait le 2026-09-27, version réduite** : une réponse par message (pas de fil de discussion), texte libre. Ni modèle de mise en forme, ni signature automatique "ManuShop" — non construits cette tranche. |
 | BF-115 | Réception de la réponse (commerçant) | Le commerçant consulte la réponse du Super Admin à son message. **Fait le 2026-09-27** : la réponse apparaît directement sous le message correspondant dans `/dashboard/support`, pas de notification (BF-116, toujours non commencé). |
-| BF-116 | Notifications push d'activité | Commerçant : nouvelle commande, nouveau message, nouveau feedback. Super Admin : nouveau message reçu. Étend le Module 11 (BF-58→61, toujours non commencé — nécessite Firebase Cloud Messaging). |
+| BF-116 | Notifications push d'activité | Commerçant : nouvelle commande, nouveau message, nouveau feedback. Super Admin : nouveau message reçu. **Fait le 2026-10-04** : avec le Module 11 — commerçant (commandes, stocks, avis, réponse du Super Admin, demande premium traitée), Super Admin (messages, demandes premium). |
 
 ### Module 22 — Supervision Super Admin
 

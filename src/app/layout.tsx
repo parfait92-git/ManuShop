@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PushRegistration } from "@/components/push/PushRegistration";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <CurrencyProvider>
             <AuthProvider>
               <TourProvider>{children}</TourProvider>
+              <PushRegistration />
             </AuthProvider>
           </CurrencyProvider>
         </I18nProvider>

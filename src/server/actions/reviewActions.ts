@@ -1,5 +1,6 @@
 "use server";
 
+import { pushNewReview } from "@/server/push/events";
 import { FieldValue } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
@@ -43,7 +44,8 @@ export async function submitReviewAction(
     shopId: string;
     clientId?: string;
     status: string;
-    items: { productId: string }[];
+    clientName?: string;
+    items: { productId: string; name?: string }[];
   };
 
   if (order.clientId !== caller.uid) {
@@ -87,5 +89,11 @@ export async function submitReviewAction(
     createdAt: FieldValue.serverTimestamp(),
   });
 
+  const item = order.items?.find((i) => i.productId === input.productId);
+  await pushNewReview(db, {
+    shopId: order.shopId,
+    clientName: String(order.clientName ?? "Un client"),
+    subject: item?.name ? `« ${item.name} »` : "un article",
+  });
   return { reviewId: reviewRef.id };
 }

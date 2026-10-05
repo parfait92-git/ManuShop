@@ -11,6 +11,13 @@ import { effectivePrice, type PromoFields } from "@/lib/promo";
 import { appendHistoryEvent, nextHistoryEvent, type HistoryHead } from "@/server/integrity/orderHistory";
 import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
+import {
+  pushNewOrder,
+  pushOrderCancelledByClient,
+  pushOrderStatus,
+  pushStockAlerts,
+  type StockAlert,
+} from "@/server/push/events";
 import { queueStockMovement } from "@/server/stock/stockMovements";
 import { hasVariants, lineName, variantPrice, type VariantFields } from "@/lib/variants";
 import type { ProductVariant } from "@/models/product/ProductVariant";
@@ -100,6 +107,8 @@ export async function createOrderAction(
   const productRefs = input.items.map((item) =>
     db.collection(PRODUCTS_COLLECTION).doc(item.productId)
   );
+  /** Stocks qui passent sous leur seuil d'alerte avec cette commande. */
+  const stockAlerts: StockAlert[] = [];
 
   await db.runTransaction(async (transaction) => {
     // Toutes les lectures d'une transaction Firestore doivent précéder ses
@@ -261,6 +270,13 @@ export async function createOrderAction(
       const before = remaining.get(stockKey(item)) ?? start;
       const stockAfter = before - item.quantity;
       remaining.set(stockKey(item), stockAfter);
+      // Alerte une seule fois, au passage du seuil (pas à chaque commande
+      // suivante) ; sur le stock final de la ligne cumulée.
+      const threshold = typeof product?.stockThreshold === "number" ? product.stockThreshold : 0;
+      const isLastLine = input.items.findLastIndex((other) => stockKey(other) === stockKey(item)) === index;
+      if (isLastLine && start > threshold && stockAfter <= threshold) {
+        stockAlerts.push({ name: lineName((product?.name as string | undefined) ?? item.name, variant?.label), stock: stockAfter });
+      }
       queueStockMovement(db, transaction, {
         shopId: input.shopId,
         productId: item.productId,
@@ -274,6 +290,21 @@ export async function createOrderAction(
       });
     });
   });
+
+  // Notifications push (2026-10-04) : la commande est déjà enregistrée,
+  // un échec d'envoi n'y change rien (`sendPush` n'échoue jamais).
+  await Promise.all([
+    input.manual
+      ? Promise.resolve(0)
+      : pushNewOrder(db, {
+          shopId: input.shopId,
+          orderId: orderRef.id,
+          clientName: input.clientName,
+          units: input.items.reduce((sum, item) => sum + item.quantity, 0),
+          total,
+        }),
+    pushStockAlerts(db, input.shopId, stockAlerts),
+  ]);
 
   const shopSnapshot = await db.collection(SHOPS_COLLECTION).doc(input.shopId).get();
   const shop = shopSnapshot.data() as
@@ -460,6 +491,19 @@ export async function updateOrderStatusAction(
   }
 
   await batch.commit();
+
+  // Notification push : au client quand la boutique fait avancer sa
+  // commande ; à l'équipe quand c'est le client qui annule.
+  if (isOwner && !isMerchant) {
+    await pushOrderCancelledByClient(db, {
+      shopId: order.shopId,
+      orderId,
+      clientName: String(orderSnapshot.data()?.clientName ?? "Un client"),
+    });
+  } else if (order.clientId && order.clientId !== caller.uid) {
+    const shopName = String((await db.collection(SHOPS_COLLECTION).doc(order.shopId).get()).data()?.name ?? "La boutique");
+    await pushOrderStatus(db, { clientId: order.clientId, orderId, status: input.status, shopName });
+  }
 
   // Facture émise dès la livraison (BF-24), après l'écriture du statut :
   // un échec ici ne doit pas annuler la livraison — la facture sera alors

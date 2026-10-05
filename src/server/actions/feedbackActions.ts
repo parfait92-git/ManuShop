@@ -1,5 +1,6 @@
 "use server";
 
+import { pushNewReview, pushReviewReply } from "@/server/push/events";
 import { FieldValue } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
@@ -79,6 +80,7 @@ export async function submitDeliveryFeedbackAction(
     }
     throw error;
   }
+  await pushNewReview(db, { shopId: order.shopId, clientName: order.clientName, subject: "sa livraison" });
 }
 
 export interface ReplyToFeedbackInput {
@@ -152,4 +154,5 @@ export async function replyToFeedbackAction(
     });
   }
   await batch.commit();
+  if (clientId) await pushReviewReply(db, { clientId, shopName, orderId: feedback.orderId });
 }

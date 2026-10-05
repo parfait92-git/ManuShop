@@ -161,6 +161,8 @@ async function main() {
       shopId: SHOP, name: p.name, description: p.description, price: p.price, category: p.category,
       images: [img(p.id)], stock: p.stock, stockThreshold: p.threshold,
       isPromo: !!p.promoPrice, ...(p.promoPrice ? { promoPrice: p.promoPrice } : {}),
+      // Promotion qui se termine demain (rappel de fin de promotion).
+      ...(p.promoPrice ? { promoEnd: Timestamp.fromDate(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1))) } : {}),
       ...(p.variants ? { variants: p.variants, variantName: p.variantName } : {}),
       isPublished: true, createdAt: at(148), updatedAt: at(2),
     });

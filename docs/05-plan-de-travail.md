@@ -193,7 +193,7 @@ Chaque module ci-dessus doit correspondre à une branche `feature/<module>` cré
 
 **Fonctionnel, ordre proposé** :
 1. [x] Module 3 — Stock : historique des mouvements et réapprovisionnement (2026-10-03, BF-15, BF-16), versions des produits (2026-10-04, BF-17)
-2. [ ] Notifications push (FCM) : nouvelle commande, stock bas, fin de promotion, message (BF-58→61, BF-116)
+2. [x] Notifications push (FCM) : nouvelle commande, stock bas, fin de promotion, message (BF-58→61, BF-116) — fait le 2026-10-04 ; clé VAPID et `CRON_SECRET` à configurer
 3. [ ] Promotions : date de début, codes promo, promotion flash, historique (BF-30→34)
 4. [ ] Retour demandé par le client (BF-77) ; factures groupées par période (BF-104), aperçu (BF-25), envoi WhatsApp (BF-27)
 5. [ ] Vitrine : filtres prix/disponibilité (BF-38), 4 meilleures boutiques (BF-108), marqueur « populaire » (BF-12), hors-ligne complet (BF-40)

@@ -2443,3 +2443,31 @@ Suite du module Stock (choix laissé par l'utilisateur).
 **Limite** : prix d'achat par article, pas par version (la marge affichée dans la fiche se calcule sur le prix de l'article).
 
 Vérifié : lint, `tsc`, 2 268 tests, build. Rien de commité.
+
+### 2026-10-04 — Notifications push (BF-58→61, BF-116)
+
+Suite du plan de travail, validée par l'utilisateur.
+
+**Fait** :
+- **Envoi** (`server/push/sendPush.ts`) : Firebase Cloud Messaging via le SDK Admin (importé à la demande, comme `firebase-admin/auth`), messages « données seulement » affichés par le service worker ; appareils dans `pushTokens` (empreinte du jeton, serveur seulement) ; jetons morts supprimés à l'envoi ; n'échoue jamais (une notification ne bloque pas l'action qui la déclenche) ; rien sur les émulateurs.
+- **Qui reçoit quoi** (`server/push/events.ts`) :
+  - équipe de la boutique (propriétaire + gérants et vendeurs rattachés) : nouvelle commande en ligne, stock passé sous le seuil ou épuisé (une fois, au passage du seuil ; par version), commande annulée par le client, nouvel avis, promotion qui se termine demain, réponse du Super Admin, demande premium traitée ;
+  - client : chaque étape de sa commande (prête, en route, livrée → lien vers l'avis, annulée, retour) et réponse à son avis ;
+  - Super Admins : messages des commerçants (et formulaire de contact), demandes d'achat premium.
+- **Rappel de fin de promotion** : `/api/cron/promo-reminders`, chaque jour à 7 h UTC (`vercel.json`), réservé à Vercel (`Authorization: Bearer CRON_SECRET`) ; promotions qui finissent dans 24 à 48 h, une notification par boutique.
+- **Appareil** : `lib/push.ts` (disponibilité : navigateur, iPhone non installé, clé absente ; autorisation ; jeton FCM sur le service worker de l'application), `PushService`, actions `registerPushTokenAction`, `unregisterPushTokenAction`, `sendTestPushAction` ; panneau « Notifications sur cet appareil » dans Mon compte (activation, essai, explications selon le rôle et l'appareil) ; invitation discrète sur le tableau de bord ; désinscription à la déconnexion (téléphone partagé) et réinscription automatique pour le compte suivant (`PushRegistration`).
+- **Service worker** : affichage des notifications et ouverture de la page liée (onglet existant si possible).
+- Règles Firestore : `pushTokens` fermé au navigateur. Guides : mentions dans les trois guides.
+
+**Vérification** :
+- tâche planifiée sur le build de production : 401 sans secret ; avec, `{"shops":1,"products":1}` (le masque, promotion qui finit demain dans les données de démonstration) ;
+- message push simulé dans Chrome (DevTools Protocol) : notification affichée avec titre, texte, icône, regroupement et lien ; un message illisible ne casse rien ;
+- Mon compte sans clé : « pas encore disponibles », pas d'invitation sur le tableau de bord ; aucune erreur console.
+- **Non vérifié ici** : l'envoi réel par FCM (non émulé) — à essayer après configuration (bouton « Envoyer une notification d'essai »).
+
+**À configurer par l'utilisateur** :
+1. Firebase console → Paramètres du projet → Cloud Messaging → Certificats Web Push → Générer une paire de clés → `NEXT_PUBLIC_FIREBASE_VAPID_KEY` (`.env.local` et Vercel) ;
+2. Vercel → `CRON_SECRET` (chaîne secrète quelconque) ;
+3. déployer les règles Firestore.
+
+Vérifié : lint, `tsc`, 2 301 tests, build. Rien de commité.

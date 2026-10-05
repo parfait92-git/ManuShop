@@ -1,3 +1,9 @@
+const storedPushTokenMock = jest.fn((): string | null => null);
+const unregisterPushTokenMock = jest.fn(async () => undefined);
+jest.mock("../lib/push", () => ({ storedPushToken: () => storedPushTokenMock() }));
+jest.mock("../server/actions/client/pushActions", () => ({
+  unregisterPushTokenAction: (...a: unknown[]) => unregisterPushTokenMock(...(a as [])),
+}));
 import type { Timestamp } from "firebase/firestore";
 
 jest.mock("firebase/auth", () => ({
@@ -456,5 +462,16 @@ describe("AuthService", () => {
       });
       expect(user.uid).toBe("uid-5");
     });
+  });
+
+  it("stops this device's push notifications for the account that signs out", async () => {
+    storedPushTokenMock.mockReturnValue("device-token");
+    const { auth } = jest.requireMock("../lib/firebase") as { auth: { currentUser: unknown } };
+    const previous = auth.currentUser;
+    auth.currentUser = { getIdToken: async () => "id-token" };
+    await service.logout();
+    expect(unregisterPushTokenMock).toHaveBeenCalledWith("id-token", "device-token");
+    auth.currentUser = previous;
+    storedPushTokenMock.mockReturnValue(null);
   });
 });

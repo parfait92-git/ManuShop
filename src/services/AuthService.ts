@@ -13,6 +13,8 @@ import {
   type User as FirebaseUser,
 } from "firebase/auth";
 
+import { storedPushToken } from "@/lib/push";
+import { unregisterPushTokenAction } from "@/server/actions/client/pushActions";
 import { auth, getSecondaryAuth } from "@/lib/firebase";
 import { clearLocalSessionId } from "@/lib/sessionId";
 import type { User } from "@/models/user/User";
@@ -282,6 +284,19 @@ export class AuthService {
     // `AuthProvider` suite à une connexion ailleurs) doit libérer cet
     // appareil pour une future connexion fraîche, qu'elle réussisse ou non.
     clearLocalSessionId();
+    // Notifications push : cet appareil cesse de recevoir celles du compte
+    // (téléphone partagé). L'autorisation reste acquise : la prochaine
+    // connexion réinscrit l'appareil pour le nouveau compte
+    // (`PushRegistration`).
+    const pushToken = storedPushToken();
+    if (pushToken) {
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        if (idToken) await unregisterPushTokenAction(idToken, pushToken);
+      } catch {
+        // Hors ligne : le jeton sera repris par le prochain compte connecté.
+      }
+    }
     await signOut(auth);
   }
 

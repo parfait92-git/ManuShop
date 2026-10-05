@@ -1,5 +1,6 @@
 "use server";
 
+import { pushPremiumDecision, pushPremiumRequest } from "@/server/push/events";
 import { FieldValue } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
@@ -74,6 +75,7 @@ export async function requestPremiumItemAction(idToken: string, itemKey: string)
     requestedByName: user.displayName ?? "",
     createdAt: FieldValue.serverTimestamp(),
   });
+  await pushPremiumRequest(db, { shopName: String(shop.name ?? "Une boutique"), itemLabel: item.label });
 }
 
 export interface PremiumRequestDto {
@@ -140,4 +142,7 @@ export async function decidePremiumRequestAction(
     });
   }
   await batch.commit();
+  if (request.requestedBy) {
+    await pushPremiumDecision(db, { userId: String(request.requestedBy), itemLabel: String(request.itemLabel), approved: approve });
+  }
 }

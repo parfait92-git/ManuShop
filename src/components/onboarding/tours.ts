@@ -822,6 +822,11 @@ export const TOURS = {
         "Votre nom, votre téléphone, votre photo de profil et vos préférences d'email.",
     },
     {
+      target: "account-push",
+      content:
+        "Activez les notifications sur ce téléphone ou cet ordinateur pour être prévenu même quand ManuShop est fermée.",
+    },
+    {
       target: "account-security",
       content:
         "Votre identifiant de connexion, votre rôle, et le changement de mot de passe.",

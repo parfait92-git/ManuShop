@@ -9,6 +9,7 @@ import type { Area } from "react-easy-crop";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import { PushNotificationsCard } from "@/components/push/PushNotificationsCard";
 import { ImageCropDialog } from "@/components/dashboard/ImageCropDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,6 +271,8 @@ export function AccountSettingsForm() {
           )}
         </form>
       </section>
+
+      <PushNotificationsCard />
 
       <section data-tour="account-security" className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:p-6">
         <div>
