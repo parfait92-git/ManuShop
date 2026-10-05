@@ -29,9 +29,15 @@ import { cn } from "cn";
  * le contenu car un tableau en mise en page automatique ignore `max-width`
  * sur une cellule et n'y respecte pas `width` comme minimum. Les mots
  * longs sont coupés avec césure (`lang="fr"`), sinon n'importe où.
+ *
+ * À partir de la tablette (2026-10-04), la colonne n'est plus fixe : la
+ * coupure « n'importe où » y laissait le navigateur réduire la colonne à
+ * une lettre de large pour faire de la place aux autres (« Christe lle
+ * Ngo »). Elle garde une largeur minimale et ne coupe un mot qu'en
+ * dernier recours.
  */
 export const STICKY_COLUMN_CONTENT =
-  "w-[calc(40vw-1.5rem)] hyphens-auto [overflow-wrap:anywhere] sm:w-auto";
+  "w-[calc(40vw-1.5rem)] hyphens-auto [overflow-wrap:anywhere] sm:w-auto sm:min-w-40 sm:[overflow-wrap:break-word]";
 
 export function ScrollableTable({
   label,

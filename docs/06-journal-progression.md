@@ -2414,3 +2414,13 @@ Demande de l'utilisateur : une page de guide d'utilisation, accessible uniquemen
 **Remarque d'interface vue sur les captures** (non corrigée) : sur la page Commandes à 1 280 px, la colonne Client est étroite et coupe les noms (« Christe lle Ngo »).
 
 Vérifié : lint, `tsc`, 2 222 tests, build. Rien de commité.
+
+### 2026-10-04 — Première colonne des tableaux écrasée sur tablette et ordinateur
+
+Vu sur les captures du guide : sur la page Commandes à 1 280 px, la colonne Client coupait les noms au milieu (« Christe lle Ngo ») ; même défaut sur Produits (« Ré fr igé ra teur »). Choix de l'utilisateur : me laisser décider de la priorité — corrigé avant les variantes.
+
+**Cause** : `STICKY_COLUMN_CONTENT` (première colonne des tableaux défilables) autorise la coupure d'un mot n'importe où, utile sur téléphone ; à partir de la tablette, le navigateur s'en servait pour réduire la colonne à une lettre de large au profit des autres.
+
+**Corrigé** (`ui/scrollable-table.tsx`, donc Commandes, Produits, Clients et Statistiques) : à partir de `sm`, largeur minimale de 10 rem et coupure d'un mot seulement en dernier recours ; téléphone inchangé (colonne fixe à 40 % de l'écran).
+
+**Vérifié dans le navigateur** : première colonne de 208 px à 640 et 768 px, 144 px à 360 px (colonne fixe), aucun débordement de page ; noms lisibles en entier à 1 280 px. Captures du guide régénérées.
