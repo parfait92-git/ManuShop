@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Mail, Settings, ShieldCheck, Store, Tag, Users } from "lucide-react";
+import { BookOpen, Crown, Mail, Settings, ShieldCheck, Store, Tag, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -20,6 +20,7 @@ const MAIN_ITEMS: NavItem[] = [
   { href: "/super-admin/offres-premium", label: "Offres premium", icon: Crown },
   { href: "/super-admin/messages", label: "Messages", icon: Mail },
   { href: "/super-admin/reglages", label: "Réglages", icon: Settings },
+  { href: "/super-admin/guide", label: "Guides d'utilisation", icon: BookOpen },
 ];
 
 function NavLink({
