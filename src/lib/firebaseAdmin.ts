@@ -73,3 +73,15 @@ export async function getAdminAuth(): Promise<import("firebase-admin/auth").Auth
   const { getAuth } = await import("firebase-admin/auth");
   return getAuth(getAdminApp());
 }
+
+/**
+ * Firebase Cloud Messaging via le SDK Admin (notifications push,
+ * 2026-10-04). Importé à la demande, comme `getAdminAuth()` : le module
+ * n'est chargé que par les appels qui envoient vraiment une notification.
+ * `null` sur les émulateurs (sans compte de service, FCM n'est pas émulé).
+ */
+export async function getAdminMessaging(): Promise<import("firebase-admin/messaging").Messaging | null> {
+  if (process.env.FIRESTORE_EMULATOR_HOST && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64) return null;
+  const { getMessaging } = await import("firebase-admin/messaging");
+  return getMessaging(getAdminApp());
+}

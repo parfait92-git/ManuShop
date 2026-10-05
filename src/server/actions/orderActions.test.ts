@@ -103,6 +103,17 @@ jest.mock("../invoices/issueInvoice", () => ({
   ensureInvoice: (...args: unknown[]) => ensureInvoiceMock(...args),
 }));
 
+const pushNewOrderMock = jest.fn(async () => 0);
+const pushStockAlertsMock = jest.fn(async () => 0);
+const pushOrderStatusMock = jest.fn(async () => 0);
+const pushOrderCancelledByClientMock = jest.fn(async () => 0);
+jest.mock("../push/events", () => ({
+  pushNewOrder: (...a: unknown[]) => pushNewOrderMock(...(a as [])),
+  pushStockAlerts: (...a: unknown[]) => pushStockAlertsMock(...(a as [])),
+  pushOrderStatus: (...a: unknown[]) => pushOrderStatusMock(...(a as [])),
+  pushOrderCancelledByClient: (...a: unknown[]) => pushOrderCancelledByClientMock(...(a as [])),
+}));
+
 const sendOrderNotificationMock = jest.fn();
 jest.mock("../../lib/whatsappBusiness", () => ({
   sendOrderNotification: (...args: unknown[]) => sendOrderNotificationMock(...args),
@@ -811,6 +822,90 @@ describe("versions d'un produit (BF-17)", () => {
       expect(movements[0]).toEqual(
         expect.objectContaining({ productName: "Huile de coco — 500 ml", variantId: "v500", quantity: 1, stockAfter: 3, type: "returned" })
       );
+    });
+  });
+});
+
+describe("notifications push (2026-10-04)", () => {
+  const base = {
+    shopId: "shop-1",
+    clientName: "Fatou",
+    clientPhone: "+237600000000",
+    clientAddress: "Douala",
+    subtotal: 0,
+    total: 0,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireCallerMock.mockResolvedValue({ uid: "client-1", email: "c@b.com" });
+    shopGetMock.mockResolvedValue({ data: () => ({ name: "Chez Awa" }) });
+    productCostGetMock.mockResolvedValue({ data: () => undefined });
+  });
+
+  it("tells the shop team about a new online order", async () => {
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", price: 5000, stock: 100, stockThreshold: 2 }) });
+    await createOrderAction("token", { ...base, items: [{ productId: "p1", name: "Wax", quantity: 2, unitPrice: 1 }] });
+    expect(pushNewOrderMock).toHaveBeenCalledWith(expect.anything(), {
+      shopId: "shop-1",
+      orderId: "order-new",
+      clientName: "Fatou",
+      units: 2,
+      total: 10000,
+    });
+    expect(pushStockAlertsMock).toHaveBeenCalledWith(expect.anything(), "shop-1", []);
+  });
+
+  it("alerts the team once, when an order takes a stock down to its threshold", async () => {
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", name: "Wax", price: 5000, stock: 4, stockThreshold: 2 }) });
+    await createOrderAction("token", { ...base, items: [{ productId: "p1", name: "Wax", quantity: 2, unitPrice: 1 }] });
+    expect(pushStockAlertsMock).toHaveBeenCalledWith(expect.anything(), "shop-1", [{ name: "Wax", stock: 2 }]);
+
+    // Déjà sous le seuil : pas de nouvelle alerte.
+    pushStockAlertsMock.mockClear();
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", name: "Wax", price: 5000, stock: 2, stockThreshold: 2 }) });
+    await createOrderAction("token", { ...base, items: [{ productId: "p1", name: "Wax", quantity: 1, unitPrice: 1 }] });
+    expect(pushStockAlertsMock).toHaveBeenCalledWith(expect.anything(), "shop-1", []);
+  });
+
+  it("doesn't announce a manual order to the team that just entered it", async () => {
+    requireCallerMock.mockResolvedValue({ uid: "merchant-1", email: "m@b.com" });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "seller", shopId: "shop-1" }) });
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", price: 5000, stock: 100 }) });
+    await createOrderAction("token", { ...base, manual: true, items: [{ productId: "p1", name: "Wax", quantity: 1, unitPrice: 5000 }] });
+    expect(pushNewOrderMock).not.toHaveBeenCalled();
+  });
+
+  describe("changement de statut", () => {
+    beforeEach(() => {
+      orderGetMock.mockResolvedValue({
+        exists: true,
+        data: () => ({ shopId: "shop-1", clientId: "client-1", clientName: "Fatou", status: "under_review", items: [] }),
+      });
+    });
+
+    it("tells the client when the shop moves the order forward", async () => {
+      requireCallerMock.mockResolvedValue({ uid: "merchant-1", email: "m@b.com" });
+      userGetMock.mockResolvedValue({ data: () => ({ role: "admin", shopId: "shop-1" }) });
+      await updateOrderStatusAction("token", "order-1", { status: "ready_for_delivery" });
+      expect(pushOrderStatusMock).toHaveBeenCalledWith(expect.anything(), {
+        clientId: "client-1",
+        orderId: "order-1",
+        status: "ready_for_delivery",
+        shopName: "Chez Awa",
+      });
+      expect(pushOrderCancelledByClientMock).not.toHaveBeenCalled();
+    });
+
+    it("tells the team, not the client, when the client cancels", async () => {
+      userGetMock.mockResolvedValue({ data: () => ({ role: "client" }) });
+      await updateOrderStatusAction("token", "order-1", { status: "cancelled", reason: "Erreur" });
+      expect(pushOrderCancelledByClientMock).toHaveBeenCalledWith(expect.anything(), {
+        shopId: "shop-1",
+        orderId: "order-1",
+        clientName: "Fatou",
+      });
+      expect(pushOrderStatusMock).not.toHaveBeenCalled();
     });
   });
 });

@@ -29,7 +29,7 @@ export const managerGuide: Guide = {
         },
         {
           type: "tip",
-          text: "Le bouton **?** en haut de chaque page relance sa visite guidée ; les **?** à côté des champs expliquent leur rôle. Un bip retentit à chaque nouvelle commande tant que l'espace est ouvert (réglable dans les Paramètres).",
+          text: "Activez les **notifications** sur votre téléphone (page **Mon compte**) : nouvelles commandes, stocks qui baissent, avis et promotions qui se terminent vous parviennent même ManuShop fermée. Le bouton **?** en haut de chaque page relance sa visite guidée.",
         },
       ],
     },

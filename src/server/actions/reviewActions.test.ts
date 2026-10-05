@@ -1,3 +1,13 @@
+// Notifications push : vérifiées dans push/events.test.ts.
+jest.mock("../push/events", () => ({
+  pushSupportMessage: jest.fn(async () => 0),
+  pushSupportReply: jest.fn(async () => 0),
+  pushNewReview: jest.fn(async () => 0),
+  pushReviewReply: jest.fn(async () => 0),
+  pushPremiumRequest: jest.fn(async () => 0),
+  pushPremiumDecision: jest.fn(async () => 0),
+}));
+
 jest.mock("../auth/requireCaller", () => ({ requireCaller: jest.fn() }));
 
 const serverTimestampMock = jest.fn(() => ({ __op: "serverTimestamp" }));

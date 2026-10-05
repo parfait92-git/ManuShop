@@ -1,3 +1,13 @@
+// Notifications push : vérifiées dans push/events.test.ts.
+jest.mock("../push/events", () => ({
+  pushSupportMessage: jest.fn(async () => 0),
+  pushSupportReply: jest.fn(async () => 0),
+  pushNewReview: jest.fn(async () => 0),
+  pushReviewReply: jest.fn(async () => 0),
+  pushPremiumRequest: jest.fn(async () => 0),
+  pushPremiumDecision: jest.fn(async () => 0),
+}));
+
 jest.mock("../auth/requireCaller", () => ({ requireCaller: jest.fn() }));
 jest.mock("../auth/requireSuperAdmin", () => ({ requireSuperAdmin: jest.fn() }));
 
@@ -248,7 +258,7 @@ describe("supportMessageActions", () => {
 
   describe("answerSupportMessageAction", () => {
     it("re-verifies Super Admin privilege before writing the reply", async () => {
-      messageGetMock.mockResolvedValue({ exists: true });
+      messageGetMock.mockResolvedValue({ exists: true, data: () => ({ senderId: "merchant-1", subject: "Aide" }) });
 
       await answerSupportMessageAction("token", "msg1", "Réponse");
 
@@ -257,10 +267,15 @@ describe("supportMessageActions", () => {
         status: "answered",
         reply: { body: "Réponse", createdAt: "SERVER_TIMESTAMP" },
       });
+      // Le commerçant est prévenu par notification push.
+      expect(jest.requireMock("../push/events").pushSupportReply).toHaveBeenCalledWith(expect.anything(), {
+        senderId: "merchant-1",
+        subject: "Aide",
+      });
     });
 
     it("rejects an empty reply", async () => {
-      messageGetMock.mockResolvedValue({ exists: true });
+      messageGetMock.mockResolvedValue({ exists: true, data: () => ({ senderId: "merchant-1", subject: "Aide" }) });
       await expect(
         answerSupportMessageAction("token", "msg1", "   ")
       ).rejects.toThrow(ValidationError);

@@ -1,3 +1,4 @@
+jest.mock("../../components/push/PushNudge", () => ({ PushNudge: () => null }));
 const useMediaQueryMock = jest.fn();
 jest.mock("../../hooks/useMediaQuery", () => ({
   TABLET_UP: "(min-width: 768px)",

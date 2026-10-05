@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { DashboardHomeContent } from "@/components/dashboard/DashboardHomeContent";
 import { PageTour } from "@/components/onboarding/PageTour";
+import { PushNudge } from "@/components/push/PushNudge";
 import { TABLET_UP, useMediaQuery } from "@/hooks/useMediaQuery";
 import { useShopTheme } from "@/hooks/useShopTheme";
 
@@ -39,6 +40,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageTour tourId="dashboard-onboarding" />
+      <PushNudge />
       {/* Tablette et ordinateur : le tableau de bord occupe toute la zone
       de contenu (2026-10-03), d'où l'annulation de la marge haute. */}
       {isTabletUp ? (

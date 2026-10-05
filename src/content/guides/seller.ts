@@ -47,7 +47,7 @@ export const sellerGuide: Guide = {
         },
         {
           type: "p",
-          text: "La **cloche** en haut de l'écran signale les nouvelles commandes, et un bip retentit tant que l'espace est ouvert. **Voir ma boutique** ouvre la vitrine telle que les clients la voient.",
+          text: "La **cloche** en haut de l'écran signale les nouvelles commandes, et un bip retentit tant que l'espace est ouvert. Activez aussi les **notifications** sur votre téléphone (page **Mon compte**) pour être prévenu ManuShop fermée. **Voir ma boutique** ouvre la vitrine telle que les clients la voient.",
         },
         {
           type: "tip",

@@ -1,5 +1,6 @@
 "use server";
 
+import { pushSupportMessage, pushSupportReply } from "@/server/push/events";
 import { hasPremiumAccess, toShopPremiumState } from "@/lib/premiumCatalog";
 import { readPremiumCatalog } from "@/server/premium/readCatalog";
 
@@ -82,6 +83,7 @@ export async function sendSupportMessageAction(
     status: "open",
     createdAt: FieldValue.serverTimestamp(),
   });
+  await pushSupportMessage(db, { shopName: String(shopData.name ?? "Une boutique"), subject: trimmedSubject });
   return { id: ref.id };
 }
 
@@ -118,6 +120,10 @@ export async function sendContactMessageAction(
     body: trimmedBody,
     status: "open",
     createdAt: FieldValue.serverTimestamp(),
+  });
+  await pushSupportMessage(db, {
+    shopName: String(userData?.displayName ?? caller.email ?? "Un visiteur"),
+    subject: trimmedSubject,
   });
   return { id: ref.id };
 }
@@ -188,7 +194,8 @@ export async function answerSupportMessageAction(
     throw new ValidationError("La réponse ne peut pas être vide.");
   }
 
-  const ref = getAdminDb().collection(SUPPORT_MESSAGES_COLLECTION).doc(messageId);
+  const db = getAdminDb();
+  const ref = db.collection(SUPPORT_MESSAGES_COLLECTION).doc(messageId);
   const snapshot = await ref.get();
   if (!snapshot.exists) {
     throw new NotFoundError();
@@ -201,4 +208,6 @@ export async function answerSupportMessageAction(
       createdAt: FieldValue.serverTimestamp(),
     },
   });
+  const message = snapshot.data()!;
+  await pushSupportReply(db, { senderId: String(message.senderId), subject: String(message.subject ?? "") });
 }

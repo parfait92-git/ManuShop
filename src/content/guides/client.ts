@@ -283,6 +283,7 @@ export const clientGuide: Guide = {
             "Modifiez votre nom, votre photo, votre téléphone et votre adresse de livraison.",
             "Changez votre mot de passe (compte e-mail).",
             "Choisissez de recevoir ou non les e-mails d'information de ManuShop.",
+            "**Notifications sur cet appareil** : activez-les pour être prévenu quand votre commande avance et quand une boutique répond à votre avis, même ManuShop fermée (sur iPhone, après avoir installé l'application).",
           ],
         },
         { type: "h2", text: "Ouvrir votre propre boutique" },

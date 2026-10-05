@@ -74,6 +74,12 @@ service cloud.firestore {
 
     // Journal d'activité commerçant (BF-98) — privé à la boutique
     // concernée, jamais public, contrairement à products/categories/shops.
+    // Appareils inscrits aux notifications push (2026-10-04) : jetons FCM,
+    // lus et écrits uniquement par le serveur (`pushActions.ts`).
+    match /pushTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
     // Historique du stock (BF-15, 2026-10-03) : lisible par l'équipe de la
     // boutique (gérant et vendeurs — aucun prix d'achat n'y figure), écrit
     // uniquement par le serveur, avec le stock lui-même.
