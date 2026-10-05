@@ -9,7 +9,8 @@ import { PageTour } from "@/components/onboarding/PageTour";
 export default function PaymentPage() {
   return (
     <>
-      <PageTour tourId="storefront-checkout" />
+      {/* Parcours d'achat : visite seulement à la demande (« ? »). */}
+      <PageTour tourId="storefront-checkout" autoStart={false} />
       <ProtectedRoute>
         <PaymentMethodPageContent />
       </ProtectedRoute>

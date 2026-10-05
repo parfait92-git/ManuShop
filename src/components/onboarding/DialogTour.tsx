@@ -15,13 +15,16 @@ import type { TourId } from "@/components/onboarding/tours";
 export function DialogTour({
   tourId,
   className,
+  autoStart = true,
 }: {
   tourId: TourId;
   className?: string;
+  /** Voir `PageTour`. */
+  autoStart?: boolean;
 }) {
   return (
     <>
-      <PageTour tourId={tourId} replayHint={false} />
+      <PageTour tourId={tourId} replayHint={false} autoStart={autoStart} />
       <TourReplayButton className={className ?? "size-8 shrink-0"} />
     </>
   );

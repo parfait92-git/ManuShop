@@ -21,7 +21,7 @@ jest.mock("./GuidedTour", () => ({
     onFinish,
   }: {
     steps: { target: string; content: string }[];
-    onFinish: () => void;
+    onFinish: (skipped: boolean) => void;
   }) => {
     mockLastSteps = steps;
     return (
@@ -31,8 +31,11 @@ jest.mock("./GuidedTour", () => ({
             {step.content}
           </p>
         ))}
-        <button type="button" onClick={onFinish}>
+        <button type="button" onClick={() => onFinish(false)}>
           fake-finish
+        </button>
+        <button type="button" onClick={() => onFinish(true)}>
+          fake-skip
         </button>
       </div>
     );
@@ -62,15 +65,22 @@ function fakeProfile(overrides: Record<string, unknown> = {}) {
   return { id: "u1", role: "admin", seenTours: ["other-tour"], ...overrides };
 }
 
-function renderPage() {
+function renderPage(autoStart = true) {
   return render(
     <TourProvider>
       <TourReplayButton />
       <div data-tour="first">cible</div>
       <div data-tour="admin-only">cible gérant</div>
-      <PageTour tourId={"test-tour" as never} />
+      <PageTour tourId={"test-tour" as never} autoStart={autoStart} />
     </TourProvider>
   );
+}
+
+async function waitForTargets() {
+  await act(async () => {
+    jest.advanceTimersByTime(6000);
+  });
+  jest.useRealTimers();
 }
 
 describe("PageTour", () => {
@@ -180,6 +190,56 @@ describe("PageTour", () => {
       "other-tour",
       "test-tour",
     ]);
+  });
+
+  it("stops every automatic tour once the user taps « Passer »", async () => {
+    jest.useFakeTimers();
+    signedIn(fakeProfile());
+    renderPage();
+    await waitForTargets();
+
+    await userEvent.click(await screen.findByRole("button", { name: "fake-skip" }));
+    expect(markTourSeenMock).toHaveBeenCalledWith("u1", "*");
+  });
+
+  it("no longer starts any tour by itself after « Passer », on the account or in the browser", async () => {
+    jest.useFakeTimers();
+    signedIn(fakeProfile({ seenTours: ["*"] }));
+    renderPage();
+    await waitForTargets();
+    expect(screen.queryByTestId("tour")).not.toBeInTheDocument();
+
+    // Visiteur : même règle, dans le navigateur.
+    jest.useFakeTimers();
+    signedIn(null);
+    window.localStorage.setItem("manushop:seen-tours", JSON.stringify(["*"]));
+    renderPage();
+    await waitForTargets();
+    expect(screen.queryByTestId("tour")).not.toBeInTheDocument();
+  });
+
+  it("counts the tours seen before signing in: signing in doesn't replay them", async () => {
+    jest.useFakeTimers();
+    window.localStorage.setItem("manushop:seen-tours", JSON.stringify(["test-tour"]));
+    signedIn(fakeProfile({ seenTours: [] }));
+    renderPage();
+    await waitForTargets();
+    expect(screen.queryByTestId("tour")).not.toBeInTheDocument();
+  });
+
+  it("never starts by itself when told not to (purchase flow), but can still be replayed", async () => {
+    jest.useFakeTimers();
+    signedIn(fakeProfile({ seenTours: [] }));
+    renderPage(false);
+    await waitForTargets();
+    expect(screen.queryByTestId("tour")).not.toBeInTheDocument();
+
+    jest.useFakeTimers();
+    act(() => {
+      screen.getByRole("button", { name: /visite/i }).click();
+    });
+    await waitForTargets();
+    expect(await screen.findByTestId("tour")).toBeInTheDocument();
   });
 
   it("ends the very first tour ever with a hint showing where to replay it", async () => {
