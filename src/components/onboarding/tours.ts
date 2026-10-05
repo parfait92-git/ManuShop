@@ -737,7 +737,7 @@ export const TOURS = {
   "storefront-product": [
     {
       target: "product-gallery",
-      content: "Les photos de l'article : touchez-en une pour l'agrandir, puis passez à la suivante.",
+      content: "Les photos de l'article : touchez une vignette pour l'afficher, puis la grande photo pour l'agrandir.",
     },
     {
       target: "product-buy",

@@ -111,22 +111,27 @@ describe("ProductDetailPageContent", () => {
     });
   });
 
-  it("enlarges any photo on click, and keeps the last one viewed as the main photo", async () => {
+  it("shows a thumbnail as the main photo, and only the main photo opens full screen", async () => {
     productServiceMock.getProduct.mockResolvedValue(
       fakeProduct({ images: ["https://picsum.photos/seed/a/400", "https://picsum.photos/seed/b/400"] })
     );
     const user = userEvent.setup();
     render(<ProductDetailPageContent productId="p1" />);
 
-    await user.click(await screen.findByRole("button", { name: "Agrandir la photo 2 sur 2" }));
+    await user.click(await screen.findByRole("button", { name: "Afficher la photo 2 sur 2" }));
+    // La vignette remplace la photo principale, sans ouvrir la vue plein écran.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Afficher la photo 2 sur 2" })).toHaveAttribute("aria-current", "true");
+
+    await user.click(screen.getByRole("button", { name: "Agrandir la photo" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent("2 / 2");
-
     await user.click(within(dialog).getByRole("button", { name: "Photo suivante" }));
     expect(dialog).toHaveTextContent("1 / 2");
     await user.click(within(dialog).getByRole("button", { name: "Fermer" }));
 
-    expect(screen.getByRole("button", { name: "Agrandir la photo 1 sur 2" })).toHaveAttribute("aria-current", "true");
+    // La dernière photo vue reste la photo principale.
+    expect(screen.getByRole("button", { name: "Afficher la photo 1 sur 2" })).toHaveAttribute("aria-current", "true");
     await user.click(screen.getByRole("button", { name: "Agrandir la photo" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("1 / 2");
   });

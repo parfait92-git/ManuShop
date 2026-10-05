@@ -124,7 +124,7 @@ export const clientGuide: Guide = {
         {
           type: "list",
           items: [
-            "Touchez la photo principale ou une vignette pour l'ouvrir en plein écran.",
+            "Touchez une vignette pour l'afficher en grand sur la fiche, puis la photo principale pour l'ouvrir en plein écran.",
             "Faites glisser votre doigt vers la gauche ou la droite pour passer d'une photo à l'autre.",
             "Touchez la photo pour zoomer ; touchez la croix pour revenir à la fiche.",
           ],
