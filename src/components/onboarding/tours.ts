@@ -715,7 +715,7 @@ export const TOURS = {
   "storefront-product": [
     {
       target: "product-gallery",
-      content: "Les photos de l'article.",
+      content: "Les photos de l'article : touchez-en une pour l'agrandir, puis passez à la suivante.",
     },
     {
       target: "product-buy",

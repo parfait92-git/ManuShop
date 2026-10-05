@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ExternalLink, Heart, Star, Store } from "lucide-react";
+import { ChevronLeft, ExternalLink, Heart, Star, Store, ZoomIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { usePremiumAccess } from "@/hooks/usePremiumCatalog";
 import { ShopBrandingSetter } from "@/components/providers/ShopBrandingSetter";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
+import { ProductImageLightbox } from "@/components/storefront/ProductImageLightbox";
 import { SellerReply } from "@/components/storefront/SellerReply";
 import {
   CLIENT_CONTACT_METHOD_LABELS,
@@ -56,6 +57,10 @@ const STOCK_CLASS: Record<StockStatus, string> = {
 export function ProductDetailPageContent({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [shop, setShop] = useState<Shop | null>(null);
+  /** Photo affichée en grand sur la page, et dans la vue plein écran
+   * (`null` : fermée). */
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const hasAccess = usePremiumAccess(shop);
   const money = useMoney(shopCurrency(shop));
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -148,6 +153,13 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
           )
       : [];
 
+  // Photo choisie, bornée au nombre de photos (le produit a pu changer).
+  const shownIndex = selectedImage < product.images.length ? selectedImage : 0;
+  const mainImage = product.images[shownIndex];
+  const imageAlts = product.images.map((_, index) =>
+    productImageAlt(product, { shopName: shop?.name, index, total: product.images.length })
+  );
+
   return (
     <>
       {/* Aux couleurs de la boutique de l'article. */}
@@ -166,42 +178,69 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">
           <div data-tour="product-gallery" className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
-            {product.images[0] && (
-              <Image
-                src={product.images[0]}
-                alt={productImageAlt(product, {
-                  shopName: shop?.name,
-                  index: 0,
-                  total: product.images.length,
-                })}
-                fill
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-contain"
-              />
+            {mainImage && (
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(shownIndex)}
+                aria-label="Agrandir la photo"
+                className="group absolute inset-0 cursor-zoom-in focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <Image
+                  src={mainImage}
+                  alt={imageAlts[shownIndex]}
+                  fill
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  // Plus grand élément de la page : chargé tout de suite.
+                  loading="eager"
+                  className="object-contain transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                />
+                <span className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-background/85 text-foreground opacity-80 shadow-sm transition group-hover:scale-110 group-hover:opacity-100 motion-reduce:transition-none">
+                  <ZoomIn className="size-4" aria-hidden />
+                </span>
+              </button>
             )}
           </div>
           {product.images.length > 1 && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {product.images.map((image, index) => (
-                <div
+                <button
                   key={image}
-                  className="relative size-20 overflow-hidden rounded-lg border border-border bg-muted"
+                  type="button"
+                  aria-label={`Agrandir la photo ${index + 1} sur ${product.images.length}`}
+                  aria-current={index === shownIndex ? "true" : undefined}
+                  onClick={() => {
+                    setSelectedImage(index);
+                    setLightboxIndex(index);
+                  }}
+                  className={`relative size-20 cursor-zoom-in overflow-hidden rounded-lg border-2 bg-muted transition duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+                    index === shownIndex ? "border-foreground" : "border-border hover:border-muted-foreground"
+                  }`}
                 >
                   <Image
                     src={image}
-                    alt={productImageAlt(product, {
-                      shopName: shop?.name,
-                      index,
-                      total: product.images.length,
-                    })}
+                    alt={imageAlts[index]}
                     fill
                     sizes="80px"
+                    // Visibles d'emblée, et la première partage la source de
+                    // la photo principale (sinon Next la croit chargée tard).
+                    loading="eager"
                     className="object-contain"
                   />
-                </div>
+                </button>
               ))}
             </div>
           )}
+          <ProductImageLightbox
+            images={product.images}
+            alts={imageAlts}
+            index={lightboxIndex}
+            onIndexChange={(index) => {
+              setLightboxIndex(index);
+              setSelectedImage(index);
+            }}
+            onClose={() => setLightboxIndex(null)}
+            title={product.name}
+          />
         </div>
 
         <div className="flex flex-col gap-4">

@@ -2365,3 +2365,30 @@ Suite du bilan, validée par l'utilisateur : historique et réapprovisionnement 
 Vérifié : lint, `tsc`, 2 200 tests, build. Rien de commité.
 
 Prochaine étape : variantes (BF-17).
+
+### 2026-10-04 — Photos d'un article en grand sur la fiche produit
+
+Demande de l'utilisateur (capture de la fiche « Mielle ») : voir chaque photo en grand en cliquant dessus. Constat : les vignettes ne faisaient rien au clic, la photo principale restait toujours la première.
+
+**Fait** :
+- **Fiche produit** (`ProductDetailPageContent`) : un clic sur une vignette l'affiche comme photo principale et l'ouvre en grand ; un clic sur la photo principale (icône loupe) l'ouvre aussi. La vignette affichée est encadrée.
+- **Vue plein écran** (`ProductImageLightbox`) : fond noir, nom de l'article, position (« 2 / 3 »), photo précédente / suivante (boutons, flèches du clavier, glissement du doigt), zoom ×2,5 au clic qui suit la souris, vignettes pour sauter à une photo, fermeture (bouton, Échap, clic hors de la photo). La photo vue en dernier reste la photo principale de la fiche.
+- Visite guidée de la fiche : l'étape « photos » l'annonce.
+
+**Corrigé en testant dans le navigateur** :
+- après un glissement sur téléphone, le compteur changeait mais l'ancienne photo restait affichée le temps du chargement : nouvelle image à chaque photo ;
+- page trop visible derrière la vue plein écran : fond noir plein ;
+- avertissement Next « LCP » : photo principale et vignettes chargées tout de suite (`loading="eager"` ; `priority` est obsolète depuis Next 16).
+
+**Vérification réelle sur émulateurs** (article à 3 photos) : ordinateur (vignette 2 → vue ouverte « 2 / 3 », flèche → « 3 / 3 », zoom, Échap, vignette 3 devenue la principale) ; téléphone 360 px (ouverture, glissement → « 2 / 3 » avec la bonne photo, aucun débordement) ; aucune erreur ni avertissement dans la console.
+
+**Animations** (demande de l'utilisateur, même jour) :
+- ouverture : fond en fondu et photo qui grandit (90 % → 100 %) ; fermeture : la photo rapetisse pendant que le fond s'efface (elle restait auparavant invisible pendant la fermeture) ; en-tête et vignettes glissent en place ;
+- changement de photo : la nouvelle arrive du côté du mouvement (droite pour « suivante », gauche pour « précédente », selon la vignette choisie) ;
+- téléphone : la photo suit le doigt (et s'estompe un peu), revient en place si le geste est trop court ;
+- zoom plus doux ; vignette active légèrement agrandie ; boutons qui réagissent au survol et à l'appui ; sur la fiche, photo principale et vignettes réagissent au survol ;
+- toutes coupées si l'appareil demande moins d'animations (`motion-safe` / `motion-reduce`).
+
+Mesuré dans le navigateur : opacité 0 → 1 et échelle 0,94 → 1 en 300 ms à l'ouverture, échelle 0,92 à 120 ms de la fermeture ; arrivée décalée de ±42 px à 60 ms puis 0 ; aucun décalage avec « animations réduites » ; doigt à -120 px → photo à -120 px, opacité 0,8.
+
+Vérifié : lint, `tsc`, 2 210 tests, build. Rien de commité.

@@ -37,6 +37,7 @@ const toastErrorMock = jest.fn();
 jest.mock("sonner", () => ({ toast: { error: (...args: unknown[]) => toastErrorMock(...args) } }));
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { ProductDetailPageContent } from "@/components/storefront/ProductDetailPageContent";
 import type { Product } from "@/models/product/Product";
@@ -107,6 +108,26 @@ describe("ProductDetailPageContent", () => {
       profile: { favoriteProductIds: [] },
       toggleFavorite: toggleFavoriteMock,
     });
+  });
+
+  it("enlarges any photo on click, and keeps the last one viewed as the main photo", async () => {
+    productServiceMock.getProduct.mockResolvedValue(
+      fakeProduct({ images: ["https://picsum.photos/seed/a/400", "https://picsum.photos/seed/b/400"] })
+    );
+    const user = userEvent.setup();
+    render(<ProductDetailPageContent productId="p1" />);
+
+    await user.click(await screen.findByRole("button", { name: "Agrandir la photo 2 sur 2" }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("2 / 2");
+
+    await user.click(within(dialog).getByRole("button", { name: "Photo suivante" }));
+    expect(dialog).toHaveTextContent("1 / 2");
+    await user.click(within(dialog).getByRole("button", { name: "Fermer" }));
+
+    expect(screen.getByRole("button", { name: "Agrandir la photo 1 sur 2" })).toHaveAttribute("aria-current", "true");
+    await user.click(screen.getByRole("button", { name: "Agrandir la photo" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("1 / 2");
   });
 
   it("shows a not-found state when the product doesn't exist", async () => {
