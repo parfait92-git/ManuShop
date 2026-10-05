@@ -2392,3 +2392,25 @@ Demande de l'utilisateur (capture de la fiche « Mielle ») : voir chaque photo 
 Mesuré dans le navigateur : opacité 0 → 1 et échelle 0,94 → 1 en 300 ms à l'ouverture, échelle 0,92 à 120 ms de la fermeture ; arrivée décalée de ±42 px à 60 ms puis 0 ; aucun décalage avec « animations réduites » ; doigt à -120 px → photo à -120 px, opacité 0,8.
 
 Vérifié : lint, `tsc`, 2 210 tests, build. Rien de commité.
+
+### 2026-10-04 — Guides d'utilisation par rôle, exportables en PDF (BF-151)
+
+Demande de l'utilisateur : une page de guide d'utilisation, accessible uniquement au Super Admin, présentée comme un document en pages A4 avec pagination et sommaire, illustrée de captures d'écran de chaque fonctionnalité, exportable en PDF ; un guide par rôle.
+
+**Fait** :
+- **Page** `/super-admin/guide` (menu « Guides d'utilisation », visite guidée `super-admin-guide`) : onglets Gérant, Vendeur, Client, Super Admin ; sommaire latéral (chapitres et numéros de page) ; page A4 à l'échelle de l'écran ; Première / Précédente / numéro de page / Suivante / Dernière, flèches du clavier ; fondu entre les pages.
+- **Mise en page automatique** (`components/super-admin/guide/`) : chaque bloc est mesuré hors écran à sa taille d'impression puis réparti en pages A4 (`paginateGuide`) — chaque chapitre commence une page, un bloc n'est jamais coupé, un intertitre reste avec la suite ; couverture, sommaire avec numéros de page (sur plusieurs pages si besoin), en-tête et pied de page « Page n / N », figures numérotées.
+- **Export PDF** : « Exporter en PDF » monte toutes les pages, attend les images, puis ouvre l'impression du navigateur (A4 sans marges, couleurs conservées, nom proposé « ManuShop - Guide du … ») : texte sélectionnable, identique à l'écran.
+- **Contenu** (`src/content/guides/`) : gérant (12 chapitres, 23 pages), vendeur (6 chapitres, 13 pages), client (9 chapitres, 13 pages), Super Admin (7 chapitres, 9 pages). Le type `ShotId` vient du manifeste des captures : une capture inexistante ne compile pas.
+- **Captures** (`public/guide/shots`, 56 images, 5,8 Mo) produites par `scripts/guide/` :
+  - `make_demo_images.py` : visuels de produits et logo d'une boutique fictive (« Maison Awa Cosmétiques »), dessinés, sans droits d'auteur ;
+  - `seed.mjs` : données réalistes sur les émulateurs uniquement (boutique, 8 produits, 19 commandes sur trois mois, avis et réponses, mouvements de stock, vendeur, cliente, Super Admin, deux autres boutiques, messages, demande premium, domaine officiel) ;
+  - `capture.mjs` : Playwright sur l'application de production branchée aux émulateurs (sans indicateur de développement), téléphone pour le client, ordinateur pour les autres, visites guidées marquées vues ; facture PDF convertie en image. Nouvelle dépendance de développement : `playwright-core` (utilise le Chrome installé).
+
+**Corrigé en testant** : captures lentes (attente « réseau inactif » impossible avec les écoutes Firestore en direct) ; visites guidées imbriquées non reconnues ; heures des données décalées (fuseau de la machine) ; « localhost » visible sur la page de vérification et les Réglages ; téléchargement de facture non capté en émulation téléphone (pris par l'API) ; photos de téléphone trop hautes (pages presque vides).
+
+**Vérification** : les 59 pages des quatre guides rendues et relues ; PDF exportés (client 13 pages, gérant 23 pages, A4, couleurs et captures présentes, même pagination qu'à l'écran) ; aucune erreur console.
+
+**Remarque d'interface vue sur les captures** (non corrigée) : sur la page Commandes à 1 280 px, la colonne Client est étroite et coupe les noms (« Christe lle Ngo »).
+
+Vérifié : lint, `tsc`, 2 222 tests, build. Rien de commité.

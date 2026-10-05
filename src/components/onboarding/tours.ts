@@ -637,6 +637,28 @@ export const TOURS = {
         "Le taux du dollar, utilisé pour afficher les prix des boutiques en dollars. L'euro a une parité fixe.",
     },
   ],
+  "super-admin-guide": [
+    {
+      target: "guide-roles",
+      content: "Un guide par rôle : choisissez celui à consulter ou à exporter.",
+    },
+    {
+      target: "guide-toc",
+      content: "Le sommaire : touchez un chapitre pour y aller directement.",
+    },
+    {
+      target: "guide-pages",
+      content: "Le guide, page par page, au format A4 — comme il sera imprimé.",
+    },
+    {
+      target: "guide-pagination",
+      content: "Tournez les pages ici, ou avec les flèches ← et → du clavier.",
+    },
+    {
+      target: "guide-pdf",
+      content: "Exportez le guide en PDF pour le remettre à vos utilisateurs.",
+    },
+  ],
   "super-admin-tags": [
     {
       target: "tags-create",
