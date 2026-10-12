@@ -1,3 +1,4 @@
+jest.mock("../../hooks/useShopPromotions");
 jest.mock("../../lib/firebase", () => ({ db: {}, auth: {} }));
 
 const useAuthMock = jest.fn();
@@ -178,5 +179,18 @@ describe("StorefrontProductCard", () => {
     expect(screen.getByRole("link", { name: "Choisir une version" })).toHaveAttribute("href", "/catalogue/p1");
     expect(screen.queryByRole("button", { name: "Ajouter au panier" })).not.toBeInTheDocument();
     expect(screen.getByText(/^Dès 12\s?500 FCFA$/)).toBeInTheDocument();
+  });
+
+  it("shows a campaign's price with the regular price struck through, and a flash badge", () => {
+    const { __setMockPromotions } = jest.requireMock("../../hooks/useShopPromotions");
+    const ts = (ms: number) => ({ toMillis: () => ms, toDate: () => new Date(ms) });
+    __setMockPromotions([
+      { id: "c1", title: "Vente flash", kind: "percent", value: 20, target: { type: "shop" }, flash: true, startsAt: ts(0), endsAt: ts(Date.now() + 3_600_000) },
+    ]);
+    render(<StorefrontProductCard product={fakeProduct()} />);
+    expect(screen.getByText(/^10\s000 FCFA/)).toBeInTheDocument();
+    expect(screen.getByText(/^12\s500 FCFA$/)).toHaveClass("line-through");
+    expect(screen.getByText("Flash -20%")).toBeInTheDocument();
+    __setMockPromotions([]);
   });
 });

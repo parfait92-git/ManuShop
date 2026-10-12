@@ -103,6 +103,10 @@ jest.mock("../invoices/issueInvoice", () => ({
   ensureInvoice: (...args: unknown[]) => ensureInvoiceMock(...args),
 }));
 
+// Campagnes de promotion de la boutique (aucune par défaut).
+let mockCampaigns: unknown[] = [];
+jest.mock("../promotions/readCampaigns", () => ({ readShopCampaigns: async () => mockCampaigns }));
+
 const pushNewOrderMock = jest.fn(async () => 0);
 const pushStockAlertsMock = jest.fn(async () => 0);
 const pushOrderStatusMock = jest.fn(async () => 0);
@@ -907,5 +911,62 @@ describe("notifications push (2026-10-04)", () => {
       });
       expect(pushOrderStatusMock).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("campagnes de promotion (BF-30, 2026-10-12)", () => {
+  const ts = (iso: string) => ({ toMillis: () => Date.parse(iso) });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireCallerMock.mockResolvedValue({ uid: "client-1", email: "c@b.com" });
+    shopGetMock.mockResolvedValue({ data: () => ({}) });
+    productCostGetMock.mockResolvedValue({ data: () => undefined });
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", name: "Wax", category: "Mode", price: 5000, stock: 10 }) });
+  });
+  afterEach(() => {
+    mockCampaigns = [];
+  });
+
+  it("charges the campaign price and remembers which campaign applied", async () => {
+    mockCampaigns = [
+      {
+        id: "rentree",
+        title: "Rentrée",
+        kind: "percent",
+        value: 20,
+        target: { type: "categories", categories: ["Mode"] },
+        startsAt: ts("2020-01-01T00:00:00Z"),
+        endsAt: ts("2099-01-01T00:00:00Z"),
+      },
+    ];
+    await createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: [{ productId: "p1", name: "Wax", quantity: 2, unitPrice: 5000 }],
+      subtotal: 10000,
+      total: 10000,
+    });
+    const saved = transactionSetMock.mock.calls.find(([ref]) => ref.id === "order-new")?.[1];
+    expect(saved.items).toEqual([{ productId: "p1", name: "Wax", quantity: 2, unitPrice: 4000, promotionId: "rentree" }]);
+    expect(saved.total).toBe(8000);
+  });
+
+  it("ignores a campaign that is over", async () => {
+    mockCampaigns = [
+      { id: "old", title: "x", kind: "percent", value: 50, target: { type: "shop" }, startsAt: ts("2020-01-01T00:00:00Z"), endsAt: ts("2020-02-01T00:00:00Z") },
+    ];
+    await createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: [{ productId: "p1", name: "Wax", quantity: 1, unitPrice: 1 }],
+      subtotal: 0,
+      total: 0,
+    });
+    const saved = transactionSetMock.mock.calls.find(([ref]) => ref.id === "order-new")?.[1];
+    expect(saved.items[0]).toEqual({ productId: "p1", name: "Wax", quantity: 1, unitPrice: 5000 });
   });
 });

@@ -74,6 +74,14 @@ service cloud.firestore {
 
     // Journal d'activité commerçant (BF-98) — privé à la boutique
     // concernée, jamais public, contrairement à products/categories/shops.
+    // Campagnes de promotion (BF-30, 2026-10-12) : lisibles par tous (le
+    // prix affiché en dépend), écrites par le serveur seulement
+    // (`promotionActions.ts`, gérant de la boutique).
+    match /promotions/{promotionId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Appareils inscrits aux notifications push (2026-10-04) : jetons FCM,
     // lus et écrits uniquement par le serveur (`pushActions.ts`).
     match /pushTokens/{tokenId} {

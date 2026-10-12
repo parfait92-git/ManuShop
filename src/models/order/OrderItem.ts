@@ -8,4 +8,6 @@ export interface OrderItem {
   /** Version commandée (BF-17), pour remettre en stock la bonne. */
   variantId?: string;
   variantLabel?: string;
+  /** Campagne de promotion appliquée (bilan des promotions). */
+  promotionId?: string;
 }

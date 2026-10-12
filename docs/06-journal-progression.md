@@ -2524,3 +2524,23 @@ Demande de l'utilisateur : rendre la liste des abonnements (étape 4 de « Crée
 **Vérifié dans le navigateur** (build de production, émulateurs, avantages inclus réglés dans le catalogue premium) : téléphone 390 × 844 et ordinateur 1 280 × 800. Tests : équivalent mensuel, économie, meilleure offre ; étape 4 (choix par défaut, changement de formule, récapitulatif).
 
 Vérifié : lint, `tsc`, tests. Rien de commité.
+
+### 2026-10-12 — Promotions, livraison 1 : campagnes, date de début, ventes flash (BF-30, BF-31, BF-33)
+
+Suite du plan validé par l'utilisateur, en deux livraisons : (1) campagnes ; (2) codes promo et historique avec impact (à suivre).
+
+**Fait** :
+- **Calcul unique du prix** (`lib/pricing.ts`), vitrine et serveur : prix normal, promotion propre au produit, meilleure campagne en cours ; le client paie le plus bas, sans cumul. Une version à prix propre ignore la promotion du produit mais reçoit les campagnes.
+- **Campagnes** (`promotions`, lisibles par tous, écrites par le serveur ; `promotionActions.ts`, gérant seulement) : nom, % (1 à 90) ou montant, toute la boutique / catégories / articles, début et fin à la minute, vente flash (7 jours au plus) ; modification tant qu'elle n'est pas terminée, fin anticipée, suppression d'une campagne pas encore commencée.
+- **Commande** : `createOrderAction` lit les campagnes et facture le même prix ; la campagne appliquée est notée sur la ligne (`promotionId`, pour le bilan à venir).
+- **Vitrine** : écoute en direct des campagnes, une seule par boutique (`useShopPromotions`) ; cartes avec prix barré et badge « −20% » ou « Flash −20% » ; fiche avec prix barré, nom de la campagne et compte à rebours à la seconde (`FlashCountdown`) ; bandeau des promotions en cours sur la boutique ; tri par prix et filtre « En promotion » qui en tiennent compte ; panier qui recalcule ses prix ; le calcul suit le début, la fin et une fin anticipée sans recharger.
+- **Gérant** : page `/dashboard/promotions` (En cours, À venir, Terminées), fenêtre de création avec aperçu du nouveau prix ; cocher « Vente flash » ramène une durée trop longue à 24 h ; visites guidées.
+- **Produit** : date de début de sa promotion (`promoStart`) ; **corrigé** : vider la date de fin ne la retirait pas.
+- **Rappel** : la tâche du matin prévient aussi des campagnes qui finissent le lendemain (hors ventes flash).
+- **Guide du gérant** : chapitre Promotions (deux captures) ; données de démonstration : trois campagnes.
+
+**Vérification réelle** (build de production, émulateurs) : « Flash cheveux » (−20 % sur Soins cheveux) → bandeau et compte à rebours ; huile de ricin « Flash -20% 2 800 FCFA » au lieu de 3 500, savon (autre catégorie) inchangé ; commande facturée **2 800 FCFA** avec la campagne notée ; « Terminer » → la fiche ouverte repasse à 3 500 FCFA sans recharger (défaut trouvé à ce test et corrigé : l'heure du calcul n'était rafraîchie que chaque minute). Aucune erreur console.
+
+**À déployer** : règles Firestore (`promotions`).
+
+Vérifié : lint, `tsc`, tests (2343), build.

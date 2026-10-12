@@ -199,6 +199,16 @@
     "height": 1000,
     "device": "desktop"
   },
+  "gerant-promotion-nouvelle": {
+    "width": 1600,
+    "height": 1000,
+    "device": "desktop"
+  },
+  "gerant-promotions": {
+    "width": 1600,
+    "height": 1000,
+    "device": "desktop"
+  },
   "gerant-rapports": {
     "width": 1600,
     "height": 1000,

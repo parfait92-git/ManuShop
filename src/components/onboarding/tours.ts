@@ -283,6 +283,43 @@ export const TOURS = {
       content: "Appliquez-le : votre vitrine et votre espace de gestion changent aussitôt.",
     },
   ],
+  "dashboard-promotions": [
+    {
+      target: "promotions-add",
+      content:
+        "Créez une promotion : une réduction en % ou en montant, sur toute la boutique, des catégories ou des articles, entre deux dates.",
+    },
+    {
+      target: "promotions-live",
+      content: "Les promotions en cours : modifiez-les ou terminez-les avant la date prévue.",
+    },
+    {
+      target: "promotions-upcoming",
+      content: "Les promotions programmées, qui commenceront d'elles-mêmes.",
+    },
+  ],
+  "dialog-promotion": [
+    {
+      target: "promo-title",
+      content: "Le nom affiché aux clients, ex. « Soldes de la rentrée ».",
+    },
+    {
+      target: "promo-value",
+      content: "La réduction : un pourcentage, ou un montant retiré du prix.",
+    },
+    {
+      target: "promo-target",
+      content: "Toute la boutique, des catégories ou des articles choisis.",
+    },
+    {
+      target: "promo-dates",
+      content: "Elle commence et s'arrête d'elle-même à ces dates.",
+    },
+    {
+      target: "promo-flash",
+      content: "Vente flash : un bandeau et un compte à rebours pour créer l'urgence.",
+    },
+  ],
   "dashboard-reports": [
     {
       target: "reports-kind",

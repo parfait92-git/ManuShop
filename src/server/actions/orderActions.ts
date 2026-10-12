@@ -7,7 +7,6 @@ import { sendOrderNotification } from "@/lib/whatsappBusiness";
 import type { OrderStatus } from "@/models/order/OrderStatus";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
-import { effectivePrice, type PromoFields } from "@/lib/promo";
 import { appendHistoryEvent, nextHistoryEvent, type HistoryHead } from "@/server/integrity/orderHistory";
 import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
@@ -19,7 +18,9 @@ import {
   type StockAlert,
 } from "@/server/push/events";
 import { queueStockMovement } from "@/server/stock/stockMovements";
-import { hasVariants, lineName, variantPrice, type VariantFields } from "@/lib/variants";
+import { hasVariants, lineName } from "@/lib/variants";
+import { quote, type PricedProduct } from "@/lib/pricing";
+import { readShopCampaigns } from "@/server/promotions/readCampaigns";
 import type { ProductVariant } from "@/models/product/ProductVariant";
 
 const ORDERS_COLLECTION = "orders";
@@ -109,6 +110,9 @@ export async function createOrderAction(
   );
   /** Stocks qui passent sous leur seuil d'alerte avec cette commande. */
   const stockAlerts: StockAlert[] = [];
+  // Campagnes de la boutique (BF-30), lues avant la transaction : elles ne
+  // changent pas au rythme des commandes.
+  const campaigns = input.manual ? [] : await readShopCampaigns(db, input.shopId);
 
   await db.runTransaction(async (transaction) => {
     // Toutes les lectures d'une transaction Firestore doivent précéder ses
@@ -178,18 +182,20 @@ export async function createOrderAction(
     // moment de l'ajout : sans ça, un article ajouté pendant une promotion
     // puis commandé après sa date de fin serait encore facturé au prix promo
     // (et un client pourrait envoyer n'importe quel prix). La commande
-    // manuelle garde le prix saisi par le commerçant lui-même. Une version
-    // a son prix propre, sinon celui du produit.
+    // manuelle garde le prix saisi par le commerçant lui-même. Même règle
+    // que la vitrine (`lib/pricing.ts`) : prix de la version, promotion du
+    // produit ou meilleure campagne en cours, le plus bas des deux.
     const now = new Date();
     const items = input.items.map((item, index) => {
       const product = productSnapshots[index].data();
       const variant = variantOf(index);
-      const unitPrice = input.manual
-        ? item.unitPrice
-        : variant
-          ? variantPrice(product as VariantFields, variant, now)
-          : effectivePrice(product as PromoFields, now);
-      if (!variant) return { ...item, unitPrice };
+      const priced = input.manual
+        ? undefined
+        : quote({ ...(product as PricedProduct), id: item.productId }, variant, campaigns, now);
+      const unitPrice = priced ? priced.price : item.unitPrice;
+      // Campagne appliquée : gardée sur la ligne pour le bilan des promotions.
+      const promotion = priced?.campaign ? { promotionId: priced.campaign.id } : {};
+      if (!variant) return { ...item, unitPrice, ...promotion };
       return {
         productId: item.productId,
         name: lineName((product?.name as string | undefined) ?? item.name, variant.label),
@@ -197,6 +203,7 @@ export async function createOrderAction(
         unitPrice,
         variantId: item.variantId,
         variantLabel: variant.label,
+        ...promotion,
       };
     });
     const subtotal = input.manual

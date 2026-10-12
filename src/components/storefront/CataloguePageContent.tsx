@@ -13,20 +13,22 @@ import type { Category } from "@/models/category/Category";
 import type { Product } from "@/models/product/Product";
 import { categoryService } from "@/services/CategoryService";
 import { productService } from "@/services/ProductService";
-import { isPromoActive } from "@/lib/promo";
-import { lowestPrice } from "@/lib/variants";
+import { discountPercent, lowestQuote } from "@/lib/pricing";
+import { useNow, useShopPromotions } from "@/hooks/useShopPromotions";
+import { ShopPromotionBanner } from "@/components/storefront/ShopPromotionBanner";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
 
 type SortOrder = "newest" | "price-asc" | "price-desc";
 
-function sortProducts(products: Product[], order: SortOrder): Product[] {
+/** `priceOf` : prix du moment, campagnes comprises (`lib/pricing.ts`). */
+function sortProducts(products: Product[], order: SortOrder, priceOf: (p: Product) => number): Product[] {
   const sorted = [...products];
   switch (order) {
     case "price-asc":
-      return sorted.sort((a, b) => lowestPrice(a) - lowestPrice(b));
+      return sorted.sort((a, b) => priceOf(a) - priceOf(b));
     case "price-desc":
-      return sorted.sort((a, b) => lowestPrice(b) - lowestPrice(a));
+      return sorted.sort((a, b) => priceOf(b) - priceOf(a));
     case "newest":
     default:
       return sorted.sort(
@@ -50,6 +52,9 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
   // is client-rendered from Firestore data anyway, and this sidesteps the
   // Suspense boundary Next requires around useSearchParams().
   const [promoOnly, setPromoOnly] = useState(false);
+  // Campagnes de la boutique (BF-30) : prix, tri et filtre « En promotion ».
+  const campaigns = useShopPromotions(shopId);
+  const now = useNow(campaigns);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -105,10 +110,10 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
       ? bySearch.filter((product) => product.category === category)
       : bySearch;
     const byPromo = promoOnly
-      ? byCategory.filter((product) => isPromoActive(product))
+      ? byCategory.filter((product) => discountPercent(lowestQuote(product, campaigns, now)) > 0)
       : byCategory;
-    return sortProducts(byPromo, sortOrder);
-  }, [publishedProducts, term, category, sortOrder, promoOnly]);
+    return sortProducts(byPromo, sortOrder, (p) => lowestQuote(p, campaigns, now).price);
+  }, [publishedProducts, term, category, sortOrder, promoOnly, campaigns, now]);
 
   // La boutique existe et est publiée (vérifié par ShopStorefrontPage), mais
   // n'a encore aucun produit VISIBLE (aucun produit du tout, ou aucun
@@ -155,6 +160,8 @@ export function CataloguePageContent({ shopId }: { shopId: string }) {
           </div>
         </div>
       </section>
+
+      <ShopPromotionBanner promotions={campaigns} now={now} />
 
       <section className="flex flex-col gap-4">
         <div data-tour="catalogue-filters" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

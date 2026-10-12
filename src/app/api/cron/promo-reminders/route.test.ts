@@ -4,11 +4,15 @@ jest.mock("../../../../server/push/events", () => ({
   pushPromoEnding: (...a: unknown[]) => pushPromoEndingMock(...(a as [])),
 }));
 const products: Record<string, unknown>[] = [];
+const campaigns: Record<string, unknown>[] = [];
+jest.mock("firebase-admin/firestore", () => ({ Timestamp: { fromMillis: (ms: number) => ms } }));
 jest.mock("../../../../lib/firebaseAdmin", () => ({
   getAdminDb: () => ({
-    collection: () => ({
-      where: () => ({ get: async () => ({ docs: products.map((p) => ({ data: () => p })) }) }),
-    }),
+    collection: (name: string) => {
+      const docs = name === "promotions" ? campaigns : products;
+      const query = { where: () => query, get: async () => ({ docs: docs.map((p) => ({ data: () => p })) }) };
+      return query;
+    },
   }),
 }));
 
@@ -25,6 +29,7 @@ const call = (auth?: string) =>
 beforeEach(() => {
   jest.clearAllMocks();
   products.length = 0;
+  campaigns.length = 0;
   process.env.CRON_SECRET = "secret";
 });
 
@@ -56,5 +61,14 @@ describe("rappel de fin de promotion", () => {
     expect(pushPromoEndingMock).toHaveBeenCalledTimes(1);
     expect(pushPromoEndingMock).toHaveBeenCalledWith(expect.anything(), { shopId: "s1", products: ["Masque", "Savon"] });
     jest.useRealTimers();
+  });
+
+  it("also reminds of the campaigns ending tomorrow evening, flash sales aside", async () => {
+    campaigns.push(
+      { shopId: "s1", title: "Soldes de la rentrée", flash: false },
+      { shopId: "s1", title: "Flash du week-end", flash: true }
+    );
+    await call("Bearer secret");
+    expect(pushPromoEndingMock).toHaveBeenCalledWith(expect.anything(), { shopId: "s1", products: ["« Soldes de la rentrée »"] });
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BadgePercent,
   LayoutGrid,
   Mail,
   Package,
@@ -65,6 +66,13 @@ const MAIN_ITEMS: NavItem[] = [
 
 const CONFIG_ITEMS: NavItem[] = [
   { href: "/dashboard/stats", label: "Statistiques", icon: BarChart3, adminOnly: true },
+  {
+    href: "/dashboard/promotions",
+    label: "Promotions",
+    icon: BadgePercent,
+    adminOnly: true,
+    dataTour: "nav-promotions",
+  },
   {
     href: "/dashboard/rapports",
     label: "Rapports de stock",

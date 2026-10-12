@@ -251,6 +251,33 @@ export const managerGuide: Guide = {
       ],
     },
     {
+      id: "promotions",
+      title: "Promotions",
+      blocks: [
+        {
+          type: "p",
+          text: "**Promotions** (gérant seulement) crée des réductions qui s'appliquent d'elles-mêmes, sans code, pendant leurs dates : sur toute la boutique, des catégories ou des articles choisis. Les clients voient le prix barré et le nouveau prix partout, jusque dans le panier et la facture.",
+        },
+        { type: "shot", shot: { id: "gerant-promotions", caption: "Les promotions en cours, à venir et terminées." } },
+        { type: "h2", text: "Créer une promotion" },
+        {
+          type: "steps",
+          items: [
+            "Touchez **Nouvelle promotion** et donnez-lui un nom affiché aux clients (ex. « Soldes de la rentrée »).",
+            "Choisissez la réduction : un **pourcentage** (1 à 90 %) ou un **montant** retiré du prix.",
+            "Choisissez à quoi elle s'applique : toute la boutique, des catégories ou des articles.",
+            "Fixez le **début** et la **fin** : elle commence et s'arrête toute seule.",
+            "Cochez **Vente flash** pour une vente courte (7 jours au plus) : bandeau rouge et compte à rebours sur la boutique et les fiches.",
+          ],
+        },
+        { type: "shot", shot: { id: "gerant-promotion-nouvelle", caption: "Une vente flash de −20 % sur les soins cheveux." } },
+        {
+          type: "tip",
+          text: "Pas de cumul : le client paie le prix le plus bas entre la promotion propre à un article (sa fiche) et la meilleure promotion en cours. **Terminer** arrête une promotion tout de suite ; une promotion à venir peut être supprimée. La veille de la fin, vous recevez un rappel par notification.",
+        },
+      ],
+    },
+    {
       id: "themes",
       title: "Thèmes et offres premium",
       blocks: [

@@ -266,6 +266,23 @@ const SHOTS = [
     },
   ],
   ["gerant-categories", "gerant@guide.local", DESKTOP, async (p) => go(p, "/dashboard/categories")],
+  ["gerant-promotions", "gerant@guide.local", DESKTOP, async (p) => go(p, "/dashboard/promotions")],
+  [
+    "gerant-promotion-nouvelle",
+    "gerant@guide.local",
+    DESKTOP,
+    async (p) => {
+      await go(p, "/dashboard/promotions");
+      await p.getByRole("button", { name: /Nouvelle promotion/ }).click();
+      const dlg = p.getByRole("dialog");
+      await dlg.getByRole("textbox", { name: /Nom de la promotion/ }).fill("Flash cheveux");
+      await dlg.getByRole("textbox", { name: /Réduction \(%\)/ }).fill("20");
+      await dlg.getByRole("radio", { name: "Des catégories" }).click();
+      await dlg.getByLabel("Soins cheveux").check();
+      await dlg.getByRole("switch", { name: /Vente flash/ }).click();
+      await settle(p, 800);
+    },
+  ],
   ["gerant-commandes", "gerant@guide.local", DESKTOP, async (p) => go(p, "/dashboard/orders")],
   [
     "gerant-commande-manuelle",

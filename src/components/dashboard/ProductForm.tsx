@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, deleteField } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -96,6 +96,7 @@ export function ProductForm({
           isPromo: product.isPromo,
           promoPrice: product.promoPrice,
           promoEndDate: toDateInputValue(product.promoEnd),
+          promoStartDate: toDateInputValue(product.promoStart),
           // Chargé à part (`productCosts`), voir l'effet plus bas.
           purchasePrice: "",
         }
@@ -232,9 +233,19 @@ export function ProductForm({
         ? {
             isPromo: true as const,
             promoPrice: data.promoPrice,
+            // Date vidée : le champ est retiré (une ancienne date ne doit
+            // plus limiter la promotion). `deleteField` n'existe qu'en
+            // modification ; à la création, le champ est simplement absent.
             ...(data.promoEndDate
               ? { promoEnd: Timestamp.fromDate(new Date(data.promoEndDate)) }
-              : {}),
+              : product
+                ? { promoEnd: deleteField() as unknown as Timestamp }
+                : {}),
+            ...(data.promoStartDate
+              ? { promoStart: Timestamp.fromDate(new Date(data.promoStartDate)) }
+              : product
+                ? { promoStart: deleteField() as unknown as Timestamp }
+                : {}),
           }
         : { isPromo: false as const };
 
@@ -579,6 +590,19 @@ export function ProductForm({
                 <p className="text-sm text-destructive">
                   {errors.promoPrice.message}
                 </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="promoStartDate" help="Facultatif. La promotion commence au début de cette journée (heure du Cameroun). Sans date, elle commence tout de suite.">Début de la promo</Label>
+              <Input
+                id="promoStartDate"
+                type="date"
+                aria-invalid={!!errors.promoStartDate}
+                {...register("promoStartDate")}
+              />
+              {errors.promoStartDate && (
+                <p className="text-sm text-destructive">{errors.promoStartDate.message}</p>
               )}
             </div>
 

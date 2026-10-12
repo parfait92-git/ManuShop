@@ -9,6 +9,16 @@ export interface PromoFields {
   isPromo?: boolean;
   promoPrice?: number;
   promoEnd?: { toDate(): Date } | null;
+  /** Premier jour de la promotion (BF-31, 2026-10-12) ; absent : dès
+   * qu'elle est cochée. Même format que `promoEnd`. */
+  promoStart?: { toDate(): Date } | null;
+}
+
+/** Instant où la promotion commence : au début de son premier jour,
+ * heure du Cameroun (même règle que `promoEndsAt`). */
+export function promoStartsAt(promoStart: { toDate(): Date }): Date {
+  const day = promoStart.toDate();
+  return new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()) - SHOP_UTC_OFFSET_MS);
 }
 
 /** Le Cameroun est en UTC+1 toute l'année (pas d'heure d'été). Fixé ici
@@ -39,6 +49,7 @@ export function isPromoActive(product: PromoFields, now: Date = new Date()): boo
   if (!product.isPromo) return false;
   if (typeof product.promoPrice !== "number" || product.promoPrice <= 0) return false;
   if (product.promoEnd && now >= promoEndsAt(product.promoEnd)) return false;
+  if (product.promoStart && now < promoStartsAt(product.promoStart)) return false;
   return true;
 }
 

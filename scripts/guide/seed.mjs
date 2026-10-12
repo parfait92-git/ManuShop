@@ -260,6 +260,22 @@ async function main() {
     });
   }
 
+  // Campagnes de promotion : une en cours, une vente flash programmée.
+  await db.collection("promotions").add({
+    shopId: SHOP, title: "Soldes de la rentrée", kind: "percent", value: 15,
+    target: { type: "categories", categories: ["Soins du corps"] },
+    startsAt: at(2, 8), endsAt: Timestamp.fromDate(new Date(NOW + 5 * DAY)), flash: false, createdAt: at(2, 8),
+  });
+  await db.collection("promotions").add({
+    shopId: SHOP, title: "Vente flash du week-end", kind: "amount", value: 500,
+    target: { type: "shop" },
+    startsAt: Timestamp.fromDate(new Date(NOW + 2 * DAY)), endsAt: Timestamp.fromDate(new Date(NOW + 3 * DAY)), flash: true, createdAt: at(0, 9),
+  });
+  await db.collection("promotions").add({
+    shopId: SHOP, title: "Fête des mères", kind: "percent", value: 10,
+    target: { type: "shop" }, startsAt: at(40, 8), endsAt: at(37, 23), flash: false, createdAt: at(41, 8),
+  });
+
   // Super Admin : messages, demande premium, réglages.
   await db.collection("supportMessages").add({
     shopId: SHOP, shopName: "Maison Awa Cosmétiques", senderId: gerant, senderName: "Aïssatou Mbarga",

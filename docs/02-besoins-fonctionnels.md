@@ -83,10 +83,10 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-30 | Créer promotion | Réduction en % ou montant fixe sur un produit ou catégorie |
-| BF-31 | Promotion limitée | Définir une date de début et fin de promotion (partiel — **fin automatique faite le 2026-10-02** : la promotion s'arrête d'elle-même à la fin de sa journée de fin, heure du Cameroun, sur toute la vitrine et dans la facturation (`src/lib/promo.ts`) ; pas encore de date de **début** : une promotion cochée commence immédiatement) |
+| BF-30 | Créer promotion | Réduction en % ou montant fixe sur un produit ou catégorie. **Fait le 2026-10-12** : campagnes (`/dashboard/promotions`, gérant) en % (1 à 90) ou en montant, sur toute la boutique, des catégories ou des articles ; prix barré et réduction partout (Marché, boutique, fiche, panier) ; même calcul côté serveur à la commande (`lib/pricing.ts`), campagne notée sur la ligne de commande ; pas de cumul avec la promotion propre au produit (le plus bas prix l'emporte). |
+| BF-31 | Promotion limitée | Définir une date de début et fin de promotion (**fait** — **fin automatique faite le 2026-10-02** : la promotion s'arrête d'elle-même à la fin de sa journée de fin, heure du Cameroun, sur toute la vitrine et dans la facturation (`src/lib/promo.ts`) ; **date de début ajoutée le 2026-10-12** sur la promotion d'un produit ; les campagnes ont un début et une fin à la minute près) |
 | BF-32 | Code promo | Générer et gérer des codes promotionnels |
-| BF-33 | Promotion flash | Affichage spécial sur la boutique (compteur de temps) |
+| BF-33 | Promotion flash | Affichage spécial sur la boutique (compteur de temps). **Fait le 2026-10-12** : campagne « vente flash » (7 jours au plus) : bandeau rouge et compte à rebours à la seconde sur la boutique, compte à rebours sur la fiche, badge « Flash » sur les cartes ; le prix revient tout seul à la fin, sans recharger la page. |
 | BF-34 | Historique promos | Voir les promotions passées et leur impact |
 
 ---
