@@ -22,6 +22,8 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { DialogTour } from "@/components/onboarding/DialogTour";
 import { SUBSCRIPTION_PLANS } from "@/lib/subscriptionPlans";
 import { usePremiumCatalog } from "@/hooks/usePremiumCatalog";
+import { SubscriptionPlanPicker } from "@/components/storefront/SubscriptionPlanPicker";
+import type { SubscriptionPlan } from "@/models/shop/Shop";
 import { listPremiumItems } from "@/lib/premiumCatalog";
 import {
   CreateShopWizardSchema,
@@ -354,51 +356,26 @@ export function CreateShopWizard({
                   Choisissez votre abonnement
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous pourrez faire évoluer votre formule selon votre
-                  activité.
+                  Plus la formule est longue, plus vous économisez.
                 </p>
               </div>
-              <div data-tour="wizard-plans" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {SUBSCRIPTION_PLANS.map((plan) => {
-                  const selected = subscriptionPlan === plan.id;
-                  // Prix et articles premium inclus réglés par le Super
-                  // Admin (Offres premium) ; prix d'origine en attendant.
-                  const settings = premiumCatalog?.plans[plan.id];
-                  const price = settings?.priceFcfa ?? plan.priceFcfa;
-                  const included = premiumItems.filter((item) => settings?.includes.includes(item.key));
-                  return (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => setValue("subscriptionPlan", plan.id)}
-                      aria-pressed={selected}
-                      className={`relative flex flex-col gap-1 rounded-lg border p-3 text-left ${
-                        selected
-                          ? "border-primary bg-primary/5"
-                          : "border-border"
-                      }`}
-                    >
-                      {plan.recommended && (
-                        <span className="absolute -top-2 right-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
-                          Meilleure offre
-                        </span>
-                      )}
-                      <span className="text-sm font-medium">{plan.label}</span>
-                      <span className="text-lg font-bold">
-                        {price.toLocaleString("fr-FR")} FCFA
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {plan.description}
-                      </span>
-                      {included.length > 0 && (
-                        <span className="text-xs text-primary">
-                          Inclut : {included.map((item) => item.label).join(", ")}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              <SubscriptionPlanPicker
+                value={subscriptionPlan}
+                onChange={(plan) => setValue("subscriptionPlan", plan)}
+                // Prix et articles premium inclus réglés par le Super
+                // Admin (Offres premium) ; prix d'origine en attendant.
+                prices={Object.fromEntries(
+                  SUBSCRIPTION_PLANS.map((plan) => [plan.id, premiumCatalog?.plans[plan.id]?.priceFcfa ?? plan.priceFcfa])
+                ) as Record<SubscriptionPlan, number>}
+                includedLabels={Object.fromEntries(
+                  SUBSCRIPTION_PLANS.map((plan) => [
+                    plan.id,
+                    premiumItems
+                      .filter((item) => premiumCatalog?.plans[plan.id]?.includes.includes(item.key))
+                      .map((item) => item.label),
+                  ])
+                ) as Record<SubscriptionPlan, string[]>}
+              />
             </div>
           )}
 

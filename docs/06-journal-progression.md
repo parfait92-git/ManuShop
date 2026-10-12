@@ -2510,3 +2510,17 @@ Signalé par l'utilisateur : impossible de faire défiler l'étape 4 (abonnement
 - vue plein écran des photos toujours à la taille de l'écran (360 × 560, 1 280 × 800). Test de la fenêtre ajouté.
 
 Vérifié : lint, `tsc`, 2 307 tests. Rien de commité.
+
+### 2026-10-12 — Formules d'abonnement plus claires et plus attractives
+
+Demande de l'utilisateur : rendre la liste des abonnements (étape 4 de « Créer ma boutique ») plus belle et plus attractive.
+
+**Fait** (`SubscriptionPlanPicker`, `lib/subscriptionPlans.ts`) :
+- une carte par formule, l'une sous l'autre (au lieu d'une grille serrée), de la plus longue à la plus courte : la meilleure offre, choisie d'office, est la première visible sur un téléphone ;
+- sur chaque carte : nom et durée (« 12 mois »), prix, équivalent mensuel (« soit 5 000 FCFA / mois », mois civil), économie par rapport au mensuel (« −37 % », arrondie vers le bas), avantages premium inclus (sans référence interne « (BF-…) ») ;
+- « Meilleure offre » calculée (plus bas prix ramené au mois) sur les prix réglés par le Super Admin, au lieu d'un « Économisez 37 % » écrit en dur ;
+- choix marqué d'une coche animée ; récapitulatif « Annuel · 60 000 FCFA — valable jusqu'au … » ; groupe de boutons radio accessible.
+
+**Vérifié dans le navigateur** (build de production, émulateurs, avantages inclus réglés dans le catalogue premium) : téléphone 390 × 844 et ordinateur 1 280 × 800. Tests : équivalent mensuel, économie, meilleure offre ; étape 4 (choix par défaut, changement de formule, récapitulatif).
+
+Vérifié : lint, `tsc`, tests. Rien de commité.
