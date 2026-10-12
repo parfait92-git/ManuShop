@@ -13,9 +13,6 @@ import type { SubscriptionPlan } from "@/models/shop/Shop";
 
 const fcfa = (n: number) => `${n.toLocaleString("fr-FR")} FCFA`;
 
-/** Libellé pour un client : sans la référence interne (« (BF-106) »). */
-const clientLabel = (label: string) => label.replace(/\s*\(BF-\d+\)\s*$/, "");
-
 /**
  * Choix de la formule d'abonnement, dernière étape de « Créer ma
  * boutique » (BF-83, revu le 2026-10-12 pour être plus clair et plus
@@ -113,7 +110,7 @@ export function SubscriptionPlanPicker({
                     {included.map((label) => (
                       <span key={label} className="flex items-start gap-1.5 text-xs text-foreground">
                         <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
-                        {clientLabel(label)}
+                        {label}
                       </span>
                     ))}
                   </span>

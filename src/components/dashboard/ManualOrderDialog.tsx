@@ -125,7 +125,7 @@ export function ManualOrderDialog({
           <DialogTour tourId="dialog-manual-order" />
         </div>
         <DialogDescription>
-          Pour un client physique, sans compte (BF-21).
+          Pour un client physique, sans compte.
         </DialogDescription>
 
         <div data-tour="manual-order-client" className="flex flex-col gap-3">
