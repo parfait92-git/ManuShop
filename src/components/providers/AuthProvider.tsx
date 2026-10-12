@@ -101,13 +101,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onSnapshot(
       doc(db, "users", firebaseUser.uid),
       (snapshot) => {
-        const remoteSessionId = snapshot.data()?.activeSessionId;
+        const data = snapshot.data();
+        const remoteSessionId = data?.activeSessionId;
         if (remoteSessionId && remoteSessionId !== localSessionId) {
           authService.logout();
           toast.error(
             "Vous avez été déconnecté(e) : votre compte a été utilisé sur un autre appareil."
           );
+          return;
         }
+        // Profil en direct (2026-10-12) : un rôle ou une boutique accordés
+        // par le serveur (création de boutique, Super Admin) s'appliquent
+        // sans recharger la page — sinon un nouveau gérant restait « client »
+        // en mémoire et bouclait sur « Accès refusé ».
+        if (data) setProfile({ id: snapshot.id, ...data } as User);
       }
     );
 
@@ -120,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // ne pas encore avoir tourné juste après une création de compte.
     const uid = auth.currentUser?.uid;
     if (!uid) return;
-    const userProfile = await authService.getUserProfile(uid);
+    const userProfile = await authService.getFreshUserProfile(uid);
     setProfile(userProfile);
   }, []);
 

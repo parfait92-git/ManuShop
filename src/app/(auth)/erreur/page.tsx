@@ -63,7 +63,7 @@ export default function ErreurPage() {
   // CataloguePageContent).
   const [code, setCode] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, profile } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -76,7 +76,14 @@ export default function ErreurPage() {
 
   if (!ready) return null;
 
-  const content = isErrorCode(code) ? ERROR_CONTENT[code] : DEFAULT_CONTENT;
+  const base = isErrorCode(code) ? ERROR_CONTENT[code] : DEFAULT_CONTENT;
+  // Le tableau de bord n'est ouvert qu'au gérant et aux vendeurs : y renvoyer
+  // un autre compte le ramènerait ici, en boucle.
+  const hasDashboard = profile?.role === "admin" || profile?.role === "seller";
+  const content =
+    base.actionHref === "/dashboard" && !hasDashboard
+      ? { ...base, actionLabel: "Retour à l'accueil", actionHref: "/catalogue" }
+      : base;
   const Icon = content.icon;
 
   async function handleLogout() {

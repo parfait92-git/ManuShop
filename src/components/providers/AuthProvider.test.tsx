@@ -253,6 +253,29 @@ describe("AuthProvider", () => {
     expect(logoutMock).not.toHaveBeenCalled();
   });
 
+  it("keeps the profile live: a role granted by the server applies without reloading the page", async () => {
+    getUserProfileMock.mockResolvedValue(fakeUser({ displayName: "Ada Cliente", role: "client" }));
+    getLocalSessionIdMock.mockReturnValue("this-browser-session");
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+
+    await triggerAuthState({ uid: "uid-1", email: "a@b.com" });
+    await waitFor(() => expect(onSnapshotMock).toHaveBeenCalled());
+    expect(screen.getByTestId("profile")).toHaveTextContent("Ada Cliente");
+
+    act(() => {
+      snapshotCallback?.({
+        id: "uid-1",
+        data: () => ({ activeSessionId: "this-browser-session", displayName: "Ada Gérante", role: "admin", shopId: "shop-1" }),
+      } as never);
+    });
+
+    expect(screen.getByTestId("profile")).toHaveTextContent("Ada Gérante");
+  });
+
   describe("toggleFavorite (BF-129)", () => {
     it("adds a product optimistically and persists it", async () => {
       getUserProfileMock.mockResolvedValue(fakeUser());

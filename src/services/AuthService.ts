@@ -312,6 +312,13 @@ export class AuthService {
     return this.users.getById(uid);
   }
 
+  /** Profil relu sur le serveur : juste après une écriture faite par le
+   * serveur (création de boutique), `getDoc` peut encore rendre l'ancienne
+   * version, celle de l'écoute en direct du profil. */
+  getFreshUserProfile(uid: string): Promise<User | null> {
+    return this.users.getByIdFromServer(uid);
+  }
+
   /** Profil personnel (nom, téléphone, photo, préférence de notification) —
    * distinct des paramètres de boutique (`ShopService.updateProfile`). */
   updateProfile(uid: string, data: UpdateUserDto): Promise<void> {

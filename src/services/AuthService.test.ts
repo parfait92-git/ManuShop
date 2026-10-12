@@ -116,6 +116,7 @@ describe("AuthService", () => {
     (auth as { currentUser: unknown }).currentUser = null;
     users = {
       getById: jest.fn(),
+      getByIdFromServer: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       listByShop: jest.fn(),
@@ -351,6 +352,16 @@ describe("AuthService", () => {
       const user = await service.getUserProfile("uid-1");
       expect(users.getById).toHaveBeenCalledWith("uid-1");
       expect(user?.id).toBe("uid-1");
+    });
+  });
+
+  describe("getFreshUserProfile", () => {
+    it("reads the profile from the server, not from a live listener's copy", async () => {
+      users.getByIdFromServer.mockResolvedValue(fakeUser({ role: "admin" }));
+      const user = await service.getFreshUserProfile("uid-1");
+      expect(users.getByIdFromServer).toHaveBeenCalledWith("uid-1");
+      expect(users.getById).not.toHaveBeenCalled();
+      expect(user?.role).toBe("admin");
     });
   });
 
