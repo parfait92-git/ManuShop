@@ -29,8 +29,10 @@ import { productService, type StockStatus } from "@/services/ProductService";
 import { reviewService } from "@/services/ReviewService";
 import { shopService } from "@/services/ShopService";
 import { isOptimizableImage } from "@/lib/imageHosts";
-import { effectivePrice } from "@/lib/promo";
-import { listVariants, variantPrice } from "@/lib/variants";
+import { listVariants } from "@/lib/variants";
+import { discountPercent, quote } from "@/lib/pricing";
+import { FlashCountdown } from "@/components/storefront/FlashCountdown";
+import { useNow, useShopPromotions } from "@/hooks/useShopPromotions";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { shopCurrency } from "@/lib/currency";
@@ -64,6 +66,9 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   /** Version choisie (BF-17) ; `null` : la première disponible. */
   const [chosenVariant, setChosenVariant] = useState<string | null>(null);
+  // Campagnes de la boutique (BF-30) : le prix les suit en direct.
+  const campaigns = useShopPromotions(product?.shopId);
+  const now = useNow(campaigns);
   const hasAccess = usePremiumAccess(shop);
   const money = useMoney(shopCurrency(shop));
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -146,7 +151,9 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
         : "in-stock"
     : productService.getStockStatus(product);
   const available = variant ? variant.stock : product.stock;
-  const price = variant ? variantPrice(product, variant) : effectivePrice(product);
+  const priced = quote(product, variant, campaigns, now);
+  const price = priced.price;
+  const percent = discountPercent(priced);
   const averageRating = reviewService.getAverageRating(reviews);
   const socialUrl = shop ? getPrimarySocialNetworkUrl(shop) : null;
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
@@ -261,9 +268,21 @@ export function ProductDetailPageContent({ productId }: { productId: string }) {
             {product.category}
             {badge ? ` · ${badge}` : ""}
           </Badge>
-          <p className="text-3xl font-bold">
-            {money(price)}
-          </p>
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <p className="text-3xl font-bold">{money(price)}</p>
+            {percent > 0 && (
+              <>
+                <p className="text-lg text-muted-foreground line-through">{money(priced.regular)}</p>
+                <span className="rounded-full bg-destructive px-2 py-0.5 text-sm font-semibold text-white">-{percent}%</span>
+              </>
+            )}
+          </div>
+          {priced.campaign && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-medium">{priced.campaign.title}</span>
+              {priced.campaign.flash && <FlashCountdown endsAt={priced.campaign.endsAt.toMillis()} />}
+            </div>
+          )}
           <p className="text-muted-foreground">{product.description}</p>
           <p className={`text-sm font-medium ${STOCK_CLASS[status]}`}>
             {STOCK_LABEL[status]}

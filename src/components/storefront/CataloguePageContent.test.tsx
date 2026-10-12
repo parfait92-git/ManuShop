@@ -1,3 +1,4 @@
+jest.mock("../../hooks/useShopPromotions");
 jest.mock("../../services/ProductService", () => ({
   productService: {
     listProducts: jest.fn(),

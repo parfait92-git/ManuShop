@@ -174,6 +174,7 @@ export const clientGuide: Guide = {
           type: "steps",
           items: [
             "Vérifiez votre nom, votre téléphone et votre adresse de livraison : ils sont repris de votre compte, et enregistrés pour la prochaine fois s'ils n'y étaient pas encore.",
+            "Un **code promo** de la boutique ? Saisissez-le et touchez **Appliquer** : la réduction et le nouveau total s'affichent aussitôt (ou la raison si le code ne s'applique pas).",
             "Choisissez un mode de paiement (Orange Money, MTN Mobile Money, carte).",
             "Touchez **Confirmer ma commande** : la boutique la reçoit immédiatement.",
           ],

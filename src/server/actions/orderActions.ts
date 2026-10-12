@@ -7,7 +7,6 @@ import { sendOrderNotification } from "@/lib/whatsappBusiness";
 import type { OrderStatus } from "@/models/order/OrderStatus";
 import { requireCaller } from "@/server/auth/requireCaller";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
-import { effectivePrice, type PromoFields } from "@/lib/promo";
 import { appendHistoryEvent, nextHistoryEvent, type HistoryHead } from "@/server/integrity/orderHistory";
 import { ensureInvoice } from "@/server/invoices/issueInvoice";
 import { queueNotification } from "@/server/notifications";
@@ -19,7 +18,11 @@ import {
   type StockAlert,
 } from "@/server/push/events";
 import { queueStockMovement } from "@/server/stock/stockMovements";
-import { hasVariants, lineName, variantPrice, type VariantFields } from "@/lib/variants";
+import { hasVariants, lineName } from "@/lib/variants";
+import { quote, type PricedProduct } from "@/lib/pricing";
+import { readShopCampaigns } from "@/server/promotions/readCampaigns";
+import { CODE_PATTERN, codeDiscount, codeProblem, normalizeCode, type PromoCodeRules } from "@/lib/promoCode";
+import { PROMO_CODE_USES, PROMO_CODES_COLLECTION, promoCodeRef } from "@/server/promotions/promoCodes";
 import type { ProductVariant } from "@/models/product/ProductVariant";
 
 const ORDERS_COLLECTION = "orders";
@@ -50,6 +53,9 @@ export interface CreateOrderActionInput {
   discount?: number;
   total: number;
   notes?: string;
+  /** Code promo saisi par le client (BF-32) : seule source de réduction
+   * d'une commande en ligne, vérifiée et calculée ici. */
+  promoCode?: string;
   /** BF-21 : commande manuelle enregistrée par le commerçant pour un client
    * physique (walk-in), sans compte. Sans ce flag, la commande est liée au
    * compte de l'appelant (`clientId`) — n'importe quel compte connecté peut
@@ -109,6 +115,16 @@ export async function createOrderAction(
   );
   /** Stocks qui passent sous leur seuil d'alerte avec cette commande. */
   const stockAlerts: StockAlert[] = [];
+  // Campagnes de la boutique (BF-30), lues avant la transaction : elles ne
+  // changent pas au rythme des commandes.
+  const campaigns = input.manual ? [] : await readShopCampaigns(db, input.shopId);
+  // Code promo (BF-32) : commande en ligne seulement, par un client connecté.
+  const codeText = !input.manual && input.promoCode ? normalizeCode(input.promoCode) : "";
+  if (codeText && !CODE_PATTERN.test(codeText)) {
+    throw new ValidationError("Ce code promo n'existe pas dans cette boutique.");
+  }
+  const codeRef = codeText ? promoCodeRef(db, input.shopId, codeText) : undefined;
+  const codeUsesRef = codeRef && clientId ? codeRef.collection(PROMO_CODE_USES).doc(clientId) : undefined;
 
   await db.runTransaction(async (transaction) => {
     // Toutes les lectures d'une transaction Firestore doivent précéder ses
@@ -125,6 +141,12 @@ export async function createOrderAction(
         transaction.get(db.collection(PRODUCT_COSTS_COLLECTION).doc(item.productId))
       )
     );
+    // Code promo et utilisations du client, relus ici : deux commandes
+    // simultanées ne dépassent pas la limite.
+    const [codeSnapshot, codeUsesSnapshot] = await Promise.all([
+      codeRef ? transaction.get(codeRef) : undefined,
+      codeUsesRef ? transaction.get(codeUsesRef) : undefined,
+    ]);
 
     // Version commandée (BF-17) : obligatoire pour un produit qui en a,
     // interdite sinon ; quantités cumulées par produit et par version (deux
@@ -178,18 +200,26 @@ export async function createOrderAction(
     // moment de l'ajout : sans ça, un article ajouté pendant une promotion
     // puis commandé après sa date de fin serait encore facturé au prix promo
     // (et un client pourrait envoyer n'importe quel prix). La commande
-    // manuelle garde le prix saisi par le commerçant lui-même. Une version
-    // a son prix propre, sinon celui du produit.
+    // manuelle garde le prix saisi par le commerçant lui-même. Même règle
+    // que la vitrine (`lib/pricing.ts`) : prix de la version, promotion du
+    // produit ou meilleure campagne en cours, le plus bas des deux.
     const now = new Date();
     const items = input.items.map((item, index) => {
       const product = productSnapshots[index].data();
       const variant = variantOf(index);
-      const unitPrice = input.manual
-        ? item.unitPrice
-        : variant
-          ? variantPrice(product as VariantFields, variant, now)
-          : effectivePrice(product as PromoFields, now);
-      if (!variant) return { ...item, unitPrice };
+      const priced = input.manual
+        ? undefined
+        : quote({ ...(product as PricedProduct), id: item.productId }, variant, campaigns, now);
+      const unitPrice = priced ? priced.price : item.unitPrice;
+      // Campagne appliquée : gardée sur la ligne, avec le prix qu'elle a
+      // remplacé, pour le bilan des promotions (BF-34).
+      const promotion = priced?.campaign
+        ? {
+            promotionId: priced.campaign.id,
+            priceBeforeCampaign: quote({ ...(product as PricedProduct), id: item.productId }, variant, [], now).price,
+          }
+        : {};
+      if (!variant) return { ...item, unitPrice, ...promotion };
       return {
         productId: item.productId,
         name: lineName((product?.name as string | undefined) ?? item.name, variant.label),
@@ -197,12 +227,29 @@ export async function createOrderAction(
         unitPrice,
         variantId: item.variantId,
         variantLabel: variant.label,
+        ...promotion,
       };
     });
     const subtotal = input.manual
       ? input.subtotal
       : items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const discount = input.discount ?? 0;
+    // Réduction : saisie par le commerçant pour une commande manuelle ;
+    // pour une commande en ligne, seulement celle du code promo, jamais un
+    // montant envoyé par le navigateur.
+    let discount = input.manual ? (input.discount ?? 0) : 0;
+    if (codeRef) {
+      const code = codeSnapshot?.data() as (PromoCodeRules & { shopId: string }) | undefined;
+      if (!code || code.shopId !== input.shopId) {
+        throw new ValidationError("Ce code promo n'existe pas dans cette boutique.");
+      }
+      const problem = codeProblem(code, {
+        subtotal,
+        now: now.getTime(),
+        clientUses: (codeUsesSnapshot?.data()?.count as number | undefined) ?? 0,
+      });
+      if (problem) throw new ValidationError(problem);
+      discount = codeDiscount(code, subtotal);
+    }
     total = input.manual ? input.total : Math.max(subtotal - discount, 0);
 
     // Premier maillon de l'historique signé de la commande (2026-10-03).
@@ -217,6 +264,7 @@ export async function createOrderAction(
       items,
       subtotal,
       discount,
+      ...(codeRef ? { promoCode: codeText, promoCodeId: codeRef.id } : {}),
       total,
       status: "under_review" satisfies OrderStatus,
       notes: input.notes ?? "",
@@ -226,6 +274,10 @@ export async function createOrderAction(
       updatedAt: FieldValue.serverTimestamp(),
     });
     appendHistoryEvent(db, transaction, orderRef.id, created);
+    if (codeRef) {
+      transaction.update(codeRef, { usedCount: FieldValue.increment(1) });
+      if (codeUsesRef) transaction.set(codeUsesRef, { count: FieldValue.increment(1) }, { merge: true });
+    }
 
     // À part de la commande, que le client peut lire (il y verrait la marge
     // du commerçant) — lisible par le seul gérant (firestore.rules).
@@ -357,6 +409,7 @@ export async function updateOrderStatusAction(
     clientId?: string;
     status: OrderStatus;
     items: { productId: string; quantity: number; name?: string; variantId?: string; variantLabel?: string }[];
+    promoCodeId?: string;
   } & HistoryHead;
 
   const callerSnapshot = await db.collection(USERS_COLLECTION).doc(caller.uid).get();
@@ -423,6 +476,15 @@ export async function updateOrderStatusAction(
     ...(needsRestock ? { restockedAt: FieldValue.serverTimestamp() } : {}),
     updatedAt: FieldValue.serverTimestamp(),
   });
+  // Une commande annulée libère son code promo (BF-32) : le client peut le
+  // réutiliser, la limite totale retrouve une place.
+  if (input.status === "cancelled" && order.promoCodeId) {
+    const codeRef = db.collection(PROMO_CODES_COLLECTION).doc(order.promoCodeId);
+    batch.update(codeRef, { usedCount: FieldValue.increment(-1) });
+    if (order.clientId) {
+      batch.set(codeRef.collection(PROMO_CODE_USES).doc(order.clientId), { count: FieldValue.increment(-1) }, { merge: true });
+    }
+  }
 
   if (needsRestock) {
     // Une écriture par produit (total et versions), en incréments. Une

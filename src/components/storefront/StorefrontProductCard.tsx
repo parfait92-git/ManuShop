@@ -10,8 +10,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import type { Product } from "@/models/product/Product";
 import type { Shop } from "@/models/shop/Shop";
 import { productService } from "@/services/ProductService";
-import { effectivePrice } from "@/lib/promo";
-import { hasPriceRange, hasVariants, lowestPrice } from "@/lib/variants";
+import { discountPercent, lowestQuote } from "@/lib/pricing";
+import { hasPriceRange, hasVariants } from "@/lib/variants";
+import { useNow, useShopPromotions } from "@/hooks/useShopPromotions";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { useMoney } from "@/hooks/useMoney";
 import { useShopCurrency } from "@/hooks/useShopCurrency";
@@ -36,12 +37,18 @@ export function StorefrontProductCard({
   const addItem = useAddToCart();
   const { firebaseUser, profile, toggleFavorite } = useAuth();
   const liked = profile?.favoriteProductIds?.includes(product.id) ?? false;
-  const badge = productService.getBadge(product);
-  // Avec des versions (BF-17) : le prix le plus bas, « Dès » s'ils varient ;
-  // la version se choisit sur la fiche de l'article.
+  // Prix du moment (`lib/pricing.ts`) : promotion du produit ou campagne
+  // de la boutique. Avec des versions (BF-17) : le plus bas, « Dès » s'ils
+  // varient ; la version se choisit sur la fiche de l'article.
+  const campaigns = useShopPromotions(product.shopId);
+  const now = useNow(campaigns);
+  const priced = lowestQuote(product, campaigns, now);
+  const price = priced.price;
+  const percent = discountPercent(priced);
   const withVariants = hasVariants(product);
-  const price = withVariants ? lowestPrice(product) : effectivePrice(product);
   const priceFrom = withVariants && hasPriceRange(product);
+  // Réduction en cours : elle prime sur « Nouveau ».
+  const badge = percent > 0 ? `${priced.campaign?.flash ? "Flash " : ""}-${percent}%` : productService.getBadge(product);
   const money = useMoney(useShopCurrency(product.shopId));
 
   return (
@@ -64,7 +71,11 @@ export function StorefrontProductCard({
             />
           )}
           {badge && (
-            <span className="absolute top-3 left-3 rounded-full bg-background px-2.5 py-1 text-xs font-medium">
+            <span
+              className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-medium ${
+                percent > 0 ? "bg-destructive text-white" : "bg-background"
+              }`}
+            >
               {badge}
             </span>
           )}
@@ -80,6 +91,11 @@ export function StorefrontProductCard({
             <h3 className="text-sm font-semibold">{product.name}</h3>
             <span className="shrink-0 text-sm font-semibold">
               {priceFrom ? `Dès ${money(price)}` : money(price)}
+              {percent > 0 && (
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground line-through">
+                  {money(priced.regular)}
+                </span>
+              )}
             </span>
           </div>
         </div>

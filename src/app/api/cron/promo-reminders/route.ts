@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase-admin/firestore";
+
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { promoEndsAt } from "@/lib/promo";
 import { pushPromoEnding } from "@/server/push/events";
@@ -31,6 +33,21 @@ export async function GET(request: Request) {
     const list = byShop.get(product.shopId) ?? [];
     list.push(String(product.name));
     byShop.set(product.shopId, list);
+  }
+
+  // Campagnes de promotion (2026-10-12) : celles qui finissent dans 24 à
+  // 48 heures, hors ventes flash (courtes, déjà sous compte à rebours).
+  const campaigns = await db
+    .collection("promotions")
+    .where("endsAt", ">", Timestamp.fromMillis(now + 24 * HOUR))
+    .where("endsAt", "<=", Timestamp.fromMillis(now + 48 * HOUR))
+    .get();
+  for (const doc of campaigns.docs) {
+    const campaign = doc.data();
+    if (campaign.flash) continue;
+    const list = byShop.get(campaign.shopId) ?? [];
+    list.push(`« ${String(campaign.title)} »`);
+    byShop.set(campaign.shopId, list);
   }
 
   await Promise.all([...byShop].map(([shopId, products]) => pushPromoEnding(db, { shopId, products })));

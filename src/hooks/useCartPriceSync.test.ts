@@ -1,3 +1,4 @@
+jest.mock("../services/PromotionService", () => ({ promotionService: { listByShop: async () => [] } }));
 const getProductMock = jest.fn();
 jest.mock("../services/ProductService", () => ({
   productService: { getProduct: (...args: unknown[]) => getProductMock(...args) },

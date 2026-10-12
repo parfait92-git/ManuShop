@@ -83,11 +83,11 @@
 
 | ID | Besoin | Description |
 |---|---|---|
-| BF-30 | Créer promotion | Réduction en % ou montant fixe sur un produit ou catégorie |
-| BF-31 | Promotion limitée | Définir une date de début et fin de promotion (partiel — **fin automatique faite le 2026-10-02** : la promotion s'arrête d'elle-même à la fin de sa journée de fin, heure du Cameroun, sur toute la vitrine et dans la facturation (`src/lib/promo.ts`) ; pas encore de date de **début** : une promotion cochée commence immédiatement) |
-| BF-32 | Code promo | Générer et gérer des codes promotionnels |
-| BF-33 | Promotion flash | Affichage spécial sur la boutique (compteur de temps) |
-| BF-34 | Historique promos | Voir les promotions passées et leur impact |
+| BF-30 | Créer promotion | Réduction en % ou montant fixe sur un produit ou catégorie. **Fait le 2026-10-12** : campagnes (`/dashboard/promotions`, gérant) en % (1 à 90) ou en montant, sur toute la boutique, des catégories ou des articles ; prix barré et réduction partout (Marché, boutique, fiche, panier) ; même calcul côté serveur à la commande (`lib/pricing.ts`), campagne notée sur la ligne de commande ; pas de cumul avec la promotion propre au produit (le plus bas prix l'emporte). |
+| BF-31 | Promotion limitée | Définir une date de début et fin de promotion (**fait** — **fin automatique faite le 2026-10-02** : la promotion s'arrête d'elle-même à la fin de sa journée de fin, heure du Cameroun, sur toute la vitrine et dans la facturation (`src/lib/promo.ts`) ; **date de début ajoutée le 2026-10-12** sur la promotion d'un produit ; les campagnes ont un début et une fin à la minute près) |
+| BF-32 | Code promo | Générer et gérer des codes promotionnels. **Fait le 2026-10-12** : onglet « Codes promo » (gérant) : code unique dans la boutique, % ou montant sur la commande, achat minimum, nombre d'utilisations au total et par client, dates ; arrêt anticipé, suppression d'un code jamais utilisé. Le client le saisit sur la page de commande (aperçu vérifié par le serveur) ; `createOrderAction` le revérifie dans la transaction et compte l'utilisation ; une commande annulée la libère. Le code s'ajoute aux campagnes. **Corrigé au passage** : une commande en ligne acceptait une réduction envoyée par le navigateur. |
+| BF-33 | Promotion flash | Affichage spécial sur la boutique (compteur de temps). **Fait le 2026-10-12** : campagne « vente flash » (7 jours au plus) : bandeau rouge et compte à rebours à la seconde sur la boutique, compte à rebours sur la fiche, badge « Flash » sur les cartes ; le prix revient tout seul à la fin, sans recharger la page. |
+| BF-34 | Historique promos | Voir les promotions passées et leur impact. **Fait le 2026-10-12** : sous chaque campagne et chaque code (en cours et terminés), commandes, articles, ventes et réductions accordées, tirés des commandes (annulées, retournées, défectueuses exclues ; `lib/promotionImpact.ts`). |
 
 ---
 

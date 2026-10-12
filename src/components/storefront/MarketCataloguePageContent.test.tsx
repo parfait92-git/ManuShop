@@ -1,3 +1,4 @@
+jest.mock("../../hooks/useShopPromotions");
 const useMarketCatalogueMock = jest.fn();
 jest.mock("../../hooks/useMarketCatalogue", () => ({
   useMarketCatalogue: () => useMarketCatalogueMock(),

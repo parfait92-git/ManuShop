@@ -28,6 +28,8 @@ const transactionGetMock = jest.fn();
 // Prix d'achat (`productCosts`), lus dans la même transaction : séparés des
 // lectures de produits pour que chaque test garde la maîtrise de celles-ci.
 const productCostGetMock = jest.fn();
+// Code promo et utilisations du client (`promoCodes/…`, BF-32).
+const promoCodeGetMock = jest.fn();
 const transactionSetMock = jest.fn();
 const transactionUpdateMock = jest.fn();
 const transactionCreateMock = jest.fn();
@@ -44,7 +46,9 @@ const runTransactionMock = jest.fn(
       get: ((ref: { __ref?: string }) =>
         ref.__ref?.startsWith("productCosts/")
           ? productCostGetMock(ref)
-          : transactionGetMock(ref)) as typeof transactionGetMock,
+          : ref.__ref?.startsWith("promoCodes/")
+            ? promoCodeGetMock(ref)
+            : transactionGetMock(ref)) as typeof transactionGetMock,
       set: transactionSetMock,
       update: transactionUpdateMock,
       create: transactionCreateMock,
@@ -87,6 +91,19 @@ const collectionMock = jest.fn((name: string) => {
   if (name === "shops") return { doc: shopDocMock };
   if (name === "notifications") return { doc: () => ({ __ref: "notifications/new" }) };
   if (name === "stockMovements") return { doc: () => ({ __ref: "stockMovements/new" }) };
+  if (name === "promoCodes") {
+    return {
+      doc: (id: string) => {
+        const ref = { __ref: `promoCodes/${id}` };
+        Object.defineProperty(ref, "id", { value: id, enumerable: false });
+        Object.defineProperty(ref, "collection", {
+          value: (sub: string) => ({ doc: (c: string) => ({ __ref: `promoCodes/${id}/${sub}/${c}` }) }),
+          enumerable: false,
+        });
+        return ref;
+      },
+    };
+  }
   throw new Error(`Unexpected collection: ${name}`);
 });
 
@@ -102,6 +119,10 @@ const ensureInvoiceMock = jest.fn();
 jest.mock("../invoices/issueInvoice", () => ({
   ensureInvoice: (...args: unknown[]) => ensureInvoiceMock(...args),
 }));
+
+// Campagnes de promotion de la boutique (aucune par défaut).
+let mockCampaigns: unknown[] = [];
+jest.mock("../promotions/readCampaigns", () => ({ readShopCampaigns: async () => mockCampaigns }));
 
 const pushNewOrderMock = jest.fn(async () => 0);
 const pushStockAlertsMock = jest.fn(async () => 0);
@@ -907,5 +928,164 @@ describe("notifications push (2026-10-04)", () => {
       });
       expect(pushOrderStatusMock).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("campagnes de promotion (BF-30, 2026-10-12)", () => {
+  const ts = (iso: string) => ({ toMillis: () => Date.parse(iso) });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireCallerMock.mockResolvedValue({ uid: "client-1", email: "c@b.com" });
+    shopGetMock.mockResolvedValue({ data: () => ({}) });
+    productCostGetMock.mockResolvedValue({ data: () => undefined });
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", name: "Wax", category: "Mode", price: 5000, stock: 10 }) });
+  });
+  afterEach(() => {
+    mockCampaigns = [];
+  });
+
+  it("charges the campaign price and remembers which campaign applied", async () => {
+    mockCampaigns = [
+      {
+        id: "rentree",
+        title: "Rentrée",
+        kind: "percent",
+        value: 20,
+        target: { type: "categories", categories: ["Mode"] },
+        startsAt: ts("2020-01-01T00:00:00Z"),
+        endsAt: ts("2099-01-01T00:00:00Z"),
+      },
+    ];
+    await createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: [{ productId: "p1", name: "Wax", quantity: 2, unitPrice: 5000 }],
+      subtotal: 10000,
+      total: 10000,
+    });
+    const saved = transactionSetMock.mock.calls.find(([ref]) => ref.id === "order-new")?.[1];
+    expect(saved.items).toEqual([
+      { productId: "p1", name: "Wax", quantity: 2, unitPrice: 4000, promotionId: "rentree", priceBeforeCampaign: 5000 },
+    ]);
+    expect(saved.total).toBe(8000);
+  });
+
+  it("ignores a campaign that is over", async () => {
+    mockCampaigns = [
+      { id: "old", title: "x", kind: "percent", value: 50, target: { type: "shop" }, startsAt: ts("2020-01-01T00:00:00Z"), endsAt: ts("2020-02-01T00:00:00Z") },
+    ];
+    await createOrderAction("token", {
+      shopId: "shop-1",
+      clientName: "Fatou",
+      clientPhone: "+237600000000",
+      clientAddress: "Douala",
+      items: [{ productId: "p1", name: "Wax", quantity: 1, unitPrice: 1 }],
+      subtotal: 0,
+      total: 0,
+    });
+    const saved = transactionSetMock.mock.calls.find(([ref]) => ref.id === "order-new")?.[1];
+    expect(saved.items[0]).toEqual({ productId: "p1", name: "Wax", quantity: 1, unitPrice: 5000 });
+  });
+});
+
+describe("codes promo (BF-32, 2026-10-12)", () => {
+  const ts = (iso: string) => ({ toMillis: () => Date.parse(iso) });
+  const CODE = {
+    shopId: "shop-1",
+    code: "RENTREE10",
+    kind: "percent",
+    value: 10,
+    minSubtotal: 0,
+    maxUses: null,
+    perClient: 1,
+    startsAt: ts("2020-01-01T00:00:00Z"),
+    endsAt: ts("2099-01-01T00:00:00Z"),
+    usedCount: 3,
+  };
+  const ORDER = {
+    shopId: "shop-1",
+    clientName: "Fatou",
+    clientPhone: "+237600000000",
+    clientAddress: "Douala",
+    items: [{ productId: "p1", name: "Wax", quantity: 2, unitPrice: 5000 }],
+    subtotal: 10000,
+    total: 10000,
+  };
+  function mockCode(code: Record<string, unknown> | undefined, clientUses = 0) {
+    promoCodeGetMock.mockImplementation(async (ref: { __ref: string }) =>
+      ref.__ref.includes("/uses/")
+        ? { data: () => (clientUses ? { count: clientUses } : undefined) }
+        : { data: () => code }
+    );
+  }
+  const savedOrder = () => transactionSetMock.mock.calls.find(([ref]) => ref.id === "order-new")?.[1];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    requireCallerMock.mockResolvedValue({ uid: "client-1", email: "c@b.com" });
+    shopGetMock.mockResolvedValue({ data: () => ({}) });
+    productCostGetMock.mockResolvedValue({ data: () => undefined });
+    transactionGetMock.mockResolvedValue({ exists: true, data: () => ({ shopId: "shop-1", price: 5000, stock: 10 }) });
+  });
+
+  it("applies the code on the server's own prices and counts the use, for the shop and for the client", async () => {
+    mockCode(CODE);
+    await createOrderAction("token", { ...ORDER, promoCode: " rentree10 " });
+
+    expect(savedOrder()).toEqual(
+      expect.objectContaining({ subtotal: 10000, discount: 1000, total: 9000, promoCode: "RENTREE10", promoCodeId: "shop-1_RENTREE10" })
+    );
+    expect(transactionUpdateMock).toHaveBeenCalledWith({ __ref: "promoCodes/shop-1_RENTREE10" }, { usedCount: { __op: "increment", n: 1 } });
+    expect(transactionSetMock).toHaveBeenCalledWith(
+      { __ref: "promoCodes/shop-1_RENTREE10/uses/client-1" },
+      { count: { __op: "increment", n: 1 } },
+      { merge: true }
+    );
+  });
+
+  it("never takes a discount sent by the browser for an online order", async () => {
+    await createOrderAction("token", { ...ORDER, discount: 9999, total: 1 });
+    expect(savedOrder()).toEqual(expect.objectContaining({ discount: 0, total: 10000 }));
+  });
+
+  it.each([
+    ["unknown", undefined, 0, "n'existe pas"],
+    ["from another shop", { ...CODE, shopId: "shop-2" }, 0, "n'existe pas"],
+    ["expired", { ...CODE, endsAt: ts("2020-02-01T00:00:00Z") }, 0, "a expiré"],
+    ["not started", { ...CODE, startsAt: ts("2099-01-01T00:00:00Z"), endsAt: ts("2099-02-01T00:00:00Z") }, 0, "pas encore valable"],
+    ["used up", { ...CODE, maxUses: 3 }, 0, "nombre d'utilisations"],
+    ["already used by this client", CODE, 1, "déjà utilisé"],
+    ["below the minimum", { ...CODE, minSubtotal: 15000 }, 0, "15"],
+  ])("refuses a code that is %s, and records nothing", async (_label, code, uses, message) => {
+    mockCode(code, uses);
+    await expect(createOrderAction("token", { ...ORDER, promoCode: "RENTREE10" })).rejects.toThrow(message);
+    expect(transactionSetMock).not.toHaveBeenCalled();
+    expect(transactionUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("caps an amount discount at the price of the items", async () => {
+    mockCode({ ...CODE, kind: "amount", value: 50000 });
+    await createOrderAction("token", { ...ORDER, promoCode: "RENTREE10" });
+    expect(savedOrder()).toEqual(expect.objectContaining({ discount: 10000, total: 0 }));
+  });
+
+  it("frees the code when the order is cancelled", async () => {
+    orderGetMock.mockResolvedValue({
+      exists: true,
+      data: () => ({ shopId: "shop-1", clientId: "client-1", status: "under_review", items: ORDER.items, promoCodeId: "shop-1_RENTREE10" }),
+    });
+    userGetMock.mockResolvedValue({ data: () => ({ role: "client" }) });
+    productGetMock.mockResolvedValue({ exists: true, data: () => ({ name: "Wax", stock: 5 }) });
+
+    await updateOrderStatusAction("token", "order-1", { status: "cancelled", reason: "Erreur" });
+
+    expect(batchUpdateMock).toHaveBeenCalledWith({ __ref: "promoCodes/shop-1_RENTREE10" }, { usedCount: { __op: "increment", n: -1 } });
+    expect(batchSetMock).toHaveBeenCalledWith(
+      { __ref: "promoCodes/shop-1_RENTREE10/uses/client-1" },
+      { count: { __op: "increment", n: -1 } },
+      { merge: true }
+    );
   });
 });

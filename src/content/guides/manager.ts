@@ -251,6 +251,58 @@ export const managerGuide: Guide = {
       ],
     },
     {
+      id: "promotions",
+      title: "Promotions",
+      blocks: [
+        {
+          type: "p",
+          text: "**Promotions** (gérant seulement) crée des réductions qui s'appliquent d'elles-mêmes, sans code, pendant leurs dates : sur toute la boutique, des catégories ou des articles choisis. Les clients voient le prix barré et le nouveau prix partout, jusque dans le panier et la facture.",
+        },
+        { type: "shot", shot: { id: "gerant-promotions", caption: "Les promotions en cours, à venir et terminées." } },
+        { type: "h2", text: "Créer une promotion" },
+        {
+          type: "steps",
+          items: [
+            "Touchez **Nouvelle promotion** et donnez-lui un nom affiché aux clients (ex. « Soldes de la rentrée »).",
+            "Choisissez la réduction : un **pourcentage** (1 à 90 %) ou un **montant** retiré du prix.",
+            "Choisissez à quoi elle s'applique : toute la boutique, des catégories ou des articles.",
+            "Fixez le **début** et la **fin** : elle commence et s'arrête toute seule.",
+            "Cochez **Vente flash** pour une vente courte (7 jours au plus) : bandeau rouge et compte à rebours sur la boutique et les fiches.",
+          ],
+        },
+        { type: "shot", shot: { id: "gerant-promotion-nouvelle", caption: "Une vente flash de −20 % sur les soins cheveux." } },
+        {
+          type: "tip",
+          text: "Pas de cumul : le client paie le prix le plus bas entre la promotion propre à un article (sa fiche) et la meilleure promotion en cours. **Terminer** arrête une promotion tout de suite ; une promotion à venir peut être supprimée. La veille de la fin, vous recevez un rappel par notification.",
+        },
+        { type: "h2", text: "Codes promo" },
+        {
+          type: "p",
+          text: "L'onglet **Codes promo** crée des codes à partager (WhatsApp, réseaux sociaux, flyers). Le client saisit le code au moment de commander : la réduction porte sur le montant de sa commande et s'ajoute aux promotions automatiques.",
+        },
+        { type: "shot", shot: { id: "gerant-codes-promo", caption: "Les codes promo, leurs conditions et leur bilan." } },
+        {
+          type: "steps",
+          items: [
+            "Touchez **Nouveau code** et choisissez le code (3 à 20 lettres, chiffres ou tirets, ex. RENTREE10) : il ne change plus ensuite.",
+            "Choisissez la réduction : un **pourcentage** ou un **montant** retiré de la commande.",
+            "Fixez ses conditions, toutes facultatives : un **achat minimum**, un nombre d'**utilisations** au total, un nombre d'utilisations **par client** (une fois, par défaut).",
+            "Fixez ses dates de validité, puis touchez **Créer le code**.",
+          ],
+        },
+        { type: "shot", shot: { id: "gerant-code-nouveau", caption: "Un code de −10 % dès 10 000 FCFA d'achats, 50 utilisations." } },
+        {
+          type: "tip",
+          text: "ManuShop vérifie le code à la commande : dates, achat minimum et limites. Une commande annulée libère son utilisation. **Arrêter** met fin à un code tout de suite ; un code qui n'a jamais servi peut être supprimé.",
+        },
+        { type: "h2", text: "Le bilan de chaque promotion" },
+        {
+          type: "p",
+          text: "Sous chaque promotion et chaque code s'affiche son bilan : le nombre de **commandes**, d'**articles** vendus, le montant des **ventes** et le total des **réductions** accordées. Les commandes annulées, retournées ou défectueuses ne comptent pas. Les promotions terminées restent dans la liste : comparez-les pour savoir lesquelles marchent le mieux.",
+        },
+      ],
+    },
+    {
       id: "themes",
       title: "Thèmes et offres premium",
       blocks: [

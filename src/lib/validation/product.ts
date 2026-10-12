@@ -23,6 +23,8 @@ export const ProductSchema = z
     isPromo: z.boolean(),
     promoPrice: z.coerce.number().positive().optional(),
     promoEndDate: z.string().optional(),
+    // Premier jour de la promotion (BF-31, 2026-10-12) ; vide : tout de suite.
+    promoStartDate: z.string().optional(),
     // Prix d'achat (gérant uniquement, stocké à part : `productCosts`).
     // Facultatif : un champ vidé vaut "non renseigné", pas 0.
     purchasePrice: z.preprocess(
@@ -48,6 +50,13 @@ export const ProductSchema = z
     {
       error: "Le prix promotionnel doit être inférieur au prix normal.",
       path: ["promoPrice"],
+    }
+  )
+  .refine(
+    (data) => !data.isPromo || !data.promoStartDate || !data.promoEndDate || data.promoStartDate <= data.promoEndDate,
+    {
+      error: "Le début doit précéder la fin de la promotion.",
+      path: ["promoStartDate"],
     }
   );
 

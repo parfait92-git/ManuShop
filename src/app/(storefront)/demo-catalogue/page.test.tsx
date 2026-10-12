@@ -1,3 +1,4 @@
+jest.mock("../../../hooks/useShopPromotions");
 // La visite guidée (BF-134) charge le SDK Firebase via useAuth — hors sujet ici.
 jest.mock("../../../components/onboarding/PageTour", () => ({ PageTour: () => null }));
 

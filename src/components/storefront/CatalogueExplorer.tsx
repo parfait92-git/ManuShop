@@ -13,8 +13,8 @@ import { Select } from "@/components/ui/select";
 import { CoachMark } from "@/components/ui/CoachMark";
 import type { MarketProduct } from "@/hooks/useMarketCatalogue";
 import type { Shop } from "@/models/shop/Shop";
-import { isPromoActive } from "@/lib/promo";
-import { lowestPrice } from "@/lib/variants";
+import { discountPercent, lowestQuote } from "@/lib/pricing";
+import { useNow, useShopsPromotions } from "@/hooks/useShopPromotions";
 
 // Assez pour donner un aperçu sans dupliquer toute la page "toutes les
 // boutiques" — celle-ci reste à un clic via la flèche "Voir toutes les
@@ -23,13 +23,14 @@ const SHOP_PREVIEW_LIMIT = 6;
 
 type SortOrder = "newest" | "price-asc" | "price-desc";
 
-function sortItems(items: MarketProduct[], order: SortOrder): MarketProduct[] {
+/** `priceOf` : prix du moment, campagnes comprises (`lib/pricing.ts`). */
+function sortItems(items: MarketProduct[], order: SortOrder, priceOf: (item: MarketProduct) => number): MarketProduct[] {
   const sorted = [...items];
   switch (order) {
     case "price-asc":
-      return sorted.sort((a, b) => lowestPrice(a.product) - lowestPrice(b.product));
+      return sorted.sort((a, b) => priceOf(a) - priceOf(b));
     case "price-desc":
-      return sorted.sort((a, b) => lowestPrice(b.product) - lowestPrice(a.product));
+      return sorted.sort((a, b) => priceOf(b) - priceOf(a));
     case "newest":
     default:
       return sorted.sort(
@@ -77,6 +78,9 @@ export function CatalogueExplorer({
   // pour éviter la limite Suspense de Next, cette page étant déjà
   // entièrement rendue côté client.
   const [promoOnly, setPromoOnly] = useState(false);
+  // Campagnes des boutiques affichées (BF-30) : prix, tri et filtre.
+  const promotionsByShop = useShopsPromotions((items ?? []).map((item) => item.shop.id));
+  const now = useNow(useMemo(() => [...promotionsByShop.values()].flat(), [promotionsByShop]));
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -126,10 +130,13 @@ export function CatalogueExplorer({
       ? bySearch.filter((item) => item.tag?.id === tagId)
       : bySearch;
     const byPromo = promoOnly
-      ? byTag.filter((item) => isPromoActive(item.product))
+      ? byTag.filter((item) => discountPercent(priceOf(item)) > 0)
       : byTag;
-    return sortItems(byPromo, sortOrder);
-  }, [items, term, tagId, sortOrder, promoOnly]);
+    return sortItems(byPromo, sortOrder, (item) => priceOf(item).price);
+    function priceOf(item: MarketProduct) {
+      return lowestQuote(item.product, promotionsByShop.get(item.shop.id) ?? [], now);
+    }
+  }, [items, term, tagId, sortOrder, promoOnly, promotionsByShop, now]);
 
   if (items !== undefined && items.length === 0) {
     return (

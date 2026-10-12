@@ -1,3 +1,4 @@
+jest.mock("../../hooks/useShopPromotions");
 jest.mock("../providers/ShopBrandingSetter", () => ({ ShopBrandingSetter: () => null }));
 jest.mock("../../hooks/usePremiumCatalog");
 jest.mock("../../services/ProductService", () => ({
@@ -169,6 +170,23 @@ describe("ProductDetailPageContent", () => {
     await user.click(screen.getByRole("radio", { name: "250 ml (épuisé)" }));
     expect(screen.getByRole("button", { name: "Ajouter au panier" })).toBeDisabled();
     expect(screen.getByText(/3\s?000 FCFA/)).toBeInTheDocument();
+  });
+
+  it("shows the campaign that lowers the price, with a countdown for a flash sale", async () => {
+    const { __setMockPromotions } = jest.requireMock("../../hooks/useShopPromotions");
+    const ts = (ms: number) => ({ toMillis: () => ms, toDate: () => new Date(ms) });
+    __setMockPromotions([
+      { id: "c1", title: "Week-end flash", kind: "amount", value: 2500, target: { type: "products", productIds: ["p1"] }, flash: true, startsAt: ts(0), endsAt: ts(Date.now() + 2 * 3_600_000) },
+    ]);
+    productServiceMock.getProduct.mockResolvedValue(fakeProduct());
+    render(<ProductDetailPageContent productId="p1" />);
+
+    expect(await screen.findByText("Week-end flash")).toBeInTheDocument();
+    expect(screen.getByText(/^10\s000 FCFA$/)).toBeInTheDocument();
+    expect(screen.getByText(/^12\s500 FCFA$/)).toHaveClass("line-through");
+    expect(screen.getByText("-20%")).toBeInTheDocument();
+    expect(await screen.findByRole("timer")).toHaveTextContent(/Se termine dans 0[12] h/);
+    __setMockPromotions([]);
   });
 
   it("shows a not-found state when the product doesn't exist", async () => {

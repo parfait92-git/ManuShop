@@ -14,6 +14,8 @@ export interface Product {
   isPromo: boolean;
   promoPrice?: number;
   promoEnd?: Timestamp;
+  /** Premier jour de la promotion (BF-31) ; absent : dès qu'elle est cochée. */
+  promoStart?: Timestamp;
   /** Versions du produit (BF-17), par identifiant. Avec des versions,
    * `stock` est leur total, tenu à jour par le serveur. */
   variants?: Record<string, ProductVariant>;
