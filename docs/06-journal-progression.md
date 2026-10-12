@@ -2495,3 +2495,32 @@ Signalé par l'utilisateur : conflit entre la visite guidée « qui apparaît to
 **Vérifié dans le navigateur** (build de production, émulateurs, compte neuf) : « Passer » sur la visite de connexion, plus aucune visite ensuite ; panier → « Choisir un mode de paiement » → coordonnées → « Confirmer ma commande » → « Mes commandes » ; aucune erreur. Tests : panier ouvert au toucher d'une bulle ; « Passer » ; visites vues avant connexion ; lancement automatique désactivé mais visite rejouable.
 
 Vérifié : lint, `tsc`, tests. Rien de commité.
+
+### 2026-10-12 — « Créer ma boutique » : étape 4 inaccessible sur téléphone
+
+Signalé par l'utilisateur : impossible de faire défiler l'étape 4 (abonnement) de « Créer ma boutique » sur téléphone, donc de choisir une formule et de continuer.
+
+**Cause** : la fenêtre commune (`ui/dialog.tsx`, `DialogPortal`) était centrée sans hauteur maximale ni défilement ; un contenu plus haut que l'écran (les cinq formules) en sortait par le haut et par le bas, hors d'atteinte. Concernait toutes les fenêtres sans réglage propre (commande manuelle, catégories, contact, connexion requise…).
+
+**Corrigé** : hauteur maximale de l'écran moins une marge (`100dvh`), défilement dans la fenêtre, marge de chaque côté sur petit écran ; la vue plein écran des photos s'en exclut explicitement.
+
+**Vérifié dans le navigateur** (build de production, émulateurs, comptes clients neufs, vrais événements tactiles) sur un écran de 360 × 560 :
+- sans la correction : fenêtre de -53 à 614 px, aucun défilement, bouton « Confirmer et créer ma boutique » hors d'atteinte du doigt ;
+- avec : fenêtre de 16 à 544 px, glissement du doigt → 139 px de défilement, bouton atteint, boutique créée, retour au tableau de bord ;
+- vue plein écran des photos toujours à la taille de l'écran (360 × 560, 1 280 × 800). Test de la fenêtre ajouté.
+
+Vérifié : lint, `tsc`, 2 307 tests. Rien de commité.
+
+### 2026-10-12 — Formules d'abonnement plus claires et plus attractives
+
+Demande de l'utilisateur : rendre la liste des abonnements (étape 4 de « Créer ma boutique ») plus belle et plus attractive.
+
+**Fait** (`SubscriptionPlanPicker`, `lib/subscriptionPlans.ts`) :
+- une carte par formule, l'une sous l'autre (au lieu d'une grille serrée), de la plus longue à la plus courte : la meilleure offre, choisie d'office, est la première visible sur un téléphone ;
+- sur chaque carte : nom et durée (« 12 mois »), prix, équivalent mensuel (« soit 5 000 FCFA / mois », mois civil), économie par rapport au mensuel (« −37 % », arrondie vers le bas), avantages premium inclus (sans référence interne « (BF-…) ») ;
+- « Meilleure offre » calculée (plus bas prix ramené au mois) sur les prix réglés par le Super Admin, au lieu d'un « Économisez 37 % » écrit en dur ;
+- choix marqué d'une coche animée ; récapitulatif « Annuel · 60 000 FCFA — valable jusqu'au … » ; groupe de boutons radio accessible.
+
+**Vérifié dans le navigateur** (build de production, émulateurs, avantages inclus réglés dans le catalogue premium) : téléphone 390 × 844 et ordinateur 1 280 × 800. Tests : équivalent mensuel, économie, meilleure offre ; étape 4 (choix par défaut, changement de formule, récapitulatif).
+
+Vérifié : lint, `tsc`, tests. Rien de commité.

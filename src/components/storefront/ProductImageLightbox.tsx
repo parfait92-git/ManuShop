@@ -52,7 +52,7 @@ export function ProductImageLightbox({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       {/* Ouverture et fermeture : fond en fondu, photo qui grandit (voir
           `Viewer`). Ni échelle ni déplacement sur la fenêtre elle-même. */}
-      <DialogPortal className="group/lightbox top-0 left-0 h-dvh w-screen max-w-none translate-x-0 translate-y-0 gap-0 rounded-none border-0 bg-black p-0 text-white shadow-none duration-300 ease-out data-ending-style:scale-100 data-starting-style:scale-100 motion-reduce:transition-none">
+      <DialogPortal className="group/lightbox top-0 left-0 h-dvh max-h-none w-screen max-w-none overflow-hidden translate-x-0 translate-y-0 gap-0 rounded-none border-0 bg-black p-0 text-white shadow-none duration-300 ease-out data-ending-style:scale-100 data-starting-style:scale-100 motion-reduce:transition-none">
         {shownIndex !== null && shownIndex < images.length && (
           <Viewer
             images={images}

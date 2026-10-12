@@ -78,16 +78,19 @@ describe("CreateShopWizard", () => {
     expect(screen.getAllByText("Non renseigné").length).toBeGreaterThan(0);
   });
 
-  it("defaults to the recommended (yearly) plan on step 4", async () => {
+  it("defaults to the yearly plan, highlighted as the best offer, on step 4", async () => {
     const user = userEvent.setup();
     render(<CreateShopWizard open onOpenChange={onOpenChange} />);
 
     await goToStep4(user);
 
-    expect(screen.getByRole("button", { name: /Annuel/ })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
+    const yearly = screen.getByRole("radio", { name: /Annuel/ });
+    expect(yearly).toHaveAttribute("aria-checked", "true");
+    expect(yearly).toHaveTextContent("Meilleure offre");
+    expect(yearly).toHaveTextContent("12 mois");
+    expect(yearly).toHaveTextContent(/soit 5\s000 FCFA \/ mois/);
+    expect(yearly).toHaveTextContent("−37 %");
+    expect(screen.getByText(/valable jusqu'au/)).toHaveTextContent(/Annuel · 60\s000 FCFA/);
   });
 
   it("lets the user pick a different plan", async () => {
@@ -95,16 +98,11 @@ describe("CreateShopWizard", () => {
     render(<CreateShopWizard open onOpenChange={onOpenChange} />);
 
     await goToStep4(user);
-    await user.click(screen.getByRole("button", { name: /Mensuel/ }));
+    await user.click(screen.getByRole("radio", { name: /Mensuel/ }));
 
-    expect(screen.getByRole("button", { name: /Mensuel/ })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-    expect(screen.getByRole("button", { name: /Annuel/ })).toHaveAttribute(
-      "aria-pressed",
-      "false"
-    );
+    expect(screen.getByRole("radio", { name: /Mensuel/ })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: /Annuel/ })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText(/valable jusqu'au/)).toHaveTextContent(/Mensuel · 8\s000 FCFA/);
   });
 
   it("creates the shop, refreshes the profile and redirects to /dashboard on confirm", async () => {
