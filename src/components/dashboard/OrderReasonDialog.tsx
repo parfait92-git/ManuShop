@@ -22,19 +22,19 @@ export interface ReasonTarget {
 const COPY: Record<ReasonKind, { title: string; description: string; confirmLabel: string }> = {
   cancel: {
     title: "Annuler la commande",
-    description: "Le motif est requis (BF-23) — visible par le client.",
+    description: "Le motif est requis — visible par le client.",
     confirmLabel: "Annuler la commande",
   },
   returned: {
     title: "Marquer comme retournée",
     description:
-      "Le motif est requis (BF-96) — le stock des articles sera automatiquement réincrémenté.",
+      "Le motif est requis — le stock des articles sera automatiquement réincrémenté.",
     confirmLabel: "Confirmer le retour",
   },
   defective: {
     title: "Marquer comme défectueuse",
     description:
-      "Le motif est requis (BF-97) — le stock des articles sera automatiquement réincrémenté.",
+      "Le motif est requis — le stock des articles sera automatiquement réincrémenté.",
     confirmLabel: "Confirmer",
   },
 };

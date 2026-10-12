@@ -260,7 +260,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold hyphens-auto break-words">Visibilité</h2>
                 <p className="text-sm text-muted-foreground">
-                  Contrôlez si vos clients peuvent voir votre boutique (BF-88).
+                  Contrôlez si vos clients peuvent voir votre boutique.
                 </p>
               </div>
             </div>
@@ -536,7 +536,7 @@ export function ShopSettingsForm({ shopId }: { shopId: string }) {
                 <h2 className="text-lg font-semibold hyphens-auto break-words">Moyens de contact client</h2>
                 <p className="text-sm text-muted-foreground">
                   Choisissez comment vos clients peuvent vous contacter,
-                  affiché sur la fiche de vos produits (BF-105).
+                  affiché sur la fiche de vos produits.
                 </p>
               </div>
             </div>

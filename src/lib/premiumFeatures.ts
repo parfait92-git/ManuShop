@@ -8,11 +8,11 @@
  * même convention que `User.notifyByEmail`, posé avant son consommateur.
  */
 export const PREMIUM_FEATURES = {
-  salesIntervalFilter: "Filtre de ventes par intervalle (BF-102)",
-  advancedContact: "Moyens de contact configurables (BF-105)",
-  socialFooterLinks: "Réseaux sociaux en pied de page (BF-106)",
-  visitStats: "Statistiques de consultation (BF-107)",
-  contactForm: "Formulaire « Nous contacter » (BF-112)",
+  salesIntervalFilter: "Filtre de ventes par intervalle",
+  advancedContact: "Moyens de contact configurables",
+  socialFooterLinks: "Réseaux sociaux en pied de page",
+  visitStats: "Statistiques de consultation",
+  contactForm: "Formulaire « Nous contacter »",
 } as const;
 
 export type PremiumFeatureKey = keyof typeof PREMIUM_FEATURES;
