@@ -2495,3 +2495,18 @@ Signalé par l'utilisateur : conflit entre la visite guidée « qui apparaît to
 **Vérifié dans le navigateur** (build de production, émulateurs, compte neuf) : « Passer » sur la visite de connexion, plus aucune visite ensuite ; panier → « Choisir un mode de paiement » → coordonnées → « Confirmer ma commande » → « Mes commandes » ; aucune erreur. Tests : panier ouvert au toucher d'une bulle ; « Passer » ; visites vues avant connexion ; lancement automatique désactivé mais visite rejouable.
 
 Vérifié : lint, `tsc`, tests. Rien de commité.
+
+### 2026-10-12 — « Créer ma boutique » : étape 4 inaccessible sur téléphone
+
+Signalé par l'utilisateur : impossible de faire défiler l'étape 4 (abonnement) de « Créer ma boutique » sur téléphone, donc de choisir une formule et de continuer.
+
+**Cause** : la fenêtre commune (`ui/dialog.tsx`, `DialogPortal`) était centrée sans hauteur maximale ni défilement ; un contenu plus haut que l'écran (les cinq formules) en sortait par le haut et par le bas, hors d'atteinte. Concernait toutes les fenêtres sans réglage propre (commande manuelle, catégories, contact, connexion requise…).
+
+**Corrigé** : hauteur maximale de l'écran moins une marge (`100dvh`), défilement dans la fenêtre, marge de chaque côté sur petit écran ; la vue plein écran des photos s'en exclut explicitement.
+
+**Vérifié dans le navigateur** (build de production, émulateurs, comptes clients neufs, vrais événements tactiles) sur un écran de 360 × 560 :
+- sans la correction : fenêtre de -53 à 614 px, aucun défilement, bouton « Confirmer et créer ma boutique » hors d'atteinte du doigt ;
+- avec : fenêtre de 16 à 544 px, glissement du doigt → 139 px de défilement, bouton atteint, boutique créée, retour au tableau de bord ;
+- vue plein écran des photos toujours à la taille de l'écran (360 × 560, 1 280 × 800). Test de la fenêtre ajouté.
+
+Vérifié : lint, `tsc`, 2 307 tests. Rien de commité.

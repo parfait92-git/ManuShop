@@ -44,7 +44,11 @@ function DialogPortal({
       <DialogPrimitive.Popup
         data-slot="dialog-popup"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border border-border bg-background p-6 text-foreground shadow-lg transition-[scale,opacity] data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+          // Jamais plus haute que l'écran : sur téléphone, un contenu long
+          // (ex. les formules d'abonnement de « Créer ma boutique ») défile
+          // dans la fenêtre au lieu de sortir de l'écran, hors d'atteinte
+          // (2026-10-12). Marge de chaque côté sur un petit écran.
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto overscroll-contain rounded-lg border border-border bg-background p-6 text-foreground shadow-lg transition-[scale,opacity] data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
           className
         )}
         {...props}
