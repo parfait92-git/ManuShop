@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
   query,
   serverTimestamp,
@@ -25,6 +26,14 @@ const USERS_COLLECTION = "users";
 export class UserRepository implements IUserRepository {
   async getById(id: string): Promise<User | null> {
     const snapshot = await getDoc(doc(db, USERS_COLLECTION, id));
+    if (!snapshot.exists()) return null;
+    return { id: snapshot.id, ...snapshot.data() } as User;
+  }
+
+  async getByIdFromServer(id: string): Promise<User | null> {
+    const ref = doc(db, USERS_COLLECTION, id);
+    // Hors ligne : la dernière version connue, plutôt qu'une erreur.
+    const snapshot = await getDocFromServer(ref).catch(() => getDoc(ref));
     if (!snapshot.exists()) return null;
     return { id: snapshot.id, ...snapshot.data() } as User;
   }

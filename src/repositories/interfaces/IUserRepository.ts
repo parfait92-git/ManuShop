@@ -5,6 +5,8 @@ export type UpdateUserDto = Partial<Omit<User, "id" | "createdAt" | "email">>;
 
 export interface IUserRepository {
   getById(id: string): Promise<User | null>;
+  /** Relu sur le serveur, jamais depuis le cache ni une écoute en cours. */
+  getByIdFromServer(id: string): Promise<User | null>;
   create(id: string, data: CreateUserDto): Promise<User>;
   update(id: string, data: UpdateUserDto): Promise<void>;
   listByShop(shopId: string): Promise<User[]>;

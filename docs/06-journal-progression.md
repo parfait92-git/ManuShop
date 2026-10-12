@@ -2561,3 +2561,16 @@ Vérifié : lint, `tsc`, tests (2343), build.
 **À déployer** : règles Firestore (`promoCodes`).
 
 Vérifié : lint, `tsc`, tests (2381), build.
+
+### 2026-10-12 — Corrigé : boucle « Accès refusé » après la création d'une boutique
+
+**Signalé** : un client qui crée sa boutique tombe sur « Accès refusé » et y revient à chaque clic sur « Retour au tableau de bord ».
+
+**Cause** : juste après la création (le serveur passe le compte en gérant), l'assistant relit le profil avec `getDoc`, qui peut rendre la version de l'écoute en direct du profil, pas encore à jour (latence de Firestore en production, invisible sur les émulateurs). Le profil en mémoire reste « client » jusqu'au prochain rechargement ; le lien (sans rechargement) renvoie donc au refus, en boucle.
+
+**Corrigé** :
+- l'écoute en direct du profil (déjà là pour la session unique) met aussi le profil à jour : un rôle ou une boutique accordés par le serveur s'appliquent sans recharger ;
+- `refreshProfile` relit le profil sur le serveur (`getDocFromServer`) ;
+- page « Accès refusé » : un compte sans tableau de bord se voit proposer « Retour à l'accueil » au lieu d'un lien qui le ramène au refus.
+
+**Vérifié** (build de production, émulateurs) : création de boutique sur ordinateur et téléphone → tableau de bord ; compte bloqué sur « Accès refusé » à qui le serveur accorde le rôle de gérant → le bouton devient « Retour au tableau de bord » et ouvre le tableau de bord. Lint, `tsc`, tests (2385).
