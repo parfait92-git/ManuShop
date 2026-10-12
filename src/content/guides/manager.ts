@@ -275,6 +275,31 @@ export const managerGuide: Guide = {
           type: "tip",
           text: "Pas de cumul : le client paie le prix le plus bas entre la promotion propre à un article (sa fiche) et la meilleure promotion en cours. **Terminer** arrête une promotion tout de suite ; une promotion à venir peut être supprimée. La veille de la fin, vous recevez un rappel par notification.",
         },
+        { type: "h2", text: "Codes promo" },
+        {
+          type: "p",
+          text: "L'onglet **Codes promo** crée des codes à partager (WhatsApp, réseaux sociaux, flyers). Le client saisit le code au moment de commander : la réduction porte sur le montant de sa commande et s'ajoute aux promotions automatiques.",
+        },
+        { type: "shot", shot: { id: "gerant-codes-promo", caption: "Les codes promo, leurs conditions et leur bilan." } },
+        {
+          type: "steps",
+          items: [
+            "Touchez **Nouveau code** et choisissez le code (3 à 20 lettres, chiffres ou tirets, ex. RENTREE10) : il ne change plus ensuite.",
+            "Choisissez la réduction : un **pourcentage** ou un **montant** retiré de la commande.",
+            "Fixez ses conditions, toutes facultatives : un **achat minimum**, un nombre d'**utilisations** au total, un nombre d'utilisations **par client** (une fois, par défaut).",
+            "Fixez ses dates de validité, puis touchez **Créer le code**.",
+          ],
+        },
+        { type: "shot", shot: { id: "gerant-code-nouveau", caption: "Un code de −10 % dès 10 000 FCFA d'achats, 50 utilisations." } },
+        {
+          type: "tip",
+          text: "ManuShop vérifie le code à la commande : dates, achat minimum et limites. Une commande annulée libère son utilisation. **Arrêter** met fin à un code tout de suite ; un code qui n'a jamais servi peut être supprimé.",
+        },
+        { type: "h2", text: "Le bilan de chaque promotion" },
+        {
+          type: "p",
+          text: "Sous chaque promotion et chaque code s'affiche son bilan : le nombre de **commandes**, d'**articles** vendus, le montant des **ventes** et le total des **réductions** accordées. Les commandes annulées, retournées ou défectueuses ne comptent pas. Les promotions terminées restent dans la liste : comparez-les pour savoir lesquelles marchent le mieux.",
+        },
       ],
     },
     {

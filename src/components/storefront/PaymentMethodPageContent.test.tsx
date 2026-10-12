@@ -55,6 +55,11 @@ jest.mock("../../services/OrderService", () => ({
   orderService: { createOrder: (...args: unknown[]) => createOrderMock(...args) },
 }));
 
+const checkCodeMock = jest.fn();
+jest.mock("../../services/PromoCodeService", () => ({
+  promoCodeService: { check: (...args: unknown[]) => checkCodeMock(...args) },
+}));
+
 const toastSuccessMock = jest.fn();
 jest.mock("sonner", () => ({
   toast: { success: (...args: unknown[]) => toastSuccessMock(...args) },
@@ -193,6 +198,38 @@ describe("PaymentMethodPageContent", () => {
       )
     ).toBeInTheDocument();
     expect(clearMock).not.toHaveBeenCalled();
+  });
+
+  it("applies a promo code checked by the server and sends it with the order (BF-32)", async () => {
+    checkCodeMock.mockResolvedValue({ code: "RENTREE10", kind: "percent", value: 10, discount: 1250 });
+    createOrderMock.mockResolvedValue({ orderId: "o1" });
+    const user = userEvent.setup();
+    render(<PaymentMethodPageContent />);
+
+    await user.type(screen.getByLabelText("Code promo"), "rentree10");
+    await user.click(screen.getByRole("button", { name: "Appliquer" }));
+
+    expect(checkCodeMock).toHaveBeenCalledWith("shop-1", "rentree10", 12500);
+    expect(await screen.findByText("Code RENTREE10")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Confirmer ma commande/ })).toHaveTextContent(/11\s250/);
+
+    await user.type(screen.getByLabelText("Adresse de livraison"), "Akwa, Douala");
+    await user.click(screen.getByRole("button", { name: /Confirmer ma commande/ }));
+    expect(createOrderMock).toHaveBeenCalledWith(
+      expect.objectContaining({ subtotal: 12500, total: 11250, promoCode: "RENTREE10" })
+    );
+  });
+
+  it("shows why a promo code is refused and keeps the full price", async () => {
+    checkCodeMock.mockRejectedValue(new Error("Le code VIEUX a expiré."));
+    const user = userEvent.setup();
+    render(<PaymentMethodPageContent />);
+
+    await user.type(screen.getByLabelText("Code promo"), "vieux");
+    await user.click(screen.getByRole("button", { name: "Appliquer" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Le code VIEUX a expiré.");
+    expect(screen.getByRole("button", { name: /Confirmer ma commande/ })).toHaveTextContent(/12\s500/);
   });
 
   it("shows an empty-cart message instead of the checkout form when there is nothing to order", () => {

@@ -82,6 +82,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Codes promo (BF-32, 2026-10-12) : lus par le gérant de la boutique
+    // seulement (le client fait vérifier son code par le serveur), écrits
+    // par le serveur (`promoCodeActions.ts`, `createOrderAction`).
+    match /promoCodes/{codeId} {
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && resource.data.shopId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId;
+      allow write: if false;
+    }
+    match /promoCodes/{codeId}/uses/{clientId} {
+      allow read, write: if false;
+    }
+
     // Appareils inscrits aux notifications push (2026-10-04) : jetons FCM,
     // lus et écrits uniquement par le serveur (`pushActions.ts`).
     match /pushTokens/{tokenId} {

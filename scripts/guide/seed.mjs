@@ -205,14 +205,26 @@ async function main() {
     [68, 0, "delivered", [["savon-noir", 2], ["beurre-karite", 1]]],
     [75, 4, "delivered", [["gommage-cafe", 3]]],
   ];
+  // Bilan des promotions : les commandes des deux derniers jours profitent
+  // des « Soldes de la rentrée » (−15 % sur les soins du corps) ; deux
+  // commandes utilisent le code BIENVENUE10 (−10 %).
+  const WITH_CODE = new Set([0, 5]);
   for (const [i, [days, c, status, lines]] of plan.entries()) {
     const [clientName, clientPhone, clientAddress] = CLIENTS[c];
-    const items = lines.map(([pid, quantity]) => ({ productId: pid, name: byId[pid].name, quantity, unitPrice: byId[pid].price }));
-    const total = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+    const items = lines.map(([pid, quantity]) => {
+      const p = byId[pid];
+      const line = { productId: pid, name: p.name, quantity, unitPrice: p.price };
+      if (days > 1 || p.category !== "Soins du corps") return line;
+      return { ...line, unitPrice: Math.round(p.price * 0.85), promotionId: "soldes-rentree", priceBeforeCampaign: p.price };
+    });
+    const subtotal = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+    const discount = WITH_CODE.has(i) ? subtotal - Math.round(subtotal * 0.9) : 0;
+    const total = subtotal - discount;
     const id = `cmd-${String(i + 1).padStart(3, "0")}`;
     await db.doc(`orders/${id}`).set({
       shopId: SHOP, ...(c === 0 ? { clientId: client } : {}), clientName, clientPhone, clientAddress, items,
-      subtotal: total, discount: 0, total, status, notes: "",
+      subtotal, discount, total, status, notes: "",
+      ...(discount ? { promoCode: "BIENVENUE10", promoCodeId: `${SHOP}_BIENVENUE10` } : {}),
       ...(status === "cancelled" ? { cancelReason: "Je me suis trompée d'article" } : {}),
       ...(status === "returned" ? { returnReason: "Couleur différente de la photo" } : {}),
       createdAt: at(days, 9 + (i % 8), (i * 7) % 60), updatedAt: at(Math.max(days - 1, 0), 15),
@@ -261,7 +273,7 @@ async function main() {
   }
 
   // Campagnes de promotion : une en cours, une vente flash programmée.
-  await db.collection("promotions").add({
+  await db.doc("promotions/soldes-rentree").set({
     shopId: SHOP, title: "Soldes de la rentrée", kind: "percent", value: 15,
     target: { type: "categories", categories: ["Soins du corps"] },
     startsAt: at(2, 8), endsAt: Timestamp.fromDate(new Date(NOW + 5 * DAY)), flash: false, createdAt: at(2, 8),
@@ -275,6 +287,17 @@ async function main() {
     shopId: SHOP, title: "Fête des mères", kind: "percent", value: 10,
     target: { type: "shop" }, startsAt: at(40, 8), endsAt: at(37, 23), flash: false, createdAt: at(41, 8),
   });
+
+  // Codes promo : un en cours (déjà utilisé deux fois), un à venir, un terminé.
+  for (const [code, kind, value, minSubtotal, maxUses, perClient, startsAt, endsAt, usedCount] of [
+    ["BIENVENUE10", "percent", 10, 5000, 100, 1, at(20, 8), Timestamp.fromDate(new Date(NOW + 30 * DAY)), 2],
+    ["NOEL2000", "amount", 2000, 15000, 50, 1, Timestamp.fromDate(new Date(NOW + 20 * DAY)), Timestamp.fromDate(new Date(NOW + 35 * DAY)), 0],
+    ["FETEDESMERES", "percent", 15, 0, null, null, at(40, 8), at(37, 23), 0],
+  ]) {
+    await db.doc(`promoCodes/${SHOP}_${code}`).set({
+      shopId: SHOP, code, kind, value, minSubtotal, maxUses, perClient, startsAt, endsAt, usedCount, createdAt: startsAt,
+    });
+  }
 
   // Super Admin : messages, demande premium, réglages.
   await db.collection("supportMessages").add({

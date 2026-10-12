@@ -161,7 +161,7 @@ Spécification fonctionnelle complète fournie par l'utilisateur (voir Modules 1
 
 ## Phase 3 — Publicité payante (≈2 semaines)
 
-- [~] **Module 6 — Promotions** (BF-30→34 ; BF-30, 31, 33 faits le 2026-10-12) : création promo %/montant, dates, code promo, promo flash avec compteur
+- [x] **Module 6 — Promotions** (BF-30→34, faits le 2026-10-12) : création promo %/montant, dates, code promo, promo flash avec compteur
 - [ ] **Module 9 — Publicité** (BF-48→52) : campagnes Facebook/Instagram Ads, ciblage, budget, suivi performance
 
 **DoD Phase 3** : une campagne Facebook Ads peut être créée et suivie depuis l'app.
@@ -194,7 +194,7 @@ Chaque module ci-dessus doit correspondre à une branche `feature/<module>` cré
 **Fonctionnel, ordre proposé** :
 1. [x] Module 3 — Stock : historique des mouvements et réapprovisionnement (2026-10-03, BF-15, BF-16), versions des produits (2026-10-04, BF-17)
 2. [x] Notifications push (FCM) : nouvelle commande, stock bas, fin de promotion, message (BF-58→61, BF-116) — fait le 2026-10-04 ; clé VAPID et `CRON_SECRET` à configurer
-3. [~] Promotions : campagnes (%, montant, cibles, dates), date de début, promotion flash faites le 2026-10-12 (BF-30, BF-31, BF-33) ; codes promo et historique avec impact à faire (BF-32, BF-34)
+3. [x] Promotions : campagnes (%, montant, cibles, dates), date de début, promotion flash, codes promo, historique avec impact — faits le 2026-10-12 (BF-30→34)
 4. [ ] Retour demandé par le client (BF-77) ; factures groupées par période (BF-104), aperçu (BF-25), envoi WhatsApp (BF-27)
 5. [ ] Vitrine : filtres prix/disponibilité (BF-38), 4 meilleures boutiques (BF-108), marqueur « populaire » (BF-12), hors-ligne complet (BF-40)
 6. [ ] Statistiques : meilleures ventes (BF-55), visites par boutique (BF-107), Firebase Analytics (BF-138→141)

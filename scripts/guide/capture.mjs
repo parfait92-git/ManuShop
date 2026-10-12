@@ -283,6 +283,32 @@ const SHOTS = [
       await settle(p, 800);
     },
   ],
+  [
+    "gerant-codes-promo",
+    "gerant@guide.local",
+    DESKTOP,
+    async (p) => {
+      await go(p, "/dashboard/promotions");
+      await p.getByRole("tab", { name: "Codes promo" }).click();
+      await settle(p, 800);
+    },
+  ],
+  [
+    "gerant-code-nouveau",
+    "gerant@guide.local",
+    DESKTOP,
+    async (p) => {
+      await go(p, "/dashboard/promotions");
+      await p.getByRole("tab", { name: "Codes promo" }).click();
+      await p.getByRole("button", { name: /Nouveau code/ }).click();
+      const dlg = p.getByRole("dialog");
+      await dlg.getByRole("textbox", { name: /^Code/ }).fill("RENTREE10");
+      await dlg.getByRole("textbox", { name: /Réduction \(%\)/ }).fill("10");
+      await dlg.getByRole("textbox", { name: /Achat minimum/ }).fill("10000");
+      await dlg.getByRole("textbox", { name: /Utilisations/ }).fill("50");
+      await settle(p, 800);
+    },
+  ],
   ["gerant-commandes", "gerant@guide.local", DESKTOP, async (p) => go(p, "/dashboard/orders")],
   [
     "gerant-commande-manuelle",

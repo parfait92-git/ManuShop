@@ -295,7 +295,11 @@ export const TOURS = {
     },
     {
       target: "promotions-upcoming",
-      content: "Les promotions programmées, qui commenceront d'elles-mêmes.",
+      content: "Les promotions programmées, qui commenceront d'elles-mêmes. Chacune affiche son bilan : commandes, articles vendus, ventes et réductions accordées.",
+    },
+    {
+      target: "promotions-tabs",
+      content: "Codes promo : des codes à partager, que vos clients saisissent en commandant.",
     },
   ],
   "dialog-promotion": [
@@ -318,6 +322,24 @@ export const TOURS = {
     {
       target: "promo-flash",
       content: "Vente flash : un bandeau et un compte à rebours pour créer l'urgence.",
+    },
+  ],
+  "dialog-promo-code": [
+    {
+      target: "code-text",
+      content: "Le code que vos clients saisiront, ex. RENTREE10.",
+    },
+    {
+      target: "code-value",
+      content: "La réduction sur le montant de la commande : un pourcentage ou un montant.",
+    },
+    {
+      target: "code-limits",
+      content: "Ses conditions : un achat minimum, un nombre d'utilisations au total et par client.",
+    },
+    {
+      target: "code-dates",
+      content: "Le code ne fonctionne qu'entre ces dates.",
     },
   ],
   "dashboard-reports": [
@@ -798,6 +820,10 @@ export const TOURS = {
     {
       target: "checkout-delivery",
       content: "Indiquez votre nom, votre téléphone et l'adresse de livraison.",
+    },
+    {
+      target: "checkout-promo-code",
+      content: "Un code promo de la boutique ? Saisissez-le ici : la réduction s'affiche avant de confirmer.",
     },
     {
       target: "checkout-methods",

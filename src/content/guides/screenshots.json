@@ -144,6 +144,16 @@
     "height": 1000,
     "device": "desktop"
   },
+  "gerant-code-nouveau": {
+    "width": 1600,
+    "height": 1000,
+    "device": "desktop"
+  },
+  "gerant-codes-promo": {
+    "width": 1600,
+    "height": 1000,
+    "device": "desktop"
+  },
   "gerant-commande-manuelle": {
     "width": 1600,
     "height": 1000,

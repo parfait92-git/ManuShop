@@ -2544,3 +2544,20 @@ Suite du plan validé par l'utilisateur, en deux livraisons : (1) campagnes ; (2
 **À déployer** : règles Firestore (`promotions`).
 
 Vérifié : lint, `tsc`, tests (2343), build.
+
+### 2026-10-12 — Promotions, livraison 2 : codes promo et bilan (BF-32, BF-34)
+
+**Fait** :
+- **Codes promo** (`promoCodes/<shopId>_<CODE>`, lus par le gérant seulement, écrits par le serveur ; `promoCodeActions.ts`) : % ou montant sur la commande, achat minimum, utilisations au total et par client (`uses/<clientId>`), dates ; modification tant qu'il court (la limite ne descend pas sous les utilisations faites), arrêt, suppression d'un code jamais utilisé. Règles communes vitrine/serveur dans `lib/promoCode.ts`.
+- **Commande** : champ « Code promo » sur la page de commande, avec aperçu (articles, code, total) et la raison d'un refus ; `createOrderAction` relit le code et les utilisations du client dans la transaction, calcule la réduction sur ses propres prix, compte l'utilisation et note le code sur la commande ; une annulation la libère. Le code s'ajoute aux campagnes.
+- **Faille corrigée** : une commande en ligne reprenait la réduction envoyée par le navigateur (`input.discount`) ; seule la commande manuelle du commerçant la garde.
+- **Bilan** (`lib/promotionImpact.ts`) : sous chaque campagne et chaque code, commandes, articles, ventes, réductions accordées (commandes annulées, retournées, défectueuses exclues). Les lignes de commande d'une campagne gardent le prix qu'elle a remplacé (`priceBeforeCampaign`).
+- **Guide** : codes promo et bilan (gérant, deux captures), code promo à la commande (client) ; visites guidées ; données de démonstration : trois codes, commandes avec campagne et code.
+
+**Vérification réelle** (build de production, émulateurs) : la gérante crée TEST10 (−10 % dès 3 000 FCFA) ; une cliente commande 3 500 FCFA → réduction 350, total **3 150 FCFA** enregistré, utilisation comptée ; annulation → utilisation rendue ; refus expliqués : code inconnu, déjà utilisé, pas encore valable, expiré, minimum non atteint ; bilan affiché. Aucune erreur console.
+
+**Remarqué, pas corrigé** : à la connexion, un passage d'environ 40 ms par `/onboarding` avant le tableau de bord (le profil arrive après le compte) ; sans effet pour l'utilisateur.
+
+**À déployer** : règles Firestore (`promoCodes`).
+
+Vérifié : lint, `tsc`, tests (2381), build.

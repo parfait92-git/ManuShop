@@ -4,8 +4,8 @@ import { FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore"
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import type { PromotionKind, PromotionTarget } from "@/models/promotion/Promotion";
-import { requireCaller } from "@/server/auth/requireCaller";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/server/errors";
+import { NotFoundError, ValidationError } from "@/server/errors";
+import { checkDiscount, parseInstant, requireManager } from "@/server/promotions/common";
 import { PROMOTIONS_COLLECTION } from "@/server/promotions/readCampaigns";
 
 const MAX_TITLE = 60;
@@ -25,20 +25,6 @@ export interface PromotionInput {
   startsAt: string;
   endsAt: string;
   flash: boolean;
-}
-
-/** Le gérant de la boutique : les prix sont son affaire. */
-async function requireManager(db: Firestore, idToken: string): Promise<{ uid: string; shopId: string }> {
-  const caller = await requireCaller(idToken);
-  const user = (await db.collection("users").doc(caller.uid).get()).data();
-  if (!user || user.role !== "admin" || !user.shopId) throw new ForbiddenError("Seul le gérant gère les promotions.");
-  return { uid: caller.uid, shopId: String(user.shopId) };
-}
-
-function parseInstant(value: string, label: string): Date {
-  const ms = Date.parse(value);
-  if (!Number.isFinite(ms)) throw new ValidationError(`Indiquez la date de ${label}.`);
-  return new Date(ms);
 }
 
 async function checkTarget(db: Firestore, shopId: string, target: PromotionTarget): Promise<PromotionTarget> {
@@ -73,14 +59,7 @@ export async function savePromotionAction(idToken: string, input: PromotionInput
 
   const title = String(input.title ?? "").trim();
   if (!title || title.length > MAX_TITLE) throw new ValidationError(`Donnez un nom à la promotion (${MAX_TITLE} caractères au plus).`);
-  if (input.kind !== "percent" && input.kind !== "amount") throw new ValidationError("Choisissez le type de réduction.");
-  const value = Number(input.value);
-  if (input.kind === "percent" && !(Number.isInteger(value) && value >= 1 && value <= 90)) {
-    throw new ValidationError("La réduction doit être comprise entre 1 et 90 %.");
-  }
-  if (input.kind === "amount" && !(Number.isInteger(value) && value >= 1 && value <= 10_000_000)) {
-    throw new ValidationError("Le montant de la réduction doit être un nombre entier de FCFA.");
-  }
+  const value = checkDiscount(input.kind, input.value);
   const startsAt = parseInstant(input.startsAt, "début");
   const endsAt = parseInstant(input.endsAt, "fin");
   const now = Date.now();

@@ -18,6 +18,9 @@ import { shopCurrency } from "@/lib/currency";
 import { cartTotal, useCartStore } from "@/store/cartStore";
 import { orderService } from "@/services/OrderService";
 import { useCartPriceSync } from "@/hooks/useCartPriceSync";
+import { codeDiscount, codeValueLabel } from "@/lib/promoCode";
+import { promoCodeService } from "@/services/PromoCodeService";
+import type { CheckedPromoCode } from "@/server/actions/promoCodeActions";
 
 type PaymentMethod = "visa" | "orange-money" | "mtn-momo";
 
@@ -48,7 +51,29 @@ export function PaymentMethodPageContent() {
   const items = useCartStore((state) => state.items);
   const clear = useCartStore((state) => state.clear);
   const changedPrices = useCartPriceSync();
-  const total = cartTotal(items);
+  const subtotal = cartTotal(items);
+  // Code promo (BF-32) : vérifié par le serveur à la saisie, puis de nouveau
+  // à la commande. La réduction suit le panier (prix mis à jour).
+  const [codeInput, setCodeInput] = useState("");
+  const [promo, setPromo] = useState<CheckedPromoCode | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [checkingCode, setCheckingCode] = useState(false);
+  const discount = promo ? codeDiscount(promo, subtotal) : 0;
+  const total = Math.max(subtotal - discount, 0);
+
+  async function applyCode() {
+    if (!shop || !codeInput.trim()) return;
+    setCodeError(null);
+    setCheckingCode(true);
+    try {
+      setPromo(await promoCodeService.check(shop.id, codeInput, subtotal));
+      setCodeInput("");
+    } catch (err) {
+      setCodeError(err instanceof Error && err.message ? err.message : "Ce code n'a pas pu être vérifié.");
+    } finally {
+      setCheckingCode(false);
+    }
+  }
 
   const [method, setMethod] = useState<PaymentMethod>("visa");
   const [fieldValue, setFieldValue] = useState("");
@@ -93,8 +118,9 @@ export function PaymentMethodPageContent() {
           unitPrice: item.price,
           ...(item.variantId ? { variantId: item.variantId } : {}),
         })),
-        subtotal: total,
+        subtotal,
         total,
+        ...(promo ? { promoCode: promo.code } : {}),
         notes: `Méthode choisie : ${METHOD_LABEL[method]} (paiement à la livraison, aucune intégration réelle).`,
       });
       clear();
@@ -186,6 +212,60 @@ export function PaymentMethodPageContent() {
             placeholder="Quartier, ville, point de repère..."
           />
         </div>
+      </div>
+
+      <div data-tour="checkout-promo-code" className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/40 p-5">
+        <Label htmlFor="promo-code" help="Un code donné par la boutique (« RENTREE10 », par exemple). La réduction s'ajoute aux promotions déjà affichées.">
+          Code promo
+        </Label>
+        {promo ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200">
+            <span>
+              <span className="font-semibold">{promo.code}</span> · {codeValueLabel(promo)} · −{money(discount)}
+            </span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setPromo(null)}>
+              Retirer
+            </Button>
+          </div>
+        ) : (
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void applyCode();
+            }}
+          >
+            <Input
+              id="promo-code"
+              value={codeInput}
+              onChange={(event) => setCodeInput(event.target.value)}
+              placeholder="Votre code"
+              autoCapitalize="characters"
+              autoComplete="off"
+              className="uppercase"
+            />
+            <Button type="submit" variant="outline" disabled={!codeInput.trim() || checkingCode}>
+              {checkingCode ? "Vérification..." : "Appliquer"}
+            </Button>
+          </form>
+        )}
+        {codeError && <p role="alert" className="text-sm text-destructive">{codeError}</p>}
+        {promo && (
+          <dl className="flex flex-col gap-1 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Articles</dt>
+              <dd className="tabular-nums">{money(subtotal)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Code {promo.code}</dt>
+              <dd className="tabular-nums">−{money(discount)}</dd>
+            </div>
+            <div className="flex justify-between font-semibold">
+              <dt>Total</dt>
+              <dd className="tabular-nums">{money(total)}</dd>
+            </div>
+          </dl>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 font-semibold">

@@ -14,6 +14,9 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   discount: number;
+  /** Code promo utilisé (BF-32) : son texte et son identifiant. */
+  promoCode?: string;
+  promoCodeId?: string;
   total: number;
   status: OrderStatus;
   // Requis avant de passer à 'cancelled' (BF-23).

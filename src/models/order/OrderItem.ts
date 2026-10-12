@@ -10,4 +10,7 @@ export interface OrderItem {
   variantLabel?: string;
   /** Campagne de promotion appliquée (bilan des promotions). */
   promotionId?: string;
+  /** Prix sans la campagne (promotion du produit comprise) : la réduction
+   * accordée par la campagne, pour son bilan (BF-34). */
+  priceBeforeCampaign?: number;
 }
